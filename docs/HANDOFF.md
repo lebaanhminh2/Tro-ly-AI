@@ -20,6 +20,8 @@ Cập nhật: 2026-09-11. Phân biệt prototype, kế hoạch và sản phẩm 
 
 ## Bước tiếp theo
 
+UX review 2026-09-12: user đã xác nhận bot trả lời /tasks và tạo việc được; ảnh bộc lộ callback spam, nút cắt, form lịch khó. User yêu cầu bỏ quiet và duyệt tự rà toàn bộ luồng rồi trình một đợt sửa. Kết quả/phạm vi file tại [UX_REVIEW.md](UX_REVIEW.md), chưa sửa code hay deploy trong lượt review. Tái hiện hàm: invalid session buttons ở 4 trạng thái, Today 2 sessions chỉ điều khiển s1, forget:missing vẫn lập side effect xóa context. Giữ pause chủ động + 2 lượt/lần hẹn, bỏ quiet; chưa coi yêu cầu này là cho phép reset jobs cũ. Chờ duyệt phạm vi code UX review; chưa bật AI/Calendar.
+
 Kết quả sửa redirect: 50/50 tests chính + 25/25 experiments đạt; typecheck/staging dry-run đạt. Deploy staging version ca88ec98-0148-4507-bc83-c5ee7ca59d3f thành công, AI/Calendar off. Cần user gửi /tasks MỚI để xác nhận gửi thành công thật; chưa có bằng chứng outbound live sau sửa. Không cần nhập secrets hoặc setWebhook lại.
 
 Sửa tương thích Workers được duyệt: bỏ redirect:error trong Telegram/Google/Gemini runtime, dùng manual và từ chối non-2xx/chuyển hướng; Telegram giữ uncertain khi redirect, không tự retry. Google transport được gọi qua closure tránh lỗi receiver của native fetch. tests/integration/workers-fetch.test.ts transpile code thật vào workerd, thay duy nhất mạng bằng outboundService giả: gửi thành công, redirect bị từ chối, không có request tới đích bẫy; cả Gemini đi qua entrypoint + D1. Đây là bài học từ mock fetch Node không phát hiện được API runtime khác biệt. Chờ nghiệm thu /tasks mới sau deploy, không reset outbox cũ.
