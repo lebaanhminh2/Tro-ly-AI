@@ -3,9 +3,11 @@ import { confirmationAvailable } from '../domain/work.ts';
 import type { Input, Plan, Proposal, Button } from '../domain/work.ts';
 import type { WorkReader } from '../ports/work-store.ts';
 import { sessionCommand } from './session-command.ts';
-export type ChatService = (owner: string, text: string, tasks: Awaited<ReturnType<WorkReader['tasks']>>) => Promise<string>;
+import {memoryCommand} from './memory-command.ts';
+export type ChatService = (owner: string, text: string, tasks: Awaited<ReturnType<WorkReader['tasks']>>,input?:Input,store?:WorkReader,now?:number) => Promise<string|Plan>;
 
 export async function planCommand(input: Input, store: WorkReader, now: number, chat?: ChatService): Promise<Plan> {
+  const memoryPlan=await memoryCommand(input,store,now);if(memoryPlan)return memoryPlan;
   const sessionPlan=await sessionCommand(input,store,now);
   if(sessionPlan)return sessionPlan;
   const { owner, text = '', callback, updateId } = input;
@@ -38,7 +40,7 @@ export async function planCommand(input: Input, store: WorkReader, now: number, 
     const rawOffset = callback?.slice(5) ?? '0';
     if (!/^\d{1,7}$/.test(rawOffset)) return view('Trang không hợp lệ.');
     const offset = Number(rawOffset), tasks = await store.tasks(owner, offset);
-    const buttons = tasks.map(t => [{ text: `Đổi hạn: ${t.title.slice(0, 25)}`, callback_data: `deadline:${t.id}` },{text:'Lên buổi',callback_data:`schedule:${t.id}`}]);
+    const buttons = tasks.map(t => [{ text: `Đổi hạn: ${t.title.slice(0, 25)}`, callback_data: `deadline:${t.id}` },{text:'Lên buổi',callback_data:`schedule:${t.id}`},{text:'Nói về việc này',callback_data:`focus:${t.id}`}]);
     if (offset > 0) buttons.push([{ text: 'Trang trước', callback_data: `page:${Math.max(0, offset - 10)}` }]);
     if (tasks.length === 10) buttons.push([{ text: 'Trang tiếp', callback_data: `page:${offset + 10}` }]);
     return view(tasks.length ? tasks.map(t => `${t.title} — ${t.deadline ?? 'chưa có hạn'}`).join('\n') : 'Chưa có việc ở trang này.', buttons);
@@ -62,7 +64,8 @@ export async function planCommand(input: Input, store: WorkReader, now: number, 
     return result;
   }
   if (chat) {
-    try { return view(await chat(owner, text, await store.tasks(owner, 0))); }
+    if(!await store.aiEnabled(owner))return view('Hội thoại AI đã tắt. /ai on để mở lại; task và nhắc vẫn dùng được.');
+    try { const result=await chat(owner,text,await store.tasks(owner,0),input,store,now);return typeof result==='string'?view(result):result; }
     catch { return view('Hội thoại đang gián đoạn. /add và /tasks vẫn dùng được nhé.'); }
   }
   return view('Hội thoại AI chưa bật. Cậu dùng /add tên việc hoặc /tasks nhé.');

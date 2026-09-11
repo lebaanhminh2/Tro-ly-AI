@@ -8,6 +8,7 @@ import { processInbox } from '../application/process-inbox.ts';
 import type { ChatService } from '../application/plan-command.ts';
 import type { Clock } from '../ports/work-store.ts';
 import { queueReminders } from '../adapters/d1/reminders.ts';
+import {expireMemory} from '../adapters/d1/memory.ts';
 
 export { flushOutbox };
 export function createWorker(chat?: ChatService, transport: typeof fetch = fetch, clock: Clock = { now: Date.now }) {
@@ -15,6 +16,7 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
     async scheduled(_event: unknown, env: Env) {
       if (!configured(env)) return;
       const store = new D1WorkStore(env.DB);
+      await expireMemory(env.DB,clock.now());
       await recoverInterrupted(env.DB, clock.now()); // Handles only legacy prototype updates and delivery leases.
       for (const owner of await store.pendingOwners()) {
         if (owner === env.TELEGRAM_USER_ID) await processInbox(store, owner, clock, chat);

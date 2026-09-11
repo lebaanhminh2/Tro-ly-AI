@@ -2,6 +2,10 @@ import type { Input, Task, Proposal, Selection, Plan } from '../domain/work.ts';
 export type Clock = { now(): number };
 export type Lease = { owner: string; token: string; input: Input; attempts: number };
 export interface WorkReader {
+  memories(owner:string,now:number):Promise<import('../domain/memory.ts').Memory[]>;
+  history(owner:string,now:number):Promise<import('../domain/memory.ts').ConversationTurn[]>;
+  focus(owner:string,now:number):Promise<string|null>;
+  aiEnabled(owner:string):Promise<boolean>;
   sessions(owner:string,start:number,end:number):Promise<import('../domain/session.ts').Session[]>;
   session(owner:string,id:string):Promise<import('../domain/session.ts').Session|null>;
   sessionInput(owner:string):Promise<{task_id:string;expires:number}|null>;

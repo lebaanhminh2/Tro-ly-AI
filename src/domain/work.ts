@@ -5,7 +5,7 @@ export type Selection = { owner: string; task_id: string; version: number; expir
 export type Input = { updateId: number; owner: string; chat: number; text?: string; callback?: string; callbackId?: string };
 export type Button = { text: string; callback_data: string };
 export type View = { text: string; buttons: Button[][] };
-export type Change = import('./session.ts').SessionChange
+export type Change = import('./session.ts').SessionChange | import('./memory.ts').MemoryChange
   | { type: 'propose'; proposal: Proposal }
   | { type: 'resolve'; proposal: Proposal; accept: boolean }
   | { type: 'select'; selection: Selection }

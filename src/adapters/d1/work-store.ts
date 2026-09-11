@@ -4,10 +4,16 @@ import type { WorkStore, Lease, ViewResult } from '../../ports/work-store.ts';
 import type { Input, Task, Proposal, Selection, Plan } from '../../domain/work.ts';
 import type { Session,Preferences } from '../../domain/session.ts';
 import { sessionStatements } from './session-store.ts';
+import {memoryStatements} from './memory.ts';
+import type {Memory,ConversationTurn} from '../../domain/memory.ts';
 
 export class D1WorkStore implements WorkStore {
   private db: Database;
   constructor(db: Database) { this.db = db; }
+  async memories(owner:string,now:number){return (await query(this.db,'SELECT * FROM memories WHERE owner=? AND (expires IS NULL OR expires>?) ORDER BY created DESC LIMIT 30',owner,now).all<Memory>()).results;}
+  async history(owner:string,now:number){return (await query(this.db,'SELECT * FROM conversation_turns WHERE owner=? AND expires>? ORDER BY command_id DESC LIMIT 4',owner,now).all<ConversationTurn>()).results.reverse();}
+  async focus(owner:string,now:number){return (await query(this.db,'SELECT task_id FROM chat_focus WHERE owner=? AND expires>?',owner,now).first<{task_id:string}>())?.task_id??null;}
+  async aiEnabled(owner:string){return (await query(this.db,'SELECT enabled FROM memory_settings WHERE owner=?',owner).first<{enabled:number}>())?.enabled!==0;}
   async sessions(owner:string,start:number,end:number){return (await query(this.db,"SELECT * FROM sessions WHERE owner=? AND start_at>=? AND start_at<? AND status!='draft' ORDER BY start_at LIMIT 30",owner,start,end).all<Session>()).results;}
   session(owner:string,id:string){return query(this.db,'SELECT * FROM sessions WHERE owner=? AND id=?',owner,id).first<Session>();}
   sessionInput(owner:string){return query(this.db,'SELECT task_id,expires FROM session_input WHERE owner=?',owner).first<{task_id:string;expires:number}>();}
@@ -49,7 +55,9 @@ export class D1WorkStore implements WorkStore {
       EXISTS(SELECT 1 FROM owner_leases WHERE owner=? AND token=? AND expires>?) AND
       EXISTS(SELECT 1 FROM command_inbox WHERE owner=? AND update_id=? AND state='pending') THEN 1 ELSE 0 END`, owner, token, now, owner, input.updateId)];
     for (const change of plan.changes) {
-      if (change.type==='session-input'||change.type==='session-create'||change.type==='session-action'||change.type==='preferences') {
+      if(change.type==='remember'||change.type==='forget'||change.type==='focus'||change.type==='ai-enabled'){
+        statements.push(...memoryStatements(this.db,owner,change));
+      }else if (change.type==='session-input'||change.type==='session-create'||change.type==='session-action'||change.type==='preferences') {
         statements.push(...sessionStatements(this.db,owner,change));
       } else if (change.type === 'cancel') {
         if (change.owner !== owner) throw new Error('OWNER_MISMATCH');
@@ -76,6 +84,7 @@ export class D1WorkStore implements WorkStore {
     }
     const payload = JSON.stringify({ method: 'sendMessage', chat_id: input.chat, text: plan.view.text,
       ...(plan.view.buttons.length ? { reply_markup: { inline_keyboard: plan.view.buttons } } : {}) });
+    if(input.text&&!input.text.startsWith('/')&&!plan.changes.some(c=>c.type==='forget'))statements.push(q('INSERT INTO conversation_turns(owner,command_id,user_text,assistant_text,created,expires) VALUES(?,?,?,?,?,?)',owner,input.updateId,input.text,plan.view.text,now,now+7*86400000));
     statements.push(q(`INSERT INTO outbox(id,payload,available) SELECT ?,?,? FROM command_inbox WHERE owner=? AND update_id=? AND delivery=1`,
       `reply:${owner}:${input.updateId}`,payload,now,owner,input.updateId));
     statements.push(q("UPDATE command_inbox SET state='done',result=? WHERE owner=? AND update_id=?", JSON.stringify(plan.view),owner,input.updateId));

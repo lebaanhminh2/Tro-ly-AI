@@ -23,7 +23,7 @@ test('session lifecycle, two reminders per appointment, no daily cap, snooze, re
   let mf=runtime();
   try{
     let db=await mf.getD1Database('DB') as unknown as Database&{exec(s:string):Promise<unknown>};
-    for(const f of ['0001_initial.sql','0002_delivery.sql','0003_command_transactions.sql','0004_sessions_reminders.sql'])await db.exec(readFileSync(`migrations/${f}`,'utf8').replace(/\r?\n/g,' '));
+    for(const f of ['0001_initial.sql','0002_delivery.sql','0003_command_transactions.sql','0004_sessions_reminders.sql','0005_memory_conversation.sql'])await db.exec(readFileSync(`migrations/${f}`,'utf8').replace(/\r?\n/g,' '));
     let store=new D1WorkStore(db),now=Date.parse('2026-09-11T08:00:00+07:00'),id=0;
     const run=async(text:string,callback=false)=>{
       const input={owner:'123',chat:123,updateId:++id,...(callback?{callback:text}:{text})};
