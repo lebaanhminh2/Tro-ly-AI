@@ -77,7 +77,7 @@ Có thể hoàn tất phần local P3 trước khi giải quyết dữ liệu li
 | --- | --- | --- |
 | D1 | V1 Telegram-only, Mini App sau | Có card/nút thân thiện ngay; ra sản phẩm nhanh hơn |
 | D2 | Capture rõ lưu inbox + hoàn tác; đổi deadline/drop/session cần xác nhận | Giảm thao tác lúc ghi nhanh, giữ kiểm soát thay đổi quan trọng |
-| D3 | Một nhắc chính + một nhắc lại sau 15 phút; tối đa 2 nhắc lại/ngày | Có thể đổi trong settings; quiet hours hỏi khi onboarding, không đoán giờ ngủ |
+| D3 — đã chốt P2 | Mỗi lần hẹn: một nhắc chính + một nhắc lại sau 15 phút, không trần theo ngày | Phản hồi hủy follow-up; hẹn lại do user chủ động; quiet hours vẫn áp dụng |
 | D4 | Chat thô 7 ngày; facts do người dùng xác nhận giữ tới khi xóa | Có trí nhớ mà không giữ mọi lời mãi; TTL chi tiết ở DATA_DESIGN |
 | D5 | Giữ prototype và refactor có kiểm soát, không xóa toàn bộ | Tái sử dụng bằng chứng, tránh viết lại vô ích |
 | D6 | Gemini chỉ dữ liệu giả trong phát triển; AI thật cần quyết định dữ liệu phù hợp | Nếu bắt buộc 0 đồng cho cả tâm sự cá nhân, chưa cam kết Gemini Free đáp ứng; không lén bật paid |

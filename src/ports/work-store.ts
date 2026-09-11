@@ -2,6 +2,10 @@ import type { Input, Task, Proposal, Selection, Plan } from '../domain/work.ts';
 export type Clock = { now(): number };
 export type Lease = { owner: string; token: string; input: Input; attempts: number };
 export interface WorkReader {
+  sessions(owner:string,start:number,end:number):Promise<import('../domain/session.ts').Session[]>;
+  session(owner:string,id:string):Promise<import('../domain/session.ts').Session|null>;
+  sessionInput(owner:string):Promise<{task_id:string;expires:number}|null>;
+  preferences(owner:string):Promise<import('../domain/session.ts').Preferences|null>;
   task(owner: string, id: string): Promise<Task | null>;
   tasks(owner: string, offset: number): Promise<Task[]>;
   proposal(owner: string, id: string): Promise<Proposal | null>;

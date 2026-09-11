@@ -7,6 +7,7 @@ import { flushOutbox } from '../adapters/d1/outbox.ts';
 import { processInbox } from '../application/process-inbox.ts';
 import type { ChatService } from '../application/plan-command.ts';
 import type { Clock } from '../ports/work-store.ts';
+import { queueReminders } from '../adapters/d1/reminders.ts';
 
 export { flushOutbox };
 export function createWorker(chat?: ChatService, transport: typeof fetch = fetch, clock: Clock = { now: Date.now }) {
@@ -18,6 +19,7 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
       for (const owner of await store.pendingOwners()) {
         if (owner === env.TELEGRAM_USER_ID) await processInbox(store, owner, clock, chat);
       }
+      await queueReminders(env.DB,env.TELEGRAM_USER_ID,clock.now());
       await flushOutbox(env, transport, clock.now());
     },
     async fetch(request: Request, env: Env): Promise<Response> {

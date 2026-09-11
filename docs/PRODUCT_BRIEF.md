@@ -76,10 +76,10 @@ Social state là mạch tương tác: người dùng vừa nói gì, đã nhắc
 
 Đã chốt nhu cầu: có nhắc thêm khi không phản hồi, nhưng hữu hạn, không liên tục.
 
-Mức đã đề xuất để thử, chưa xem là người dùng xác nhận từng con số:
+Quy tắc đã được người dùng chốt khi duyệt P2:
 
 - Một lần lúc bắt đầu, thêm một lần sau 15 phút nếu chưa phản hồi.
-- Tối đa hai lượt nhắc thêm/ngày cho toàn bộ công việc.
+- Tối đa hai lượt tổng cộng cho mỗi lần hẹn (một chính, một nhắc thêm). Không giới hạn tổng theo ngày; lần hẹn mới phải do người dùng chủ động hẹn lại, không tự tạo để réo tiếp.
 - Có giờ yên lặng; dừng/hủy nhắc phù hợp khi đã trả lời, đang làm, chọn nghỉ.
 - Snooze chuyển giờ, không tạo thêm chuỗi nhắc trùng.
 - Critical deadline không tự vượt quyền làm phiền.

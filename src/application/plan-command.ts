@@ -2,9 +2,12 @@ import { deadlineValue } from '../domain/time.ts';
 import { confirmationAvailable } from '../domain/work.ts';
 import type { Input, Plan, Proposal, Button } from '../domain/work.ts';
 import type { WorkReader } from '../ports/work-store.ts';
+import { sessionCommand } from './session-command.ts';
 export type ChatService = (owner: string, text: string, tasks: Awaited<ReturnType<WorkReader['tasks']>>) => Promise<string>;
 
 export async function planCommand(input: Input, store: WorkReader, now: number, chat?: ChatService): Promise<Plan> {
+  const sessionPlan=await sessionCommand(input,store,now);
+  if(sessionPlan)return sessionPlan;
   const { owner, text = '', callback, updateId } = input;
   const view = (text: string, buttons: Button[][] = []): Plan => ({ view: { text, buttons }, changes: [] });
   const proposalCard = (proposal: Proposal, description: string): Plan => ({
@@ -30,12 +33,12 @@ export async function planCommand(input: Input, store: WorkReader, now: number, 
       changes: [{ type: 'select', selection: { owner, task_id: task.id, version: task.version, expires: now + 300000 } }] };
   }
   if (text === '/cancel') return { ...view('Đã hủy nhập ngày giờ.'), changes: [{ type: 'cancel', owner }] };
-  if (text === '/start' || text === '/help') return view('Ghi việc: /add tên việc. Xem và sửa: /tasks. Hủy nhập: /cancel. Hội thoại AI chưa bật.');
+  if (text === '/start' || text === '/help') return view('Ghi việc: /add tên việc. Xem/sửa/lên buổi: /tasks. Hôm nay: /today. Nhắc và giờ nghỉ: /settings. Hủy nhập: /cancel. Hội thoại AI chưa bật.');
   if (text === '/tasks' || callback?.startsWith('page:')) {
     const rawOffset = callback?.slice(5) ?? '0';
     if (!/^\d{1,7}$/.test(rawOffset)) return view('Trang không hợp lệ.');
     const offset = Number(rawOffset), tasks = await store.tasks(owner, offset);
-    const buttons = tasks.map(t => [{ text: `Đổi hạn: ${t.title.slice(0, 40)}`, callback_data: `deadline:${t.id}` }]);
+    const buttons = tasks.map(t => [{ text: `Đổi hạn: ${t.title.slice(0, 25)}`, callback_data: `deadline:${t.id}` },{text:'Lên buổi',callback_data:`schedule:${t.id}`}]);
     if (offset > 0) buttons.push([{ text: 'Trang trước', callback_data: `page:${Math.max(0, offset - 10)}` }]);
     if (tasks.length === 10) buttons.push([{ text: 'Trang tiếp', callback_data: `page:${offset + 10}` }]);
     return view(tasks.length ? tasks.map(t => `${t.title} — ${t.deadline ?? 'chưa có hạn'}`).join('\n') : 'Chưa có việc ở trang này.', buttons);

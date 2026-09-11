@@ -83,7 +83,7 @@ Confirmation trễ sau khi task đã đổi → stale, không áp dụng; cùng 
 
 Planner lấy busy intervals đã sync + quiet/rest blocks + overrides → trừ buffer → tìm slot theo thời lượng đã chọn. Ưu tiên deadline có chứng cứ, việc người dùng chọn, rồi mục tiêu dài hạn; tie-break ổn định, không đảo lịch mỗi tin nhắn.
 Chưa biết workload: đề xuất discovery session, không tuyên bố sẽ xong. Nhiều task cạnh tranh cùng slot phải xét chung. Thiếu chỗ → đưa lựa chọn giảm phạm vi/hoãn, không lấy giờ ngủ.
-Nhắc phải kiểm tra lại session version/trạng thái/pause/quiet hours/budget ngay trước gửi. Snooze tạo generation mới, job cũ thành no-op. Budget theo ngày địa phương, reserve nguyên tử khi nhiều worker.
+Nhắc phải kiểm tra lại session version/trạng thái/pause/quiet hours ngay trước gửi. Snooze tạo generation mới, job cũ thành no-op. Giới hạn đã chốt P2: hai lượt mỗi lần hẹn, không budget ngày; reserve nguyên tử khi nhiều worker.
 Cron chạy jobs đến hạn từng lô nhỏ; không quét mọi task để nhờ AI quyết định. Những job chờ provider không giữ một transaction DB mở.
 Calendar cache giữ last_successful_sync và cursor per calendar. Pagination/resync/410 không xóa task; unavailable thì báo lịch chưa cập nhật và ngừng hứa slot an toàn.
 Event bot tạo có stable external identity + link session; retry cần kiểm tra event đã tồn tại. User edit/delete tạo override/tombstone, không tự tái tạo; remote change sau proposal yêu cầu revalidate trước ghi.

@@ -20,6 +20,8 @@ Cập nhật: 2026-09-11. Phân biệt prototype, kế hoạch và sản phẩm 
 
 ## Bước tiếp theo
 
+P2 người dùng đã duyệt với quy tắc **2 lượt mỗi lần hẹn, không trần theo ngày**. Đã triển khai local sessions/Today/nhắc/settings; bằng chứng và giới hạn tại [P2_ACCEPTANCE.md](P2_ACCEPTANCE.md). Không tự mở P3 hoặc gọi API/live.
+
 1. P1 đã được người dùng duyệt và thực hiện local; ghi kết quả tại P1_ACCEPTANCE. Không tự suy đã duyệt D1–D6 toàn bộ.
 2. Mốc tiếp theo P2 (Today/session/nhắc), trình phạm vi trước khi code. Không cấu hình BotFather hoặc deploy mặc định.
 3. Dùng kết luận model đã có; giải quyết dữ liệu AI trước live cá nhân, không thử prompt vô hạn.

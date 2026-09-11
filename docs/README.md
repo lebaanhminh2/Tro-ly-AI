@@ -13,6 +13,7 @@ Bắt đầu với [HANDOFF.md](HANDOFF.md), chỉ mở tiếp phần liên quan
 | [HANDOFF.md](HANDOFF.md) | Hiện trạng, quyền thao tác, bước kế tiếp |
 | [DELIVERY_PLAN.md](DELIVERY_PLAN.md) | Kế hoạch duyệt chính: MVP, stack, milestones, mặc định và nghiệm thu |
 | [P1_ACCEPTANCE.md](P1_ACCEPTANCE.md) | Kết quả P1 local, bằng chứng giao dịch/recovery và giới hạn |
+| [P2_ACCEPTANCE.md](P2_ACCEPTANCE.md) | Buổi làm, Today, nhắc theo lần hẹn, giờ nghỉ và kiểm thử local |
 | [DATA_DESIGN.md](DATA_DESIGN.md) | Module, model dữ liệu, bộ nhớ, transaction, lịch/nhắc |
 | [UX_FLOWS.md](UX_FLOWS.md) | UI Telegram, onboarding, luồng thành công/lỗi và iPhone |
 | [SECURITY_RELEASE.md](SECURITY_RELEASE.md) | Threats, SEC controls/tests, release và vận hành |
