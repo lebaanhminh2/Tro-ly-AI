@@ -27,6 +27,12 @@ Luồng: `/calendar connect` → mở link từ bot → consent → `/calendar l
 
 ## Kiểm thử và nguồn
 
+Review fix P4: sync cursor/cache và đánh dấu needs_review/hủy reminders/outbox cũ cùng transaction. Session planned đúng version chuyển unknown, không sửa lại thời gian Google hoặc coi task thất bại. Running/completed không bị đổi trạng thái.
+
+Kết quả sau sửa: 41/41 tests mặc định + 25/25 experiments pass, typecheck và Workers dry-run pass; không gọi provider thật.
+Writer kiểm tra calendar lease token + connection revision + job state trước mỗi ghi DB, kể cả trước POST và khi xử lý lỗi. Worker cũ không ghi đè cancelled/synced của tiến trình mới; request đã rời hệ thống không thể thu hồi bảo đảm.
+Lỗi đọc trước POST giữ pending để thử lại (tối đa 3 attempts, rồi failed); chỉ uncertain nếu có khả năng insert đã bắt đầu. No blind reinsert sau uncertain. Không cần migration mới cho đợt sửa này.
+
 Kết quả khi tiếp tục sau ngắt: **40/40 tests mặc định + 25/25 experiments pass**, typecheck và Workers dry-run pass. Migration 0007 local đã áp dụng thành công trước khi ngắt; không áp lại hoặc tạo tài nguyên Google thật. Các kiểm thử vẫn dùng fake provider, chưa chứng minh hoạt động production.
 
 `tests/integration/calendar.test.ts` dùng fake Google + Miniflare, không gọi ngoài: AES tamper/wrong owner, cookie/state thiếu/replay/expiry, selected calendars, pagination, 410, cache deletion, conflict mới, confirm replay, writes off, lost insert response, remote edits/deletion, refresh revoked, disconnect.

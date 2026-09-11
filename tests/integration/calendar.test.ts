@@ -11,6 +11,7 @@ import {CalendarError,eventInterval,slots} from '../../src/domain/calendar.ts';
 import type {Interval} from '../../src/domain/calendar.ts';
 import {createWorker} from '../../src/entrypoints/worker.ts';
 import type {Env} from '../../src/config/env.ts';
+import {reminderAllowed} from '../../src/adapters/d1/reminders.ts';
 
 class FakeGoogle implements CalendarProvider,TokenProvider {
   exchanges=0;refreshes=0;creates=0;inserts=0;revoked=false;failRefresh=false;expireSync=false;breakPage=false;loseInsert=false;
@@ -104,10 +105,16 @@ test('OAuth browser/state replay, scope separation, paginated sync/410, confirme
   await service.flushWrites();assert.equal(api.inserts,1); // Reconcile existing event after lost response.
   assert.equal((await db.prepare('SELECT status FROM calendar_writes').first<{status:string}>())!.status,'synced');
   const event=[...api.remote.values()][0]!;event.etag='user-edited';
+  const linkedSession=await db.prepare('SELECT start_at,generation FROM sessions WHERE id=\'s\'').first<{start_at:number;generation:number}>();
+  const reminderId=`s:${linkedSession!.generation}:1`;
+  await db.prepare("INSERT INTO outbox(id,payload,state,available,reminder_id) VALUES('queued-old','{}','pending',?,?)").bind(now,reminderId).run();
   await service.synchronize();assert.equal((await db.prepare('SELECT status FROM calendar_writes').first<{status:string}>())!.status,'needs_review');
+  assert.equal(await reminderAllowed(db,reminderId,linkedSession!.start_at),false);
+  assert.equal((await db.prepare("SELECT state FROM outbox WHERE id='queued-old'").first<{state:string}>())!.state,'failed');
+  assert.equal((await db.prepare("SELECT status FROM sessions WHERE id='s'").first<{status:string}>())!.status,'unknown');
   api.remote.clear();await service.synchronize();await service.flushWrites();assert.equal(api.inserts,1);
   api.breakPage=true;await assert.rejects(service.synchronize());
-  assert.match((await run('cal-plan:s',true))!.text,/SYNC_REQUIRED|GOOGLE_HTTP/);api.breakPage=false;
+  assert.match((await run('cal-plan:s',true))!.text,/SESSION_NOT_AVAILABLE/);api.breakPage=false;
   api.failRefresh=true;await assert.rejects(service.synchronize());
   assert.equal((await db.prepare('SELECT status FROM calendar_connections').first<{status:string}>())!.status,'reconnect');api.failRefresh=false;
   const disconnect=(await run('/calendar disconnect'))!;await run(disconnect.buttons[0]![0]!.callback_data,true);
@@ -130,4 +137,61 @@ test('Google adapter uses fixed URLs, minimal write body, no redirects, scope ve
  await assert.rejects(bad.exchange('code'),/MISSING_SCOPES/);
  const broken=new GoogleClient(config,async()=>{throw Error('access-token-leak');});
  await assert.rejects(broken.refresh('private-refresh'),{message:'GOOGLE_RESPONSE_UNKNOWN'});
+});
+
+test('P4 review: retry pre-insert reads, fence stale workers and preserve disconnect on late result',async()=>{
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("offline")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(s:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync(`migrations/${f}`,'utf8').replace(/\r?\n/g,' '));
+  let now=Date.parse('2026-09-18T07:00:00+07:00');
+  const initial=now,start=Date.parse('2026-09-18T10:00:00+07:00');
+  const api=new FakeGoogle(),vault=new GoogleTokenVault('ab'.repeat(32));
+  const service=new CalendarService({db,provider:api,tokens:api,vault,owner:'123',origin:'https://local.example',writes:true,now:()=>now});
+  await db.prepare("INSERT INTO calendar_connections(owner,refresh_cipher,status,managed_id) VALUES('123',?,'ready','app-calendar')").bind(await vault.seal('123','fake-refresh')).run();
+  await db.prepare("INSERT INTO calendars(id,owner,external_id,name,selected,managed,synced_at) VALUES('c','123','app-calendar','app',1,1,?)").bind(now).run();
+  await db.prepare("INSERT INTO tasks(id,owner,title,created) VALUES('t','123','test',?)").bind(now).run();
+  await db.prepare("INSERT INTO sessions(id,owner,task_id,start_at,minutes,status,expires) VALUES('s','123','t',?,25,'planned',?)").bind(start,start).run();
+  await db.prepare("INSERT INTO calendar_writes(id,owner,session_id,session_version,connection_revision,calendar_id,event_id,start_at,end_at) VALUES('w','123','s',1,1,'app-calendar','abcdef',?,?)").bind(start,start+1500000).run();
+  const get=api.getEvent.bind(api),insert=api.insertEvent.bind(api);
+  api.getEvent=async()=>{throw new CalendarError('GOOGLE_HTTP_503');};
+  await service.flushWrites();
+  assert.equal((await db.prepare("SELECT status FROM calendar_writes WHERE id='w'").first<{status:string}>())!.status,'pending');
+  assert.equal(api.inserts,0);
+  api.getEvent=get;await service.flushWrites();assert.equal(api.inserts,1);
+  assert.equal((await db.prepare("SELECT status FROM calendar_writes WHERE id='w'").first<{status:string}>())!.status,'synced');
+
+  const reset=async()=>{
+   now=initial;api.remote.clear();api.inserts=0;api.getEvent=get;api.insertEvent=insert;
+   await db.prepare("UPDATE calendar_writes SET status='pending',attempts=0 WHERE id='w'").run();
+   await db.prepare("UPDATE calendar_connections SET status='ready',revision=1,managed_id='app-calendar',refresh_cipher=? WHERE owner='123'").bind(await vault.seal('123','fake-refresh')).run();
+   await db.prepare("DELETE FROM calendar_leases WHERE owner='123'").run();
+  };
+  await reset();
+  api.getEvent=async()=>{
+   now+=90001;
+   await db.prepare("UPDATE calendar_leases SET token='new-worker',expires=? WHERE owner='123'").bind(now+90000).run();
+   return null;
+  };
+  await assert.rejects(service.flushWrites());assert.equal(api.inserts,0);
+  assert.equal((await db.prepare("SELECT token FROM calendar_leases WHERE owner='123'").first<{token:string}>())!.token,'new-worker');
+  assert.equal((await db.prepare("SELECT status FROM calendar_writes WHERE id='w'").first<{status:string}>())!.status,'pending');
+
+  await reset();
+  api.insertEvent=async(...args)=>{
+   const result=await insert(...args);now+=90001;
+   await db.prepare("UPDATE calendar_leases SET token='replacement',expires=? WHERE owner='123'").bind(now+90000).run();
+   await db.prepare("UPDATE calendar_connections SET status='disconnected',revision=2,refresh_cipher=NULL WHERE owner='123'").run();
+   await db.prepare("UPDATE calendar_writes SET status='cancelled' WHERE id='w'").run();
+   return result;
+  };
+  await assert.rejects(service.flushWrites());assert.equal(api.inserts,1);
+  assert.equal((await db.prepare("SELECT status FROM calendar_writes WHERE id='w'").first<{status:string}>())!.status,'cancelled');
+  assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM transaction_guard').first<{n:number}>())!.n,0);
+
+  await reset();api.getEvent=async()=>{throw new CalendarError('GOOGLE_HTTP_503');};
+  await service.flushWrites();await service.flushWrites();await service.flushWrites();await service.flushWrites();
+  const exhausted=await db.prepare("SELECT status,attempts FROM calendar_writes WHERE id='w'").first<{status:string;attempts:number}>();
+  assert.equal(exhausted!.status,'failed');assert.equal(exhausted!.attempts,3);assert.equal(api.inserts,0);
+ }finally{await mf.dispose();}
 });

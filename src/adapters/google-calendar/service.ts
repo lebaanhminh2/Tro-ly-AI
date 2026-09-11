@@ -131,14 +131,27 @@ export class CalendarService {
               statements.push(this.q('INSERT INTO calendar_events(calendar_id,external_id,payload) VALUES(?,?,?) ON CONFLICT(calendar_id,external_id) DO UPDATE SET payload=excluded.payload',ref.id,id,JSON.stringify(cache)));
             }
           }
+          // Detect overrides from the complete sync result BEFORE committing the cursor.
+          // Updating needs_review and cancelling reminders must be in the same transaction.
+          const linked=(await this.q("SELECT * FROM calendar_writes WHERE owner=? AND calendar_id=? AND status='synced'",c.owner,ref.external_id).all<Write>()).results;
+          const changed=new Map(items.map(raw=>{const e=object(raw);return [string(e.id),e] as const;}));
+          for(const w of linked){
+            let current=changed.get(w.event_id);
+            if(!current&&!full){
+              const cached=await this.q('SELECT payload FROM calendar_events WHERE calendar_id=? AND external_id=?',ref.id,w.event_id).first<{payload:string}>();
+              if(cached)current=object(JSON.parse(cached.payload));
+            }
+            if(!current||current.status==='cancelled'||(w.etag&&current.etag!==w.etag)){
+              statements.push(
+                this.q("UPDATE calendar_writes SET status='needs_review' WHERE id=? AND owner=? AND status='synced'",w.id,c.owner),
+                this.q("UPDATE sessions SET status='unknown',version=version+1 WHERE id=? AND owner=? AND version=? AND status='planned'",w.session_id,c.owner,w.session_version),
+                this.q("UPDATE reminders SET status='cancelled' WHERE session_id=? AND owner=? AND status IN ('pending','queued')",w.session_id,c.owner),
+                this.q("UPDATE outbox SET state='failed' WHERE state='pending' AND reminder_id IN (SELECT id FROM reminders WHERE session_id=? AND owner=?)",w.session_id,c.owner)
+              );
+            }
+          }
           statements.push(this.q('UPDATE calendars SET sync_token=?,synced_at=?,revision=revision+1 WHERE id=? AND owner=?',nextSync,this.options.now(),ref.id,c.owner),this.q('DELETE FROM transaction_guard'));
           await this.options.db.batch(statements);
-          const linked=(await this.q("SELECT * FROM calendar_writes WHERE owner=? AND calendar_id=? AND status='synced'",c.owner,ref.external_id).all<Write>()).results;
-          for(const w of linked){
-            const cached=await this.q('SELECT payload FROM calendar_events WHERE calendar_id=? AND external_id=?',ref.id,w.event_id).first<{payload:string}>();
-            const current=cached?object(JSON.parse(cached.payload)):null;
-            if(!current||(w.etag&&current.etag!==w.etag))await this.q("UPDATE calendar_writes SET status='needs_review' WHERE id=? AND status='synced'",w.id).run();
-          }
         }catch(e){await this.q('UPDATE calendars SET synced_at=NULL WHERE id=? AND owner=?',ref.id,c.owner).run();throw e;}
       }
     });
@@ -206,31 +219,46 @@ export class CalendarService {
   }
   async flushWrites(){
     if(!this.options.writes)return;
-    return this.lock(async()=>{
+    return this.lock(async fence=>{
       const {connection:c,access}=await this.token();
       const jobs=(await this.q("SELECT * FROM calendar_writes WHERE owner=? AND status IN ('pending','uncertain') AND attempts<3 ORDER BY id LIMIT 1",c.owner).all<Write>()).results;
       for(const w of jobs){
-        await this.q('UPDATE calendar_writes SET attempts=attempts+1 WHERE id=?',w.id).run();
+        const guarded=async(statements:Statement[])=>{
+          await this.options.db.batch([
+            fence(),
+            this.q("INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM calendar_connections WHERE owner=? AND revision=? AND status='ready' AND managed_id=?) AND EXISTS(SELECT 1 FROM calendar_writes WHERE id=? AND owner=? AND connection_revision=? AND status IN ('pending','uncertain')) THEN 1 ELSE 0 END",c.owner,c.revision,w.calendar_id,w.id,c.owner,c.revision),
+            ...statements,this.q('DELETE FROM transaction_guard')
+          ]);
+        };
+        await guarded([this.q('UPDATE calendar_writes SET attempts=attempts+1 WHERE id=? AND owner=?',w.id,c.owner)]);
+        let mayHaveInserted=w.status==='uncertain';
         try{
           const s=await this.q('SELECT * FROM sessions WHERE owner=? AND id=?',c.owner,w.session_id).first<Session>();
           if(c.revision!==w.connection_revision||c.managed_id!==w.calendar_id||!s||s.version!==w.session_version||s.status!=='planned')throw new CalendarError('SESSION_CHANGED');
           let remote=await this.options.provider.getEvent(access,w.calendar_id,w.event_id);
           if(remote===null){
-            if(w.status==='uncertain')throw new CalendarError('UNCERTAIN_MISSING_EVENT'); // May have been deleted by user; never recreate blindly.
+            if(mayHaveInserted)throw new CalendarError('UNCERTAIN_MISSING_EVENT');
             if(!await this.localAvailable(c.owner,s,{start:w.start_at,end:w.end_at}))throw new CalendarError('LOCAL_PLAN_CHANGED');
             if(this.options.now()>=w.start_at||(await this.busy(access,{start:w.start_at-600000,end:w.end_at+600000},w.event_id)).some(b=>overlaps({start:w.start_at,end:w.end_at},b,600000)))throw new CalendarError('SLOT_CONFLICT');
-            await this.checkConnection(c.revision);
-            // Persist uncertain before external write so a process crash cannot trigger blind duplicate insert.
-            await this.q("UPDATE calendar_writes SET status='uncertain' WHERE id=?",w.id).run();
+            // Validate lease/connection/session immediately before external write.
+            await guarded([
+              this.q("INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM sessions WHERE id=? AND owner=? AND version=? AND status='planned') THEN 1 ELSE 0 END",w.session_id,c.owner,w.session_version),
+              this.q("UPDATE calendar_writes SET status='uncertain' WHERE id=? AND owner=?",w.id,c.owner)
+            ]);
+            mayHaveInserted=true;
             remote=await this.options.provider.insertEvent(access,w.calendar_id,w.event_id,{start:w.start_at,end:w.end_at},w.id);
           }
           const marker=object(object(remote.extendedProperties).private).assistantWrite;
           const interval=eventInterval(remote,'Asia/Ho_Chi_Minh');
           if(marker!==w.id||remote.id!==w.event_id||!interval||interval.start!==w.start_at||interval.end!==w.end_at)throw new CalendarError('REMOTE_CHANGED');
-          await this.q("UPDATE calendar_writes SET status='synced',etag=? WHERE id=?",typeof remote.etag==='string'?remote.etag:null,w.id).run();
+          await guarded([this.q("UPDATE calendar_writes SET status='synced',etag=? WHERE id=? AND owner=?",typeof remote.etag==='string'?remote.etag:null,w.id,c.owner)]);
         }catch(e){
           const code=e instanceof CalendarError?e.message:'UNKNOWN';
-          await this.q('UPDATE calendar_writes SET status=? WHERE id=?', ['SESSION_CHANGED','SLOT_CONFLICT','LOCAL_PLAN_CHANGED','REMOTE_CHANGED','UNCERTAIN_MISSING_EVENT','GOOGLE_HTTP_410'].includes(code)?'needs_review':'uncertain',w.id).run();
+          const review=['SESSION_CHANGED','SLOT_CONFLICT','LOCAL_PLAN_CHANGED','REMOTE_CHANGED','UNCERTAIN_MISSING_EVENT','GOOGLE_HTTP_410'].includes(code);
+          const permanent=['GOOGLE_HTTP_400','GOOGLE_HTTP_401','GOOGLE_HTTP_403'].includes(code);
+          const status=review?'needs_review':mayHaveInserted?'uncertain':permanent||w.attempts+1>=3?'failed':'pending';
+          // A stale worker cannot overwrite a new lease or disconnected/cancelled job, even on failure.
+          await guarded([this.q('UPDATE calendar_writes SET status=? WHERE id=? AND owner=?',status,w.id,c.owner)]);
         }
       }
     });
