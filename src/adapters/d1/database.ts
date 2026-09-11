@@ -4,7 +4,7 @@ export interface Statement {
   all<T>(): Promise<{ results: T[] }>;
   run(): Promise<{ meta: { changes: number } }>;
 }
-export interface Database { prepare(sql: string): Statement; }
+export interface Database { prepare(sql: string): Statement; batch(statements: Statement[]): Promise<unknown[]>; }
 export function query(db: Database, sql: string, ...args: (string | number | null)[]) { return db.prepare(sql).bind(...args); }
 
 // Recovery is conservative: never replay possibly committed business mutations.

@@ -2,15 +2,15 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { Miniflare } from 'miniflare';
-import worker, { createWorker, flushOutbox } from '../../src/index.ts';
-import { deliver } from '../../src/telegram.ts';
-import { recoverInterrupted } from '../../src/db.ts';
+import worker, { createWorker, flushOutbox } from '../../src/entrypoints/worker.ts';
+import { deliver } from '../../src/adapters/telegram/api.ts';
+import { recoverInterrupted } from '../../src/adapters/d1/database.ts';
 import { trialChat } from '../../src/ai/chat.ts';
 import { GeminiTrial } from '../../src/ai/gemini.ts';
-import type { Env } from '../../src/config.ts';
-import type { Database } from '../../src/db.ts';
-import { getTask, listTasks } from '../../src/tasks.ts';
-import { propose, resolveProposal } from '../../src/proposals.ts';
+import type { Env } from '../../src/config/env.ts';
+import type { Database } from '../../src/adapters/d1/database.ts';
+import { getTask, listTasks } from '../../src/adapters/d1/tasks.ts';
+import { propose, resolveProposal } from '../../src/adapters/d1/proposals.ts';
 
 test('Telegram webhook and D1: complete flow, duplicate, owner, stale, expiry, rollback', async () => {
   const mf = new Miniflare({ modules: true, script: 'export default { fetch() { return new Response("test"); } }', d1Databases: ['DB'] });
@@ -18,6 +18,7 @@ test('Telegram webhook and D1: complete flow, duplicate, owner, stale, expiry, r
     const d1 = await mf.getD1Database('DB');
     await d1.exec(readFileSync('migrations/0001_initial.sql', 'utf8').replace(/\r?\n/g, ' '));
     await d1.exec(readFileSync('migrations/0002_delivery.sql', 'utf8').replace(/\r?\n/g, ' '));
+    await d1.exec(readFileSync('migrations/0003_command_transactions.sql', 'utf8').replace(/\r?\n/g, ' '));
     const db = d1 as unknown as Database;
     const secret = 'synthetic-webhook-secret-12345678';
     const env: Env = { DB: db, TELEGRAM_USER_ID: '123456', TELEGRAM_WEBHOOK_SECRET: secret, AI_MODE: 'off' };
@@ -71,7 +72,10 @@ test('Telegram webhook and D1: complete flow, duplicate, owner, stale, expiry, r
     assert.equal((await listTasks(db, '123456')).length, 1);
     const concurrent = update('/add Concurrent');
     const responses = await Promise.all([send(concurrent), send(concurrent)]);
-    assert.equal((await Promise.all(responses.map(r => r.text()))).filter(t => t === 'OK').length, 1);
+    assert.ok(responses.every(r => r.status === 200));
+    await worker.scheduled({}, env); // Queue ACK may precede execution under an owner lease.
+    const once = await db.prepare('SELECT COUNT(*) AS count FROM proposals WHERE id=?').bind(`p123456_${concurrent.update_id}`).first<{count:number}>();
+    assert.equal(once!.count, 1);
     const ai = await (await send(update('Chào cậu'))).json() as any;
     assert.match(ai.text, /chưa bật/);
     const mockClient = new GeminiTrial({ apiKey: 'synthetic', model: 'synthetic', transport: async () =>
@@ -111,19 +115,19 @@ test('outbox persisted replies, callback ack, retry cap, restart recovery and co
   const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
   try {
     const db=await mf.getD1Database('DB') as unknown as Database & {exec(sql:string):Promise<unknown>};
-    for(const file of ['0001_initial.sql','0002_delivery.sql']) await db.exec(readFileSync(`migrations/${file}`,'utf8').replace(/\r?\n/g,' '));
+    for(const file of ['0001_initial.sql','0002_delivery.sql','0003_command_transactions.sql']) await db.exec(readFileSync(`migrations/${file}`,'utf8').replace(/\r?\n/g,' '));
     const env:Env={DB:db,TELEGRAM_USER_ID:'123',TELEGRAM_WEBHOOK_SECRET:'synthetic-secret-long-enough',DELIVERY_MODE:'outbox',TELEGRAM_BOT_TOKEN:'123:fake'};
     const calls:string[]=[];
     const transport:typeof fetch=async(url)=>{calls.push(String(url).split('/').at(-1)!); return Response.json({ok:true,result:String(url).endsWith('answerCallbackQuery')?true:{message_id:99}});};
     const request=(id:number,callback=false)=>new Request('https://local/telegram',{method:'POST',headers:{'X-Telegram-Bot-Api-Secret-Token':env.TELEGRAM_WEBHOOK_SECRET},body:JSON.stringify(callback?{
-      update_id:id,callback_query:{id:'cb',data:'no:p1',from:{id:123},message:{chat:{id:123,type:'private'}}}
+      update_id:id,callback_query:{id:'cb',data:'no:p123_1',from:{id:123},message:{chat:{id:123,type:'private'}}}
     }:{update_id:id,message:{from:{id:123},chat:{id:123,type:'private'},text:'/add A'}})});
     assert.equal(await (await createWorker(undefined,transport).fetch(request(1),env)).text(),'OK');
     await createWorker(undefined,transport).fetch(request(1),env);
     assert.deepEqual(calls,['sendMessage']);
     await createWorker(undefined,transport).fetch(request(2,true),env);
     assert.deepEqual(calls,['sendMessage','answerCallbackQuery','sendMessage']);
-    const row=await db.prepare("SELECT state,message_id FROM outbox WHERE id='reply:1'").first<any>();
+    const row=await db.prepare("SELECT state,message_id FROM outbox WHERE id='reply:123:1'").first<any>();
     assert.equal(row.state,'sent'); assert.equal(row.message_id,99);
     const now=Date.now();
     await db.prepare("INSERT INTO updates(id,status,created,chat) VALUES(3,'processing',?,123)").bind(now-61000).run();

@@ -1,5 +1,5 @@
-import { query } from './db.ts';
-import type { Database } from './db.ts';
+import { query } from './database.ts';
+import type { Database } from './database.ts';
 export async function propose(db: Database, owner: string, updateId: number, taskId: string | null,
   value: string, version: number, now: number) {
   const id = `p${updateId}`;

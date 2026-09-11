@@ -1,6 +1,6 @@
 {
   "name": "personal-assistant-trial",
-  "main": "src/index.ts",
+  "main": "src/entrypoints/worker.ts",
   "compatibility_date": "2026-09-11",
   "workers_dev": false,
   "vars": { "AI_MODE": "off" },

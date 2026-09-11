@@ -2,6 +2,8 @@
 
 Trạng thái 2026-09-11: code + kiểm thử offline; chưa deploy, chưa nối bot thật hoặc Google Calendar.
 
+**Cập nhật P1:** entrypoint chuyển sang `src/entrypoints/worker.ts`; nghiệp vụ và giao dịch mới xem [P1_ACCEPTANCE.md](P1_ACCEPTANCE.md). Giới hạn crash/selection của prototype bên dưới là lịch sử; P1 đã thêm inbox bền vững, owner lease và atomic batch. Delivery uncertain vẫn giữ nguyên giới hạn.
+
 ## Phạm vi đã có
 
 - Worker nhận POST `/telegram`, kiểm tra webhook secret và đúng user/private chat trước đọc/ghi nghiệp vụ.

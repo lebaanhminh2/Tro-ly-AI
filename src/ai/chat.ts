@@ -1,5 +1,5 @@
 import type { GeminiTrial } from './gemini.ts';
-import type { StoredTask } from '../tasks.ts';
+import type { Task as StoredTask } from '../domain/work.ts';
 import { decide } from './policy.ts';
 
 export type Chat = (owner: string, text: string, tasks: StoredTask[]) => Promise<string>;

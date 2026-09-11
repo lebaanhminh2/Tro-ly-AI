@@ -13,15 +13,15 @@ Cập nhật: 2026-09-11. Phân biệt prototype, kế hoạch và sản phẩm 
 
 - Đã cơ cấu theo phê duyệt: code thử/memory/fixtures ở `experiments/ai-trial/`; unit ở `tests/unit/`, tích hợp D1 ở `tests/integration/`.
 - `src/domain/time.ts` là nguồn hàm ngày dùng chung; runtime không import experiments/tests.
-- 50 test cũ được giữ; thêm 3 regression tests. Test mặc định 28/28, experiments 25/25; typecheck và Workers dry-run pass.
+- P1 đã triển khai cấu trúc entrypoints/application/domain/ports/adapters/config và transaction command + task + outbox; xem [P1_ACCEPTANCE.md](P1_ACCEPTANCE.md).
 - Không thêm chức năng sản phẩm hoặc gọi API trong đợt cơ cấu. Local bot vẫn là prototype, chưa deploy/Calendar thật.
 - Live đã dừng: tổng 31 request toàn dự án, kết luận tại [MODEL_VERDICT.md](MODEL_VERDICT.md). Không mở lại chiến dịch cũ.
 - Audit gần nhất trước cơ cấu: 0 với overrides sharp/undici; không coi là chứng nhận bảo mật.
 
 ## Bước tiếp theo
 
-1. Duyệt các mặc định P0 trong [DELIVERY_PLAN.md](DELIVERY_PLAN.md) nếu chưa chốt; duyệt cơ cấu không tự duyệt toàn bộ D1–D6.
-2. Trình phạm vi P1 trước khi xây/refactor nghiệp vụ mới. Không cấu hình BotFather hoặc deploy mặc định.
+1. P1 đã được người dùng duyệt và thực hiện local; ghi kết quả tại P1_ACCEPTANCE. Không tự suy đã duyệt D1–D6 toàn bộ.
+2. Mốc tiếp theo P2 (Today/session/nhắc), trình phạm vi trước khi code. Không cấu hình BotFather hoặc deploy mặc định.
 3. Dùng kết luận model đã có; giải quyết dữ liệu AI trước live cá nhân, không thử prompt vô hạn.
 
 ## Đọc theo nhu cầu

@@ -1,4 +1,4 @@
-import type { Database } from './db.ts';
+import type { Database } from '../adapters/d1/database.ts';
 export type Env = { DB: Database; TELEGRAM_USER_ID: string; TELEGRAM_WEBHOOK_SECRET: string; AI_MODE?: string;
   TELEGRAM_BOT_TOKEN?: string; DELIVERY_MODE?: 'outbox' | 'preview' };
 export function configured(env: Env) {
