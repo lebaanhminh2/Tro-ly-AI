@@ -4,5 +4,25 @@
   "compatibility_date": "2026-09-11",
   "workers_dev": false,
   "vars": { "AI_MODE": "off", "CALENDAR_MODE": "off", "CALENDAR_WRITES": "off" },
-  "d1_databases": [{ "binding": "DB", "database_name": "assistant-local", "database_id": "00000000-0000-0000-0000-000000000000", "migrations_dir": "migrations" }]
+  "d1_databases": [{ "binding": "DB", "database_name": "assistant-local", "database_id": "00000000-0000-0000-0000-000000000000", "migrations_dir": "migrations" }],
+  "env": {
+    "staging": {
+      "name": "personal-assistant-staging",
+      "workers_dev": true,
+      "preview_urls": false,
+      "vars": {
+        "AI_MODE": "off",
+        "CALENDAR_MODE": "off",
+        "CALENDAR_WRITES": "off",
+        "DELIVERY_MODE": "outbox"
+      },
+      "triggers": { "crons": ["* * * * *"] },
+      "d1_databases": [{
+        "binding": "DB",
+        "database_name": "assistant-staging",
+        "database_id": "11111111-1111-1111-1111-111111111111",
+        "migrations_dir": "migrations"
+      }]
+    }
+  }
 }

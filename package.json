@@ -9,7 +9,10 @@
     "test:all": "npm run test && npm run test:experiments",
     "dev": "wrangler dev --local",
     "db:local": "wrangler d1 migrations apply assistant-local --local",
-    "build:check": "wrangler deploy --dry-run",
+    "build:check": "wrangler deploy --env \"\" --dry-run",
+    "staging:check": "node --test tests/unit/staging-config.test.ts && wrangler deploy --env staging --dry-run",
+    "deploy:staging": "node tests/unit/staging-config.test.ts --require-ready && wrangler deploy --env staging",
+    "db:staging": "node tests/unit/staging-config.test.ts --require-ready && wrangler d1 migrations apply DB --env staging --remote",
     "try:ai": "node experiments/ai-trial/try-ai.ts",
     "typecheck": "tsc --noEmit"
   },
