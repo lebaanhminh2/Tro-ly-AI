@@ -99,5 +99,3 @@ test('proposal checks operation/field scope and evidence from USER only', () => 
   proposal.draft.operation = 'delete_everything';
   assert.throws(() => parseReply(JSON.stringify(proposal), turns, ['session-a']));
 });
-
-
