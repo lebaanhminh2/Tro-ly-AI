@@ -20,6 +20,8 @@ Cập nhật: 2026-09-11. Phân biệt prototype, kế hoạch và sản phẩm 
 
 ## Bước tiếp theo
 
+Lượt migrations/deploy được duyệt 2026-09-12: `db:staging` thất bại ngay 0001 với D1 `incomplete input` (7500). Read-only xác nhận cả 7 migrations còn pending, sqlite_master chỉ có _cf_KV và d1_migrations; chưa bảng nghiệp vụ. Chưa deploy. Nghi trigger có CASE...END không bọc ngoặc (Cloudflare workers-sdk issue #4727); splitter Wrangler local vẫn trả đúng 7 statements, nên chưa chứng minh nguyên nhân server. Cần duyệt sửa migrations/0001_initial.sql bọc biểu thức CASE và thêm tests/unit/migration-compat.test.ts trước khi thử lại cloud; không bỏ trigger/guard hoặc đánh dấu migration đã áp thủ công.
+
 Cloud setup 2026-09-12 (được duyệt): Wrangler đăng nhập thành công, một account; đã tạo D1 `assistant-staging` region APAC và cập nhật UUID staging trong wrangler.jsonc. Chưa áp migrations remote, chưa deploy/secrets/webhook, AI/Calendar vẫn off. Tiếp theo cần duyệt migrations và deploy staging ban đầu; không tạo DB lần nữa.
 
 Cập nhật staging 2026-09-12: đã chuẩn bị env staging riêng trong wrangler, cron mỗi phút/outbox, flags off, UUID placeholder; scripts check/deploy/migration có guard placeholder trước remote. Hướng dẫn tại [STAGING_SETUP.md](STAGING_SETUP.md). 46/46 tests chính + 25/25 experiments đạt, typecheck và dry-run local/staging đạt; kiểm tra readiness cố ý từ chối placeholder (exit 1). Chưa tạo cloud resource, đăng ký webhook hay gọi API provider thật. Tiếp theo hỏi tình trạng Cloudflare/bot và xin duyệt thao tác cloud với đích cụ thể; không tự deploy.
