@@ -126,7 +126,7 @@ test('OAuth browser/state replay, scope separation, paginated sync/410, confirme
 test('Google adapter uses fixed URLs, minimal write body, no redirects, scope verification and sanitized errors',async()=>{
  const config={clientId:'client',clientSecret:'secret',redirectUri:'https://local.example/oauth/google/callback'};
  const client=new GoogleClient(config,async(url,init)=>{
-  assert.equal(init?.redirect,'error');assert.ok(String(url).startsWith('https://www.googleapis.com/calendar/v3/'));
+  assert.equal(init?.redirect,'manual');assert.ok(String(url).startsWith('https://www.googleapis.com/calendar/v3/'));
   const body=JSON.parse(String(init?.body));assert.equal(body.attendees,undefined);assert.equal(body.reminders.useDefault,false);
   return Response.json({...body,etag:'v1'});
  });

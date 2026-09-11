@@ -101,7 +101,7 @@ test('Bot API classifies failures without retrying or leaking token', async () =
   ] as const) {
     let count=0;
     const result=await deliver('123:fake',{method:'sendMessage',chat_id:123,text:'test'},async (url,opts)=>{
-      count++; assert.match(String(url), /^https:\/\/api.telegram.org\/bot/); assert.equal(opts?.redirect,'error');
+      count++; assert.match(String(url), /^https:\/\/api.telegram.org\/bot/); assert.equal(opts?.redirect,'manual');
       return new Response(JSON.stringify(body),{status});
     });
     assert.equal(result.state,state); assert.equal(count,1);

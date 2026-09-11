@@ -23,7 +23,7 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
     return contextualChat({generate: (turns, context, ids) => {
       // One client per reserved call: durable D1 quota, not isolate lifetime, is authoritative.
       const client = new GeminiTrial({apiKey: env.GEMINI_API_KEY!, model: env.GEMINI_MODEL!,
-        transport: (url, options) => transport(url, {...options, redirect: 'error'}),
+        transport: (url, options) => transport(url, {...options, redirect: 'manual'}),
         now: () => clock.now(), timeoutMs: 5000, maxRequests: 1});
       return client.generate(turns, context, ids);
     }}, (key, now) => reserveAi(env.DB, 'runtime:gemini', key, now, Number(env.AI_DAILY_LIMIT)));

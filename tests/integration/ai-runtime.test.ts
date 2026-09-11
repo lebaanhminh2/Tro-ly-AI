@@ -37,7 +37,7 @@ test('runtime Gemini wiring: context, switches, persistent quota, replay and saf
     const transport: typeof fetch = async (url, options) => {
       calls++;
       assert.equal(String(url), 'https://generativelanguage.googleapis.com/v1beta/models/test-model:generateContent');
-      assert.equal(options?.redirect, 'error');
+      assert.equal(options?.redirect, 'manual');
       assert.equal(new Headers(options?.headers).get('x-goog-api-key'), 'synthetic-key');
       bodies.push(String(options?.body));
       if (failure) return new Response('synthetic-key: provider details', {status: 429});

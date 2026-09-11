@@ -10,12 +10,12 @@ export class GoogleClient implements CalendarProvider, TokenProvider {
   constructor(config: GoogleConfig, transport: typeof fetch = fetch) {
     const url = new URL(config.redirectUri);
     if (url.protocol !== 'https:' || url.pathname !== '/oauth/google/callback' || url.search || url.hash || !config.clientId || !config.clientSecret) throw new CalendarError('INVALID_GOOGLE_CONFIG');
-    this.config = config; this.transport = transport;
+    this.config = config; this.transport = (input, init) => transport(input, init);
   }
   private async request(url: string, init: RequestInit): Promise<Record<string, unknown>> {
     const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 8000);
     try {
-      const response = await this.transport(url, { ...init, redirect: 'error', signal: controller.signal });
+      const response = await this.transport(url, { ...init, redirect: 'manual', signal: controller.signal });
       if (!response.ok) { await response.body?.cancel(); throw new CalendarError(`GOOGLE_HTTP_${response.status}`); }
       const text = await response.text();
       if (text.length > 2000000) throw new CalendarError('RESPONSE_TOO_LARGE');
@@ -46,9 +46,9 @@ export class GoogleClient implements CalendarProvider, TokenProvider {
     // Revoke responses may be empty, unlike Calendar JSON APIs.
     const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 8000);
     try {
-      const response = await this.transport('https://oauth2.googleapis.com/revoke', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({token:refresh}).toString(), redirect: 'error', signal: controller.signal });
-      if (!response.ok) throw new CalendarError('REVOCATION_UNCONFIRMED');
+      const response = await this.transport('https://oauth2.googleapis.com/revoke', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({token:refresh}).toString(), redirect: 'manual', signal: controller.signal });
       await response.body?.cancel();
+      if (!response.ok) throw new CalendarError('REVOCATION_UNCONFIRMED');
     } catch { throw new CalendarError('REVOCATION_UNCONFIRMED'); } finally { clearTimeout(timer); }
   }
   private api(token: string, path: string, method = 'GET', body?: unknown) {

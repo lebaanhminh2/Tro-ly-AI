@@ -34,10 +34,15 @@ export async function deliver(token: string, payload: Record<string, unknown>, t
     const { method, ...body } = payload;
     const response = await transport(`https://api.telegram.org/bot${token}/${method}`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
-      signal: controller.signal, redirect: 'error'
+      signal: controller.signal, redirect: 'manual'
     });
     phase = 'response';
     httpStatus = response.status;
+    if (response.status >= 300 && response.status < 400) {
+      await response.body?.cancel();
+      report('REDIRECT_REJECTED');
+      return {state: 'uncertain'};
+    }
     const data = record(await response.json()), messageId = record(data.result).message_id;
     if (response.ok && data.ok === true && (method === 'answerCallbackQuery' ? data.result === true : typeof messageId === 'number' && Number.isSafeInteger(messageId)))
       return { state: 'sent', ...(typeof messageId === 'number' ? { messageId } : {}) };
