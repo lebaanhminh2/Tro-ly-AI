@@ -5,7 +5,7 @@ Cập nhật: 2026-09-11. Phân biệt prototype, kế hoạch và sản phẩm 
 ## Quyền và quy trình
 
 - Trình file/phạm vi và chờ xác nhận trước khi sửa, tạo, xóa hoặc format mã nguồn; làm liên tục trong phạm vi đã duyệt.
-- Cuối lượt có thay đổi: kiểm tra staged diff/secrets và commit cục bộ có chọn lọc; không empty commit. Push chưa được người dùng chốt.
+- Cuối lượt có thay đổi: kiểm tra staged diff/secrets và commit có chọn lọc; không empty commit. Người dùng đã yêu cầu xử lý push/PR; dùng nhánh review, không tự merge/force-push.
 - Remote: https://github.com/lebaanhminh2/Tro-ly-AI.git. Checkpoint trước cơ cấu: `f37233c`.
 - Không tự gọi API, bật billing, deploy hoặc đọc/in secrets. Đọc docs theo nhiệm vụ, không nạp hết mặc định.
 
@@ -19,6 +19,8 @@ Cập nhật: 2026-09-11. Phân biệt prototype, kế hoạch và sản phẩm 
 - Audit gần nhất trước cơ cấu: 0 với overrides sharp/undici; không coi là chứng nhận bảo mật.
 
 ## Bước tiếp theo
+
+GitHub: [PR #1](https://github.com/lebaanhminh2/Tro-ly-AI/pull/1), base main=checkpoint f37233c, head review/p1-p3. Nhánh làm việc review/p1-p3, chưa merge. Kết quả P3: 35 tests + 25 experiments, typecheck/migration/dry-run pass. Tiếp theo review PR hoặc trình P4, không tự gọi AI thật.
 
 P3 được duyệt và triển khai local: memory/history/focus/expiry, AI toggle, contextual adapter và quota D1. Xem [P3_ACCEPTANCE.md](P3_ACCEPTANCE.md). Không gọi API AI thật thêm. Người dùng đã yêu cầu xử lý push/PR GitHub; được phép đưa code đã scan lên remote và mở PR, không tự merge.
 

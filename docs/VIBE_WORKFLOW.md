@@ -4,7 +4,7 @@ Ngày 2026-09-11. Dành cho người dùng vibe code; không phải skill hoặc
 
 ## 1. Bạn cần đọc và làm gì?
 
-Yêu cầu mới: cuối mỗi lượt có thay đổi file, agent tạo Git checkpoint cục bộ sau khi kiểm tra staged diff/secrets. Lượt chỉ trao đổi không tạo empty commit. Chỉ stage file trong phạm vi, không `git add .`; ghi rõ WIP nếu chưa đạt tests. Không commit secrets, dữ liệu runtime, logs hoặc export tài khoản. Quyền push GitHub chưa chốt riêng; không tự push. Git checkpoint không thay thế phê duyệt sửa mã nguồn.
+Yêu cầu hiện tại: cuối mỗi lượt có thay đổi file, agent tạo Git checkpoint sau khi kiểm tra staged diff/secrets. Lượt chỉ trao đổi không tạo empty commit. Chỉ stage file trong phạm vi, không `git add .`; ghi rõ WIP nếu chưa đạt tests. Không commit secrets, dữ liệu runtime, logs hoặc export tài khoản. Người dùng đã yêu cầu push/PR: dùng nhánh review, không tự merge/force-push. Git checkpoint không thay thế phê duyệt sửa mã nguồn.
 
 1. Đọc [DELIVERY_PLAN.md](DELIVERY_PLAN.md), nhất là phạm vi, mốc và 6 mặc định cần duyệt. Không cần đọc hết SQL/security để bắt đầu.
 2. Duyệt kế hoạch hoặc chỉ ra mặc định muốn đổi. Agent trình file/phạm vi P1 trước khi code; sau duyệt làm liên tục tới mốc xong.
