@@ -5,10 +5,12 @@ import type { WorkReader } from '../ports/work-store.ts';
 import { sessionCommand } from './session-command.ts';
 import {memoryCommand} from './memory-command.ts';
 import type { CalendarCommands } from '../ports/calendar.ts';
+import {dayStart} from '../domain/session.ts';
 export type ChatService = (owner: string, text: string, tasks: Awaited<ReturnType<WorkReader['tasks']>>,input?:Input,store?:WorkReader,now?:number) => Promise<string|Plan>;
 
 export async function planCommand(input: Input, store: WorkReader, now: number, chat?: ChatService, calendar?: CalendarCommands): Promise<Plan> {
   if(calendar){const calendarView=await calendar.command(input);if(calendarView)return {view:calendarView,changes:[]};}
+  if(input.callback?.startsWith('focus:')&&(!chat||!await store.aiEnabled(input.owner)))return {view:{text:'Hội thoại AI chưa bật. Cậu vẫn có thể quản lý việc và lên lịch nhé.',buttons:[]},changes:[]};
   const memoryPlan=await memoryCommand(input,store,now);if(memoryPlan)return memoryPlan;
   const sessionPlan=await sessionCommand(input,store,now);
   if(sessionPlan)return sessionPlan;
@@ -26,15 +28,39 @@ export async function planCommand(input: Input, store: WorkReader, now: number, 
     const accept = callback.startsWith('yes:');
     const proposal = await store.proposal(owner, callback.slice(callback.indexOf(':') + 1));
     const task = proposal ? await store.task(owner, proposal.task_id) : null;
+    if(proposal&&proposal.status!=='pending')return {view:{text:'Đã xử lý lựa chọn này.',buttons:[],silent:true},changes:[]};
     if (!proposal || !confirmationAvailable(proposal, task, now, accept))
       return view('Lựa chọn đã xử lý, hết hạn hoặc đã cũ. Dùng /tasks để xem bản mới nhé.');
-    return { ...view(accept ? 'Đã lưu thay đổi.' : 'Ừ, không đổi nhé.'), changes: [{ type: 'resolve', proposal, accept }] };
+    return { ...view(accept ? proposal.operation==='capture'?`Đã thêm “${proposal.value}”. Mở /tasks để lên lịch nhé.`:'Đã cập nhật hạn của việc.' : 'Ừ, không đổi nhé.'), changes: [{ type: 'resolve', proposal, accept }] };
   }
   if (callback?.startsWith('deadline:')) {
     const task = await store.task(owner, callback.slice(9));
     if (!task) return view('Không tìm thấy việc này.');
-    return { ...view(`Đổi hạn “${task.title}”: nhập DD/MM/YYYY HH:mm theo giờ Việt Nam. /cancel để hủy.`),
-      changes: [{ type: 'select', selection: { owner, task_id: task.id, version: task.version, expires: now + 300000 } }] };
+    const previous=await store.selection(owner);
+    const expires=Math.max(now+300000,(previous?.expires??0)+1);
+    return { ...view(`Đặt hạn “${task.title}”: chọn ngày, hoặc nhập DD/MM/YYYY HH:mm theo giờ Việt Nam.`,[
+      ...[0,1,2].map(days=>[{text:days===0?'Hôm nay':days===1?'Ngày mai':'Ngày kia',callback_data:`due:${expires}:day:${dayStart(now)+days*86400000}`}]),
+      [{text:'Hủy',callback_data:'cancel-input'}]]),
+      changes: [{ type: 'select', selection: { owner, task_id: task.id, version: task.version, expires } }] };
+  }
+  if(callback?.startsWith('due:')){
+    const [,expiry,step,raw]=callback.split(':');
+    const selection=await store.selection(owner),value=Number(raw);
+    if(!selection||selection.expires<=now||String(selection.expires)!==expiry)return view('Lựa chọn hạn đã cũ. Mở lại việc nhé.');
+    const task=await store.task(owner,selection.task_id);
+    if(!task||task.version!==selection.version)return view('Việc đã thay đổi. Mở lại việc nhé.');
+    if(step==='day'&&Number.isSafeInteger(value)&&value===dayStart(value)&&value>=dayStart(now)&&value<=dayStart(now)+7*86400000){
+      const times=Array.from({length:24},(_,hour)=>value+hour*3600000).filter(time=>time>now);
+      const buttons:Button[][]=[];
+      for(let n=0;n<times.length;n+=4)buttons.push(times.slice(n,n+4).map(time=>({text:new Date(time+7*3600000).toISOString().slice(11,16),callback_data:`due:${expiry}:time:${time}`})));
+      buttons.push([{text:'Chọn lại ngày',callback_data:`deadline:${task.id}`},{text:'Hủy',callback_data:'cancel-input'}]);
+      return view('Chọn giờ hạn (giờ Việt Nam). Hoặc nhập DD/MM/YYYY HH:mm để chọn phút khác.',buttons);
+    }
+    if(step==='time'&&Number.isSafeInteger(value)&&value>now&&value<=now+8*86400000){
+      const result=proposalCard(newProposal(new Date(value).toISOString(),task.id,task.version),`Hạn “${task.title}”: ${new Date(value+7*3600000).toISOString().slice(0,16).replace('T',' ')} (giờ Việt Nam). Xác nhận nhé?`);
+      result.changes.push({type:'cancel',owner});return result;
+    }
+    return view('Giờ này không hợp lệ. Chọn lại ngày nhé.');
   }
   if (text === '/cancel') return { ...view('Đã hủy nhập ngày giờ.'), changes: [{ type: 'cancel', owner }] };
   if (text === '/start' || text === '/help') return view('Ghi việc: /add tên việc. Xem/sửa/lên buổi: /tasks. Hôm nay: /today. Nhắc và giờ nghỉ: /settings. Hủy nhập: /cancel. Hội thoại AI chưa bật.');
@@ -42,10 +68,18 @@ export async function planCommand(input: Input, store: WorkReader, now: number, 
     const rawOffset = callback?.slice(5) ?? '0';
     if (!/^\d{1,7}$/.test(rawOffset)) return view('Trang không hợp lệ.');
     const offset = Number(rawOffset), tasks = await store.tasks(owner, offset);
-    const buttons = tasks.map(t => [{ text: `Đổi hạn: ${t.title.slice(0, 25)}`, callback_data: `deadline:${t.id}` },{text:'Lên buổi',callback_data:`schedule:${t.id}`},{text:'Nói về việc này',callback_data:`focus:${t.id}`}]);
+    const buttons = tasks.map((t,index) => [{ text: `${index+1}. ${t.title.slice(0,35)}`, callback_data: `task:${t.id}` }]);
     if (offset > 0) buttons.push([{ text: 'Trang trước', callback_data: `page:${Math.max(0, offset - 10)}` }]);
     if (tasks.length === 10) buttons.push([{ text: 'Trang tiếp', callback_data: `page:${offset + 10}` }]);
-    return view(tasks.length ? tasks.map(t => `${t.title} — ${t.deadline ?? 'chưa có hạn'}`).join('\n') : 'Chưa có việc ở trang này.', buttons);
+    return {...view(tasks.length ? tasks.map(t => `${t.title} — ${t.deadline ?? 'chưa có hạn'}`).join('\n') : offset===0?'Chưa có việc nào. Gửi /add tên việc để thêm nhé.':'Chưa có việc ở trang này.', buttons),changes:[{type:'cancel',owner}]};
+  }
+  if(callback?.startsWith('task:')){
+    const task=await store.task(owner,callback.slice(5));
+    if(!task)return view('Không tìm thấy việc này.');
+    const buttons:Button[][]=[[{text:'Đặt hạn',callback_data:`deadline:${task.id}`},{text:'Lên lịch',callback_data:`schedule:${task.id}`}]];
+    if(chat&&await store.aiEnabled(owner))buttons.push([{text:'Trò chuyện',callback_data:`focus:${task.id}`}]);
+    buttons.push([{text:'Danh sách việc',callback_data:'page:0'}]);
+    return {...view(`${task.title}\nHạn: ${task.deadline??'Chưa đặt'}`,buttons),changes:[{type:'cancel',owner}]};
   }
   if (callback) return view('Nút không còn hợp lệ.');
   if (text.startsWith('/add ')) {

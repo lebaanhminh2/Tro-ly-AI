@@ -17,8 +17,9 @@ export function sessionButtons(s:Session) {
   const button=(text:string,action:string)=>({text,callback_data:`s:${action}:${s.id}:${s.version}`});
   if(s.status==='draft') return [[button('Chốt buổi','confirm'),button('Thôi','skip')]];
   if(['completed','skipped'].includes(s.status))return [];
-  return [[button(s.status==='paused'?'Làm tiếp':'Bắt đầu','start'),button('+15 phút','snooze')],
-    [button('Tạm dừng','pause'),button('Kết thúc buổi','finish'),button('Bỏ buổi','skip')]];
+  const actions = [[button(s.status==='paused'?'Làm tiếp':'Bắt đầu','start'),button('+15 phút','snooze')],
+    [button('Tạm dừng','pause'),button('Kết thúc','finish')], [button('Bỏ buổi','skip')]];
+  return actions.map(row=>row.filter(b=>canAct(s,b.callback_data.split(':')[1]!,0))).filter(row=>row.length);
 }
 export function canAct(s:Session,action:string,now:number) {
   if(action==='confirm') return s.status==='draft'&&s.expires>now&&s.start_at>=now;

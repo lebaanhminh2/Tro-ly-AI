@@ -1,6 +1,16 @@
 # Luồng UX và giao diện v1
 
-Ngày 2026-09-11. Đề xuất chờ duyệt cùng [DELIVERY_PLAN](DELIVERY_PLAN.md). Telegram-first, thao tác thường ngày không cần app thứ hai.
+Ngày 2026-09-12. Telegram-first. Các mục thiết kế bên dưới không đồng nghĩa đã triển khai hết; trạng thái đợt sửa thực tế ở mục 0.
+
+## 0. Đợt UX đã triển khai local
+
+- Tasks: danh sách chọn một việc → chi tiết, nút ngắn; không hiện trò chuyện khi AI off. Thành công nói rõ tên việc. Callback xác nhận đã xử lý không tạo tin trả lời lặp.
+- Gỡ keyboard cũ qua outbox sau commit, chỉ với message ID của card app đã gửi tới đúng owner. Gỡ thất bại không mất thay đổi đã lưu; không retry mù với uncertain. Đây là gỡ nút + trả card mới, chưa phải sửa nội dung mọi card cũ tại chỗ.
+- Ngày hẹn/hạn: hôm nay, ngày mai, ngày kia → chọn giờ → thời lượng 15/25/45 phút cho session → confirm. Giờ khác/phút khác vẫn nhập tay. Nút tối đa 4 ô cho giờ ngắn HH:mm, thao tác chính tối đa 2. Chọn ngày mới vô hiệu lựa chọn cũ; D1 lưu task/expiry, phần lựa chọn trung gian nằm trong callback, không mất khi restart.
+- Today chọn được từng buổi trong danh sách hiện có (giới hạn 30); nút theo trạng thái, sau hành động trả nút phiên bản mới. Guard D1 chặn hai buổi running đồng thời.
+- Bỏ chặn quiet và khung cứng 08–21 trong Calendar slots; giữ pause chủ động và giới hạn 2 lượt/lần hẹn. Không hồi sinh nhắc đã hủy; /resume giải thích rõ điều này. Cột quiet cũ giữ để không phá schema, không còn quyết định giờ gửi.
+- Callback quên mục đã xóa không xóa ngữ cảnh mới; DB cũng guard điều kiện tồn tại.
+- Giới hạn: chưa nâng Today thành planner đầy đủ, chưa lifecycle task/đồng bộ PATCH Google; chưa kiểm chứng hiển thị card mới trên iPhone. Wizard chưa picker phút tùy ý bằng nút. Không gọi đợt này là nghiệm thu v1.
 
 ## 1. Nguyên tắc giao diện
 
@@ -31,7 +41,7 @@ Chi tiết: tên, deadline có certainty, tiến độ thực, buổi tiếp the
 ## 3. Onboarding ngắn, có thể tiếp tục sau
 
 1. /start từ đúng owner: giới thiệu đây là trợ lý AI, dữ liệu đi đâu; không cho người lạ claim owner đầu tiên.
-2. Xác nhận múi giờ và giờ yên lặng; hỏi mức nhắc bằng vài nút. Không lấy ảnh lịch làm lịch ngủ thật.
+2. Xác nhận múi giờ; không áp giờ yên lặng tự động. Giữ quyền dừng nhắc chủ động.
 3. Kết nối Google hoặc [Để sau]; chọn calendars và giải thích quyền đọc/ghi riêng.
 4. Thử một task đơn giản; không bắt nhập backlog, estimate, project, routine đầy đủ.
 5. Cài đặt luôn có: nhắc, persona, AI on/off, những điều đã nhớ, Calendar sync, xuất/xóa dữ liệu.

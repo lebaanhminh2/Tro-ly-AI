@@ -19,6 +19,7 @@ export function sessionStatements(db:Database,owner:string,c:SessionChange):Stat
     q('DELETE FROM session_input WHERE owner=?',owner)];
   const result=[q('INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM sessions WHERE id=? AND owner=? AND version=?) THEN 1 ELSE 0 END',s.id,owner,s.version)];
   const action=c.action;
+  if(action==='start')result.push(q("INSERT INTO transaction_guard SELECT CASE WHEN NOT EXISTS(SELECT 1 FROM sessions WHERE owner=? AND status='running' AND id!=?) THEN 1 ELSE 0 END",owner,s.id));
   const status=action==='confirm'||action==='snooze'?'planned':action==='start'?'running':action==='pause'?'paused':action==='finish'?'completed':'skipped';
   const generation=s.generation+(action==='snooze'?1:0),start=action==='snooze'?c.now+900000:s.start_at;
   const spent=s.spent_ms+(s.active_since!==null?Math.max(0,c.now-s.active_since):0);

@@ -53,12 +53,8 @@ export function slots(start: number, end: number, minutes: number, busy: Interva
   const result: Interval[] = [];
   for (let t = Math.ceil(start / 900000) * 900000; t + minutes * 60000 <= end && result.length < 3; t += 900000) {
     const candidate = { start: t, end: t + minutes * 60000 };
-    let resting = false;
-    for (let tick = t; tick < candidate.end; tick += 60000) {
-      const minute = Math.floor(((tick + 7 * 3600000) % 86400000) / 60000);
-      if (minute < 8 * 60 || minute >= 21 * 60 || (quietStart !== quietEnd && (quietStart < quietEnd ? minute >= quietStart && minute < quietEnd : minute >= quietStart || minute < quietEnd))) { resting = true; break; }
-    }
-    if (!resting && !busy.some(b => overlaps(candidate, b, 10 * 60000))) { result.push(candidate); t = candidate.end; }
+    // Legacy quiet parameters are retained for callers, but never restrict a user's appointment.
+    if (!busy.some(b => overlaps(candidate, b, 10 * 60000))) { result.push(candidate); t = candidate.end; }
   }
   return result;
 }

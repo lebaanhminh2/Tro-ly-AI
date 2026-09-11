@@ -13,7 +13,8 @@ export function incoming(raw: unknown): Incoming | null {
     || from.is_bot || from.id !== chat.id) return null;
   if (hasCallback) {
     if (typeof c.id !== 'string' || !c.id || c.id.length > 256 || typeof c.data !== 'string' || new TextEncoder().encode(c.data).length > 64) return null;
-    return { updateId: u.update_id, owner: String(from.id), chat: chat.id, callback: c.data, callbackId: c.id };
+    return { updateId: u.update_id, owner: String(from.id), chat: chat.id, callback: c.data, callbackId: c.id,
+      ...(typeof m.message_id==='number'&&Number.isSafeInteger(m.message_id)&&m.message_id>0?{messageId:m.message_id}:{}) };
   }
   if (typeof m.text !== 'string' || m.text.length > 4096) return null;
   return { updateId: u.update_id, owner: String(from.id), chat: chat.id, text: m.text };
@@ -21,7 +22,7 @@ export function incoming(raw: unknown): Incoming | null {
 
 export type Delivery = { state: 'sent' | 'pending' | 'failed' | 'uncertain'; retryAfter?: number; messageId?: number };
 export async function deliver(token: string, payload: Record<string, unknown>, transport: typeof fetch = fetch, timeout = 8000): Promise<Delivery> {
-  if (!['sendMessage','answerCallbackQuery'].includes(String(payload.method))) return { state: 'failed' };
+  if (!['sendMessage','answerCallbackQuery','editMessageReplyMarkup'].includes(String(payload.method))) return { state: 'failed' };
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeout);
   let phase: 'request' | 'response' = 'request';

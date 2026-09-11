@@ -1,6 +1,6 @@
 # Rà soát UX trước khi bật AI
 
-2026-09-12. Đã duyệt rà soát; **phạm vi code dưới đây chờ duyệt**. Không thay dữ liệu cloud. Nguồn: ảnh iPhone, đọc application/domain/D1/Telegram, thử trực tiếp hàm với dữ liệu giả. Không gọi đây là kiểm thử end-to-end toàn bộ sản phẩm.
+2026-09-12. Phạm vi đã được duyệt và bản UX đầu đã deploy staging; xem UX_FLOWS mục 0 cho phần thực hiện và giới hạn. Không chỉnh dữ liệu cloud thủ công. Nguồn rà soát: ảnh iPhone, đọc application/domain/D1/Telegram, thử hàm và test integration. Không gọi đây là nghiệm thu toàn bộ sản phẩm.
 
 ## Kết quả
 

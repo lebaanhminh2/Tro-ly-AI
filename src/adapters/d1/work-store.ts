@@ -10,6 +10,8 @@ import type {Memory,ConversationTurn} from '../../domain/memory.ts';
 export class D1WorkStore implements WorkStore {
   private db: Database;
   constructor(db: Database) { this.db = db; }
+  runningSession(owner:string){return query(this.db,"SELECT * FROM sessions WHERE owner=? AND status='running' ORDER BY start_at LIMIT 1",owner).first<Session>();}
+  memory(owner:string,id:string){return query(this.db,'SELECT * FROM memories WHERE owner=? AND id=?',owner,id).first<Memory>();}
   async memories(owner:string,now:number,offset=0,limit=30){
     if(!Number.isSafeInteger(offset)||offset<0||!Number.isInteger(limit)||limit<1||limit>30)throw Error('INVALID_PAGE');
     return (await query(this.db,'SELECT * FROM memories WHERE owner=? AND (expires IS NULL OR expires>?) ORDER BY created DESC,id DESC LIMIT ? OFFSET ?',owner,now,limit,offset).all<Memory>()).results;
@@ -89,8 +91,14 @@ export class D1WorkStore implements WorkStore {
     const payload = JSON.stringify({ method: 'sendMessage', chat_id: input.chat, text: plan.view.text,
       ...(plan.view.buttons.length ? { reply_markup: { inline_keyboard: plan.view.buttons } } : {}) });
     if(input.text&&!input.text.startsWith('/')&&!plan.changes.some(c=>c.type==='forget'))statements.push(q('INSERT INTO conversation_turns(owner,command_id,user_text,assistant_text,created,expires) VALUES(?,?,?,?,?,?)',owner,input.updateId,input.text,plan.view.text,now,now+7*86400000));
-    statements.push(q(`INSERT INTO outbox(id,payload,available) SELECT ?,?,? FROM command_inbox WHERE owner=? AND update_id=? AND delivery=1`,
+    if(!plan.view.silent)statements.push(q(`INSERT INTO outbox(id,payload,available) SELECT ?,?,? FROM command_inbox WHERE owner=? AND update_id=? AND delivery=1`,
       `reply:${owner}:${input.updateId}`,payload,now,owner,input.updateId));
+    if(input.messageId&&input.callback&&(plan.changes.some(c=>c.type==='resolve'||c.type==='session-action'||c.type==='memory-resolve')||plan.view.silent)){
+      // Only remove buttons on a card previously sent by this application to this owner.
+      statements.push(q(`INSERT OR IGNORE INTO outbox(id,payload,available) SELECT ?,?,? WHERE EXISTS
+        (SELECT 1 FROM outbox WHERE message_id=? AND state='sent' AND json_extract(payload,'$.chat_id')=? AND json_extract(payload,'$.method')='sendMessage')`,
+        `clear:${owner}:${input.messageId}`,JSON.stringify({method:'editMessageReplyMarkup',chat_id:input.chat,message_id:input.messageId,reply_markup:{inline_keyboard:[]}}),now,input.messageId,input.chat));
+    }
     statements.push(q("UPDATE command_inbox SET state='done',result=? WHERE owner=? AND update_id=?", JSON.stringify(plan.view),owner,input.updateId));
     statements.push(q('INSERT INTO command_audit(owner,update_id,change_count,applied) VALUES(?,?,?,?)',owner,input.updateId,plan.changes.length,now));
     statements.push(q('DELETE FROM transaction_guard'));

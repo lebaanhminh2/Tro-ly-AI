@@ -1,7 +1,7 @@
 import { query } from './database.ts';
 import type { Database } from './database.ts';
 import type { Session } from '../../domain/session.ts';
-import { quiet,sessionButtons } from '../../domain/session.ts';
+import { sessionButtons } from '../../domain/session.ts';
 
 export async function reminderAllowed(db:Database,id:string,now:number):Promise<boolean>{
   const r=await query(db,`SELECT r.*,s.status AS session_status,s.generation AS current_generation,s.start_at,s.minutes,
@@ -11,7 +11,7 @@ export async function reminderAllowed(db:Database,id:string,now:number):Promise<
       quiet_start:number;quiet_end:number;pause_until:number
     }>();
   return !!r&&['pending','queued'].includes(r.status)&&r.session_status==='planned'&&r.generation===r.current_generation
-    &&now<r.start_at+Math.max(r.minutes,15)*60000+60000&&now>=r.pause_until&&!quiet(now,r);
+    &&now<r.start_at+Math.max(r.minutes,15)*60000+60000&&now>=r.pause_until;
 }
 export async function queueReminders(db:Database,owner:string,now:number){
   // Expired slots become unknown, not failed; a day of outage never produces a reminder flood.

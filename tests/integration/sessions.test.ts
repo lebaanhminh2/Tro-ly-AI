@@ -64,20 +64,20 @@ test('session lifecycle, two reminders per appointment, no daily cap, snooze, re
     assert.match((await run('/today'))!.text,/Đã kết thúc buổi/);
     await run('/quiet 12:00 13:00');
     const fourth=await make('11/09/2026 12:30');
-    now=Date.parse('2026-09-11T12:30:00+07:00');await queueReminders(db,'123',now);await flushOutbox(env(),transport,now,()=>0);assert.equal(sent.length,7);
+    now=Date.parse('2026-09-11T12:30:00+07:00');await queueReminders(db,'123',now);await flushOutbox(env(),transport,now,()=>0);assert.equal(sent.length,8); // Quiet hours no longer suppress appointments.
     await run('/rest');assert.ok((await store.preferences('123'))!.pause_until>now);
     await run('/resume');await run('/quiet 22:00 07:00');
     const stale=await make('11/09/2026 14:00');
     now=Date.parse('2026-09-11T14:00:00+07:00');await queueReminders(db,'123',now);
     await run(`s:snooze:${stale}:2`,true); // Old first reminder is queued but must never send.
-    await flushOutbox(env(),transport,now,()=>0);assert.equal(sent.length,7);
+    await flushOutbox(env(),transport,now,()=>0);assert.equal(sent.length,8);
     now+=900000;await queueReminders(db,'123',now);
     let limited=0;
     await flushOutbox(env(),async()=>{limited++;return Response.json({ok:false,error_code:429,parameters:{retry_after:60}},{status:429});},now,()=>0);
     assert.equal(limited,1);
-    await run('/rest');now+=60000;await flushOutbox(env(),transport,now,()=>0);assert.equal(sent.length,7);
+    await run('/rest');now+=60000;await flushOutbox(env(),transport,now,()=>0);assert.equal(sent.length,8);
     now=Date.parse('2026-09-12T09:00:00+07:00');await queueReminders(db,'123',now);await flushOutbox(env(),transport,now,()=>0);
-    assert.equal(sent.length,7); // No catch-up spam on the next day.
+    assert.equal(sent.length,8); // No catch-up spam on the next day.
     await mf.dispose();mf=runtime();db=await mf.getD1Database('DB') as unknown as typeof db;store=new D1WorkStore(db);
     assert.equal((await store.session('123',third))!.spent_ms,120000);
     assert.equal(await store.session('other',fourth),null);

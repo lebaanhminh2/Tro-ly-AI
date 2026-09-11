@@ -37,6 +37,7 @@ test('real workerd fetch supports production adapters and never follows credenti
       const result = {};
       result.telegram = await deliver('123:fake', {method:'sendMessage',chat_id:123,text:'test'});
       result.telegramRedirect = await deliver('123:fake', {method:'sendMessage',chat_id:123,text:'test'});
+      result.clearKeyboard = await deliver('123:fake', {method:'editMessageReplyMarkup',chat_id:123,message_id:7,reply_markup:{inline_keyboard:[]}});
       const google = new GoogleClient({clientId:'fake',clientSecret:'fake',redirectUri:'https://test.invalid/oauth/google/callback'});
       result.refresh = await google.refresh('fake');
       try {await google.refresh('fake');} catch(e) {result.refreshRedirect = e.message;}
@@ -60,6 +61,7 @@ test('real workerd fetch supports production adapters and never follows credenti
     const result = JSON.parse(probeText) as Record<string, any>;
     assert.equal(result.telegram.state, 'sent');
     assert.equal(result.telegramRedirect.state, 'uncertain');
+    assert.equal(result.clearKeyboard.state, 'sent');
     assert.equal(result.refresh, 'access');
     assert.equal(result.refreshRedirect, 'GOOGLE_HTTP_302');
     assert.equal(result.revoke, true);

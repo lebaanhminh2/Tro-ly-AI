@@ -17,7 +17,11 @@ export async function memoryCommand(i:Input,store:WorkReader,now:number):Promise
   if(!content||content.length>300)return view('Nội dung cần từ 1 đến 300 ký tự.');
   return {...view('Đã lưu theo yêu cầu của cậu. Xem hoặc xóa ở /memory.'),changes:[{type:'remember',memory:{id:`m${i.updateId}`,owner:i.owner,content,kind:temporary?'temporary':'preference',source:`user-command:${i.updateId}`,created:now,expires:temporary?dayStart(now)+86400000:null}}]};
  }
- if(i.callback?.startsWith('forget:'))return {...view('Đã quên mục được chọn và xóa ngữ cảnh hội thoại cũ để không nhắc lại nó.'),changes:[{type:'forget',owner:i.owner,id:i.callback.slice(7)}]};
+ if(i.callback?.startsWith('forget:')){
+  const id=i.callback.slice(7);
+  if(!await store.memory(i.owner,id))return {view:{text:'Mục này đã được xóa hoặc không còn tồn tại.',buttons:[],silent:true},changes:[]};
+  return {...view('Đã quên mục được chọn và xóa ngữ cảnh hội thoại cũ để không nhắc lại nó.'),changes:[{type:'forget',owner:i.owner,id}]};
+ }
  if(text==='/forgetall'){
   const id=`mc${i.updateId}`;
   return {view:{text:'Xóa mọi ghi nhớ và lịch sử hội thoại? Xác nhận có hiệu lực 5 phút; task và nhắc vẫn giữ.',buttons:[[{text:'Xóa bộ nhớ',callback_data:`memory-yes:${id}`},{text:'Thôi',callback_data:`memory-no:${id}`}]]},changes:[{type:'memory-confirm',confirmation:{owner:i.owner,id,expires:now+300000,status:'pending'}}]};

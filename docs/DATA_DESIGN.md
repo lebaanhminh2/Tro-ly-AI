@@ -94,3 +94,6 @@ Event bot tạo có stable external identity + link session; retry cần kiểm 
 Task/facts giữ tới khi xóa; backup luân phiên 7 ngày. Inbox/outbox chứa nội dung cần cleanup sau khi hoàn tất, giữ tombstone idempotency tối thiểu theo replay policy đã test.
 Không cần event sourcing toàn hệ thống. Giữ audit đủ truy nguyên nhưng không log secrets hoặc nhân bản mọi cuộc chat.
 Tính năng mới phải đi qua application command/query và cùng quyền owner, không mở đường DB trực tiếp từ UI/AI.
+# Cập nhật UX 2026-09-12
+
+Không migration mới: session_input và selections lưu task/expiry/version để tiếp tục wizard sau restart, callback mang lựa chọn ngày/giờ/thời lượng và expiry để chặn nút cũ. Input callback có messageId tùy chọn; outbox gỡ keyboard chỉ khi tìm thấy bản ghi sendMessage sent với đúng message_id/chat_id. View.silent bỏ tin trả lời lặp, không bỏ lưu kết quả/audit của command. Guard transaction chặn nhiều running sessions và callback quên mục không tồn tại không xóa context. Quiet columns giữ tương thích schema nhưng không còn chặn nhắc/Calendar slot; pause_until vẫn áp dụng.

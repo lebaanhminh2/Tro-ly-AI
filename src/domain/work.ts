@@ -2,9 +2,9 @@ export type Task = { id: string; owner: string; title: string; deadline: string 
 export type Proposal = { id: string; owner: string; task_id: string; operation: 'capture' | 'deadline'; value: string;
   expected_version: number; expires: number; status: 'pending' | 'accepted' | 'rejected' };
 export type Selection = { owner: string; task_id: string; version: number; expires: number };
-export type Input = { updateId: number; owner: string; chat: number; text?: string; callback?: string; callbackId?: string };
+export type Input = { updateId: number; owner: string; chat: number; text?: string; callback?: string; callbackId?: string; messageId?:number };
 export type Button = { text: string; callback_data: string };
-export type View = { text: string; buttons: Button[][] };
+export type View = { text: string; buttons: Button[][]; silent?:boolean };
 export type Change = import('./session.ts').SessionChange | import('./memory.ts').MemoryChange
   | { type: 'propose'; proposal: Proposal }
   | { type: 'resolve'; proposal: Proposal; accept: boolean }

@@ -97,7 +97,8 @@ test('OAuth browser/state replay, scope separation, paginated sync/410, confirme
   const disabled=new CalendarService({db,provider:api,tokens:api,vault:new GoogleTokenVault('ab'.repeat(32)),owner:'123',origin:'https://local.example',writes:false,now:()=>now});
   assert.match((await disabled.command({owner:'123',chat:123,updateId:500,callback:button}))!.text,/WRITES_DISABLED/);
   assert.equal(api.inserts,0);
-  api.expanded.push({id:'new-conflict',start:{dateTime:'2026-09-18T09:00:00+07:00'},end:{dateTime:'2026-09-18T10:00:00+07:00'}});
+  const offeredTime=await db.prepare('SELECT start_at,end_at FROM calendar_proposals WHERE id=?').bind(button.slice('cal-write:'.length)).first<{start_at:number;end_at:number}>();
+  api.expanded.push({id:'new-conflict',start:{dateTime:new Date(offeredTime!.start_at).toISOString()},end:{dateTime:new Date(offeredTime!.end_at).toISOString()}});
   assert.match((await run(button,true))!.text,/SLOT_CONFLICT/);assert.equal(api.inserts,0);
   api.expanded.pop();assert.match((await run(button,true))!.text,/đang chờ/);
   assert.match((await run(button,true))!.text,/STALE_CALENDAR_PROPOSAL/);

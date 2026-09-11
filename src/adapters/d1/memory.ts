@@ -17,9 +17,11 @@ export function memoryStatements(db:Database,owner:string,c:MemoryChange){
   q("INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM memory_confirmations WHERE owner=? AND id=? AND status='pending' AND expires>?) THEN 1 ELSE 0 END",owner,c.id,c.now),
   q('UPDATE memory_confirmations SET status=? WHERE owner=? AND id=?',c.accept?'accepted':'rejected',owner,c.id),
   ...(c.accept?[q('DELETE FROM memories WHERE owner=?',owner),q('DELETE FROM conversation_turns WHERE owner=?',owner),q('DELETE FROM chat_focus WHERE owner=?',owner),q("UPDATE command_inbox SET payload='{}',result=NULL WHERE owner=? AND state='done'",owner)]:[]),q('DELETE FROM transaction_guard')];
- if(c.type==='forget')return [q('DELETE FROM memories WHERE owner=? AND id=?',owner,c.id),
-  q('DELETE FROM conversation_turns WHERE owner=?',owner),q('DELETE FROM chat_focus WHERE owner=?',owner),
-  q("UPDATE command_inbox SET payload='{}',result=NULL WHERE owner=? AND state='done'",owner)];
+ if(c.type==='forget')return [
+  q('DELETE FROM conversation_turns WHERE owner=? AND EXISTS(SELECT 1 FROM memories WHERE owner=? AND id=?)',owner,owner,c.id),
+  q('DELETE FROM chat_focus WHERE owner=? AND EXISTS(SELECT 1 FROM memories WHERE owner=? AND id=?)',owner,owner,c.id),
+  q("UPDATE command_inbox SET payload='{}',result=NULL WHERE owner=? AND state='done' AND EXISTS(SELECT 1 FROM memories WHERE owner=? AND id=?)",owner,owner,c.id),
+  q('DELETE FROM memories WHERE owner=? AND id=?',owner,c.id)];
  if(c.type==='ai-enabled')return [q('INSERT INTO memory_settings(owner,enabled) VALUES(?,?) ON CONFLICT(owner) DO UPDATE SET enabled=excluded.enabled',owner,c.enabled?1:0)];
  return [q('INSERT INTO chat_focus(owner,task_id,expires) VALUES(?,?,?) ON CONFLICT(owner) DO UPDATE SET task_id=excluded.task_id,expires=excluded.expires',owner,c.taskId,c.expires)];
 }
