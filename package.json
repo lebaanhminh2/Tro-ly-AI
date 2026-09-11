@@ -1,0 +1,16 @@
+{
+  "name": "telegram-assistant-ai-trial",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=24.0.0" },
+  "scripts": {
+    "test": "node --test tests/*.test.ts",
+    "dev": "wrangler dev --local",
+    "db:local": "wrangler d1 migrations apply assistant-local --local",
+    "build:check": "wrangler deploy --dry-run",
+    "try:ai": "node scripts/try-ai.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": { "@types/node": "^24.0.0", "typescript": "~5.8.3", "wrangler": "^4.0.0", "miniflare": "^4.0.0" },
+  "overrides": { "miniflare": { "sharp": "0.35.4", "undici": "7.29.0" } }
+}

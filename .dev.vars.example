@@ -1,0 +1,5 @@
+# Local synthetic testing only. Never copy a real key here.
+TELEGRAM_WEBHOOK_SECRET=replace-with-random-secret-at-least-24-characters
+TELEGRAM_USER_ID=123456
+AI_MODE=off
+# No Telegram token needed: this prototype replies through the webhook response.
