@@ -114,6 +114,30 @@ test('Bot API classifies failures without retrying or leaking token', async () =
   assert.equal(timed.state,'uncertain');
 });
 
+test('delivery diagnostics expose only fixed labels and numeric status, never provider secrets', async () => {
+  const logs: string[] = [];
+  const original = console.warn;
+  console.warn = (...args: unknown[]) => { logs.push(args.join(' ')); };
+  try {
+    const secret = 'private-token-and-chat';
+    const payload = {method: 'sendMessage', chat_id: 123, text: secret};
+    await deliver(secret, payload, async () => { throw new TypeError('Illegal invocation ' + secret); });
+    await deliver(secret, payload, async () => new Response(secret, {status: 502}));
+    await deliver(secret, payload, async () => Response.json({ok: false, error_code: 401, description: secret}, {status: 401}));
+    await deliver(secret, payload, async () => Response.json({ok: false, error_code: secret, description: secret}, {status: 500}));
+    await deliver(secret, payload, async (_url, options) => new Promise((_resolve, reject) => {
+      options?.signal?.addEventListener('abort', () => reject(new Error(secret)), {once: true});
+    }), 5);
+    assert.deepEqual(logs.map(line => JSON.parse(line).code), [
+      'TRANSPORT_ILLEGAL_INVOCATION', 'RESPONSE_DECODE_FAILED', 'API_REJECTED', 'API_REJECTED', 'TIMEOUT'
+    ]);
+    assert.equal(JSON.parse(logs[1]!).httpStatus, 502);
+    assert.equal(JSON.parse(logs[2]!).apiStatus, 401);
+    assert.ok(!logs.join('').includes(secret));
+    for (const line of logs) assert.ok(Object.keys(JSON.parse(line)).every(k => ['event', 'code', 'phase', 'httpStatus', 'apiStatus'].includes(k)));
+  } finally { console.warn = original; }
+});
+
 test('outbox persisted replies, callback ack, retry cap, restart recovery and concurrent send claim', async()=>{
   const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
   try {

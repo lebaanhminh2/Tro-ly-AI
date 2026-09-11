@@ -24,21 +24,38 @@ export async function deliver(token: string, payload: Record<string, unknown>, t
   if (!['sendMessage','answerCallbackQuery'].includes(String(payload.method))) return { state: 'failed' };
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeout);
+  let phase: 'request' | 'response' = 'request';
+  let httpStatus: number | undefined;
+  // Only fixed labels and numeric status codes. Never log errors, URLs, payloads or headers.
+  const report = (code: string, apiStatus?: number) => {
+    console.warn(JSON.stringify({event: 'telegram_delivery', code, phase, httpStatus, apiStatus}));
+  };
   try {
     const { method, ...body } = payload;
     const response = await transport(`https://api.telegram.org/bot${token}/${method}`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
       signal: controller.signal, redirect: 'error'
     });
+    phase = 'response';
+    httpStatus = response.status;
     const data = record(await response.json()), messageId = record(data.result).message_id;
     if (response.ok && data.ok === true && (method === 'answerCallbackQuery' ? data.result === true : typeof messageId === 'number' && Number.isSafeInteger(messageId)))
       return { state: 'sent', ...(typeof messageId === 'number' ? { messageId } : {}) };
     const retry = record(data.parameters).retry_after;
+    const apiStatus = typeof data.error_code === 'number' && Number.isInteger(data.error_code)
+      && data.error_code >= 100 && data.error_code <= 599 ? data.error_code : undefined;
+    report(data.ok === false ? 'API_REJECTED' : 'UNEXPECTED_RESPONSE', apiStatus);
     if (data.ok === false && data.error_code === 429)
       return { state: 'pending', retryAfter: typeof retry === 'number' && Number.isFinite(retry) ? Math.min(86400, Math.max(1, retry)) : 60 };
     if (data.ok === false && typeof data.error_code === 'number' && data.error_code >= 400 && data.error_code < 500) return { state: 'failed' };
     return { state: 'uncertain' };
-  } catch { return { state: 'uncertain' }; } // Never log error/URL: the URL contains token.
+  } catch (error) {
+    // Match a known runtime failure without exposing arbitrary exception text.
+    const illegalInvocation = error instanceof TypeError && /illegal invocation/i.test(error.message);
+    report(controller.signal.aborted ? 'TIMEOUT' : phase === 'response' ? 'RESPONSE_DECODE_FAILED'
+      : illegalInvocation ? 'TRANSPORT_ILLEGAL_INVOCATION' : 'TRANSPORT_FAILED');
+    return { state: 'uncertain' };
+  }
   finally { clearTimeout(timer); }
 }
 export function message(chat: number, text: string, buttons: Button[][] = []) {
