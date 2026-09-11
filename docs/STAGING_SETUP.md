@@ -59,6 +59,8 @@ Webhook secret là chuỗi ngẫu nhiên riêng, tối thiểu 24 ký tự, ch�
 
 ## 5. Thứ tự nghiệm thu thật
 
+Đã có script đăng ký sau khi duyệt (thay thao tác thủ công ở bước 4.6): `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\telegram-setup.ps1 -RegisterWebhook`. Nhập token mới ở prompt ẩn; file .dev.vars.webhook-secret.dpapi phải còn trên máy và giải mã được bằng user Windows đã tạo. Script không ghi đè webhook khác, không xóa updates, chỉ đăng ký bot đã chốt tới staging. Chạy `-SelfTest` để test offline (12 tình huống); không dùng kết quả này làm bằng chứng kết nối thật.
+
 - **Telegram trước:** /add → xác nhận → /tasks → lên buổi → nhận nhắc → phản hồi/snooze/rest. Kiểm tra sai owner/secret bị từ chối, bấm lặp không tạo trùng. Thử tắt máy tính và nhận thông báo iPhone; kiểm tra notification/Focus trên máy.
 - **Gemini sau:** khai báo key bằng secret, model đã kiểm chứng và ngân sách rõ; duyệt request smoke riêng. Xem [P5_RUNTIME](P5_RUNTIME.md). Tests hiện khóa flags off cho đợt chuẩn bị; cập nhật tests/config có duyệt khi bật provider, không xóa test để vượt chốt.
 - **Google sau nữa:** Google project/consent, redirect `<URL>/oauth/google/callback`, token key và scopes theo [P4_ACCEPTANCE](P4_ACCEPTANCE.md). Bắt đầu calendar thử, writes off; chỉ bật ghi sau khi duyệt. Không giả định account/consent đã có.

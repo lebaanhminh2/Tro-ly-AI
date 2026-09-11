@@ -1,6 +1,7 @@
-param([switch]$SelfTest)
+param([switch]$SelfTest, [switch]$RegisterWebhook)
 
-# Read-only Telegram diagnostics. No offset, webhook mutation, or token persistence.
+# Diagnostics are read-only. Registration requires explicit -RegisterWebhook.
+# No offset, pending-update deletion, or token persistence.
 # ASCII messages keep Windows PowerShell 5.1 file decoding predictable.
 function Invoke-TelegramDiagnostic {
     param([scriptblock]$Request, [scriptblock]$Emit, [scriptblock]$Prompt)
@@ -54,6 +55,42 @@ function Invoke-TelegramDiagnostic {
     }
 }
 
+function Register-StagingWebhook {
+    param([scriptblock]$Request, [scriptblock]$Emit, [string]$Secret)
+    $target = 'https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev/telegram'
+    if ($Secret -cnotmatch '^[a-f0-9]{64}$') { & $Emit 'Secret local khong hop le. Chua thay doi webhook.'; return }
+    $me = & $Request 'getMe' @{}
+    if (-not $me.ok -or $me.result.username -ine 'Minh_Anh_cua_Minh_bot' -or
+        [string]$me.result.id -ne '8854712189') {
+        & $Emit 'Khong xac minh duoc dung bot da duyet. Chua thay doi webhook.'; return
+    }
+    $before = & $Request 'getWebhookInfo' @{}
+    if (-not $before.ok) { & $Emit 'Khong doc duoc webhook hien tai. Chua thay doi.'; return }
+    if ($before.result.url -and $before.result.url -cne $target) {
+        & $Emit 'Bot dang noi voi dia chi KHAC. Dung lai de kiem tra, khong ghi de.'; return
+    }
+    $set = & $Request 'setWebhook' @{
+        url = $target; secret_token = $Secret
+        allowed_updates = @('message', 'callback_query')
+        drop_pending_updates = $false; max_connections = 1
+    }
+    $after = & $Request 'getWebhookInfo' @{}
+    if (-not $set.ok -or $set.result -ne $true) {
+        & $Emit "Dang ky chua xac nhan thanh cong ($($set.code)). Khong tu thu lai; co the request da toi Telegram."
+        return
+    }
+    if (-not $after.ok -or $after.result.url -cne $target) {
+        & $Emit 'Telegram da nhan dang ky nhung chua xac minh duoc dia chi. Can kiem tra lai.'; return
+    }
+    & $Emit 'DA DANG KY webhook staging. Khong xoa tin dang cho.'
+    & $Emit "Tin dang cho: $($after.result.pending_update_count)"
+    if ($after.result.last_error_date) {
+        & $Emit 'Telegram co ghi nhan loi giao tin (co the tu truoc). Can kiem tra khi gui tin moi.'
+    }
+    & $Emit 'Mo bot tren dien thoai va gui /tasks. AI/Calendar van tat.'
+    & $Emit 'Dang ky thanh cong chua chung minh bot da tra loi; bao lai ket qua /tasks.'
+}
+
 if ($SelfTest) {
     # Fakes only: no token prompt, network, Cloudflare or Telegram changes.
     foreach ($scenario in @('match', 'webhook', 'empty', 'conflict', 'full', 'wrong')) {
@@ -86,7 +123,37 @@ if ($SelfTest) {
         if (-not $output.Contains($expected) -or $output.Contains('hidden-url')) { throw "Self-test failed: $scenario" }
         if ($scenario -eq 'webhook' -and $state.calls -ne 2) { throw 'Polled with webhook enabled' }
     }
-    Write-Host 'PASS: 6 offline diagnostic scenarios. No network calls.'
+    foreach ($scenario in @('success', 'wrongbot', 'foreignhook', 'timeout', 'badsecret', 'wrongafter')) {
+        $state = @{sets = 0; reads = 0; lines = [Collections.Generic.List[string]]::new()}
+        $fake = {
+            param($method, $body)
+            switch ($method) {
+                'getMe' { return @{ok = $true; result = @{id = $(if ($scenario -eq 'wrongbot') {1} else {8854712189}); username = 'Minh_Anh_cua_Minh_bot'}} }
+                'getWebhookInfo' {
+                    $state.reads++
+                    $url = ''
+                    if ($scenario -eq 'foreignhook' -or ($scenario -eq 'wrongafter' -and $state.reads -gt 1)) { $url = 'https://other.invalid/hidden' }
+                    elseif ($state.sets) { $url = 'https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev/telegram' }
+                    return @{ok = $true; result = @{url = $url; pending_update_count = 2}}
+                }
+                'setWebhook' {
+                    $state.sets++
+                    if ($body.drop_pending_updates -ne $false -or $body.max_connections -ne 1 -or
+                        ($body.allowed_updates -join ',') -ne 'message,callback_query' -or $body.secret_token -ne ('a' * 64)) { throw 'Unsafe registration' }
+                    if ($scenario -eq 'timeout') { return @{ok = $false; code = 'NETWORK_TIMEOUT_OR_RESPONSE'} }
+                    return @{ok = $true; result = $true}
+                }
+                default { throw 'Unexpected method' }
+            }
+        }
+        Register-StagingWebhook $fake {param($line) $state.lines.Add([string]$line)} $(if ($scenario -eq 'badsecret') {'bad'} else {'a' * 64})
+        $output = $state.lines -join "`n"
+        $expected = @{success = 'DA DANG KY'; wrongbot = 'dung bot'; foreignhook = 'dia chi KHAC'; timeout = 'chua xac nhan'; badsecret = 'Secret local'; wrongafter = 'chua xac minh'}[$scenario]
+        if (-not $output.Contains($expected) -or $output.Contains(('a' * 64)) -or $output.Contains('other.invalid')) { throw "Registration test failed: $scenario" }
+        $expectedSets = if ($scenario -in @('wrongbot', 'foreignhook', 'badsecret')) {0} else {1}
+        if ($state.sets -ne $expectedSets) { throw 'Unexpected registration count' }
+    }
+    Write-Host 'PASS: 12 offline scenarios. No network calls.'
     return
 }
 
@@ -94,6 +161,8 @@ $secureToken = $null
 $plainToken = $null
 $client = $null
 $handler = $null
+$webhookSecure = $null
+$webhookPlain = $null
 try {
     Add-Type -AssemblyName System.Net.Http
     $secureToken = Read-Host 'Nhap token bot MOI (an ky tu)' -AsSecureString
@@ -111,7 +180,8 @@ try {
         $content = $null
         $response = $null
         try {
-            if ($method -notin @('getMe', 'getWebhookInfo', 'getUpdates')) { return @{ok = $false; code = 'METHOD_DENIED'} }
+            if ($method -notin @('getMe', 'getWebhookInfo', 'getUpdates') -and
+                -not ($RegisterWebhook -and $method -eq 'setWebhook')) { return @{ok = $false; code = 'METHOD_DENIED'} }
             $content = [System.Net.Http.StringContent]::new(($body | ConvertTo-Json -Compress), [Text.Encoding]::UTF8, 'application/json')
             $response = $client.PostAsync(('https://api.telegram.org/bot' + $plainToken + '/' + $method), $content).GetAwaiter().GetResult()
             if (-not $response.IsSuccessStatusCode) { return @{ok = $false; code = [int]$response.StatusCode} }
@@ -125,13 +195,23 @@ try {
             if ($content) { $content.Dispose() }
         }
     }
-    Invoke-TelegramDiagnostic $request {param($line) Write-Host $line} {
-        $null = Read-Host 'Gui ma tren dien thoai XONG thi nhan Enter o day'
+    if ($RegisterWebhook) {
+        $secretPath = Join-Path (Split-Path -Parent $PSScriptRoot) '.dev.vars.webhook-secret.dpapi'
+        $cipher = (Get-Content -LiteralPath $secretPath -Raw -ErrorAction Stop).Trim()
+        $webhookSecure = ConvertTo-SecureString $cipher -ErrorAction Stop
+        $webhookPlain = [System.Net.NetworkCredential]::new('', $webhookSecure).Password
+        Register-StagingWebhook $request {param($line) Write-Host $line} $webhookPlain
+    } else {
+        Invoke-TelegramDiagnostic $request {param($line) Write-Host $line} {
+            $null = Read-Host 'Gui ma tren dien thoai XONG thi nhan Enter o day'
+        }
     }
 } catch {
     Write-Host 'Khong chay duoc chan doan. Khong chia se token hoac exception chi tiet.'
 } finally {
     $plainToken = $null
+    $webhookPlain = $null
+    if ($webhookSecure) { $webhookSecure.Dispose() }
     if ($secureToken) { $secureToken.Dispose() }
     if ($client) { $client.Dispose() }
     if ($handler) { $handler.Dispose() }
