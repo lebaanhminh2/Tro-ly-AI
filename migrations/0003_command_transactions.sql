@@ -11,6 +11,6 @@ CREATE TABLE transaction_guard (valid INTEGER NOT NULL CHECK(valid=1));
 CREATE TABLE command_audit (owner TEXT NOT NULL, update_id INTEGER NOT NULL, change_count INTEGER NOT NULL, applied INTEGER NOT NULL,
  PRIMARY KEY(owner,update_id), FOREIGN KEY(owner,update_id) REFERENCES command_inbox(owner,update_id));
 ALTER TABLE outbox ADD COLUMN claim_token TEXT;
-/* Old updates cannot safely be replayed across this migration; preserved for inspection. */
+/* Old updates cannot safely be replayed across this migration, preserved for inspection. */
 INSERT INTO command_inbox(owner,update_id,payload,state,created,delivery,result)
  SELECT CAST(chat AS TEXT),id,'{}','done',created,0,NULL FROM updates WHERE chat IS NOT NULL;

@@ -16,9 +16,9 @@ CREATE TABLE updates (id INTEGER PRIMARY KEY, status TEXT NOT NULL, created INTE
 CREATE TRIGGER apply_proposal AFTER UPDATE OF status ON proposals
 WHEN OLD.status='pending' AND NEW.status='accepted'
 BEGIN
-  SELECT CASE WHEN NEW.operation='deadline' AND NOT EXISTS
+  SELECT (CASE WHEN NEW.operation='deadline' AND NOT EXISTS
     (SELECT 1 FROM tasks WHERE id=NEW.task_id AND owner=NEW.owner AND version=NEW.expected_version)
-    THEN RAISE(ABORT,'STALE_PROPOSAL') END;
+    THEN RAISE(ABORT,'STALE_PROPOSAL') END);
   INSERT INTO tasks(id,owner,title,created)
     SELECT NEW.task_id,NEW.owner,NEW.value,unixepoch()*1000 WHERE NEW.operation='capture';
   UPDATE tasks SET deadline=NEW.value,version=version+1
