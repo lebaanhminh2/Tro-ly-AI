@@ -1,0 +1,10 @@
+CREATE TABLE calendar_connections(owner TEXT PRIMARY KEY, refresh_cipher TEXT, revision INTEGER NOT NULL DEFAULT 1, status TEXT NOT NULL, managed_id TEXT);
+CREATE TABLE calendar_oauth(hash TEXT PRIMARY KEY, owner TEXT NOT NULL, revision INTEGER NOT NULL, phase TEXT NOT NULL, browser_hash TEXT, expires INTEGER NOT NULL);
+CREATE TABLE calendars(id TEXT PRIMARY KEY,owner TEXT NOT NULL,external_id TEXT NOT NULL,name TEXT NOT NULL,selected INTEGER NOT NULL DEFAULT 0,managed INTEGER NOT NULL DEFAULT 0,sync_token TEXT,synced_at INTEGER,revision INTEGER NOT NULL DEFAULT 0,UNIQUE(owner,external_id));
+CREATE TABLE calendar_events(calendar_id TEXT NOT NULL REFERENCES calendars(id),external_id TEXT NOT NULL,payload TEXT NOT NULL,PRIMARY KEY(calendar_id,external_id));
+CREATE TABLE calendar_leases(owner TEXT PRIMARY KEY,token TEXT NOT NULL,expires INTEGER NOT NULL);
+CREATE TABLE calendar_proposals(id TEXT PRIMARY KEY,owner TEXT NOT NULL,session_id TEXT NOT NULL,session_version INTEGER NOT NULL,connection_revision INTEGER NOT NULL,start_at INTEGER NOT NULL,end_at INTEGER NOT NULL,expires INTEGER NOT NULL,status TEXT NOT NULL DEFAULT 'pending');
+CREATE TABLE calendar_writes(id TEXT PRIMARY KEY,owner TEXT NOT NULL,session_id TEXT NOT NULL,session_version INTEGER NOT NULL,connection_revision INTEGER NOT NULL,calendar_id TEXT NOT NULL,event_id TEXT NOT NULL UNIQUE,start_at INTEGER NOT NULL,end_at INTEGER NOT NULL,status TEXT NOT NULL DEFAULT 'pending',attempts INTEGER NOT NULL DEFAULT 0,etag TEXT);
+CREATE UNIQUE INDEX one_calendar_write_per_session ON calendar_writes(owner,session_id);
+CREATE INDEX calendar_pending ON calendar_writes(owner,status);
+CREATE TABLE calendar_control(id TEXT PRIMARY KEY,owner TEXT NOT NULL,action TEXT NOT NULL,expires INTEGER NOT NULL,status TEXT NOT NULL DEFAULT 'pending');

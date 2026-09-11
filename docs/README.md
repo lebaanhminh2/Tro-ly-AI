@@ -15,6 +15,7 @@ Bắt đầu với [HANDOFF.md](HANDOFF.md), chỉ mở tiếp phần liên quan
 | [P1_ACCEPTANCE.md](P1_ACCEPTANCE.md) | Kết quả P1 local, bằng chứng giao dịch/recovery và giới hạn |
 | [P2_ACCEPTANCE.md](P2_ACCEPTANCE.md) | Buổi làm, Today, nhắc theo lần hẹn, giờ nghỉ và kiểm thử local |
 | [P3_ACCEPTANCE.md](P3_ACCEPTANCE.md) | Bộ nhớ, hội thoại/context và quota local; giới hạn trước live |
+| [P4_ACCEPTANCE.md](P4_ACCEPTANCE.md) | Calendar local, OAuth/token, sync/write và giới hạn trước pilot |
 | [DATA_DESIGN.md](DATA_DESIGN.md) | Module, model dữ liệu, bộ nhớ, transaction, lịch/nhắc |
 | [UX_FLOWS.md](UX_FLOWS.md) | UI Telegram, onboarding, luồng thành công/lỗi và iPhone |
 | [SECURITY_RELEASE.md](SECURITY_RELEASE.md) | Threats, SEC controls/tests, release và vận hành |

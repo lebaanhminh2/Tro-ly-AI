@@ -20,6 +20,10 @@ Cập nhật: 2026-09-11. Phân biệt prototype, kế hoạch và sản phẩm 
 
 ## Bước tiếp theo
 
+P4 đã hoàn tất bàn giao code/local sau lượt bị ngắt: 40/40 tests mặc định, 25/25 experiments, typecheck/dry-run pass; migration 0007 local đã áp dụng. Xem P4_ACCEPTANCE trước bước tiếp theo: cần review giới hạn Calendar/session-link và cấu hình staging trước pilot, không tự bật live hoặc merge.
+
+P4 được duyệt và triển khai local: Google adapter/OAuth+vault, sync/slots, confirmed write/reconcile; migration 0007. [P4_ACCEPTANCE.md](P4_ACCEPTANCE.md) ghi test và giới hạn. Calendar/AI thật vẫn off; chưa consent/live/deploy. Không tự merge PR.
+
 Review P1–P3: đã sửa phạm vi nghỉ (giữ nhắc ngày sau), xác nhận xóa memory dùng một lần/expiry, phân trang memory và sent_at cho khoảng follow-up. Migration 0006; regression tại tests/integration/review-fixes.test.ts. Không merge/deploy/API thật trong đợt sửa.
 
 Kết quả mới nhất: 36/36 tests mặc định + 25/25 experiments, typecheck/migration 0006 local/Workers dry-run đều pass. Bốn findings đã có regression; không coi đây là audit bảo mật toàn diện.

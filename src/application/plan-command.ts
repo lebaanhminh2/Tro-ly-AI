@@ -4,9 +4,11 @@ import type { Input, Plan, Proposal, Button } from '../domain/work.ts';
 import type { WorkReader } from '../ports/work-store.ts';
 import { sessionCommand } from './session-command.ts';
 import {memoryCommand} from './memory-command.ts';
+import type { CalendarCommands } from '../ports/calendar.ts';
 export type ChatService = (owner: string, text: string, tasks: Awaited<ReturnType<WorkReader['tasks']>>,input?:Input,store?:WorkReader,now?:number) => Promise<string|Plan>;
 
-export async function planCommand(input: Input, store: WorkReader, now: number, chat?: ChatService): Promise<Plan> {
+export async function planCommand(input: Input, store: WorkReader, now: number, chat?: ChatService, calendar?: CalendarCommands): Promise<Plan> {
+  if(calendar){const calendarView=await calendar.command(input);if(calendarView)return {view:calendarView,changes:[]};}
   const memoryPlan=await memoryCommand(input,store,now);if(memoryPlan)return memoryPlan;
   const sessionPlan=await sessionCommand(input,store,now);
   if(sessionPlan)return sessionPlan;
