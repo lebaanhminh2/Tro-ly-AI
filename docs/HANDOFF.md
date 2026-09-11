@@ -20,6 +20,10 @@ Cập nhật: 2026-09-11. Phân biệt prototype, kế hoạch và sản phẩm 
 
 ## Bước tiếp theo
 
+Cập nhật 2026-09-12: đã duyệt nối AI runtime trong worker/env và tests/integration/ai-runtime.test.ts, không live/deploy. Runtime dùng contextualChat + Gemini adapter + quota D1; hướng dẫn và giới hạn tại [P5_RUNTIME.md](P5_RUNTIME.md). Các đoạn P1–P4 bên dưới là lịch sử; sau đợt này tiếp tục chuẩn bị staging trong P5, không mở lại kiểm chứng model.
+
+Nghiệm thu đợt runtime: 43/43 tests mặc định, 25/25 experiments, typecheck và Workers dry-run đạt. Chưa nghiệm thu toàn bộ P5; chưa cloud/pilot.
+
 Đợt sửa review P4 đã được duyệt: hủy nhắc local khi remote đổi/xóa, fencing toàn bộ writer, tách lỗi đọc trước POST khỏi uncertain insert. Thay đổi tại Calendar service và regression tests; không API thật/deploy/merge.
 
 P4 đã hoàn tất bàn giao code/local sau lượt bị ngắt: 40/40 tests mặc định, 25/25 experiments, typecheck/dry-run pass; migration 0007 local đã áp dụng. Xem P4_ACCEPTANCE trước bước tiếp theo: cần review giới hạn Calendar/session-link và cấu hình staging trước pilot, không tự bật live hoặc merge.

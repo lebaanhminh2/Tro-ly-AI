@@ -8,13 +8,26 @@ import { processInbox } from '../application/process-inbox.ts';
 import type { ChatService } from '../application/plan-command.ts';
 import type { Clock } from '../ports/work-store.ts';
 import { queueReminders } from '../adapters/d1/reminders.ts';
-import {expireMemory} from '../adapters/d1/memory.ts';
+import {expireMemory, reserveAi} from '../adapters/d1/memory.ts';
+import {contextualChat} from '../ai/chat.ts';
+import {GeminiTrial} from '../ai/gemini.ts';
 import {CalendarService} from '../adapters/google-calendar/service.ts';
 import {GoogleClient} from '../adapters/google-calendar/client.ts';
 import {GoogleTokenVault} from '../adapters/google-calendar/vault.ts';
 
 export { flushOutbox };
 export function createWorker(chat?: ChatService, transport: typeof fetch = fetch, clock: Clock = { now: Date.now }, calendarOverride?:CalendarService) {
+  const runtimeChat = (env: Env): ChatService | undefined => {
+    if (chat) return chat; // Explicit offline dependency injection; default export has none.
+    if (env.AI_MODE !== 'enabled') return undefined;
+    return contextualChat({generate: (turns, context, ids) => {
+      // One client per reserved call: durable D1 quota, not isolate lifetime, is authoritative.
+      const client = new GeminiTrial({apiKey: env.GEMINI_API_KEY!, model: env.GEMINI_MODEL!,
+        transport: (url, options) => transport(url, {...options, redirect: 'error'}),
+        now: () => clock.now(), timeoutMs: 5000, maxRequests: 1});
+      return client.generate(turns, context, ids);
+    }}, (key, now) => reserveAi(env.DB, 'runtime:gemini', key, now, Number(env.AI_DAILY_LIMIT)));
+  };
   const calendar=(env:Env)=>{
     if(env.CALENDAR_MODE!=='enabled')return undefined;
     if(calendarOverride)return calendarOverride;
@@ -29,7 +42,7 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
       await expireMemory(env.DB,clock.now());
       await recoverInterrupted(env.DB, clock.now()); // Handles only legacy prototype updates and delivery leases.
       for (const owner of await store.pendingOwners()) {
-        if (owner === env.TELEGRAM_USER_ID) await processInbox(store, owner, clock, chat,4,calendarService);
+        if (owner === env.TELEGRAM_USER_ID) await processInbox(store, owner, clock, runtimeChat(env),4,calendarService);
       }
       try{await calendarService?.tick();}catch{/* Error state remains visible via /calendar; never log tokens. */}
       await queueReminders(env.DB,env.TELEGRAM_USER_ID,clock.now());
@@ -83,7 +96,7 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
             JSON.stringify({ method: 'answerCallbackQuery', callback_query_id: input.callbackId }),clock.now()).run();
           await flushOutbox(env, transport, clock.now());
         }
-        await processInbox(store, input.owner, clock, chat,4,calendar(env));
+        await processInbox(store, input.owner, clock, runtimeChat(env),4,calendar(env));
         await flushOutbox(env, transport, clock.now());
         if (env.DELIVERY_MODE === 'outbox' || !isNew) return new Response('OK');
         const result = await store.result(input.owner, input.updateId);
