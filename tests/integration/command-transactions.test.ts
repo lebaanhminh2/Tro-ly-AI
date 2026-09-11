@@ -17,7 +17,7 @@ function createRuntime(path?: string) {
     d1Databases:{DB:'test-db'}, ...(path ? {d1Persist:path} : {}) });
 }
 async function migrate(db: Database & {exec(s:string):Promise<unknown>}) {
-  for (const name of ['0001_initial.sql','0002_delivery.sql','0003_command_transactions.sql','0004_sessions_reminders.sql','0005_memory_conversation.sql'])
+  for (const name of ['0001_initial.sql','0002_delivery.sql','0003_command_transactions.sql','0004_sessions_reminders.sql','0005_memory_conversation.sql','0006_review_fixes.sql'])
     await db.exec(readFileSync(`migrations/${name}`,'utf8').replace(/\r?\n/g,' '));
 }
 

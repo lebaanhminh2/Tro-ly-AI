@@ -5,7 +5,7 @@ Ngày 2026-09-11. Phạm vi local/offline, không gọi thêm Gemini/Telegram ho
 ## Đã triển khai
 
 - `/remember nội dung`: user ra lệnh rõ lưu preference có source; `/mood nội dung`: context hết hạn cuối ngày Việt Nam.
-- `/memory`: xem bộ nhớ, nút quên từng mục; `/forgetall` có xác nhận. Xóa memory đồng thời bỏ history/focus để không đưa thông tin đã quên vào model lần nữa.
+- `/memory`: xem bộ nhớ, 8 mục/trang và nút trước/tiếp; giới hạn UI riêng với context model. `/forgetall` có xác nhận owner-bound dùng một lần, TTL 5 phút, có hủy; nút legacy không còn thực thi. Xóa memory đồng thời bỏ history/focus để không đưa thông tin đã quên vào model lần nữa.
 - `/ai off` và `/ai on` kiểm soát tùy chọn; runtime mặc định vẫn off và không tự lấy key.
 - Nút “Nói về việc này” trong /tasks giữ focus task 15 phút; context builder lấy task đúng owner, memory còn hạn và 4 cặp trao đổi gần nhất.
 - History lưu cùng command transaction, tối đa 7 ngày trong truy vấn; scheduled cleanup xóa history/temporary/focus hết hạn và làm rỗng payload/result inbox đã hoàn tất quá 7 ngày.

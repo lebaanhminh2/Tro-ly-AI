@@ -10,7 +10,7 @@ export function sessionStatements(db:Database,owner:string,c:SessionChange):Stat
     const p=c.preferences;if(p.owner!==owner)throw Error('OWNER_MISMATCH');
     return [q(`INSERT INTO reminder_preferences(owner,quiet_start,quiet_end,pause_until) VALUES(?,?,?,?)
       ON CONFLICT(owner) DO UPDATE SET quiet_start=excluded.quiet_start,quiet_end=excluded.quiet_end,pause_until=excluded.pause_until`,owner,p.quiet_start,p.quiet_end,p.pause_until),
-      ...(p.pause_until>0?[q("UPDATE reminders SET status='cancelled' WHERE owner=? AND status IN ('pending','queued')",owner)]:[])];
+      ...(p.pause_until>0?[q("UPDATE reminders SET status='cancelled' WHERE owner=? AND due<? AND status IN ('pending','queued')",owner,p.pause_until)]:[])];
   }
   const s=c.session;if(s.owner!==owner)throw Error('OWNER_MISMATCH');
   if(c.type==='session-create')return [

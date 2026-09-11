@@ -2,7 +2,8 @@ import type { Input, Task, Proposal, Selection, Plan } from '../domain/work.ts';
 export type Clock = { now(): number };
 export type Lease = { owner: string; token: string; input: Input; attempts: number };
 export interface WorkReader {
-  memories(owner:string,now:number):Promise<import('../domain/memory.ts').Memory[]>;
+  memories(owner:string,now:number,offset?:number,limit?:number):Promise<import('../domain/memory.ts').Memory[]>;
+  memoryConfirmation(owner:string,id:string):Promise<import('../domain/memory.ts').MemoryConfirmation|null>;
   history(owner:string,now:number):Promise<import('../domain/memory.ts').ConversationTurn[]>;
   focus(owner:string,now:number):Promise<string|null>;
   aiEnabled(owner:string):Promise<boolean>;

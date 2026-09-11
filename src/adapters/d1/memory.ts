@@ -7,8 +7,17 @@ export function memoryStatements(db:Database,owner:string,c:MemoryChange){
   const m=c.memory;if(m.owner!==owner)throw Error('OWNER_MISMATCH');
   return [q('INSERT INTO memories(id,owner,content,kind,source,created,expires) VALUES(?,?,?,?,?,?,?)',m.id,owner,m.content,m.kind,m.source,m.created,m.expires)];
  }
+ if(c.type==='memory-confirm'){
+  const p=c.confirmation;if(p.owner!==owner)throw Error('OWNER_MISMATCH');
+  return [q("UPDATE memory_confirmations SET status='rejected' WHERE owner=? AND status='pending'",owner),
+    q('INSERT INTO memory_confirmations(owner,id,expires) VALUES(?,?,?)',owner,p.id,p.expires)];
+ }
  if(c.owner!==owner)throw Error('OWNER_MISMATCH');
- if(c.type==='forget')return [c.id===null?q('DELETE FROM memories WHERE owner=?',owner):q('DELETE FROM memories WHERE owner=? AND id=?',owner,c.id),
+ if(c.type==='memory-resolve')return [
+  q("INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM memory_confirmations WHERE owner=? AND id=? AND status='pending' AND expires>?) THEN 1 ELSE 0 END",owner,c.id,c.now),
+  q('UPDATE memory_confirmations SET status=? WHERE owner=? AND id=?',c.accept?'accepted':'rejected',owner,c.id),
+  ...(c.accept?[q('DELETE FROM memories WHERE owner=?',owner),q('DELETE FROM conversation_turns WHERE owner=?',owner),q('DELETE FROM chat_focus WHERE owner=?',owner),q("UPDATE command_inbox SET payload='{}',result=NULL WHERE owner=? AND state='done'",owner)]:[]),q('DELETE FROM transaction_guard')];
+ if(c.type==='forget')return [q('DELETE FROM memories WHERE owner=? AND id=?',owner,c.id),
   q('DELETE FROM conversation_turns WHERE owner=?',owner),q('DELETE FROM chat_focus WHERE owner=?',owner),
   q("UPDATE command_inbox SET payload='{}',result=NULL WHERE owner=? AND state='done'",owner)];
  if(c.type==='ai-enabled')return [q('INSERT INTO memory_settings(owner,enabled) VALUES(?,?) ON CONFLICT(owner) DO UPDATE SET enabled=excluded.enabled',owner,c.enabled?1:0)];

@@ -23,9 +23,9 @@ export async function queueReminders(db:Database,owner:string,now:number){
       await query(db,"UPDATE reminders SET status='cancelled' WHERE id=? AND status='pending'",r.id).run();continue;
     }
     if(r.ordinal===2){
-      const previous=await query(db,"SELECT state,available FROM outbox WHERE reminder_id=?",`${r.session_id}:${r.generation}:1`).first<{state:string;available:number}>();
-      if(!previous||previous.state!=='sent')continue;
-      if(now<previous.available+900000)continue;
+      const previous=await query(db,"SELECT state,sent_at FROM outbox WHERE reminder_id=?",`${r.session_id}:${r.generation}:1`).first<{state:string;sent_at:number|null}>();
+      if(!previous||previous.state!=='sent'||previous.sent_at===null)continue;
+      if(now<previous.sent_at+900000)continue;
     }
     const s=await query(db,'SELECT s.*,t.title FROM sessions s JOIN tasks t ON t.id=s.task_id AND t.owner=s.owner WHERE s.id=? AND s.owner=?',r.session_id,owner).first<Session&{title:string}>();
     if(!s)continue;

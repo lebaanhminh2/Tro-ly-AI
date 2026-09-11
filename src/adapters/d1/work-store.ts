@@ -10,7 +10,11 @@ import type {Memory,ConversationTurn} from '../../domain/memory.ts';
 export class D1WorkStore implements WorkStore {
   private db: Database;
   constructor(db: Database) { this.db = db; }
-  async memories(owner:string,now:number){return (await query(this.db,'SELECT * FROM memories WHERE owner=? AND (expires IS NULL OR expires>?) ORDER BY created DESC LIMIT 30',owner,now).all<Memory>()).results;}
+  async memories(owner:string,now:number,offset=0,limit=30){
+    if(!Number.isSafeInteger(offset)||offset<0||!Number.isInteger(limit)||limit<1||limit>30)throw Error('INVALID_PAGE');
+    return (await query(this.db,'SELECT * FROM memories WHERE owner=? AND (expires IS NULL OR expires>?) ORDER BY created DESC,id DESC LIMIT ? OFFSET ?',owner,now,limit,offset).all<Memory>()).results;
+  }
+  memoryConfirmation(owner:string,id:string){return query(this.db,'SELECT * FROM memory_confirmations WHERE owner=? AND id=?',owner,id).first<import('../../domain/memory.ts').MemoryConfirmation>();}
   async history(owner:string,now:number){return (await query(this.db,'SELECT * FROM conversation_turns WHERE owner=? AND expires>? ORDER BY command_id DESC LIMIT 4',owner,now).all<ConversationTurn>()).results.reverse();}
   async focus(owner:string,now:number){return (await query(this.db,'SELECT task_id FROM chat_focus WHERE owner=? AND expires>?',owner,now).first<{task_id:string}>())?.task_id??null;}
   async aiEnabled(owner:string){return (await query(this.db,'SELECT enabled FROM memory_settings WHERE owner=?',owner).first<{enabled:number}>())?.enabled!==0;}
@@ -55,7 +59,7 @@ export class D1WorkStore implements WorkStore {
       EXISTS(SELECT 1 FROM owner_leases WHERE owner=? AND token=? AND expires>?) AND
       EXISTS(SELECT 1 FROM command_inbox WHERE owner=? AND update_id=? AND state='pending') THEN 1 ELSE 0 END`, owner, token, now, owner, input.updateId)];
     for (const change of plan.changes) {
-      if(change.type==='remember'||change.type==='forget'||change.type==='focus'||change.type==='ai-enabled'){
+      if(change.type==='remember'||change.type==='forget'||change.type==='focus'||change.type==='ai-enabled'||change.type==='memory-confirm'||change.type==='memory-resolve'){
         statements.push(...memoryStatements(this.db,owner,change));
       }else if (change.type==='session-input'||change.type==='session-create'||change.type==='session-action'||change.type==='preferences') {
         statements.push(...sessionStatements(this.db,owner,change));

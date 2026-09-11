@@ -23,7 +23,7 @@ test('session lifecycle, two reminders per appointment, no daily cap, snooze, re
   let mf=runtime();
   try{
     let db=await mf.getD1Database('DB') as unknown as Database&{exec(s:string):Promise<unknown>};
-    for(const f of ['0001_initial.sql','0002_delivery.sql','0003_command_transactions.sql','0004_sessions_reminders.sql','0005_memory_conversation.sql'])await db.exec(readFileSync(`migrations/${f}`,'utf8').replace(/\r?\n/g,' '));
+    for(const f of ['0001_initial.sql','0002_delivery.sql','0003_command_transactions.sql','0004_sessions_reminders.sql','0005_memory_conversation.sql','0006_review_fixes.sql'])await db.exec(readFileSync(`migrations/${f}`,'utf8').replace(/\r?\n/g,' '));
     let store=new D1WorkStore(db),now=Date.parse('2026-09-11T08:00:00+07:00'),id=0;
     const run=async(text:string,callback=false)=>{
       const input={owner:'123',chat:123,updateId:++id,...(callback?{callback:text}:{text})};
@@ -43,18 +43,18 @@ test('session lifecycle, two reminders per appointment, no daily cap, snooze, re
     for(const hour of [9,10,11]){
       now=Date.parse(`2026-09-11T${String(hour).padStart(2,'0')}:00:00+07:00`);
       await Promise.all([queueReminders(db,'123',now),queueReminders(db,'123',now)]);
-      await flushOutbox(env(),transport,now);
-      now+=900000;await queueReminders(db,'123',now);await flushOutbox(env(),transport,now);
-      await queueReminders(db,'123',now+60000);await flushOutbox(env(),transport,now+60000);
+      await flushOutbox(env(),transport,now,()=>0);
+      now+=900000;await queueReminders(db,'123',now);await flushOutbox(env(),transport,now,()=>0);
+      await queueReminders(db,'123',now+60000);await flushOutbox(env(),transport,now+60000,()=>0);
     }
     assert.equal(sent.length,6); // Three appointments each receive two, no daily cap.
     assert.equal((await store.task('123','t123_1'))!.version,1);
     await run(`s:snooze:${third}:2`,true);
     const snoozed=(await store.session('123',third))!;assert.equal(snoozed.generation,2);
-    now=snoozed.start_at;await queueReminders(db,'123',now);await flushOutbox(env(),transport,now);
+    now=snoozed.start_at;await queueReminders(db,'123',now);await flushOutbox(env(),transport,now,()=>0);
     assert.equal(sent.length,7);
     await run('tớ nghe rồi'); // Any reply after first reminder suppresses its follow-up.
-    now+=900000;await queueReminders(db,'123',now);await flushOutbox(env(),transport,now);assert.equal(sent.length,7);
+    now+=900000;await queueReminders(db,'123',now);await flushOutbox(env(),transport,now,()=>0);assert.equal(sent.length,7);
     await run(`s:start:${third}:${snoozed.version}`,true);
     const running=(await store.session('123',third))!;assert.equal(running.status,'running');
     now+=120000;await run(`s:pause:${third}:${running.version}`,true);
@@ -64,19 +64,19 @@ test('session lifecycle, two reminders per appointment, no daily cap, snooze, re
     assert.match((await run('/today'))!.text,/Đã kết thúc buổi/);
     await run('/quiet 12:00 13:00');
     const fourth=await make('11/09/2026 12:30');
-    now=Date.parse('2026-09-11T12:30:00+07:00');await queueReminders(db,'123',now);await flushOutbox(env(),transport,now);assert.equal(sent.length,7);
+    now=Date.parse('2026-09-11T12:30:00+07:00');await queueReminders(db,'123',now);await flushOutbox(env(),transport,now,()=>0);assert.equal(sent.length,7);
     await run('/rest');assert.ok((await store.preferences('123'))!.pause_until>now);
     await run('/resume');await run('/quiet 22:00 07:00');
     const stale=await make('11/09/2026 14:00');
     now=Date.parse('2026-09-11T14:00:00+07:00');await queueReminders(db,'123',now);
     await run(`s:snooze:${stale}:2`,true); // Old first reminder is queued but must never send.
-    await flushOutbox(env(),transport,now);assert.equal(sent.length,7);
+    await flushOutbox(env(),transport,now,()=>0);assert.equal(sent.length,7);
     now+=900000;await queueReminders(db,'123',now);
     let limited=0;
-    await flushOutbox(env(),async()=>{limited++;return Response.json({ok:false,error_code:429,parameters:{retry_after:60}},{status:429});},now);
+    await flushOutbox(env(),async()=>{limited++;return Response.json({ok:false,error_code:429,parameters:{retry_after:60}},{status:429});},now,()=>0);
     assert.equal(limited,1);
-    await run('/rest');now+=60000;await flushOutbox(env(),transport,now);assert.equal(sent.length,7);
-    now=Date.parse('2026-09-12T09:00:00+07:00');await queueReminders(db,'123',now);await flushOutbox(env(),transport,now);
+    await run('/rest');now+=60000;await flushOutbox(env(),transport,now,()=>0);assert.equal(sent.length,7);
+    now=Date.parse('2026-09-12T09:00:00+07:00');await queueReminders(db,'123',now);await flushOutbox(env(),transport,now,()=>0);
     assert.equal(sent.length,7); // No catch-up spam on the next day.
     await mf.dispose();mf=runtime();db=await mf.getD1Database('DB') as unknown as typeof db;store=new D1WorkStore(db);
     assert.equal((await store.session('123',third))!.spent_ms,120000);

@@ -22,7 +22,9 @@ Session/preferences/job thay đổi cùng transaction command P1. Snooze tăng g
 Dispatcher query jobs đến hạn có index/lô hữu hạn. Outbox gửi phải kiểm tra lại generation/status/quiet/pause trước và sau claim, kể cả retry 429. Không gọi AI để quyết định nhắc.
 Follow-up chỉ sau primary được xác nhận sent và cách ít nhất 15 phút; primary uncertain/failed không kích hoạt follow-up. Primary trễ có thể khiến follow-up không còn phù hợp khung buổi, khi đó bỏ, không dồn.
 Phản hồi của user sau primary hủy các follow-up đang chờ; khi không biết user đang trả lời buổi nào, v1 chọn giảm làm phiền: hủy các follow-up outstanding của owner, không hủy lần hẹn tương lai chưa nhắc chính.
-Rest hủy pending/queued reminders hiện tại; resume không hồi sinh các job bị hủy. Muốn hẹn lại dùng snooze/lên buổi mới.
+Rest chỉ hủy pending/queued reminders có giờ đến hạn trước lúc hết nghỉ; lịch nhắc những ngày sau được giữ. Resume không hồi sinh các job đã hủy trong khoảng nghỉ; muốn hẹn lại dùng snooze/lên buổi mới.
+
+Review fix: outbox lưu `sent_at` khi provider xác nhận thành công; follow-up cách ít nhất 15 phút từ mốc này, không dùng giờ tạo job/available. Bản ghi sent cũ không có sent_at không được dùng để đoán thời điểm follow-up.
 
 ## Kiểm thử
 

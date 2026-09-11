@@ -20,6 +20,10 @@ Cập nhật: 2026-09-11. Phân biệt prototype, kế hoạch và sản phẩm 
 
 ## Bước tiếp theo
 
+Review P1–P3: đã sửa phạm vi nghỉ (giữ nhắc ngày sau), xác nhận xóa memory dùng một lần/expiry, phân trang memory và sent_at cho khoảng follow-up. Migration 0006; regression tại tests/integration/review-fixes.test.ts. Không merge/deploy/API thật trong đợt sửa.
+
+Kết quả mới nhất: 36/36 tests mặc định + 25/25 experiments, typecheck/migration 0006 local/Workers dry-run đều pass. Bốn findings đã có regression; không coi đây là audit bảo mật toàn diện.
+
 GitHub: [PR #1](https://github.com/lebaanhminh2/Tro-ly-AI/pull/1), base main=checkpoint f37233c, head review/p1-p3. Nhánh làm việc review/p1-p3, chưa merge. Kết quả P3: 35 tests + 25 experiments, typecheck/migration/dry-run pass. Tiếp theo review PR hoặc trình P4, không tự gọi AI thật.
 
 P3 được duyệt và triển khai local: memory/history/focus/expiry, AI toggle, contextual adapter và quota D1. Xem [P3_ACCEPTANCE.md](P3_ACCEPTANCE.md). Không gọi API AI thật thêm. Người dùng đã yêu cầu xử lý push/PR GitHub; được phép đưa code đã scan lên remote và mở PR, không tự merge.

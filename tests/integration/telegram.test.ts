@@ -21,6 +21,7 @@ test('Telegram webhook and D1: complete flow, duplicate, owner, stale, expiry, r
     await d1.exec(readFileSync('migrations/0003_command_transactions.sql', 'utf8').replace(/\r?\n/g, ' '));
     await d1.exec(readFileSync('migrations/0004_sessions_reminders.sql', 'utf8').replace(/\r?\n/g, ' '));
     await d1.exec(readFileSync('migrations/0005_memory_conversation.sql', 'utf8').replace(/\r?\n/g, ' '));
+    await d1.exec(readFileSync('migrations/0006_review_fixes.sql', 'utf8').replace(/\r?\n/g, ' '));
     const db = d1 as unknown as Database;
     const secret = 'synthetic-webhook-secret-12345678';
     const env: Env = { DB: db, TELEGRAM_USER_ID: '123456', TELEGRAM_WEBHOOK_SECRET: secret, AI_MODE: 'off' };
@@ -117,7 +118,7 @@ test('outbox persisted replies, callback ack, retry cap, restart recovery and co
   const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
   try {
     const db=await mf.getD1Database('DB') as unknown as Database & {exec(sql:string):Promise<unknown>};
-    for(const file of ['0001_initial.sql','0002_delivery.sql','0003_command_transactions.sql','0004_sessions_reminders.sql','0005_memory_conversation.sql']) await db.exec(readFileSync(`migrations/${file}`,'utf8').replace(/\r?\n/g,' '));
+    for(const file of ['0001_initial.sql','0002_delivery.sql','0003_command_transactions.sql','0004_sessions_reminders.sql','0005_memory_conversation.sql','0006_review_fixes.sql']) await db.exec(readFileSync(`migrations/${file}`,'utf8').replace(/\r?\n/g,' '));
     const env:Env={DB:db,TELEGRAM_USER_ID:'123',TELEGRAM_WEBHOOK_SECRET:'synthetic-secret-long-enough',DELIVERY_MODE:'outbox',TELEGRAM_BOT_TOKEN:'123:fake'};
     const calls:string[]=[];
     const transport:typeof fetch=async(url)=>{calls.push(String(url).split('/').at(-1)!); return Response.json({ok:true,result:String(url).endsWith('answerCallbackQuery')?true:{message_id:99}});};
@@ -135,13 +136,13 @@ test('outbox persisted replies, callback ack, retry cap, restart recovery and co
     await db.prepare("INSERT INTO updates(id,status,created,chat) VALUES(3,'processing',?,123)").bind(now-61000).run();
     await recoverInterrupted(db,now);
     assert.equal((await db.prepare('SELECT status FROM updates WHERE id=3').first<any>()).status,'interrupted');
-    await Promise.all([flushOutbox(env,transport,now),flushOutbox(env,transport,now)]);
+    await Promise.all([flushOutbox(env,transport,now,()=>0),flushOutbox(env,transport,now,()=>0)]);
     assert.equal(calls.filter(x=>x==='sendMessage').length,3);
     await db.prepare("INSERT INTO outbox(id,payload,available) VALUES('retry',?,?)").bind(JSON.stringify({method:'sendMessage',chat_id:123,text:'rate limited'}),now).run();
     let retries=0;
     const limited:typeof fetch=async()=>{retries++; return Response.json({ok:false,error_code:429,parameters:{retry_after:10}},{status:429});};
-    await flushOutbox(env,limited,now); await flushOutbox(env,limited,now+9999); assert.equal(retries,1);
-    await flushOutbox(env,limited,now+10000); await flushOutbox(env,limited,now+20000);
+    await flushOutbox(env,limited,now,()=>0); await flushOutbox(env,limited,now+9999,()=>0); assert.equal(retries,1);
+    await flushOutbox(env,limited,now+10000,()=>0); await flushOutbox(env,limited,now+20000,()=>0);
     assert.equal((await db.prepare("SELECT state FROM outbox WHERE id='retry'").first<any>()).state,'failed');
     await db.prepare("INSERT INTO outbox(id,payload,state,available,lease) VALUES('crashed','{}','sending',?,?)").bind(now,now-1).run();
     await createWorker(undefined,transport).scheduled({},env);
