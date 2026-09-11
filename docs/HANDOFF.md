@@ -20,6 +20,8 @@ Cập nhật: 2026-09-11. Phân biệt prototype, kế hoạch và sản phẩm 
 
 ## Bước tiếp theo
 
+Cloud setup 2026-09-12 (được duyệt): Wrangler đăng nhập thành công, một account; đã tạo D1 `assistant-staging` region APAC và cập nhật UUID staging trong wrangler.jsonc. Chưa áp migrations remote, chưa deploy/secrets/webhook, AI/Calendar vẫn off. Tiếp theo cần duyệt migrations và deploy staging ban đầu; không tạo DB lần nữa.
+
 Cập nhật staging 2026-09-12: đã chuẩn bị env staging riêng trong wrangler, cron mỗi phút/outbox, flags off, UUID placeholder; scripts check/deploy/migration có guard placeholder trước remote. Hướng dẫn tại [STAGING_SETUP.md](STAGING_SETUP.md). 46/46 tests chính + 25/25 experiments đạt, typecheck và dry-run local/staging đạt; kiểm tra readiness cố ý từ chối placeholder (exit 1). Chưa tạo cloud resource, đăng ký webhook hay gọi API provider thật. Tiếp theo hỏi tình trạng Cloudflare/bot và xin duyệt thao tác cloud với đích cụ thể; không tự deploy.
 
 Cập nhật 2026-09-12: đã duyệt nối AI runtime trong worker/env và tests/integration/ai-runtime.test.ts, không live/deploy. Runtime dùng contextualChat + Gemini adapter + quota D1; hướng dẫn và giới hạn tại [P5_RUNTIME.md](P5_RUNTIME.md). Các đoạn P1–P4 bên dưới là lịch sử; sau đợt này tiếp tục chuẩn bị staging trong P5, không mở lại kiểm chứng model.

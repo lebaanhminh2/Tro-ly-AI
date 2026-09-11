@@ -2,6 +2,8 @@
 
 Ngày 2026-09-12. **Hiện mới chuẩn bị local, chưa deploy.** Không cần bật máy cá nhân sau khi cloud chạy; vẫn phải kiểm tra nhắc thực tế trên iPhone.
 
+Cập nhật: đã được duyệt tạo D1 `assistant-staging` trên account đăng nhập, region APAC; UUID thật đã nằm trong cấu hình. Chưa migrations remote/deploy/secrets/webhook. Bảng dưới mô tả cấu hình mẫu ban đầu; không tạo lại database ở bước 4.2.
+
 ## 1. Bản đã chuẩn bị
 
 | Local | Staging |

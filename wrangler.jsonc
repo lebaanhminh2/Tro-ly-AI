@@ -20,7 +20,7 @@
       "d1_databases": [{
         "binding": "DB",
         "database_name": "assistant-staging",
-        "database_id": "11111111-1111-1111-1111-111111111111",
+        "database_id": "5457c401-45d9-4b19-b76e-0eceec67a223",
         "migrations_dir": "migrations"
       }]
     }
