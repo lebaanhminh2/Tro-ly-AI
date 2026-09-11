@@ -5,7 +5,7 @@ import { incoming, message, deliver } from './telegram.ts';
 import type { Incoming } from './telegram.ts';
 import { listTasks, getTask } from './tasks.ts';
 import { propose, resolveProposal } from './proposals.ts';
-import { deadlineValue } from './ai/trial-flow.ts';
+import { deadlineValue } from './domain/time.ts';
 import type { Chat } from './ai/chat.ts';
 
 async function handle(input: Incoming, env: Env, now: number, chatService?: Chat) {

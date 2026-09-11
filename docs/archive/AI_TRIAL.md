@@ -1,12 +1,14 @@
 # Thử nghiệm AI đầu tiên
 
+> Archive: lịch sử thử nghiệm, không phải kế hoạch thực hiện hiện tại. Xem [kế hoạch chính](../DELIVERY_PLAN.md).
+
 Cập nhật: 2026-09-11. Đã xây, kiểm thử offline và chạy đúng một request Gemini thật bằng dữ liệu giả theo phê duyệt.
 
 ## Mục đích và phạm vi
 
 Kiểm tra ứng viên Gemini có đủ tốt cho persona và hiểu yêu cầu trước khi xây tích hợp hoàn chỉnh. Chạy bằng dữ liệu giả; không kết nối Telegram/Google Calendar thật, không bật billing. Công cụ thử trên máy phát triển không phải yêu cầu bật máy để vận hành bot.
 
-Nguồn hành vi: [PRODUCT_BRIEF.md](PRODUCT_BRIEF.md). Quota/quyền riêng tư: [DECISIONS.md](DECISIONS.md). Không lấy tính năng trong DESIGN_CANDIDATES làm yêu cầu đã chốt.
+Nguồn hành vi: [PRODUCT_BRIEF.md](../PRODUCT_BRIEF.md). Quota/quyền riêng tư: [DECISIONS.md](../DECISIONS.md). Không lấy tính năng trong DESIGN_CANDIDATES làm yêu cầu đã chốt.
 
 ## Trình tự
 
@@ -53,7 +55,7 @@ Nguồn hành vi: [PRODUCT_BRIEF.md](PRODUCT_BRIEF.md). Quota/quyền riêng tư
 - Revision offline `trial-0.4`: **47/47 test**, typecheck và `npm.cmd run try:ai -- --flow` pass. Không gọi Gemini. `trial-flow.ts` lưu dữ liệu giả trong bộ nhớ; capture cần xác nhận, chọn task/field bằng API UI giả, thiếu ngày giờ thì hỏi, đầy đủ thì đề xuất và xác nhận mới commit.
 - Kiểm tra thêm: proposal hết hạn 5 phút, sai owner, version cũ, bấm lặp, từ chối/hủy chọn, ngày không tồn tại/quá khứ. Ngày chỉ hỗ trợ `DD/MM/YYYY HH:mm`, UTC+7; không có parser ngôn ngữ tự nhiên hoặc lưu bền qua restart.
 - Đây là nhánh thao tác có scope từ UI giả, KHÔNG tuyên bố đã xử lý trọn vẹn yêu cầu đổi hạn bằng chat tự do. `policy.ts` vẫn chặn draft update chưa validate; `TrialFlow` xử lý nhánh ngày rõ riêng. Adapter/schema cũ giữ nguyên để tránh đổi giao thức chưa cần thiết; prompt thêm ví dụ khác test, chưa live-validate.
-- Revision offline `trial-0.3`: **44/44 test**, typecheck và mock demo pass; không có API request mới. Fixture riêng tại `tests/ai-cases.ts`, không còn session mồ côi và lịch học ghi rõ owner.
+- Revision offline `trial-0.3`: **44/44 test**, typecheck và mock demo pass; không có API request mới. Fixture riêng tại `experiments/ai-trial/ai-cases.ts`, không còn session mồ côi và lịch học ghi rõ owner.
 - `src/ai/policy.ts` giữ draft AI là đầu vào không tin cậy. Capture có title trích đúng mới được hiện xác nhận; cập nhật sai owner/type, bằng chứng cũ hoặc thiếu phạm vi được chặn, lời nói draft không được chuyển thẳng ra người dùng.
 - Giới hạn hiện tại: chưa có typed validation ngày giờ/progress, nên ngay cả scope UI đúng cũng chưa cho proposal cập nhật. Đây là hàng rào bảo thủ, chưa phải nghiệp vụ hoàn chỉnh. Policy không hiểu câu tự nhiên; nếu model chọn sai proposal cho “mai làm hết” sẽ hỏi lại, chưa đạt UX chat mong muốn. Chat không có draft vẫn cần đánh giá lời nói thủ công.
 - Bộ đếm dùng lock file bao quanh read/reserve/write; lock sót sau crash cần kiểm tra thủ công, không tự xóa. Đường dẫn live cố định theo repo, báo cáo mới có ID riêng không đè báo cáo cũ. Live revision này bị khóa rõ ràng tới khi có chiến dịch mới được duyệt; hạn mức cũ vẫn 7/7.

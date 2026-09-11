@@ -16,10 +16,10 @@ Bắt đầu với [HANDOFF.md](HANDOFF.md), chỉ mở tiếp phần liên quan
 | [UX_FLOWS.md](UX_FLOWS.md) | UI Telegram, onboarding, luồng thành công/lỗi và iPhone |
 | [SECURITY_RELEASE.md](SECURITY_RELEASE.md) | Threats, SEC controls/tests, release và vận hành |
 | [VIBE_WORKFLOW.md](VIBE_WORKFLOW.md) | Hướng dẫn người dùng, prompt giao việc và prompt sản phẩm dự kiến |
-| [ARCHITECTURE_PLAN.md](ARCHITECTURE_PLAN.md) | Đề xuất kiến trúc/MVP/cổng kiểm chứng/mốc triển khai chờ duyệt |
+| [ARCHITECTURE_PLAN.md](archive/ARCHITECTURE_PLAN.md) | Đề xuất kiến trúc/MVP/cổng kiểm chứng/mốc triển khai chờ duyệt |
 | [PRODUCT_BRIEF.md](PRODUCT_BRIEF.md) | Bối cảnh, persona, nguyên tắc và phạm vi sản phẩm |
 | [DECISIONS.md](DECISIONS.md) | Hướng kỹ thuật, bằng chứng, rủi ro và phương án cũ |
-| [AI_TRIAL.md](AI_TRIAL.md) | Bộ tình huống, giới hạn và tiêu chí thử AI đầu tiên |
+| [AI_TRIAL.md](archive/AI_TRIAL.md) | Bộ tình huống, giới hạn và tiêu chí thử AI đầu tiên |
 | [MODEL_VERDICT.md](MODEL_VERDICT.md) | Kết luận model mới nhất, bằng chứng và ngân sách đã dùng; đọc trước khi chọn AI |
 | [LOCAL_BOT.md](LOCAL_BOT.md) | Luồng Telegram/D1 local, cách chạy và giới hạn trước triển khai |
 | [DESIGN_CANDIDATES.md](DESIGN_CANDIDATES.md) | Ý tưởng chưa duyệt, mâu thuẫn, nguồn spec cũ; không đọc mặc định |

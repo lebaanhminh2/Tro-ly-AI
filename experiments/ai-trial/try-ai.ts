@@ -1,9 +1,9 @@
-import { GeminiTrial } from '../src/ai/gemini.ts';
+import { GeminiTrial } from '../../src/ai/gemini.ts';
 import { mkdirSync, readFileSync, renameSync, writeFileSync, openSync, closeSync, unlinkSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
-import { decide } from '../src/ai/policy.ts';
-import { TrialFlow } from '../src/ai/trial-flow.ts';
-import { syntheticInput as cleanInput, cases } from '../tests/ai-cases.ts';
+import { decide } from '../../src/ai/policy.ts';
+import { TrialFlow } from './trial-flow.ts';
+import { syntheticInput as cleanInput, cases } from './ai-cases.ts';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -90,7 +90,7 @@ async function run() {
       if (!args.includes('--confirm-synthetic-data') || process.env.GEMINI_FREE_TIER_VERIFIED !== 'true')
         throw new Error('Live trial requires explicit synthetic-data consent and verified free tier.');
       // Anchor to repository, never cwd or user-supplied env paths.
-      const resultsDir = fileURLToPath(new URL('../trial-results/', import.meta.url));
+      const resultsDir = fileURLToPath(new URL('../../trial-results/', import.meta.url));
       const budgetPath = resolve(resultsDir, 'persona-budget.json');
       const reportPath = resolve(resultsDir, `persona-${Date.now()}-${randomUUID()}.json`);
       // No live calls authorized for this revision; prior campaign remains untouched.

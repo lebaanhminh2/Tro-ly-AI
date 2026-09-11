@@ -2,15 +2,15 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { Miniflare } from 'miniflare';
-import worker, { createWorker, flushOutbox } from '../src/index.ts';
-import { deliver } from '../src/telegram.ts';
-import { recoverInterrupted } from '../src/db.ts';
-import { trialChat } from '../src/ai/chat.ts';
-import { GeminiTrial } from '../src/ai/gemini.ts';
-import type { Env } from '../src/config.ts';
-import type { Database } from '../src/db.ts';
-import { getTask, listTasks } from '../src/tasks.ts';
-import { propose, resolveProposal } from '../src/proposals.ts';
+import worker, { createWorker, flushOutbox } from '../../src/index.ts';
+import { deliver } from '../../src/telegram.ts';
+import { recoverInterrupted } from '../../src/db.ts';
+import { trialChat } from '../../src/ai/chat.ts';
+import { GeminiTrial } from '../../src/ai/gemini.ts';
+import type { Env } from '../../src/config.ts';
+import type { Database } from '../../src/db.ts';
+import { getTask, listTasks } from '../../src/tasks.ts';
+import { propose, resolveProposal } from '../../src/proposals.ts';
 
 test('Telegram webhook and D1: complete flow, duplicate, owner, stale, expiry, rollback', async () => {
   const mf = new Miniflare({ modules: true, script: 'export default { fetch() { return new Response("test"); } }', d1Databases: ['DB'] });

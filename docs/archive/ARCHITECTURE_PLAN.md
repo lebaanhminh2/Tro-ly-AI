@@ -1,12 +1,14 @@
 # Kiến trúc và kế hoạch bản đầu
 
-**Đã được thay thế về lịch mốc và ngân sách kiểm chứng bởi [DELIVERY_PLAN.md](DELIVERY_PLAN.md).** Giữ làm tham khảo lịch sử; không chạy lại G1 bên dưới. MODEL_VERDICT đã kết thúc việc chọn model. Chi tiết thực hiện mới nằm ở DATA_DESIGN, UX_FLOWS, SECURITY_RELEASE, VIBE_WORKFLOW.
+> Archive: lịch sử thử nghiệm, không phải kế hoạch thực hiện hiện tại. Xem [kế hoạch chính](../DELIVERY_PLAN.md).
+
+**Đã được thay thế về lịch mốc và ngân sách kiểm chứng bởi [DELIVERY_PLAN.md](../DELIVERY_PLAN.md).** Giữ làm tham khảo lịch sử; không chạy lại G1 bên dưới. MODEL_VERDICT đã kết thúc việc chọn model. Chi tiết thực hiện mới nằm ở DATA_DESIGN, UX_FLOWS, SECURITY_RELEASE, VIBE_WORKFLOW.
 
 Ngày: 2026-09-11. **Đề xuất chờ duyệt**, không phải quyền code/API/deploy. Thay thế hướng tiếp tục mở rộng prototype ở các ghi chú cũ.
 
 ## 1. Sản phẩm và điều kiện hoàn thành
 
-Một người dùng trên Telegram, iPhone XS Max/iOS 18.3.2. Mục tiêu và persona giữ theo [PRODUCT_BRIEF.md](PRODUCT_BRIEF.md), không chép lại.
+Một người dùng trên Telegram, iPhone XS Max/iOS 18.3.2. Mục tiêu và persona giữ theo [PRODUCT_BRIEF.md](../PRODUCT_BRIEF.md), không chép lại.
 
 MVP phải hoàn thành vòng: nói việc → giữ thông tin → chọn việc hôm nay → xác nhận buổi làm → nhắc → ghi nhận kết quả → điều chỉnh.
 
@@ -38,7 +40,7 @@ Workers phù hợp vì tác vụ chủ yếu chờ I/O, nhưng Free có 10 ms CP
 
 Không chọn VM vì chưa có nhu cầu tiến trình liên tục; không thêm database thứ hai, framework agent, vector DB hoặc queue service trước khi có bằng chứng cần. Nếu Workers/D1 không vượt cổng kiểm chứng, dừng và so sánh phương án khác; không đổi công nghệ âm thầm.
 
-Chi phí mục tiêu: 0 tiền dịch vụ trong hạn mức; không cam kết miễn phí mãi. Quota quan sát và các ứng viên cũ nằm tại [DECISIONS.md](DECISIONS.md). Không tự bật billing; nếu AI Free không phù hợp dữ liệu thì phải trình lựa chọn chi phí/riêng tư cho người dùng.
+Chi phí mục tiêu: 0 tiền dịch vụ trong hạn mức; không cam kết miễn phí mãi. Quota quan sát và các ứng viên cũ nằm tại [DECISIONS.md](../DECISIONS.md). Không tự bật billing; nếu AI Free không phù hợp dữ liệu thì phải trình lựa chọn chi phí/riêng tư cho người dùng.
 
 ## 3. Trách nhiệm và luồng dữ liệu
 
@@ -103,7 +105,7 @@ Không pass G1 sau ngân sách thì so sánh model khác hoặc giảm phạm vi
 | M3 — lịch và pilot | OAuth/sync/Assistant Plan + G3, sau đó G4; chỉ lúc này gọi là MVP hoàn tất |
 
 Ứng viên reuse: kiểu dữ liệu task/proposal, validator ngày rõ, adapter có timeout, tests SQL, webhook allowlist, lock/outbox patterns. Reuse không đồng nghĩa đã production-ready.
-Phải review/refactor: inbox/outbox atomicity, hội thoại đồng thời, hardcoded UTC+7/ID, state machine và quotas; xem [LOCAL_BOT.md](LOCAL_BOT.md).
+Phải review/refactor: inbox/outbox atomicity, hội thoại đồng thời, hardcoded UTC+7/ID, state machine và quotas; xem [LOCAL_BOT.md](../LOCAL_BOT.md).
 Chỉ tham khảo: `trial-flow.ts` memory, prompt/test script và đánh giá thủ công; không mang harness filesystem vào Worker.
 Giữ nguyên prototype hiện tại, không tự xóa/viết lại. Schema mới có migration có kiểm chứng và backup khi có dữ liệu thật.
 

@@ -25,10 +25,10 @@ Trạng thái 2026-09-11: code + kiểm thử offline; chưa deploy, chưa nối
 
 ## Cách kiểm tra
 
-`tests/telegram.test.ts` gửi webhook giả vào handler và dùng D1 của Miniflare, không gọi Telegram/Gemini.
+`tests/integration/telegram.test.ts` gửi webhook giả vào handler và dùng D1 của Miniflare, không gọi Telegram/Gemini.
 Test bao gồm capture chưa confirm không ghi task, confirm/bấm lặp, update trùng/đồng thời, sai secret/user,
 ngày sai, đề xuất cũ, expiry, rollback trigger, phân trang cơ bản và chat mock không mutation.
-Kết quả: 48 tests pass, typecheck pass, migration local pass, Workers dry-run pass.
+Sau cơ cấu: test mặc định 28 pass, experiments 25 pass (giữ đủ 50 cũ + 3 regression); typecheck và Workers dry-run pass. Các kết quả migration trước đây không được chạy lại trong đợt chỉ di chuyển file.
 
 ## Giới hạn trước khi public
 
@@ -46,7 +46,7 @@ Kết quả: 48 tests pass, typecheck pass, migration local pass, Workers dry-ru
 
 ## Bước tiếp theo cần người dùng
 
-Hướng triển khai ngay bên dưới đã tạm gác: ưu tiên duyệt [kiến trúc và kế hoạch](ARCHITECTURE_PLAN.md) trước, không đi cấu hình BotFather/deploy ngay.
+Hướng triển khai ngay bên dưới đã tạm gác: ưu tiên duyệt [kiến trúc và kế hoạch](archive/ARCHITECTURE_PLAN.md) trước, không đi cấu hình BotFather/deploy ngay.
 
 Kết quả đợt delivery: 50 tests pass, typecheck, migration 0002 local, dry-run pass. Chưa live Telegram/Gemini/deploy.
 Xin duyệt cấu hình kết nối/deploy và Cron; kiểm tra trước quotas, retention, lựa chọn nhập đồng thời và recovery thủ công cho uncertain/failed.
