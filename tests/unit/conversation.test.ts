@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {conversationDeadline,parseConversation,directRequest} from '../../src/domain/conversation.ts';
+import {conversationDeadline,parseConversation,directRequest,unsupportedSuccessClaim} from '../../src/domain/conversation.ts';
 test('conversation date precision preserves date-only and relative dates use Vietnam midnight',()=>{
  const now=Date.parse('2026-09-12T23:55:00+07:00');
  assert.deepEqual(conversationDeadline('ngày mai',now),{value:'2026-09-13',precision:'date'});
@@ -27,4 +27,8 @@ test('completion never treats unfinished or partial work as a completed task',()
  }
  const text='Tớ làm xong bài tiếng Anh rồi';
  assert.equal(directRequest(text,{kind:'complete',reply:'unused',title:null,taskId:'t',deadlineText:null,evidence:text}),true);
+});
+test('social reply guard catches common uncommitted success claims without blocking ordinary conversation',()=>{
+ for(const reply of ['Tớ ghi bài này rồi nhé.','Đã thêm việc cho cậu.','Tớ đã dời lịch sang mai rồi.'])assert.equal(unsupportedSuccessClaim(reply),true);
+ for(const reply of ['ừ, kể tớ nghe tiếp đi','Cậu làm xong rồi à?','Tớ chưa lưu gì cả.'])assert.equal(unsupportedSuccessClaim(reply),false);
 });

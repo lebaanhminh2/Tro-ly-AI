@@ -17,6 +17,14 @@ export const CONVERSATION_SCHEMA = {
   title:{type:['string','null']},taskId:{type:['string','null']},deadlineText:{type:['string','null']},evidence:{type:['string','null']}}
 };
 
+// A narrow last-line guard against common unsupported success claims in social replies.
+// It is not a proof of semantic truth; live evaluations must include paraphrases.
+export function unsupportedSuccessClaim(reply:string):boolean{
+ const text=reply.normalize('NFC').toLocaleLowerCase('vi');
+ return /(?:tớ|mình|tôi|em)\s+(?:đã\s+)?(?:thêm|lưu|ghi|đổi|dời|xóa|hủy|đặt|tạo|đánh dấu|bật|tắt|dừng)\b[^.!?\n]{0,160}\brồi/u.test(text)
+   || /(?:^|[.!?\n]\s*)đã\s+(?:thêm|lưu|ghi|đổi|dời|xóa|hủy|đặt|tạo|đánh dấu|bật|tắt|dừng)/u.test(text);
+}
+
 export function parseConversation(raw:string):ConversationIntent{
  const value:unknown=JSON.parse(raw);
  if(!value||typeof value!=='object'||Array.isArray(value))throw Error('INVALID_INTENT');

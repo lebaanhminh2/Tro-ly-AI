@@ -1,6 +1,6 @@
 import type {ChatService} from './plan-command.ts';
 import type {ConversationIntent} from '../domain/conversation.ts';
-import {conversationDeadline,directRequest} from '../domain/conversation.ts';
+import {conversationDeadline,directRequest,unsupportedSuccessClaim} from '../domain/conversation.ts';
 import {buildContext} from './context-builder.ts';
 import {dayStart} from '../domain/session.ts';
 
@@ -23,7 +23,10 @@ export function conversationChat(infer:Infer):ChatService{
   }
   const built=await buildContext(store,owner,text,receivedAt);
   const intent=await infer(owner,input.updateId,now,built.context,built.turns,continuation);
-  if(intent.kind==='chat'||intent.kind==='clarify')return pending?{view:{text:intent.reply,buttons:[]},changes:[{type:'conversation-pending',owner,pending:null}]}:intent.reply;
+  if(intent.kind==='chat'||intent.kind==='clarify'){
+    const reply=unsupportedSuccessClaim(intent.reply)?'Tớ chưa thực hiện thay đổi nào từ câu này. Cậu nói rõ việc muốn tớ làm nhé.':intent.reply;
+    return pending?{view:{text:reply,buttons:[]},changes:[{type:'conversation-pending',owner,pending:null}]}:reply;
+  }
   if(!continuation&&!directRequest(text,intent))return 'Cậu muốn tớ ghi hoặc đổi việc này thật, hay mình đang bàn phương án thôi?';
   if(intent.kind==='overview'){
     const sessions=await store.sessions(owner,dayStart(now),dayStart(now)+86400000);

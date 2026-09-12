@@ -118,6 +118,9 @@ test('Worker conversation mode writes a grounded capture and consumes durable qu
   assert.match(await (await send()).text(),/Tớ ghi/);await send();assert.equal(calls,1);
   assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM tasks').first<{n:number}>())!.n,1);
   assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM ai_reservations').first<{n:number}>())!.n,1);
+  const receipt=await db.prepare('SELECT model,prompt_version,inference_source,inference_ms FROM conversation_receipts WHERE owner=? AND update_id=1').bind('123').first<{model:string;prompt_version:string;inference_source:string;inference_ms:number}>();
+  assert.equal(receipt!.model,'test-model');assert.equal(receipt!.prompt_version,'conversation-c1-v1');
+  assert.equal(receipt!.inference_source,'model');assert.ok(receipt!.inference_ms>=0);
  }finally{await mf.dispose();}
 });
 

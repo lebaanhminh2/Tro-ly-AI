@@ -17,6 +17,10 @@ CREATE TABLE conversation_receipts (
  update_id INTEGER NOT NULL,
  state TEXT NOT NULL CHECK(state IN ('started','ready','applied','failed')),
  envelope TEXT,
+ model TEXT,
+ prompt_version TEXT,
+ inference_source TEXT CHECK(inference_source IN ('model','continuation')),
+ inference_ms INTEGER,
  created INTEGER NOT NULL,
  PRIMARY KEY(owner,update_id)
 );
