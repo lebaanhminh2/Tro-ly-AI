@@ -29,6 +29,7 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
       const receipts=new ConversationStore(env.DB);
       return conversationChat((owner,id,now,context,turns,resolved)=>receipts.infer(owner,id,now,async()=>{
         if(resolved)return resolved;
+        if(env.AI_TRIAL_ENDS_AT&&(!Number.isFinite(Date.parse(env.AI_TRIAL_ENDS_AT))||clock.now()>=Date.parse(env.AI_TRIAL_ENDS_AT)))throw Error('AI_TRIAL_ENDED');
         if(!await reserveAi(env.DB,'runtime:gemini',`${owner}:${id}`,now,Number(env.AI_DAILY_LIMIT)))throw Error('AI_QUOTA');
         const client=new GeminiTrial({apiKey:env.GEMINI_API_KEY!,model:env.GEMINI_MODEL!,
           transport:(url,options)=>transport(url,{...options,redirect:'manual'}),now:()=>clock.now(),timeoutMs:5000,maxRequests:1});

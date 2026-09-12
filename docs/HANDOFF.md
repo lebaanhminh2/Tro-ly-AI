@@ -20,6 +20,8 @@ Cập nhật: 2026-09-11. Phân biệt prototype, kế hoạch và sản phẩm 
 
 ## Bước tiếp theo
 
+**LIVE CONVERSATION PILOT ĐÃ BẬT:** user duyệt deploy+20 lượt/24h, gửi chat/task context thật tới Gemini. Đã áp0009 remote (không sửa migration này nữa), upload GEMINI_API_KEY từ local vào Worker secret không lộ, deploy c25e59e0-ee44-48dd-ada2-ef19977c370b. AI_MODE=conversation, model gemini-3.5-flash-lite, daily limit20, AI_TRIAL_ENDS_AT=2026-09-13T04:58:59Z (11:58:59 VN), không gọi provider sau thời hạn; continuation rõ vẫn xử lý không model, hẹn đã lưu vẫn nhắc. Quota check sau deploy=0, memory_settings chưa có row (default enabled). Endpoint không auth403. Calendar off. Full suite72+25/typecheck/dry-run đạt trước key regex điều chỉnh chấp nhận dấu chấm; targeted config test/typecheck đạt sau. Không tự gửi request pilot; user test hội thoại mới. 4req/60s vẫn giữ. Không coi đã chứng minh E2E live sau deploy. Khi hết quota/time cần user duyệt gia hạn, không tự tăng.
+
 Sau user “oke tiếp đi”: sửa live-smoke regressions bằng pending completion-scope/existing-or-new và guard pendingId completion. “cả bài”, “việc cũ”, “việc mới” dùng resolved intent không gọi AI; task version thay đổi chặn apply. Tests hội thoại targeted6 đạt, full suite đang kiểm trước commit. Prompt bump conversation-c1-v2 (model metadata đồng bộ), chỉnh ví dụ không mời lưu không binding, fatigue không tự hoãn. V2 chưa live, không gọi thêm API/budget0;0009 vẫn chưa remote, AI off. Không nhầm đạt fake tests với bot đã bật.
 
 Kết quả cuối checkpoint: 72 tests chính +25 experiments đạt, typecheck/staging dry-run đạt. Chưa deploy và chưa gọi thêm model.

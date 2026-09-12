@@ -148,6 +148,10 @@ test('Worker conversation mode writes a grounded capture and consumes durable qu
   const receipt=await db.prepare('SELECT model,prompt_version,inference_source,inference_ms FROM conversation_receipts WHERE owner=? AND update_id=1').bind('123').first<{model:string;prompt_version:string;inference_source:string;inference_ms:number}>();
   assert.equal(receipt!.model,'test-model');assert.equal(receipt!.prompt_version,'conversation-c1-v2');
   assert.equal(receipt!.inference_source,'model');assert.ok(receipt!.inference_ms>=0);
+  const stopped=await createWorker(undefined,transport,{now:()=>Date.parse('2026-09-12T08:00:00+07:00')}).fetch(new Request('https://local/telegram',{
+   method:'POST',headers:{'X-Telegram-Bot-Api-Secret-Token':env.TELEGRAM_WEBHOOK_SECRET},body:JSON.stringify({update_id:2,message:{from:{id:123},chat:{id:123,type:'private'},text}})
+  }),{...env,AI_TRIAL_ENDS_AT:'2026-09-11T00:00:00Z'});
+  assert.match(await stopped.text(),/gián đoạn/);assert.equal(calls,1);
  }finally{await mf.dispose();}
 });
 

@@ -19,6 +19,7 @@ test('runtime config requires explicit AI switch, key, model and bounded budget'
   }
   assert.equal(configured({...env, GEMINI_MODEL: '../other-host'}), false);
   assert.equal(configured({...env, GEMINI_API_KEY: 'key\nheader'}), false);
+  assert.equal(configured({...env, GEMINI_API_KEY: 'synthetic.key'}), true);
   assert.equal(configured({...env, AI_MODE: 'typo'}), false);
 });
 
