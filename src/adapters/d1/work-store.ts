@@ -120,6 +120,7 @@ export class D1WorkStore implements WorkStore {
     for (const change of plan.changes) {
       if(change.type==='conversation-completion'){
         if(change.owner!==owner)throw Error('OWNER_MISMATCH');
+        if(change.pendingId)statements.push(q('INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM conversation_pending WHERE owner=? AND id=? AND expires>?) THEN 1 ELSE 0 END',owner,change.pendingId,now));
         statements.push(q("INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM conversation_receipts WHERE owner=? AND update_id=? AND state='ready') AND EXISTS(SELECT 1 FROM tasks WHERE owner=? AND id=? AND version=? AND status=?) THEN 1 ELSE 0 END",owner,change.updateId,owner,change.taskId,change.expectedVersion,change.operation==='complete'?'active':'completed'));
         if(change.operation==='reopen')statements.push(q('INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM task_completion_undo WHERE owner=? AND task_id=? AND expected_version=? AND expires>?) THEN 1 ELSE 0 END',owner,change.taskId,change.expectedVersion,now));
         statements.push(q('UPDATE tasks SET status=?,version=version+1 WHERE owner=? AND id=?',change.operation==='complete'?'completed':'active',owner,change.taskId));

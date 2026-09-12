@@ -13,6 +13,33 @@ import type {Database} from '../../src/adapters/d1/database.ts';
 import {createWorker} from '../../src/entrypoints/worker.ts';
 import {buildContext} from '../../src/application/context-builder.ts';
 
+test('live-smoke regressions: ambiguous completion and existing-title capture retain scoped clarification',async()=>{
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync(`migrations/${f}`,'utf8').replace(/\r?\n/g,' '));
+  const store=new D1WorkStore(db),receipts=new ConversationStore(db);let now=Date.parse('2026-09-12T08:00:00+07:00'),seq=0,calls=0;
+  await db.prepare("INSERT INTO tasks(id,owner,title,created) VALUES('t','123','bài tiếng Anh',0)").run();
+  await db.prepare("INSERT INTO chat_focus(owner,task_id,expires) VALUES('123','t',?)").bind(now+900000).run();
+  let intent:ConversationIntent={kind:'complete',reply:'unused',taskId:'t',title:null,deadlineText:null,evidence:'Xong rồi'};
+  const chat=conversationChat((owner,id,time,_context,_turns,resolved)=>receipts.infer(owner,id,time,async()=>{if(resolved)return resolved;calls++;return intent;}));
+  const run=async(text:string)=>{const id=++seq;await store.accept({owner:'123',chat:123,updateId:id,text},now,false);await processInbox(store,'123',{now:()=>now},chat);return (await store.result('123',id))!;};
+  assert.match((await run('Xong rồi')).text,/xong cả/);
+  assert.equal((await store.task('123','t'))!.status,'active');
+  const before=calls;assert.match((await run('cả bài')).text,/Xong/);assert.equal(calls,before);
+  assert.equal((await store.task('123','t'))!.status,'completed');
+  await db.prepare("UPDATE tasks SET status='active',version=version+1 WHERE id='t'").run();
+  await run('Xong rồi');await db.prepare("UPDATE tasks SET version=version+1 WHERE id='t'").run();
+  assert.match((await run('cả bài')).text,/vừa thay đổi/);assert.equal((await store.task('123','t'))!.status,'active');
+  intent={kind:'deadline',reply:'unused',taskId:'t',title:null,deadlineText:'ngày mai',evidence:'Tớ có bài tiếng Anh, deadline ngày mai'};
+  assert.match((await run(intent.evidence!)).text,/việc cũ/);
+  const n=calls;assert.match((await run('việc cũ')).text,/đổi hạn/);assert.equal(calls,n);
+  assert.equal((await store.task('123','t'))!.deadline,'2026-09-13');
+  await run(intent.evidence!);const n2=calls;assert.match((await run('việc mới')).text,/Tớ ghi/);assert.equal(calls,n2);
+  assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM tasks').first<{n:number}>())!.n,2);
+ }finally{await mf.dispose();}
+});
+
 test('task completion requires explicit scope, stops pending reminders, and undo preserves newer data',async()=>{
  const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
  try{
@@ -119,7 +146,7 @@ test('Worker conversation mode writes a grounded capture and consumes durable qu
   assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM tasks').first<{n:number}>())!.n,1);
   assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM ai_reservations').first<{n:number}>())!.n,1);
   const receipt=await db.prepare('SELECT model,prompt_version,inference_source,inference_ms FROM conversation_receipts WHERE owner=? AND update_id=1').bind('123').first<{model:string;prompt_version:string;inference_source:string;inference_ms:number}>();
-  assert.equal(receipt!.model,'test-model');assert.equal(receipt!.prompt_version,'conversation-c1-v1');
+  assert.equal(receipt!.model,'test-model');assert.equal(receipt!.prompt_version,'conversation-c1-v2');
   assert.equal(receipt!.inference_source,'model');assert.ok(receipt!.inference_ms>=0);
  }finally{await mf.dispose();}
 });

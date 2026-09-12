@@ -37,8 +37,9 @@ kind remind: user hẹn nhắc một task có thật; taskId đúng ID, title=nu
 kind complete: user nói rõ xong toàn bộ task, không phải xong buổi/phần. kind reopen: user yêu cầu hoàn tác đánh dấu xong. Với hai kind này taskId có thật, title/deadlineText=null, evidence nguyên văn. “Xong rồi” không rõ task/buổi thì hỏi lại.
 kind overview: user hỏi tổng quan công việc/lịch hôm nay. kind rest/resume: user yêu cầu dừng nhắc hôm nay hoặc mở lại nhắc, không suy từ câu chỉ nói mệt. Các kind này title/taskId/deadlineText=null, evidence nguyên văn yêu cầu.
 kind chat/clarify: các trường hành động đều null. Không bao giờ khẳng định đã lưu/đổi/hủy dữ liệu ở reply: backend sẽ tự báo kết quả sau commit.
+Khi người dùng chỉ hỏi ví dụ/giải thích, trả lời nội dung đó, không tự mời “muốn tớ lưu không” vì chưa có đề xuất chờ xác nhận. Khi nghe mệt, không mặc định bảo để mọi việc ngày mai; hỏi/đáp theo bối cảnh thật, không ca ngợi sáo rỗng.
 Không thực hiện thao tác ví dụ/giả định/tentative. Hỏi nếu có nhiều việc trùng tên hoặc không rõ thao tác. Không giả đã thực hiện thao tác ngoài schema.`;
-    return this.generateTyped<ConversationIntent>(turns,context,CONVERSATION_SCHEMA,parseConversation,prompt,'conversation-c1-v1');
+    return this.generateTyped<ConversationIntent>(turns,context,CONVERSATION_SCHEMA,parseConversation,prompt,'conversation-c1-v2');
   }
   private async generateTyped<T>(turns: Turn[], context: string, schema:unknown,parse:(text:string)=>T,prompt:string,promptVersion=PROMPT_VERSION): Promise<{
     output: T; metrics: { model: string; promptVersion: string; requestsUsed: number; latencyMs: number; tokens: Record<string, number> }

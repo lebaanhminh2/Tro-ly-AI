@@ -20,6 +20,10 @@ Cập nhật: 2026-09-11. Phân biệt prototype, kế hoạch và sản phẩm 
 
 ## Bước tiếp theo
 
+Sau user “oke tiếp đi”: sửa live-smoke regressions bằng pending completion-scope/existing-or-new và guard pendingId completion. “cả bài”, “việc cũ”, “việc mới” dùng resolved intent không gọi AI; task version thay đổi chặn apply. Tests hội thoại targeted6 đạt, full suite đang kiểm trước commit. Prompt bump conversation-c1-v2 (model metadata đồng bộ), chỉnh ví dụ không mời lưu không binding, fatigue không tự hoãn. V2 chưa live, không gọi thêm API/budget0;0009 vẫn chưa remote, AI off. Không nhầm đạt fake tests với bot đã bật.
+
+Kết quả cuối checkpoint: 72 tests chính +25 experiments đạt, typecheck/staging dry-run đạt. Chưa deploy và chưa gọi thêm model.
+
 Live smoke completed with explicit approval: 10/10 Gemini requests, synthetic only, gemini-3.5-flash-lite / conversation-c1-v1. No DB/cloud mutations, no deploy. Results docs/CONVERSATION_SMOKE.md. Mean1143.5ms,5936 tokens, all schema valid; two weak cases existing-title ambiguity and “xong rồi” classified complete but backend safely blocks with bad generic clarification. Case10 model asks save without pending binding. Need targeted clarification/pending/persona fixes within conversation plan, not loosen authorization. Budget now0 (historical total41 requests), no auto rerun. UI staging unchanged; AI still off/0009 not remote. Harness was inline, not new source files.
 
 Pre-live checkpoint: receipts ghi model/prompt version/source/inference_ms; social reply guard một số mẫu success-claim khi không có mutation, có test.71+25 tests, typecheck/dry-run đạt.0009 vẫn chưa áp remote, cloud AI off. Cần xin quyền smoke tối đa10 request synthetic Gemini model gemini-3.5-flash-lite đã dùng trước (không lặp campaign cũ), không cloud data/mutation/deploy/paid fallback; dừng429/auth/unavailable. Không có quyền tự gọi mới từ budget31 đã hết. C2 language/undo general còn giới hạn, không tuyên bố full product.

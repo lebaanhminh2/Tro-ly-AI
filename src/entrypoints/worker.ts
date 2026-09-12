@@ -33,7 +33,7 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
         const client=new GeminiTrial({apiKey:env.GEMINI_API_KEY!,model:env.GEMINI_MODEL!,
           transport:(url,options)=>transport(url,{...options,redirect:'manual'}),now:()=>clock.now(),timeoutMs:5000,maxRequests:1});
         return (await client.generateConversation(turns,context)).output;
-      },{model:resolved?'none':env.GEMINI_MODEL!,promptVersion:'conversation-c1-v1',source:resolved?'continuation':'model'}));
+      },{model:resolved?'none':env.GEMINI_MODEL!,promptVersion:'conversation-c1-v2',source:resolved?'continuation':'model'}));
     }
     if (env.AI_MODE !== 'enabled') return undefined;
     return contextualChat({generate: (turns, context, ids) => {

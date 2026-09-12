@@ -13,13 +13,30 @@ export function conversationChat(infer:Infer):ChatService{
   if(pending&&/^(thôi|hủy|không|bỏ đi)$/iu.test(text.trim()))return {view:{text:'Ừ, tớ hủy yêu cầu đang chờ nhé.',buttons:[]},changes:[{type:'conversation-pending',owner,pending:null}]};
   let continuation:ConversationIntent|undefined;
   let confirmedDuplicate=false;
+  let confirmedScope=false;
+  if(pending?.kind==='clarify'){
+    const saved=JSON.parse(pending.draft) as {intent:ConversationIntent;reason?:string;title?:string};
+    if(saved.reason==='completion-scope'){
+      if(/^(xong )?(cả (bài|việc|task)|toàn bộ( (bài|việc|task))?)( rồi)?[.!\s]*$/iu.test(text.trim())){
+        continuation={...saved.intent,evidence:text};confirmedScope=true;
+      }else if(/^(chỉ )?(xong )?(buổi|phần|đoạn)( thôi)?[.!\s]*$/iu.test(text.trim()))return {
+        view:{text:'Ừ, vậy tớ chưa đánh dấu cả việc là xong. Cậu nói rõ buổi nào cần kết thúc nhé.',buttons:[]},changes:[{type:'conversation-pending',owner,pending:null}]};
+    }
+    if(saved.reason==='existing-or-new'){
+      if(/^(việc cũ|bài cũ|cập nhật việc cũ|đổi hạn việc cũ)[.!\s]*$/iu.test(text.trim())){
+        continuation={...saved.intent,evidence:text};confirmedScope=true;
+      }else if(/^(việc mới|bài mới|thêm mới|thêm việc mới)[.!\s]*$/iu.test(text.trim())){
+        continuation={...saved.intent,kind:'capture',taskId:null,title:saved.title!,evidence:text};confirmedDuplicate=true;
+      }
+    }
+  }
   if(pending?.kind==='confirm'&&/^(ừ|ừm|đồng ý|ok|oke|đúng|thêm đi|xác nhận|ừ[, ]+thêm đi)[.!\s]*$/iu.test(text.trim())){
     const saved=JSON.parse(pending.draft) as {intent:ConversationIntent;reason:string};
     if(saved.reason==='duplicate-title'){continuation=saved.intent;confirmedDuplicate=true;}
   }
   if(pending?.kind==='clarify'&&conversationDeadline(text,receivedAt)){
-    const saved=JSON.parse(pending.draft) as {intent:ConversationIntent;source:string;taskVersion:number|null};
-    if(['capture','deadline','remind'].includes(saved.intent.kind))continuation={...saved.intent,deadlineText:text,evidence:text};
+    const saved=JSON.parse(pending.draft) as {intent:ConversationIntent;source:string;taskVersion:number|null;reason?:string};
+    if(!saved.reason&&['capture','deadline','remind'].includes(saved.intent.kind))continuation={...saved.intent,deadlineText:text,evidence:text};
   }
   const built=await buildContext(store,owner,text,receivedAt);
   const intent=await infer(owner,input.updateId,now,built.context,built.turns,continuation);
@@ -27,7 +44,18 @@ export function conversationChat(infer:Infer):ChatService{
     const reply=unsupportedSuccessClaim(intent.reply)?'Tớ chưa thực hiện thay đổi nào từ câu này. Cậu nói rõ việc muốn tớ làm nhé.':intent.reply;
     return pending?{view:{text:reply,buttons:[]},changes:[{type:'conversation-pending',owner,pending:null}]}:reply;
   }
-  if(!continuation&&!directRequest(text,intent))return 'Cậu muốn tớ ghi hoặc đổi việc này thật, hay mình đang bàn phương án thôi?';
+  if(!continuation&&!directRequest(text,intent)){
+    const focus=await store.focus(owner,now);
+    const task=built.tasks.find(t=>t.id===intent.taskId);
+    if(intent.kind==='complete'&&/^(tớ )?xong rồi[.!\s]*$/iu.test(text.trim())&&task&&focus===task.id&&task.status!=='completed')return {
+      view:{text:`Cậu xong cả “${task.title}”, hay chỉ xong buổi/phần đang làm thôi?`,buttons:[]},changes:[{type:'conversation-pending',owner,pending:{id:`cp${input.updateId}`,kind:'clarify',expires:now+300000,
+        draft:JSON.stringify({intent,reason:'completion-scope',taskVersion:task.version,receivedAt})}}]};
+    if(intent.kind==='deadline'&&task&&intent.deadlineText&&text.includes(task.title)&&text.toLowerCase().includes(intent.deadlineText.toLowerCase())
+      &&directRequest(text,{...intent,kind:'capture',title:task.title,taskId:null}))return {
+      view:{text:`Đã có “${task.title}” trong danh sách. Cậu muốn cập nhật hạn việc cũ, hay thêm một việc mới cùng tên?`,buttons:[]},changes:[{type:'conversation-pending',owner,pending:{id:`cp${input.updateId}`,kind:'clarify',expires:now+300000,
+        draft:JSON.stringify({intent,reason:'existing-or-new',title:task.title,taskVersion:task.version,receivedAt})}}]};
+    return 'Cậu muốn tớ ghi hoặc đổi việc này thật, hay mình đang bàn phương án thôi?';
+  }
   if(intent.kind==='overview'){
     const sessions=await store.sessions(owner,dayStart(now),dayStart(now)+86400000);
     const tasks=(await store.tasks(owner,0)).filter(t=>t.status!=='completed');
@@ -42,8 +70,8 @@ export function conversationChat(infer:Infer):ChatService{
       {type:'cancel',owner},{type:'conversation-pending',owner,pending:null}]};
   }
   if(!continuation&&intent.title&&!text.includes(intent.title))return 'Tên việc cậu muốn ghi chính xác là gì nhỉ?';
-  if(!confirmedDuplicate&&intent.deadlineText&&!text.toLowerCase().includes(intent.deadlineText.toLowerCase()))return 'Cậu nói lại hạn của việc này giúp tớ nhé, tớ chưa xác định chắc được.';
-  const dateBase=confirmedDuplicate?(JSON.parse(pending!.draft) as {receivedAt:number}).receivedAt:receivedAt;
+  if(!confirmedDuplicate&&!confirmedScope&&intent.deadlineText&&!text.toLowerCase().includes(intent.deadlineText.toLowerCase()))return 'Cậu nói lại hạn của việc này giúp tớ nhé, tớ chưa xác định chắc được.';
+  const dateBase=confirmedDuplicate||confirmedScope?(JSON.parse(pending!.draft) as {receivedAt:number}).receivedAt:receivedAt;
   const deadline=intent.deadlineText?conversationDeadline(intent.deadlineText,dateBase):null;
   if(intent.deadlineText&&(!deadline||(intent.kind==='remind'&&deadline.precision!=='datetime')))return {view:{text:intent.kind==='remind'?'Cậu muốn nhắc ngày nào, mấy giờ? Gửi ngày/tháng/năm giờ:phút giúp tớ nhé.':'Hạn đó là ngày nào nhỉ? Cậu ghi ngày/tháng/năm giúp tớ để tránh hiểu nhầm nhé.',buttons:[]},changes:[{
     type:'conversation-pending',owner,pending:{id:`cp${input.updateId}`,kind:'clarify',expires:now+900000,
@@ -75,7 +103,7 @@ export function conversationChat(infer:Infer):ChatService{
   if(intent.kind==='complete'||intent.kind==='reopen'){
     if(intent.kind==='reopen'&&!await store.completionUndo?.(owner,taskId,expectedVersion!,now))return 'Không thể hoàn tác tự động: việc đã đổi hoặc quá 15 phút từ lúc đánh dấu xong. Tớ chưa thay đổi gì nhé.';
     return {view:{text:intent.kind==='complete'?`Xong “${title}” rồi nhé. Tớ đã dừng các nhắc và đóng buổi làm còn lại của việc này. Nếu nhầm, cậu có thể bảo hoàn tác việc trong 15 phút.`:`Tớ mở lại “${title}” rồi. Nhắc và buổi cũ không được khôi phục để tránh nhắc sai; cậu hẹn lại nếu cần nhé.`,buttons:[]},changes:[
-      {type:'conversation-completion',owner,taskId,expectedVersion:expectedVersion!,operation:intent.kind,updateId:input.updateId,now},
+      {type:'conversation-completion',owner,taskId,expectedVersion:expectedVersion!,operation:intent.kind,updateId:input.updateId,now,...(continuation?{pendingId:pending!.id}:{})},
       {type:'focus',owner,taskId,expires:now+900000},{type:'cancel',owner},{type:'conversation-pending',owner,pending:null}
     ]};
   }
