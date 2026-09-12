@@ -19,3 +19,22 @@ CREATE TABLE conversation_pending (
  draft TEXT NOT NULL,
  expires INTEGER NOT NULL
 );
+CREATE TABLE task_appointments (
+ id TEXT PRIMARY KEY,
+ owner TEXT NOT NULL,
+ task_id TEXT NOT NULL REFERENCES tasks(id),
+ due INTEGER NOT NULL,
+ status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','cancelled','expired')),
+ responded INTEGER NOT NULL DEFAULT 0 CHECK(responded IN (0,1))
+);
+CREATE INDEX task_appointments_due ON task_appointments(owner,status,due);
+CREATE TRIGGER cancel_appointments_on_pause AFTER UPDATE OF pause_until ON reminder_preferences
+WHEN NEW.pause_until>0
+BEGIN
+ UPDATE task_appointments SET status='cancelled' WHERE owner=NEW.owner AND due<NEW.pause_until AND status='active';
+END;
+CREATE TRIGGER cancel_appointments_on_initial_pause AFTER INSERT ON reminder_preferences
+WHEN NEW.pause_until>0
+BEGIN
+ UPDATE task_appointments SET status='cancelled' WHERE owner=NEW.owner AND due<NEW.pause_until AND status='active';
+END;

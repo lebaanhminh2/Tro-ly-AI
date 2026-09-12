@@ -5,7 +5,7 @@ export type Selection = { owner: string; task_id: string; version: number; expir
 export type Input = { updateId: number; owner: string; chat: number; text?: string; callback?: string; callbackId?: string; messageId?:number; receivedAt?:number };
 export type Button = { text: string; callback_data: string };
 export type View = { text: string; buttons: Button[][]; silent?:boolean };
-export type Change = import('./conversation.ts').ConversationPendingChange | import('./conversation.ts').ConversationMutation | import('./session.ts').SessionChange | import('./memory.ts').MemoryChange
+export type Change = import('./conversation.ts').AppointmentChange | import('./conversation.ts').ConversationPendingChange | import('./conversation.ts').ConversationMutation | import('./session.ts').SessionChange | import('./memory.ts').MemoryChange
   | { type: 'propose'; proposal: Proposal }
   | { type: 'resolve'; proposal: Proposal; accept: boolean }
   | { type: 'select'; selection: Selection }

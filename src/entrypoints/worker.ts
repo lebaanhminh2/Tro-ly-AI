@@ -15,7 +15,7 @@ import {CalendarService} from '../adapters/google-calendar/service.ts';
 import {GoogleClient} from '../adapters/google-calendar/client.ts';
 import {GoogleTokenVault} from '../adapters/google-calendar/vault.ts';
 import {D1UiStore} from '../adapters/d1/ui-store.ts';
-import {ConversationStore} from '../adapters/d1/conversation-store.ts';
+import {ConversationStore,queueAppointments,acknowledgeAppointments} from '../adapters/d1/conversation-store.ts';
 import {conversationChat} from '../application/conversation-command.ts';
 
 export { flushOutbox };
@@ -62,6 +62,7 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
       }
       try{await calendarService?.tick();}catch{/* Error state remains visible via /calendar; never log tokens. */}
       await queueReminders(env.DB,env.TELEGRAM_USER_ID,clock.now());
+      if(env.AI_MODE==='conversation')await queueAppointments(env.DB,env.TELEGRAM_USER_ID,clock.now());
       await flushOutbox(env, transport, clock.now());
       await flushCards(env);
     },
@@ -108,6 +109,7 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
       try {
         const store = new D1WorkStore(env.DB,cardsEnabled);
         const isNew = await store.accept(input, clock.now(), env.DELIVERY_MODE === 'outbox');
+        if(isNew&&env.AI_MODE==='conversation')await acknowledgeAppointments(env.DB,input.owner);
         if(cardsEnabled&&env.DELIVERY_MODE==='outbox'&&input.callbackId&&isNew){
           const action=input.messageId&&input.callback?.startsWith('ui:')
             ?await new D1UiStore(env.DB).resolve(input.owner,input.chat,input.messageId,input.callback,clock.now()):null;

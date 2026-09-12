@@ -3,13 +3,74 @@ import assert from 'node:assert/strict';
 import {readFileSync,readdirSync} from 'node:fs';
 import {Miniflare} from 'miniflare';
 import {D1WorkStore} from '../../src/adapters/d1/work-store.ts';
-import {ConversationStore} from '../../src/adapters/d1/conversation-store.ts';
+import {ConversationStore,queueAppointments,acknowledgeAppointments} from '../../src/adapters/d1/conversation-store.ts';
+import {flushOutbox} from '../../src/adapters/d1/outbox.ts';
 import {conversationChat} from '../../src/application/conversation-command.ts';
 import {processInbox} from '../../src/application/process-inbox.ts';
 import {GeminiTrial} from '../../src/ai/gemini.ts';
 import type {ConversationIntent} from '../../src/domain/conversation.ts';
 import type {Database} from '../../src/adapters/d1/database.ts';
 import {createWorker} from '../../src/entrypoints/worker.ts';
+import {buildContext} from '../../src/application/context-builder.ts';
+
+test('spoken reminder has no invented duration, two sends per appointment, reply/rest/reschedule cancel old jobs',async()=>{
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync(`migrations/${f}`,'utf8').replace(/\r?\n/g,' '));
+  const store=new D1WorkStore(db),receipts=new ConversationStore(db);let now=Date.parse('2026-09-12T08:00:00+07:00'),id=0;
+  await db.prepare("INSERT INTO tasks(id,owner,title,created) VALUES('t','123','bài tiếng Anh',0)").run();
+  const intent:ConversationIntent={kind:'remind',reply:'unused',title:null,taskId:'t',deadlineText:'hôm nay 9h',evidence:'Nhắc bài tiếng Anh hôm nay 9h'};
+  const chat=conversationChat((owner,update,time,_context,_turns,resolved)=>receipts.infer(owner,update,time,async()=>resolved??intent));
+  const run=async(text:string)=>{const update=++id;await store.accept({owner:'123',chat:123,updateId:update,text},now,false);await processInbox(store,'123',{now:()=>now},chat);return (await store.result('123',update))!;};
+  assert.match((await run(intent.evidence!)).text,/hẹn nhắc/);
+  assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM sessions').first<{n:number}>())!.n,0);
+  const sent:string[]=[];
+  const env={DB:db,TELEGRAM_USER_ID:'123',TELEGRAM_WEBHOOK_SECRET:'x'.repeat(32),TELEGRAM_BOT_TOKEN:'123:fake',DELIVERY_MODE:'outbox' as const,AI_MODE:'off'};
+  const flush=()=>flushOutbox(env,async(_url,init)=>{sent.push(JSON.parse(String(init?.body)).text);return Response.json({ok:true,result:{message_id:sent.length}});},now,()=>0);
+  now+=3600000;await queueAppointments(db,'123',now);await flush();assert.equal(sent.length,1);
+  now+=899999;await queueAppointments(db,'123',now);await flush();assert.equal(sent.length,1);
+  now++;await queueAppointments(db,'123',now);await flush();assert.equal(sent.length,2);
+  now+=60000;await queueAppointments(db,'123',now);await flush();assert.equal(sent.length,2);
+  intent.deadlineText='hôm nay 10h';intent.evidence='Nhắc bài tiếng Anh hôm nay 10h';await run(intent.evidence);
+  now=Date.parse('2026-09-12T10:00:00+07:00');await queueAppointments(db,'123',now);await flush();assert.equal(sent.length,3);
+  await acknowledgeAppointments(db,'123');now+=900000;await queueAppointments(db,'123',now);await flush();assert.equal(sent.length,3);
+  intent.deadlineText='hôm nay 11h';intent.evidence='Nhắc bài tiếng Anh hôm nay 11h';await run(intent.evidence);
+  now=Date.parse('2026-09-12T11:00:00+07:00');await queueAppointments(db,'123',now);
+  intent.deadlineText='hôm nay 12h';intent.evidence='Nhắc bài tiếng Anh hôm nay 12h';await run(intent.evidence);
+  await flush();assert.equal(sent.length,3); // queued old time cannot send after reschedule
+  await run('/rest');await run('/resume');
+  now=Date.parse('2026-09-12T12:00:00+07:00');await queueAppointments(db,'123',now);await flush();assert.equal(sent.length,3);
+ }finally{await mf.dispose();}
+});
+
+test('conversation finds named tasks beyond first page, confirms duplicates by voice and handles rest/overview',async()=>{
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync(`migrations/${f}`,'utf8').replace(/\r?\n/g,' '));
+  for(let n=0;n<14;n++)await db.prepare('INSERT INTO tasks(id,owner,title,created) VALUES(?,?,?,?)').bind(`t${n}`,'123',`bài số ${n}`,n).run();
+  const store=new D1WorkStore(db),receipts=new ConversationStore(db),now=Date.parse('2026-09-12T08:00:00+07:00');let calls=0,id=100;
+  let intent:ConversationIntent={kind:'capture',reply:'unused',title:'bài số 13',taskId:null,deadlineText:'ngày mai',evidence:'Tớ có bài số 13, hạn ngày mai'};
+  const chat=conversationChat((owner,update,time,_context,_turns,resolved)=>receipts.infer(owner,update,time,async()=>{if(resolved)return resolved;calls++;return intent;}));
+  const run=async(text:string)=>{const update=++id;await store.accept({owner:'123',chat:123,updateId:update,text},now,false);await processInbox(store,'123',{now:()=>now},chat);return (await store.result('123',update))!;};
+  const context=await buildContext(store,'123','Đổi hạn bài số 13 thành ngày mai',now);
+  assert.ok(context.tasks.some(t=>t.id==='t13'));
+  const duplicate=await run(intent.evidence!);assert.match(duplicate.text,/Đã có việc/);
+  assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM tasks').first<{n:number}>())!.n,14);
+  const before=calls;assert.match((await run('ừ, thêm đi')).text,/Tớ ghi/);assert.equal(calls,before);
+  assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM tasks').first<{n:number}>())!.n,15);
+  assert.equal(await store.conversationPending('123',now),null);
+  intent={kind:'rest',reply:'unused',title:null,taskId:null,deadlineText:null,evidence:'Tớ mệt quá'};
+  await run(intent.evidence!);assert.equal(await store.preferences('123'),null);
+  intent={...intent,evidence:'Dừng nhắc hôm nay nhé'};
+  assert.match((await run(intent.evidence!)).text,/dừng nhắc/);assert.ok((await store.preferences('123'))!.pause_until>now);
+  intent={...intent,kind:'resume',evidence:'Mở lại nhắc nhé'};
+  await run(intent.evidence!);assert.equal((await store.preferences('123'))!.pause_until,0);
+  intent={...intent,kind:'overview',evidence:'Hôm nay còn việc gì?'};
+  const overview=await run(intent.evidence!);assert.match(overview.text,/chưa có buổi/);assert.ok(overview.buttons.length>0);
+ }finally{await mf.dispose();}
+});
 
 test('Worker conversation mode writes a grounded capture and consumes durable quota only once',async()=>{
  const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});

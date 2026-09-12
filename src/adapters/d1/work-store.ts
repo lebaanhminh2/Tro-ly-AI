@@ -14,6 +14,10 @@ export class D1WorkStore implements WorkStore {
   private db: Database;
   constructor(db: Database, privateCards = false) { this.db = db; this.cardsEnabled=privateCards; }
   private cardsEnabled:boolean;
+  async conversationTasks(owner:string,text:string){
+    return (await query(this.db,`SELECT * FROM tasks WHERE owner=? AND instr(lower(?),lower(title))>0 ORDER BY length(title) DESC,created DESC LIMIT 20`,owner,text).all<Task>()).results;
+  }
+  async sameTitleTasks(owner:string,title:string){return (await query(this.db,'SELECT * FROM tasks WHERE owner=? AND title=? ORDER BY created LIMIT 2',owner,title).all<Task>()).results;}
   conversationPending(owner:string,now:number){return query(this.db,'SELECT id,kind,draft,expires FROM conversation_pending WHERE owner=? AND expires>?',owner,now).first<import('../../domain/conversation.ts').PendingConversation>();}
   async calendarResult(lease:Lease,run:()=>Promise<import('../../domain/work.ts').View|null>,clock:import('../../ports/work-store.ts').Clock){
     if(!this.cardsEnabled||(!lease.input.text?.startsWith('/calendar')&&!lease.input.callback?.startsWith('cal-')))return run();
@@ -113,7 +117,14 @@ export class D1WorkStore implements WorkStore {
       EXISTS(SELECT 1 FROM owner_leases WHERE owner=? AND token=? AND expires>?) AND
       EXISTS(SELECT 1 FROM command_inbox WHERE owner=? AND update_id=? AND state='pending') THEN 1 ELSE 0 END`, owner, token, now, owner, input.updateId)];
     for (const change of plan.changes) {
-      if(change.type==='conversation-pending'){
+      if(change.type==='conversation-appointment'){
+        if(change.owner!==owner||change.due<=now)throw Error('INVALID_APPOINTMENT');
+        if(change.pendingId)statements.push(q('INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM conversation_pending WHERE owner=? AND id=? AND expires>?) THEN 1 ELSE 0 END',owner,change.pendingId,now));
+        statements.push(q("INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM conversation_receipts WHERE owner=? AND update_id=? AND state='ready') AND EXISTS(SELECT 1 FROM tasks WHERE owner=? AND id=? AND version=?) THEN 1 ELSE 0 END",owner,change.updateId,owner,change.taskId,change.expectedVersion));
+        statements.push(q("UPDATE task_appointments SET status='cancelled' WHERE owner=? AND task_id=? AND status='active'",owner,change.taskId));
+        statements.push(q('INSERT INTO task_appointments(id,owner,task_id,due) VALUES(?,?,?,?)',change.id,owner,change.taskId,change.due));
+        statements.push(q("UPDATE conversation_receipts SET state='applied' WHERE owner=? AND update_id=?",owner,change.updateId));
+      }else if(change.type==='conversation-pending'){
         if(change.owner!==owner)throw Error('OWNER_MISMATCH');
         if(change.pending)statements.push(q('INSERT INTO conversation_pending(owner,id,kind,draft,expires) VALUES(?,?,?,?,?) ON CONFLICT(owner) DO UPDATE SET id=excluded.id,kind=excluded.kind,draft=excluded.draft,expires=excluded.expires',owner,change.pending.id,change.pending.kind,change.pending.draft,change.pending.expires));
         else statements.push(q('DELETE FROM conversation_pending WHERE owner=?',owner));

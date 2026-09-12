@@ -2,8 +2,10 @@ import { query } from './database.ts';
 import type { Database } from './database.ts';
 import type { Session } from '../../domain/session.ts';
 import { sessionButtons } from '../../domain/session.ts';
+import {appointmentAllowed} from './conversation-store.ts';
 
 export async function reminderAllowed(db:Database,id:string,now:number):Promise<boolean>{
+  if(id.startsWith('appointment:'))return appointmentAllowed(db,id,now);
   const r=await query(db,`SELECT r.*,s.status AS session_status,s.generation AS current_generation,s.start_at,s.minutes,
     p.quiet_start,p.quiet_end,p.pause_until FROM reminders r JOIN sessions s ON s.id=r.session_id AND s.owner=r.owner
     JOIN reminder_preferences p ON p.owner=r.owner WHERE r.id=?`,id).first<{

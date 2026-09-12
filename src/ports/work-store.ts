@@ -3,6 +3,8 @@ export type Clock = { now(): number };
 export type Lease = { owner: string; token: string; input: Input; attempts: number;
   ui?:{card:import('../domain/ui.ts').Card;action:import('../domain/ui.ts').CardAction}; uiStale?:boolean; uiRecovered?:boolean };
 export interface WorkReader {
+  conversationTasks?(owner:string,text:string):Promise<Task[]>;
+  sameTitleTasks?(owner:string,title:string):Promise<Task[]>;
   conversationPending?(owner:string,now:number):Promise<import('../domain/conversation.ts').PendingConversation|null>;
   runningSession(owner:string):Promise<import('../domain/session.ts').Session|null>;
   memory(owner:string,id:string):Promise<import('../domain/memory.ts').Memory|null>;
