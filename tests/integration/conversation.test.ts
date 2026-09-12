@@ -14,6 +14,41 @@ import {createWorker} from '../../src/entrypoints/worker.ts';
 import {buildContext} from '../../src/application/context-builder.ts';
 import {executeTool} from '../../src/application/tool-executor.ts';
 
+test('native step receipts replay reads/model without calls and atomically fence the only write',async()=>{
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const file of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync(`migrations/${file}`,'utf8').replace(/\r?\n/g,' '));
+  const store=new D1WorkStore(db),journal=new ConversationStore(db);let now=100000,calls=0;
+  await store.accept({owner:'123',chat:123,updateId:1,text:'synthetic'},now,false);
+  const lease=(await store.claim('123',now))!;
+  const model=()=>journal.step(lease,'model:0','model',{contents:['synthetic']},()=>now,async()=>{calls++;return {text:'result'};});
+  assert.deepEqual(await model(),{text:'result'});assert.deepEqual(await model(),{text:'result'});assert.equal(calls,1);
+  await assert.rejects(journal.step(lease,'model:0','model',{contents:['different']},()=>now,async()=>({})),/STEP_INPUT_CHANGED/);
+  await assert.rejects(journal.step(lease,'model:1','model',{},()=>now,async()=>{calls++;throw Error('network');}));
+  await assert.rejects(journal.step(lease,'model:1','model',{},()=>now,async()=>{calls++;return {};}),/ALREADY_ATTEMPTED/);assert.equal(calls,2);
+  const request={name:'create_task',args:{title:'test',deadline:null}},result={status:'applied',task_id:'tool-task'};
+  const mutation=db.prepare("INSERT INTO tasks(id,owner,title,created) VALUES('tool-task','123','test',0)");
+  await assert.rejects(journal.commitWrite(lease,request,result,[mutation,db.prepare('INSERT INTO transaction_guard VALUES(0)')],now));
+  assert.equal(await journal.writeResult(lease,request),null);assert.equal(await db.prepare("SELECT id FROM tasks WHERE id='tool-task'").first(),null);
+  await journal.commitWrite(lease,request,result,[mutation],now);
+  assert.deepEqual(await journal.commitWrite(lease,request,result,[mutation],now),result);
+  assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM tasks').first<{n:number}>())!.n,1);
+  await assert.rejects(journal.commitWrite(lease,{name:'create_task',args:{title:'other'}},result,[],now),/WRITE_INPUT_CHANGED/);
+  const pending=journal.pendingStatements(lease,'create_task',{title:'same',deadline:null},'existing_title',now);
+  await db.batch(pending.statements);
+  assert.equal((await journal.pending('123',now))!.id,pending.id);
+  assert.equal(await journal.pending('999',now),null);
+  await assert.rejects(db.batch(journal.resolvePendingStatements('999',pending.id,true,now)));
+  assert.equal(await journal.pending('123',now+300000),null);
+  await db.batch([...journal.resolvePendingStatements('123',pending.id,false,now),db.prepare('DELETE FROM transaction_guard')]);
+  assert.equal(await journal.pending('123',now),null);
+  await assert.rejects(db.batch(journal.resolvePendingStatements('123',pending.id,true,now)));
+  now+=30001;
+  await assert.rejects(journal.step(lease,'read:2:0','read',{},()=>now,async()=>{throw Error('must not execute');}));
+ }finally{await mf.dispose();}
+});
+
 test('native tool executor reads scoped data and plans writes from typed args, independent of phrasing',async()=>{
  const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
  try{

@@ -6,6 +6,8 @@ Checkpoint: đã có function declarations/response parsing/data validation và 
 
 Checkpoint executor: tool-executor dùng typed args/WorkReader, trả result+mutation plan; loop bounded trong conversation-command dùng ports model/execute/commit, không retry mutation khi final-model lỗi. D1 find_tasks/get_agenda owner-scoped/paginated. Còn nối step receipts/pending/commit với runtime, hỗ trợ xóa deadline và dọn các handler cũ; code trung gian chưa deploy. Không thêm file executor thứ hai.
 
+Checkpoint journal: migration0010 thêm tool_steps (unique write/turn) và pending_tool_actions chuẩn. ConversationStore.step/commitWrite lưu kết quả và guard owner lease; model bước mất kết quả không gọi lại, write receipt cùng transaction nghiệp vụ. Pending có owner/TTL/one-use; test rollback/replay/input mismatch/sender hết lease đạt. Chưa nối orchestrator production hoặc áp migration; không coi code legacy đã được dọn.
+
 ## 1. Luồng duy nhất
 
 Telegram → inbox/owner lease → context nhỏ → Gemini → tool call có kiểu → backend validate/execute → tool result → trả lời người dùng.

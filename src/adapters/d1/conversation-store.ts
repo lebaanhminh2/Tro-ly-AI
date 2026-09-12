@@ -1,9 +1,74 @@
-import {query,type Database} from './database.ts';
+import {query,type Database,type Statement} from './database.ts';
+import type {Lease} from '../../ports/work-store.ts';
 import {parseConversation,type ConversationIntent,type ConversationMutation} from '../../domain/conversation.ts';
 
 export class ConversationStore {
  private db:Database;
  constructor(db:Database){this.db=db;}
+ private fence(lease:Lease,now:number){return query(this.db,`INSERT INTO transaction_guard SELECT CASE WHEN
+  EXISTS(SELECT 1 FROM owner_leases WHERE owner=? AND token=? AND expires>?) AND
+  EXISTS(SELECT 1 FROM command_inbox WHERE owner=? AND update_id=? AND state='pending') THEN 1 ELSE 0 END`,lease.owner,lease.token,now,lease.owner,lease.input.updateId);}
+
+ async step<T>(lease:Lease,key:string,kind:'model'|'read',request:unknown,clock:()=>number,run:()=>Promise<T>):Promise<T>{
+  if(!/^(model:[0-2]|read:[0-2]:[0-1])$/.test(key)||!key.startsWith(kind+':'))throw Error('INVALID_STEP');
+  const requestJson=JSON.stringify(request);
+  if(!requestJson||requestJson.length>100000)throw Error('INVALID_STEP_REQUEST');
+  const prior=await query(this.db,'SELECT state,kind,request_json,result_json FROM tool_steps WHERE owner=? AND update_id=? AND step_key=?',lease.owner,lease.input.updateId,key)
+   .first<{state:string;kind:string;request_json:string;result_json:string|null}>();
+  if(prior){
+   if(prior.request_json!==requestJson||prior.kind!==kind)throw Error('STEP_INPUT_CHANGED');
+   if(prior.state==='done'&&prior.result_json)return JSON.parse(prior.result_json) as T;
+   throw Error('STEP_ALREADY_ATTEMPTED');
+  }
+  await this.db.batch([this.fence(lease,clock()),query(this.db,"INSERT INTO tool_steps(owner,update_id,step_key,kind,state,request_json,created) VALUES(?,?,?,?,'started',?,?)",lease.owner,lease.input.updateId,key,kind,requestJson,clock()),query(this.db,'DELETE FROM transaction_guard')]);
+  try{
+   const result=await run(),json=JSON.stringify(result);
+   if(!json||json.length>100000)throw Error('INVALID_STEP_RESULT');
+   await this.db.batch([this.fence(lease,clock()),query(this.db,"UPDATE tool_steps SET state='done',result_json=? WHERE owner=? AND update_id=? AND step_key=? AND state='started'",json,lease.owner,lease.input.updateId,key),query(this.db,'DELETE FROM transaction_guard')]);
+   return result;
+  }catch{
+   // A provider may have processed a timed-out request. Never auto-repeat the model step.
+   await query(this.db,`UPDATE tool_steps SET state='failed' WHERE owner=? AND update_id=? AND step_key=? AND state='started'
+    AND EXISTS(SELECT 1 FROM owner_leases WHERE owner=? AND token=? AND expires>?)`,lease.owner,lease.input.updateId,key,lease.owner,lease.token,clock()).run();
+   throw Error('STEP_UNAVAILABLE');
+  }
+ }
+
+ async writeResult(lease:Lease,request:unknown):Promise<Record<string,unknown>|null>{
+  const row=await query(this.db,"SELECT request_json,result_json FROM tool_steps WHERE owner=? AND update_id=? AND kind='write' AND state='done'",lease.owner,lease.input.updateId)
+   .first<{request_json:string;result_json:string}>();
+  if(!row)return null;
+  if(row.request_json!==JSON.stringify(request))throw Error('WRITE_INPUT_CHANGED');
+  return JSON.parse(row.result_json);
+ }
+
+ async commitWrite(lease:Lease,request:unknown,result:Record<string,unknown>,statements:Statement[],now:number){
+  const prior=await this.writeResult(lease,request);if(prior)return prior;
+  const requestJson=JSON.stringify(request),resultJson=JSON.stringify(result);
+  if(requestJson.length>16000||resultJson.length>24000)throw Error('TOOL_RESULT_TOO_LARGE');
+  await this.db.batch([this.fence(lease,now),
+   query(this.db,"INSERT INTO tool_steps(owner,update_id,step_key,kind,state,request_json,result_json,created) VALUES(?,?,'write','write','done',?,?,?)",lease.owner,lease.input.updateId,requestJson,resultJson,now),
+   ...statements,query(this.db,'DELETE FROM transaction_guard')]);
+  return result;
+ }
+
+ pendingStatements(lease:Lease,name:string,args:Record<string,unknown>,reason:string,now:number){
+  const id=`pending_${lease.owner}_${lease.input.updateId}`;
+  return {id,statements:[
+   query(this.db,"UPDATE pending_tool_actions SET status='expired' WHERE owner=? AND status='pending'",lease.owner),
+   query(this.db,'INSERT INTO pending_tool_actions(id,owner,tool_name,args_json,reason,expires,origin_update_id) VALUES(?,?,?,?,?,?,?)',id,lease.owner,name,JSON.stringify(args),reason,now+300000,lease.input.updateId)
+  ]};
+ }
+ async pending(owner:string,now:number){
+  return query(this.db,"SELECT id,tool_name,args_json,reason,expires FROM pending_tool_actions WHERE owner=? AND status='pending' AND expires>?",owner,now)
+   .first<{id:string;tool_name:string;args_json:string;reason:string;expires:number}>();
+ }
+ resolvePendingStatements(owner:string,id:string,accept:boolean,now:number){
+  return [
+   query(this.db,"INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM pending_tool_actions WHERE id=? AND owner=? AND status='pending' AND expires>?) THEN 1 ELSE 0 END",id,owner,now),
+   query(this.db,'UPDATE pending_tool_actions SET status=? WHERE id=? AND owner=?',accept?'accepted':'rejected',id,owner)
+  ];
+ }
  async infer(owner:string,updateId:number,now:number,generate:()=>Promise<ConversationIntent>,metadata?:{model:string;promptVersion:string;source:'model'|'continuation'}){
   if(metadata&&(!/^[\w.-]{1,100}$/.test(metadata.model)||!/^[\w.-]{1,100}$/.test(metadata.promptVersion)))throw Error('INVALID_INFERENCE_METADATA');
   const row=await query(this.db,'SELECT state,envelope FROM conversation_receipts WHERE owner=? AND update_id=?',owner,updateId).first<{state:string;envelope:string|null}>();

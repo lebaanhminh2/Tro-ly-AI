@@ -5,7 +5,7 @@ Cập nhật 2026-09-12. Đọc file này trước, không nạp cả docs.
 ## Nhiệm vụ hiện tại
 
 - User đã duyệt triển khai [TOOL_CALLING_PLAN.md](TOOL_CALLING_PLAN.md) bằng yêu cầu “làm một lượt dài”. Tiếp tục trong phạm vi, không xin lại từng bước.
-- Đã có protocol + tool-executor (query scoped/typed mutation plan) + runToolTurn tối đa3 model/2read/1write. Test read→write→commit→final-model-failure và reject parallel writes; query D1 task/agenda có pagination/owner, không arbitrary SQL. Chưa nối receipt/pending port của loop vào production, chưa cutover/deploy.
+- Đã có protocol + tool-executor + bounded runToolTurn. Thêm migration0010_tool_turns (chưa remote), step journal và pending tool actions trong ConversationStore hiện có. Model/read receipt replay; write result+mutation cùng batch, unique một write/turn, owner lease fence. Pending owner/TTL/one-use đã test. Chưa nối tất cả ports vào production, chưa cutover/deploy.
 - Các API generate cũ tạm còn để test/caller hiện tại không gãy; bắt buộc xóa/chuyển trial-only ra experiments khi cutover, không tuyên bố đã dọn sạch. Không chạy hai runtime AI song song trên cloud.
 - Không tiếp tục vá regex `directRequest` hoặc mở rộng wizard. Hội thoại là chính; card hỗ trợ.
 
@@ -15,7 +15,7 @@ Cập nhật 2026-09-12. Đọc file này trước, không nạp cả docs.
 - Staging đã bật runtime hội thoại cũ, chưa native tool calling. Capture/date/remind/complete có kiểm thử nhưng user gặp lỗi câu nói tự nhiên bị regex chặn.
 - UI cards dùng revision/token; pending/receipts lưu D1. Calendar adapter có code, Calendar thật vẫn off.
 - Deploy gần nhất đã ghi nhận: `c25e59e0-ee44-48dd-ada2-ef19977c370b`. Kiểm tra thực tế trước thao tác cloud, không suy từ docs.
-- Checkpoint executor: full suite77+25 đạt; sau guard đếm cả read thất bại, targeted loop2/typecheck đạt; staging dry-run đạt. Chưa thử provider thật cho function calling; không coi plan result là đã commit.
+- Checkpoint journal: full suite78+25/typecheck/staging dry-run đạt; bổ sung pending tests đạt riêng. Chưa thử provider thật cho function calling; migration0010 chưa remote, executor chưa nối production.
 
 ## Quyền và ngân sách
 
