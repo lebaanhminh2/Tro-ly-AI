@@ -9,14 +9,14 @@ import type { ChatService } from '../application/plan-command.ts';
 import type { Clock } from '../ports/work-store.ts';
 import { queueReminders } from '../adapters/d1/reminders.ts';
 import {expireMemory, reserveAi} from '../adapters/d1/memory.ts';
-import {contextualChat} from '../ai/chat.ts';
-import {GeminiTrial} from '../ai/gemini.ts';
+import {Gemini} from '../ai/gemini.ts';
 import {CalendarService} from '../adapters/google-calendar/service.ts';
 import {GoogleClient} from '../adapters/google-calendar/client.ts';
 import {GoogleTokenVault} from '../adapters/google-calendar/vault.ts';
 import {D1UiStore} from '../adapters/d1/ui-store.ts';
 import {ConversationStore,queueAppointments,acknowledgeAppointments} from '../adapters/d1/conversation-store.ts';
-import {conversationChat} from '../application/conversation-command.ts';
+import {TOOL_PERSONA} from '../ai/persona.ts';
+import {buildContext} from '../application/context-builder.ts';
 
 export { flushOutbox };
 export function createWorker(chat?: ChatService, transport: typeof fetch = fetch, clock: Clock = { now: Date.now }, calendarOverride?:CalendarService, cardsEnabled=false) {
@@ -24,26 +24,34 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
     if(cardsEnabled&&env.DELIVERY_MODE==='outbox')await new D1UiStore(env.DB).flush(env.TELEGRAM_USER_ID,env.TELEGRAM_BOT_TOKEN!,transport,()=>clock.now());
   };
   const runtimeChat = (env: Env): ChatService | undefined => {
-    if (chat) return chat; // Explicit offline dependency injection; default export has none.
-    if(env.AI_MODE==='conversation'){
-      const receipts=new ConversationStore(env.DB);
-      return conversationChat((owner,id,now,context,turns,resolved)=>receipts.infer(owner,id,now,async()=>{
-        if(resolved)return resolved;
+    if(chat)return chat;
+    if(env.AI_MODE!=='on')return undefined;
+    const service:ChatService=async()=>{throw Error('MISSING_OWNER_LEASE');};
+    service.forLease=lease=>async(owner,text,_tasks,input,reader)=>{
+      if(!reader||owner!==lease.owner)throw Error('INVALID_CHAT_SCOPE');
+      const journal=new ConversationStore(env.DB),store=new D1WorkStore(env.DB,cardsEnabled);
+      const confirmation=input?.callback? /^tool-confirm:([yn]):(.+)$/.exec(input.callback):null;
+      const [context,pending]=await Promise.all([buildContext(reader,owner,text||'Xác nhận bằng nút',lease.input.receivedAt??clock.now()),journal.pending(owner,clock.now())]);
+      if(confirmation&&(!pending||pending.id!==confirmation[2]))return 'Đề xuất này đã cũ hoặc đã được xử lý.';
+      const initial=[{role:'user' as const,parts:[{text:JSON.stringify({contextData:JSON.parse(context.context),pending})}]},
+        ...context.turns.map(turn=>({role:turn.role,parts:[{text:turn.text}]}))];
+      const reply=await journal.turn(lease,initial,reader,(changes,now)=>store.mutationStatements(owner,changes,now,true),async(contents,allowTools,step)=>{
+        if(confirmation){
+          if(step>0)throw Error('USE_COMMITTED_FALLBACK');
+          const call={name:'resolve_pending' as const,args:{pending_id:confirmation[2],accept:confirmation[1]==='y'}};
+          return {content:{role:'model' as const,parts:[{functionCall:call}]},calls:[call],text:''};
+        }
+        if(!await reader.aiEnabled(owner))throw Error('AI_DISABLED');
         if(env.AI_TRIAL_ENDS_AT&&(!Number.isFinite(Date.parse(env.AI_TRIAL_ENDS_AT))||clock.now()>=Date.parse(env.AI_TRIAL_ENDS_AT)))throw Error('AI_TRIAL_ENDED');
-        if(!await reserveAi(env.DB,'runtime:gemini',`${owner}:${id}`,now,Number(env.AI_DAILY_LIMIT)))throw Error('AI_QUOTA');
-        const client=new GeminiTrial({apiKey:env.GEMINI_API_KEY!,model:env.GEMINI_MODEL!,
-          transport:(url,options)=>transport(url,{...options,redirect:'manual'}),now:()=>clock.now(),timeoutMs:5000,maxRequests:1});
-        return (await client.generateConversation(turns,context)).output;
-      },{model:resolved?'none':env.GEMINI_MODEL!,promptVersion:'conversation-c1-v2',source:resolved?'continuation':'model'}));
-    }
-    if (env.AI_MODE !== 'enabled') return undefined;
-    return contextualChat({generate: (turns, context, ids) => {
-      // One client per reserved call: durable D1 quota, not isolate lifetime, is authoritative.
-      const client = new GeminiTrial({apiKey: env.GEMINI_API_KEY!, model: env.GEMINI_MODEL!,
-        transport: (url, options) => transport(url, {...options, redirect: 'manual'}),
-        now: () => clock.now(), timeoutMs: 5000, maxRequests: 1});
-      return client.generate(turns, context, ids);
-    }}, (key, now) => reserveAi(env.DB, 'runtime:gemini', key, now, Number(env.AI_DAILY_LIMIT)));
+        if(!await reserveAi(env.DB,'runtime:gemini',`${owner}:${lease.input.updateId}:tool:${step}`,clock.now(),Number(env.AI_DAILY_LIMIT)))throw Error('AI_QUOTA');
+        const client=new Gemini({apiKey:env.GEMINI_API_KEY!,model:env.GEMINI_MODEL!,transport:(url,options)=>transport(url,{...options,redirect:'manual'}),timeoutMs:5000});
+        return (await client.generateTools(contents,TOOL_PERSONA,allowTools)).output;
+      },()=>clock.now());
+      const awaiting=await journal.pending(owner,clock.now());
+      if(awaiting&&awaiting.id===`pending_${owner}_${lease.input.updateId}`)return {view:{text:reply,buttons:[[{text:'Xác nhận',callback_data:`tool-confirm:y:${awaiting.id}`},{text:'Thôi',callback_data:`tool-confirm:n:${awaiting.id}`}]]},changes:[]};
+      return reply;
+    };
+    return service;
   };
   const calendar=(env:Env)=>{
     if(env.CALENDAR_MODE!=='enabled')return undefined;
@@ -63,7 +71,7 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
       }
       try{await calendarService?.tick();}catch{/* Error state remains visible via /calendar; never log tokens. */}
       await queueReminders(env.DB,env.TELEGRAM_USER_ID,clock.now());
-      if(env.AI_MODE==='conversation')await queueAppointments(env.DB,env.TELEGRAM_USER_ID,clock.now());
+      if(cardsEnabled)await queueAppointments(env.DB,env.TELEGRAM_USER_ID,clock.now());
       await flushOutbox(env, transport, clock.now());
       await flushCards(env);
     },
@@ -110,7 +118,7 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
       try {
         const store = new D1WorkStore(env.DB,cardsEnabled);
         const isNew = await store.accept(input, clock.now(), env.DELIVERY_MODE === 'outbox');
-        if(isNew&&env.AI_MODE==='conversation')await acknowledgeAppointments(env.DB,input.owner);
+        if(isNew&&cardsEnabled)await acknowledgeAppointments(env.DB,input.owner);
         if(cardsEnabled&&env.DELIVERY_MODE==='outbox'&&input.callbackId&&isNew){
           const action=input.messageId&&input.callback?.startsWith('ui:')
             ?await new D1UiStore(env.DB).resolve(input.owner,input.chat,input.messageId,input.callback,clock.now()):null;

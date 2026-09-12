@@ -25,3 +25,5 @@ CREATE TABLE pending_tool_actions (
  UNIQUE(owner,origin_update_id)
 );
 CREATE UNIQUE INDEX tool_one_pending_per_owner ON pending_tool_actions(owner) WHERE status='pending';
+/* Old intent-specific prompts must never be executed as tool confirmations. */
+UPDATE conversation_pending SET expires=0;

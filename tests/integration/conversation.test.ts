@@ -3,12 +3,13 @@ import assert from 'node:assert/strict';
 import {readFileSync,readdirSync} from 'node:fs';
 import {Miniflare} from 'miniflare';
 import {D1WorkStore} from '../../src/adapters/d1/work-store.ts';
-import {ConversationStore,queueAppointments,acknowledgeAppointments} from '../../src/adapters/d1/conversation-store.ts';
+import {ConversationStore} from '../../experiments/ai-trial/conversation-store.ts';
+import {queueAppointments,acknowledgeAppointments} from '../../src/adapters/d1/conversation-store.ts';
 import {flushOutbox} from '../../src/adapters/d1/outbox.ts';
-import {conversationChat} from '../../src/application/conversation-command.ts';
+import {conversationChat} from '../../experiments/ai-trial/conversation-command.ts';
 import {processInbox} from '../../src/application/process-inbox.ts';
-import {GeminiTrial} from '../../src/ai/gemini.ts';
-import type {ConversationIntent} from '../../src/domain/conversation.ts';
+import {GeminiTrial} from '../../experiments/ai-trial/gemini.ts';
+import type {ConversationIntent} from '../../experiments/ai-trial/conversation.ts';
 import type {Database} from '../../src/adapters/d1/database.ts';
 import {createWorker} from '../../src/entrypoints/worker.ts';
 import {buildContext} from '../../src/application/context-builder.ts';
@@ -37,6 +38,20 @@ test('native D1 turn commits typed tool once, caches final reply and resumes saf
   // Simulate losing only the final cached reply after the write: step receipts still prevent repeats.
   await db.prepare('UPDATE command_inbox SET tool_reply=NULL WHERE owner=? AND update_id=1').bind('123').run();
   assert.match(await run(),/đã thêm/);assert.equal(calls,2);assert.equal((await store.tasks('123',0)).length,1);
+  await store.commit(lease,{view:{text:'done',buttons:[]},changes:[]},now);
+  await store.accept({owner:'123',chat:123,updateId:2,text:'Thêm việc cùng tên'},now,false);
+  const duplicateLease=(await store.claim('123',now))!;
+  const proposed=await journal.turn(duplicateLease,[{role:'user',parts:[{text:'Thêm việc cùng tên'}]}],store,(changes,time)=>store.mutationStatements('123',changes,time,true),async()=>({content:{role:'model',parts:[{functionCall:call}]},calls:[call],text:''}),()=>now);
+  assert.match(proposed,/xác nhận/);assert.equal((await store.tasks('123',0)).length,1);
+  const pending=(await journal.pending('123',now))!;assert.ok(pending);
+  await store.commit(duplicateLease,{view:{text:proposed,buttons:[]},changes:[]},now);
+  await store.accept({owner:'123',chat:123,updateId:3,text:'Ừ thêm đi'},now,false);
+  const confirmLease=(await store.claim('123',now))!;
+  const confirm:ToolCall={name:'resolve_pending',args:{pending_id:pending.id,accept:true}};let confirmations=0;
+  const confirmed=await journal.turn(confirmLease,[{role:'user',parts:[{text:'Ừ thêm đi'}]}],store,(changes,time)=>store.mutationStatements('123',changes,time,true),async()=>{
+    confirmations++;return confirmations===1?{content:{role:'model',parts:[{functionCall:confirm}]},calls:[confirm],text:''}:{content:{role:'model',parts:[{text:'Đã thêm việc mới nhé.'}]},calls:[],text:'Đã thêm việc mới nhé.'};
+  },()=>now);
+  assert.match(confirmed,/Đã thêm/);assert.equal((await store.tasks('123',0)).length,2);assert.equal(await journal.pending('123',now),null);
  }finally{await mf.dispose();}
 });
 
@@ -223,22 +238,20 @@ test('Worker conversation mode writes a grounded capture and consumes durable qu
   let calls=0;const text='Tớ có bài tiếng Anh, dl ngày mai';
   const transport:typeof fetch=async(_url,init)=>{
    calls++;assert.equal(init?.redirect,'manual');
-   return Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify({kind:'capture',reply:'unused',title:'bài tiếng Anh',taskId:null,deadlineText:'ngày mai',evidence:text})}]}}]});
+   return Response.json({candidates:[{finishReason:'STOP',content:calls===1?{role:'model',parts:[{functionCall:{name:'create_task',args:{title:'bài tiếng Anh',deadline:{value:'2026-09-13',precision:'date'}}}}]}:{role:'model',parts:[{text:'Tớ ghi rồi nhé.'}]}}]});
   };
-  const env={DB:db,TELEGRAM_USER_ID:'123',TELEGRAM_WEBHOOK_SECRET:'x'.repeat(32),AI_MODE:'conversation',GEMINI_API_KEY:'fake',GEMINI_MODEL:'test-model',AI_DAILY_LIMIT:'2'};
+  const env={DB:db,TELEGRAM_USER_ID:'123',TELEGRAM_WEBHOOK_SECRET:'x'.repeat(32),AI_MODE:'on',GEMINI_API_KEY:'fake',GEMINI_MODEL:'test-model',AI_DAILY_LIMIT:'2'};
   const send=()=>createWorker(undefined,transport,{now:()=>Date.parse('2026-09-12T08:00:00+07:00')}).fetch(new Request('https://local/telegram',{
    method:'POST',headers:{'X-Telegram-Bot-Api-Secret-Token':env.TELEGRAM_WEBHOOK_SECRET},body:JSON.stringify({update_id:1,message:{from:{id:123},chat:{id:123,type:'private'},text}})
   }),env);
-  assert.match(await (await send()).text(),/Tớ ghi/);await send();assert.equal(calls,1);
+  assert.match(await (await send()).text(),/Tớ ghi/);await send();assert.equal(calls,2);
   assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM tasks').first<{n:number}>())!.n,1);
-  assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM ai_reservations').first<{n:number}>())!.n,1);
-  const receipt=await db.prepare('SELECT model,prompt_version,inference_source,inference_ms FROM conversation_receipts WHERE owner=? AND update_id=1').bind('123').first<{model:string;prompt_version:string;inference_source:string;inference_ms:number}>();
-  assert.equal(receipt!.model,'test-model');assert.equal(receipt!.prompt_version,'conversation-c1-v2');
-  assert.equal(receipt!.inference_source,'model');assert.ok(receipt!.inference_ms>=0);
+  assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM ai_reservations').first<{n:number}>())!.n,2);
+  assert.equal((await db.prepare("SELECT COUNT(*) AS n FROM tool_steps WHERE kind='model'").first<{n:number}>())!.n,2);
   const stopped=await createWorker(undefined,transport,{now:()=>Date.parse('2026-09-12T08:00:00+07:00')}).fetch(new Request('https://local/telegram',{
    method:'POST',headers:{'X-Telegram-Bot-Api-Secret-Token':env.TELEGRAM_WEBHOOK_SECRET},body:JSON.stringify({update_id:2,message:{from:{id:123},chat:{id:123,type:'private'},text}})
   }),{...env,AI_TRIAL_ENDS_AT:'2026-09-11T00:00:00Z'});
-  assert.match(await stopped.text(),/gián đoạn/);assert.equal(calls,1);
+  assert.match(await stopped.text(),/gián đoạn/);assert.equal(calls,2);
  }finally{await mf.dispose();}
 });
 

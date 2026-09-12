@@ -2,6 +2,8 @@
 
 2026-09-12. Đã được user duyệt triển khai bằng yêu cầu làm một lượt dài. Đang thay source, chưa cutover/deploy. Yêu cầu sản phẩm/persona không đổi; không thêm UI/provider/framework.
 
+**Trạng thái mới nhất:** đã cutover source handler sang native tool calling, chỉ off/on; gỡ directRequest/legacy JSON-intent khỏi src. Pending resolve qua model hoặc nút đều dùng executor; nút không gọi provider. Legacy harness chuyển vào experiments giữ tests. Production giảm khoảng500 dòng, không dependency mới. Cloud chưa deploy,0010 chưa remote. Cần smoke native với quyền mới; generic draft clarification/assistant-origin proposal và semantic authorization vẫn cần kiểm chứng, không coi test pass là mọi ca hội thoại đều đúng. Các checkpoint bên dưới là tiến trình kỹ thuật trước cutover source.
+
 Checkpoint: đã có function declarations/response parsing/data validation và adapter native giữ nguyên model parts/call ID, không dùng JSON response schema cho tool mode. Các entrypoint cũ chưa chuyển, executor/receipts/cleanup chưa hoàn tất; đây chưa phải bot function calling đã chạy. API đối chiếu [Google generateContent](https://ai.google.dev/api/generate-content) và [function calling](https://ai.google.dev/gemini-api/docs/function-calling); không đổi model theo ví dụ tài liệu.
 
 Checkpoint executor: tool-executor dùng typed args/WorkReader, trả result+mutation plan; loop bounded trong conversation-command dùng ports model/execute/commit, không retry mutation khi final-model lỗi. D1 find_tasks/get_agenda owner-scoped/paginated. Còn nối step receipts/pending/commit với runtime, hỗ trợ xóa deadline và dọn các handler cũ; code trung gian chưa deploy. Không thêm file executor thứ hai.

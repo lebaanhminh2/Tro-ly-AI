@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { decide } from '../../src/ai/policy.ts';
-import type { Reply } from '../../src/ai/contracts.ts';
+import { decide } from '../../experiments/ai-trial/policy.ts';
+import type { Reply } from '../../experiments/ai-trial/contracts.ts';
 
 const text = 'dời buổi vẽ';
 const draft: Reply = { kind: 'proposal', reply: 'Đã đổi', draft: {

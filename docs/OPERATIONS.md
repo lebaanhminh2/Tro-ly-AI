@@ -6,7 +6,7 @@
 - entrypoints nối application/domain/ports/adapters. Không domain SQL/fetch, không runtime import experiments/tests.
 - Schema thực tế: migrations; interface: src/ports; không chép lại toàn schema trong docs.
 - D1 lưu tasks, sessions, appointments, memory, pending, receipts, inbox/outbox và UI revisions.
-- Hiện vẫn còn runtime AI legacy/regex; phạm vi thay dứt điểm ở TOOL_CALLING_PLAN.
+- Source production hiện dùng Gemini native tools, AI_MODE off/on; legacy harness chỉ experiments. Cloud vẫn bản cũ cho tới deploy được duyệt. Không dùng config on trước khi áp0010 và duyệt ngân sách live.
 
 ## Kiểm tra local
 
@@ -37,7 +37,7 @@ Kiểm kết quả theo hành vi, không lấy số test/audit=0 làm chứng nh
 4. Không giả deploy thành công = người dùng đã nhận tin/AI hiểu đúng.
 5. Rollback code/config có chủ đích; không rollback schema hoặc xóa DB tùy tiện.
 
-Quota/pilot deadline hiện tại đọc HANDOFF + wrangler; không tự gia hạn. AI off không nên làm mất các hẹn đã lưu: runtime hiện còn coupling cần sửa trong kế hoạch.
+Quota/pilot deadline hiện tại đọc HANDOFF + wrangler; không tự gia hạn. Source mới vẫn chạy hẹn đã lưu khi AI off; không phụ thuộc lựa chọn model.
 Calendar vẫn off; live OAuth/Google writes cần quyền riêng, không bật chung khi test AI.
 
 ## Checklist bảo mật bắt buộc

@@ -7,10 +7,36 @@ import {configured, type Env} from '../../src/config/env.ts';
 import {query, type Database} from '../../src/adapters/d1/database.ts';
 import {D1WorkStore} from '../../src/adapters/d1/work-store.ts';
 
+test('native Worker creates a pending card and its confirmation button commits without another model call',async()=>{
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync(`migrations/${f}`,'utf8').replace(/\r?\n/g,' '));
+  await db.prepare("INSERT INTO tasks(id,owner,title,created) VALUES('existing','123','rửa bát',0)").run();
+  const env:Env={DB:db,TELEGRAM_USER_ID:'123',TELEGRAM_WEBHOOK_SECRET:'x'.repeat(32),TELEGRAM_BOT_TOKEN:'123:fake',DELIVERY_MODE:'outbox',AI_MODE:'on',GEMINI_API_KEY:'fake',GEMINI_MODEL:'test-model',AI_DAILY_LIMIT:'4'};
+  const sent:Record<string,any>[]=[];let modelCalls=0;
+  const transport:typeof fetch=async(url,init)=>{
+   if(String(url).includes('generativelanguage')){modelCalls++;return Response.json({candidates:[{finishReason:'STOP',content:{role:'model',parts:[{functionCall:{name:'create_task',args:{title:'rửa bát',deadline:null}}}]}}]});}
+   const body=JSON.parse(String(init?.body)),method=String(url).split('/').at(-1)!;sent.push({method,...body});
+   return Response.json({ok:true,result:method==='answerCallbackQuery'?true:{message_id:77}});
+  };
+  const worker=createWorker(undefined,transport,{now:()=>Date.parse('2026-09-12T12:00:00+07:00')},undefined,true);
+  const run=(body:unknown)=>worker.fetch(new Request('https://local/telegram',{method:'POST',headers:{'X-Telegram-Bot-Api-Secret-Token':env.TELEGRAM_WEBHOOK_SECRET},body:JSON.stringify(body)}),env);
+  assert.equal((await run({update_id:1,message:{from:{id:123},chat:{id:123,type:'private'},text:'Thêm cho tớ việc rửa bát'}})).status,200);
+  const button=sent.at(-1)!.reply_markup.inline_keyboard[0][0].callback_data;
+  const callback={update_id:2,callback_query:{id:'cb',data:button,from:{id:123},message:{message_id:77,chat:{id:123,type:'private'}}}};
+  assert.equal((await run(callback)).status,200);assert.equal(modelCalls,1);
+  assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM tasks').first<{n:number}>())!.n,2);
+  assert.equal(sent.at(-1)!.method,'editMessageText');assert.match(sent.at(-1)!.text,/đã thêm/);
+  await run({...callback,update_id:3});assert.equal(modelCalls,1);
+  assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM tasks').first<{n:number}>())!.n,2);
+ }finally{await mf.dispose();}
+});
+
 test('runtime config requires explicit AI switch, key, model and bounded budget', () => {
   const env: Env = {DB: {} as Database, TELEGRAM_USER_ID: '123', TELEGRAM_WEBHOOK_SECRET: 'x'.repeat(32)};
   assert.equal(configured(env), true);
-  env.AI_MODE = 'enabled';
+  env.AI_MODE = 'on';
   assert.equal(configured(env), false);
   Object.assign(env, {GEMINI_API_KEY: 'synthetic-key', GEMINI_MODEL: 'test-model', AI_DAILY_LIMIT: '20'});
   assert.equal(configured(env), true);
@@ -42,9 +68,7 @@ test('runtime Gemini wiring: context, switches, persistent quota, replay and saf
       assert.equal(new Headers(options?.headers).get('x-goog-api-key'), 'synthetic-key');
       bodies.push(String(options?.body));
       if (failure) return new Response('synthetic-key: provider details', {status: 429});
-      return Response.json({candidates: [{finishReason: 'STOP', content: {parts: [{text: JSON.stringify({
-        kind: 'chat', reply: 'ừ, kể tớ nghe tiếp nhé', draft: null
-      })}]}}]});
+      return Response.json({candidates: [{finishReason: 'STOP', content: {role:'model',parts: [{text:'ừ, kể tớ nghe tiếp nhé'}]}}]});
     };
     // Recreate the worker on every request to exercise durable, not in-memory, quotas.
     const request = (text: string, updateId = ++seq, owner = 123, secret = env.TELEGRAM_WEBHOOK_SECRET) =>
@@ -56,7 +80,7 @@ test('runtime Gemini wiring: context, switches, persistent quota, replay and saf
     await request('/ai on');
     await request('chào khi runtime tắt');
     assert.equal(calls, 0);
-    env.AI_MODE = 'enabled';
+    env.AI_MODE = 'on';
     assert.equal((await request('chào', ++seq, 123, 'wrong')).status, 403);
     await request('chào', ++seq, 999);
     await request('/tasks');
@@ -76,7 +100,7 @@ test('runtime Gemini wiring: context, switches, persistent quota, replay and saf
     assert.ok(bodies[1]!.includes('chào cậu'));
     assert.equal(calls, 2);
     const limited = await request('hết quota');
-    assert.match(await limited.text(), /giới hạn/);
+    assert.match(await limited.text(), /gián đoạn/);
     assert.equal(calls, 2);
     // Changing model cannot bypass the application's shared reservation budget.
     env.GEMINI_MODEL = 'another-model';

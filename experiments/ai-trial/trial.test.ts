@@ -8,8 +8,8 @@ import { PersistentBudget } from './try-ai.ts';
 import { TrialFlow } from './trial-flow.ts';
 import { deadlineValue } from '../../src/domain/time.ts';
 import { cases, syntheticInput } from './ai-cases.ts';
-import { decide } from '../../src/ai/policy.ts';
-import type { Reply } from '../../src/ai/contracts.ts';
+import { decide } from './policy.ts';
+import type { Reply } from './contracts.ts';
 const chat = { kind: 'chat', reply: 'ừ, cậu kể tiếp đi', draft: null };
 
 function capturedFlow(clock = () => Date.parse('2026-09-11T10:00:00+07:00')) {

@@ -1,4 +1,3 @@
-import type { Draft, Reply, Turn } from './contracts.ts';
 import type {ToolCall,ToolName} from './contracts.ts';
 
 export function isReadTool(name:ToolName){return name==='find_tasks'||name==='get_agenda';}
@@ -26,6 +25,7 @@ function deadlineArg(value:unknown){
 export function validateTool(call:ToolCall,now:number):void{
  const a=call.args;
  switch(call.name){
+  case 'resolve_pending':fields(a,['pending_id','accept']);textArg(a.pending_id,100);if(typeof a.accept!=='boolean')throw Error('INVALID_CONFIRMATION');break;
   case 'find_tasks':fields(a,['query','status','cursor']);if(typeof a.query!=='string'||a.query.length>160||!['active','completed','all'].includes(String(a.status)))throw Error('INVALID_QUERY');cursorArg(a.cursor);break;
   case 'get_agenda':fields(a,['from','to','cursor']);{const from=timestamp(a.from),to=timestamp(a.to);if(to<=from||to-from>31*86400000)throw Error('INVALID_RANGE');}cursorArg(a.cursor);break;
   case 'create_task':fields(a,['title','deadline']);textArg(a.title,160);deadlineArg(a.deadline);break;
@@ -39,33 +39,4 @@ export function validateTool(call:ToolCall,now:number):void{
   default:throw Error('UNKNOWN_TOOL');
  }
  if('expected_version' in a&&(!Number.isSafeInteger(a.expected_version)||Number(a.expected_version)<1))throw Error('INVALID_VERSION');
-}
-
-export type Entity = { id: string; ownerId: string; type: 'task' | 'session' };
-// Supplied by a validated UI selection, not the LLM or fixture expectations.
-export type SelectedScope = { operation: Draft['operation']; entityId: string | null; field: Draft['field'] };
-export type PolicyContext = { userId: string; entities: Entity[]; selectedScope?: SelectedScope };
-export type Decision = { kind: 'chat' | 'clarify' | 'proposal'; text: string; pending: Draft | null; reason: string };
-
-export function decide(reply: Reply, turns: Turn[], context: PolicyContext): Decision {
-  const clarify = (reason: string, text: string): Decision => ({ kind: 'clarify', text, pending: null, reason });
-  if (!reply.draft) return { kind: reply.kind === 'clarify' ? 'clarify' : 'chat', text: reply.reply, pending: null, reason: 'NO_MUTATION' };
-  const draft = reply.draft;
-  const last = turns.at(-1);
-  if (last?.role !== 'user' || !last.text.includes(draft.evidence))
-    return clarify('STALE_EVIDENCE', 'Cậu muốn đổi thông tin nào lúc này?');
-  if (draft.operation === 'capture_task') {
-    // Exact title grounding only; still pending confirmation, never saves anything.
-    if (!last.text.includes(draft.value)) return clarify('UNGROUNDED_TITLE', 'Cậu muốn ghi tên việc là gì?');
-    return { kind: 'proposal', text: `Tớ ghi việc “${draft.value}” nhé?`, pending: draft, reason: 'CAPTURE_CONFIRMATION' };
-  }
-  const entity = context.entities.find(e => e.id === draft.entityId && e.ownerId === context.userId);
-  const requiredType = draft.operation === 'reschedule_session' ? 'session' : 'task';
-  if (!entity || entity.type !== requiredType)
-    return clarify('INVALID_ENTITY_SCOPE', 'Cậu đang nói đến việc hay buổi làm nào?');
-  const scope = context.selectedScope;
-  if (!scope || scope.operation !== draft.operation || scope.entityId !== draft.entityId || scope.field !== draft.field)
-    return clarify('SCOPE_NOT_CONFIRMED', 'Cậu muốn đổi hạn nộp, buổi làm hay thông tin khác của việc này?');
-  // Dates, progress and estimates need typed domain validation not yet implemented.
-  return clarify('VALUE_VALIDATION_NOT_IMPLEMENTED', 'Tớ chưa kiểm tra được thay đổi này nên chưa tạo đề xuất cập nhật nhé.');
 }

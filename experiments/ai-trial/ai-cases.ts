@@ -1,5 +1,5 @@
-import type { Turn } from '../../src/ai/contracts.ts';
-import type { Entity } from '../../src/ai/policy.ts';
+import type { Turn } from './contracts.ts';
+import type { Entity } from './policy.ts';
 
 export const cases = [
   ['T01', 'còn bài báo cáo môn A nữa'], ['T02', 'hình như chủ nhật nộp'],

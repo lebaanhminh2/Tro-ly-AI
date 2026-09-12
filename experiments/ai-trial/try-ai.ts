@@ -1,7 +1,7 @@
-import { GeminiTrial } from '../../src/ai/gemini.ts';
+import { GeminiTrial } from './gemini.ts';
 import { mkdirSync, readFileSync, renameSync, writeFileSync, openSync, closeSync, unlinkSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
-import { decide } from '../../src/ai/policy.ts';
+import { decide } from './policy.ts';
 import { TrialFlow } from './trial-flow.ts';
 import { syntheticInput as cleanInput, cases } from './ai-cases.ts';
 import { dirname, resolve } from 'node:path';

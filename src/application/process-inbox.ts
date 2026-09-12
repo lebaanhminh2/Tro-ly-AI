@@ -11,8 +11,8 @@ export async function processInbox(store: WorkStore, owner: string, clock: Clock
       await store.prepareUi?.(lease,clock.now());
       const plan = lease.uiStale ? {view:{text:'Lựa chọn đã cũ. Mở lại danh sách nhé.',buttons:[],silent:true},changes:[]}
         : lease.attempts > 3
-        ? { view: { text: 'Lệnh này chưa thực hiện được sau nhiều lần thử. Không có thay đổi từ lệnh này được lưu; cậu có thể gửi lại yêu cầu.', buttons: [] }, changes: [] }
-        : await planCommand(lease.input, store, clock.now(), chat, calendar ? {command: input=>{
+        ? { view: { text: 'Xử lý phản hồi bị gián đoạn nhiều lần. Thay đổi có thể đã lưu; cậu kiểm tra trạng thái trước khi gửi lại yêu cầu nhé.', buttons: [] }, changes: [] }
+        : await planCommand(lease.input, store, clock.now(), chat?.forLease?.(lease)??chat, calendar ? {command: input=>{
           const run=()=>calendar.command(input,{token:lease.token});
           return store.calendarResult?store.calendarResult(lease,run,clock):run();
         }} : undefined);

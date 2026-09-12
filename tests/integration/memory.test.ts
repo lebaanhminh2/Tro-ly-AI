@@ -7,8 +7,8 @@ import {D1WorkStore} from '../../src/adapters/d1/work-store.ts';
 import {reserveAi,expireMemory} from '../../src/adapters/d1/memory.ts';
 import {processInbox} from '../../src/application/process-inbox.ts';
 import {buildContext} from '../../src/application/context-builder.ts';
-import {contextualChat} from '../../src/ai/chat.ts';
-import type {Turn} from '../../src/ai/contracts.ts';
+import {contextualChat} from '../../experiments/ai-trial/chat.ts';
+import type {Turn} from '../../experiments/ai-trial/contracts.ts';
 
 test('P3 memory context, expiry, forget, owner isolation, chat capture confirmation and quotas',async()=>{
  const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});

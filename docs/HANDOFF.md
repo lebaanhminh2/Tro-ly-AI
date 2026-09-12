@@ -5,8 +5,8 @@ Cập nhật 2026-09-12. Đọc file này trước, không nạp cả docs.
 ## Nhiệm vụ hiện tại
 
 - User đã duyệt triển khai [TOOL_CALLING_PLAN.md](TOOL_CALLING_PLAN.md) bằng yêu cầu “làm một lượt dài”. Tiếp tục trong phạm vi, không xin lại từng bước.
-- Native D1 turn đã nối model/read step receipts → executeTool → mutationStatements dùng chung → write receipt atomic → final reply cache. Test mất final generation/reply vẫn không duplicate write/model. Migration0010 chưa remote, có tool_context/tool_reply trong inbox; snapshot context ổn định khi replay. Chưa cắm handler production, chưa cutover/deploy; còn pending accept/reject qua chat/nút và cleanup legacy.
-- Các API generate cũ tạm còn để test/caller hiện tại không gãy; bắt buộc xóa/chuyển trial-only ra experiments khi cutover, không tuyên bố đã dọn sạch. Không chạy hai runtime AI song song trên cloud.
+- Handler production đã chuyển sang native Gemini tools, AI_MODE off/on duy nhất. Native D1 journal/executor + pending resolve qua model hoặc button (button không model), final fallback sau write. Query/validation typed, không directRequest/parseConversation/generateConversation trong src.
+- Legacy chat/parser/prompt chuyển vào experiments/ai-trial để giữ regression, src/ai/chat.ts xóa; không runtime import experiments. Kho/bảng receipt cũ và mutation compatibility còn để tests/UI không mất dữ liệu, không có AI handler cũ chạy ngầm. Migration0010 chưa remote, config repo AI off, chưa deploy.
 - Không tiếp tục vá regex `directRequest` hoặc mở rộng wizard. Hội thoại là chính; card hỗ trợ.
 
 ## Trạng thái sản phẩm
@@ -15,7 +15,8 @@ Cập nhật 2026-09-12. Đọc file này trước, không nạp cả docs.
 - Staging đã bật runtime hội thoại cũ, chưa native tool calling. Capture/date/remind/complete có kiểm thử nhưng user gặp lỗi câu nói tự nhiên bị regex chặn.
 - UI cards dùng revision/token; pending/receipts lưu D1. Calendar adapter có code, Calendar thật vẫn off.
 - Deploy gần nhất đã ghi nhận: `c25e59e0-ee44-48dd-ada2-ef19977c370b`. Kiểm tra thực tế trước thao tác cloud, không suy từ docs.
-- Checkpoint D1 turn: full suite79+25/typecheck/staging dry-run đạt. Chưa thử provider thật cho function calling; migration0010 chưa remote, executor chưa nối production.
+- Cần smoke native thật có ngân sách mới trước deploy; ngân sách cũ không tự gia hạn. Fake tests không chứng minh tool selection/persona thật. Chưa đủ generic proposal/clarification draft ngoài prompt/pending confirmed args; không hứa hoàn thành toàn bộ sản phẩm.
+- Cutover source: full suite82+25/typecheck/staging dry-run đạt; architecture check không legacy AI handlers/regex gate trong src. Cloud chưa đổi. Không tạo thêm docs checkpoint riêng.
 
 ## Quyền và ngân sách
 

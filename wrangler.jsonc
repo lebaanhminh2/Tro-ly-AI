@@ -11,7 +11,7 @@
       "workers_dev": true,
       "preview_urls": false,
       "vars": {
-        "AI_MODE": "conversation",
+        "AI_MODE": "off",
         "GEMINI_MODEL": "gemini-3.5-flash-lite",
         "AI_DAILY_LIMIT": "20",
         "AI_TRIAL_ENDS_AT": "2026-09-13T04:58:59Z",

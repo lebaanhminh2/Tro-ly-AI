@@ -1,6 +1,6 @@
-import { parseReply } from '../../src/ai/contracts.ts';
-import type { Reply, Turn } from '../../src/ai/contracts.ts';
-import { decide } from '../../src/ai/policy.ts';
+import { parseReply } from './contracts.ts';
+import type { Reply, Turn } from './contracts.ts';
+import { decide } from './policy.ts';
 
 export type Task = { id: string; ownerId: string; title: string; deadline: string | null; version: number };
 type Proposal = { id: string; ownerId: string; taskId: string; version: number; expiresAt: number;

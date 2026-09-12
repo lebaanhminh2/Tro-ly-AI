@@ -1,8 +1,8 @@
 import type { GeminiTrial } from './gemini.ts';
-import type { Task as StoredTask } from '../domain/work.ts';
+import type { Task as StoredTask } from '../../src/domain/work.ts';
 import { decide } from './policy.ts';
-import {buildContext} from '../application/context-builder.ts';
-import type {ChatService} from '../application/plan-command.ts';
+import {buildContext} from '../../src/application/context-builder.ts';
+import type {ChatService} from '../../src/application/plan-command.ts';
 
 export type Chat = (owner: string, text: string, tasks: StoredTask[]) => Promise<string>;
 // Dependency injected for offline tests. No key discovery, no default network client.

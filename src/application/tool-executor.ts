@@ -5,7 +5,7 @@ import type {Change} from '../domain/work.ts';
 import {dayStart} from '../domain/session.ts';
 
 export type ToolOutcome={result:Record<string,unknown>;changes:Change[];fallback:string};
-export async function executeTool(call:ToolCall,store:WorkReader,owner:string,updateId:number,now:number):Promise<ToolOutcome>{
+export async function executeTool(call:ToolCall,store:WorkReader,owner:string,updateId:number,now:number,confirmed=false):Promise<ToolOutcome>{
  validateTool(call,now);
  const a=call.args;
  if(isReadTool(call.name)){
@@ -18,7 +18,7 @@ export async function executeTool(call:ToolCall,store:WorkReader,owner:string,up
  }
  if(call.name==='create_task'){
   const same=await store.sameTitleTasks?.(owner,String(a.title))??[];
-  if(same.length)return {result:{status:'needs_confirmation',reason:'existing_title',matches:same.map(t=>({id:t.id,title:t.title,version:t.version}))},changes:[],fallback:'Có việc cùng tên rồi. Cậu muốn thêm việc mới hay sửa việc đã có?'};
+  if(same.length&&!confirmed)return {result:{status:'needs_confirmation',reason:'existing_title',matches:same.map(t=>({id:t.id,title:t.title,version:t.version}))},changes:[],fallback:`Đã có “${a.title}”. Cậu xác nhận thêm một việc mới cùng tên nhé?`};
   const id=`tool${owner}_${updateId}`;
   return {result:{status:'planned',task_id:id,title:a.title,deadline:a.deadline},fallback:`Tớ đã thêm “${a.title}”.`,changes:[{
    type:'conversation-task',owner,updateId,taskId:id,title:String(a.title),created:now,deadline:a.deadline as import('../domain/conversation.ts').Deadline|null,expectedVersion:null
@@ -31,6 +31,7 @@ export async function executeTool(call:ToolCall,store:WorkReader,owner:string,up
  if(call.name==='remember_preference')return {result:{status:'planned',content:a.content,lifetime:a.lifetime},fallback:'Tớ đã ghi nhớ theo yêu cầu của cậu.',changes:[{
   type:'remember',memory:{id:`toolmem${owner}_${updateId}`,owner,content:String(a.content),kind:a.lifetime==='today'?'temporary':'preference',source:`user-tool:${updateId}`,created:now,expires:a.lifetime==='today'?dayStart(now)+86400000:null}
  }]};
+ if(call.name==='resolve_pending')throw Error('PENDING_RESOLUTION_REQUIRES_JOURNAL');
  const task=await store.task(owner,String(a.task_id));
  if(!task)return {result:{status:'rejected',reason:'task_not_found'},changes:[],fallback:'Tớ chưa tìm thấy việc này.'};
  if(task.version!==a.expected_version)return {result:{status:'rejected',reason:'stale_version',task},changes:[],fallback:'Việc vừa thay đổi. Mình kiểm tra lại trước nhé.'};
@@ -47,9 +48,7 @@ export async function executeTool(call:ToolCall,store:WorkReader,owner:string,up
   if('deadline' in patch)return {result:{status:'needs_confirmation',reason:'split_status_and_deadline'},changes:[],fallback:'Mình đổi trạng thái hay hạn trước nhé?'};
   changes.push({type:'conversation-completion',owner,taskId:task.id,expectedVersion:task.version,operation:patch.status==='completed'?'complete':'reopen',updateId,now});
  }else if('deadline' in patch){
-  // Null deadline removal will be supported by the shared transaction adapter during cutover.
-  if(patch.deadline===null)return {result:{status:'rejected',reason:'deadline_removal_not_available'},changes:[],fallback:'Tớ chưa thể bỏ hạn trong phiên bản này.'};
-  changes.push({type:'conversation-task',owner,updateId,taskId:task.id,title:null,created:now,deadline:patch.deadline as import('../domain/conversation.ts').Deadline,expectedVersion:task.version});
+  changes.push({type:'conversation-task',owner,updateId,taskId:task.id,title:null,created:now,deadline:patch.deadline as import('../domain/conversation.ts').Deadline|null,expectedVersion:task.version});
  }
  return {result:{status:changes.length?'planned':'unchanged',task_id:task.id,patch},changes,fallback:changes.length?`Tớ đã cập nhật “${task.title}”.`:'Việc đã ở trạng thái đó rồi nhé.'};
 }

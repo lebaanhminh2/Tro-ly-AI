@@ -1,4 +1,4 @@
-export type ToolName='find_tasks'|'get_agenda'|'create_task'|'update_task'|'set_reminder'|'set_reminder_pause'|'remember_preference';
+export type ToolName='find_tasks'|'get_agenda'|'create_task'|'update_task'|'set_reminder'|'set_reminder_pause'|'remember_preference'|'resolve_pending';
 export type ToolCall={name:ToolName;args:Record<string,unknown>;id?:string};
 export type ModelContent={role:'user'|'model';parts:Record<string,unknown>[]};
 export type ModelStep={content:ModelContent;calls:ToolCall[];text:string};
@@ -7,6 +7,7 @@ const integer={type:'INTEGER'};
 const deadline={type:'OBJECT',nullable:true,properties:{value:str,precision:{type:'STRING',enum:['date','datetime']}},required:['value','precision']};
 const declaration=(name:ToolName,description:string,properties:Record<string,unknown>,required=Object.keys(properties))=>({name,description,parameters:{type:'OBJECT',properties,required}});
 export const TOOL_DECLARATIONS=[
+ declaration('resolve_pending','Accept or reject the exact pending action only when the user clearly answers it. Never use to approve your own suggestion.',{pending_id:str,accept:{type:'BOOLEAN'}}),
  declaration('find_tasks','Find tasks owned by the user. Query by title, or pass an empty query to list. Use returned IDs/versions, never invent them.',{query:str,status:{type:'STRING',enum:['active','completed','all']},cursor:integer}),
  declaration('get_agenda','Read local task deadlines, appointments and work sessions for a time interval. Does not imply Google Calendar is connected.',{from:str,to:str,cursor:integer}),
  declaration('create_task','Create a task the user directly asked to record. Deadline is optional, date-only must not acquire an invented hour. No reminder is created automatically.',{title:str,deadline}),
@@ -41,79 +42,4 @@ export function toolResponse(call:ToolCall,result:Record<string,unknown>):Record
  return {functionResponse:{name:call.name,...(call.id?{id:call.id}:{}),response:result}};
 }
 
-export type Turn = { role: 'user' | 'model'; text: string };
-export type Draft = {
-  operation: 'capture_task' | 'update_task' | 'reschedule_session';
-  entityId: string | null;
-  field: 'title' | 'deadline' | 'progress' | 'estimate' | 'subtasks' | 'status' | 'session_time';
-  value: string;
-  certainty: 'confirmed' | 'tentative' | 'unknown';
-  evidence: string;
-};
-export type Reply = { kind: 'chat' | 'clarify' | 'proposal'; reply: string; draft: Draft | null };
-
-const operations = ['capture_task', 'update_task', 'reschedule_session'];
-const fields = ['title', 'deadline', 'progress', 'estimate', 'subtasks', 'status', 'session_time'];
-export const REPLY_SCHEMA = {
-  type: 'object', required: ['kind', 'reply', 'draft'], additionalProperties: false,
-  properties: {
-    kind: { type: 'string', enum: ['chat', 'clarify', 'proposal'] },
-    reply: { type: 'string' },
-    draft: { anyOf: [
-      { type: 'null' },
-      { type: 'object', additionalProperties: false,
-        required: ['operation', 'entityId', 'field', 'value', 'certainty', 'evidence'],
-        properties: {
-          operation: { type: 'string', enum: operations },
-          entityId: { type: ['string', 'null'] },
-          field: { type: 'string', enum: fields }, value: { type: 'string' },
-          certainty: { type: 'string', enum: ['confirmed', 'tentative', 'unknown'] },
-          evidence: { type: 'string' }
-        }
-      }
-    ] }
-  }
-};
-
-function object(value: unknown): Record<string, unknown> {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Invalid AI output');
-  return value as Record<string, unknown>;
-}
-function keys(value: Record<string, unknown>, expected: string[]) {
-  if (Object.keys(value).length !== expected.length || expected.some(k => !(k in value)))
-    throw new Error('Invalid AI fields');
-}
-function shortText(value: unknown, max = 3000): value is string {
-  return typeof value === 'string' && value.trim().length > 0 && value.length <= max;
-}
-
-// Untrusted model draft, not a user-facing proposal until policy approves it.
-// Structural validation is not a truth/authorization check. No mutation executor exists here.
-export function parseReply(text: string, turns: Turn[], allowedIds: string[] = []): Reply {
-  let raw: unknown;
-  try { raw = JSON.parse(text); } catch { throw new Error('Invalid AI JSON'); }
-  const value = object(raw);
-  keys(value, ['kind', 'reply', 'draft']);
-  if (!['chat', 'clarify', 'proposal'].includes(String(value.kind)) || !shortText(value.reply))
-    throw new Error('Invalid AI reply');
-  if (value.kind !== 'proposal') {
-    if (value.draft !== null) throw new Error('Unexpected draft');
-  } else {
-    const draft = object(value.draft);
-    keys(draft, ['operation', 'entityId', 'field', 'value', 'certainty', 'evidence']);
-    if (!operations.includes(String(draft.operation)) || !fields.includes(String(draft.field)) ||
-        !['confirmed', 'tentative', 'unknown'].includes(String(draft.certainty)) ||
-        !shortText(draft.value) || !shortText(draft.evidence) ||
-        !turns.some(t => t.role === 'user' && t.text.includes(draft.evidence as string)))
-      throw new Error('Invalid draft evidence or fields');
-    if (draft.operation === 'capture_task') {
-      if (draft.entityId !== null || draft.field !== 'title') throw new Error('Invalid capture');
-    } else {
-      if (typeof draft.entityId !== 'string' || !allowedIds.includes(draft.entityId))
-        throw new Error('Unknown draft entity');
-      if ((draft.operation === 'reschedule_session') !== (draft.field === 'session_time'))
-        throw new Error('Invalid draft scope');
-    }
-  }
-  return value as Reply;
-}
+function object(value:unknown):Record<string,unknown>{if(!value||typeof value!=='object'||Array.isArray(value))throw Error('INVALID_OBJECT');return value as Record<string,unknown>;}

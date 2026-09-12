@@ -1,14 +1,30 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseReply } from '../../src/ai/contracts.ts';
-import { GeminiTrial } from '../../src/ai/gemini.ts';
+import { parseReply } from '../../experiments/ai-trial/contracts.ts';
+import { GeminiTrial } from '../../experiments/ai-trial/gemini.ts';
+import {Gemini} from '../../src/ai/gemini.ts';
 import {modelStep,toolResponse} from '../../src/ai/contracts.ts';
 import {validateTool} from '../../src/ai/policy.ts';
+
+test('native adapter bounds failures and never logs or follows credentials on redirect',async()=>{
+ for(const status of [302,401,429,503]){
+  let calls=0;
+  const client=new Gemini({apiKey:'private-test',model:'test-model',transport:async(_url,init)=>{
+   calls++;assert.equal(init?.redirect,'manual');return new Response('private-test',{status,headers:{location:'https://not-called.invalid'}});
+  }});
+  await assert.rejects(client.generateTools([{role:'user',parts:[{text:'hi'}]}]),{message:status===429?'PROVIDER_RATE_LIMIT':`PROVIDER_HTTP_${status}`});
+  assert.equal(calls,1);
+ }
+ const timed=new Gemini({apiKey:'private-test',model:'test-model',timeoutMs:5,transport:async(_url,init)=>new Promise((_resolve,reject)=>{
+  init?.signal?.addEventListener('abort',()=>reject(Error('private-test')),{once:true});
+ })});
+ await assert.rejects(timed.generateTools([{role:'user',parts:[{text:'hi'}]}]),{message:'PROVIDER_TIMEOUT'});
+});
 
 test('native function calling preserves signature and call ID across tool response without JSON-output mode',async()=>{
  const content={role:'model' as const,parts:[{thoughtSignature:'opaque-signature',functionCall:{id:'call-1',name:'create_task',args:{title:'rửa bát',deadline:{value:'2026-09-12T19:00:00+07:00',precision:'datetime'}}}}]};
  const inputs:{role:'user'|'model';parts:Record<string,unknown>[]}[][]=[];let calls=0;
- const client=new GeminiTrial({apiKey:'fake',model:'test-model',maxRequests:3,transport:async(_url,init)=>{
+ const client=new Gemini({apiKey:'fake',model:'test-model',transport:async(_url,init)=>{
   calls++;const body=JSON.parse(String(init?.body));inputs.push(body.contents);
   assert.ok(body.tools[0].functionDeclarations.some((t:{name:string})=>t.name==='create_task'));
   assert.equal(body.generationConfig.responseMimeType,undefined);

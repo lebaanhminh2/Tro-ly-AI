@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {conversationDeadline,parseConversation,directRequest,unsupportedSuccessClaim} from '../../src/domain/conversation.ts';
+import {conversationDeadline,parseConversation,directRequest,unsupportedSuccessClaim} from '../../experiments/ai-trial/conversation.ts';
 import {runToolTurn} from '../../src/application/conversation-command.ts';
 import type {ToolCall,ModelStep} from '../../src/ai/contracts.ts';
 

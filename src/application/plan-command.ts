@@ -6,9 +6,15 @@ import { sessionCommand } from './session-command.ts';
 import {memoryCommand} from './memory-command.ts';
 import type { CalendarCommands } from '../ports/calendar.ts';
 import {dayStart} from '../domain/session.ts';
-export type ChatService = (owner: string, text: string, tasks: Awaited<ReturnType<WorkReader['tasks']>>,input?:Input,store?:WorkReader,now?:number) => Promise<string|Plan>;
+export type ChatService = ((owner: string, text: string, tasks: Awaited<ReturnType<WorkReader['tasks']>>,input?:Input,store?:WorkReader,now?:number) => Promise<string|Plan>) & {
+  forLease?:(lease:import('../ports/work-store.ts').Lease)=>ChatService;
+};
 
 export async function planCommand(input: Input, store: WorkReader, now: number, chat?: ChatService, calendar?: CalendarCommands): Promise<Plan> {
+  if(input.callback?.startsWith('tool-confirm:')&&chat){
+    const result=await chat(input.owner,'',[],input,store,now);
+    return typeof result==='string'?{view:{text:result,buttons:[]},changes:[]}:result;
+  }
   const navigation:Record<string,string>={'nav:tasks':'/tasks','nav:today':'/today','nav:settings':'/settings','nav:memory':'/memory','nav:home':'/start','nav:resume':'/resume','nav:rest':'/rest'};
   if(input.callback&&navigation[input.callback]){
     const result=await planCommand({...input,text:navigation[input.callback],callback:undefined},store,now,chat,calendar);

@@ -18,7 +18,7 @@ test('real workerd fetch supports production adapters and never follows credenti
     if (url.hostname === 'api.telegram.org') return Response.json({ok: true, result: {message_id: 7}});
     if (url.pathname === '/token') return Response.json({access_token: 'access'});
     if (url.pathname === '/revoke') return new Response('');
-    if (url.hostname === 'generativelanguage.googleapis.com') return Response.json({candidates: [{finishReason: 'STOP', content: {parts: [{text: JSON.stringify({kind: 'chat', reply: 'hello', draft: null})}]}}]});
+    if (url.hostname === 'generativelanguage.googleapis.com') return Response.json({candidates: [{finishReason: 'STOP', content: {role:'model',parts: [{text:'hello'}]}}]});
     throw Error('Unexpected outbound request');
   };
 
@@ -52,7 +52,7 @@ test('real workerd fetch supports production adapters and never follows credenti
   const mf = new Miniflare({modulesRoot: process.cwd(), modules: [{type: 'ESModule', path: resolve('runtime-probe.js'), contents: script}, ...modules],
     outboundService, d1Databases: ['DB'], bindings: {
       TELEGRAM_USER_ID: '123', TELEGRAM_WEBHOOK_SECRET: 'x'.repeat(32),
-      AI_MODE: 'enabled', GEMINI_API_KEY: 'fake', GEMINI_MODEL: 'test-model', AI_DAILY_LIMIT: '10'
+      AI_MODE: 'on', GEMINI_API_KEY: 'fake', GEMINI_MODEL: 'test-model', AI_DAILY_LIMIT: '10'
     }});
   try {
     const db = await mf.getD1Database('DB');
