@@ -1,39 +1,34 @@
 # Tiếp tục từ đây
 
-Cập nhật 2026-09-12. Đọc file này trước, không nạp cả docs.
+Cập nhật 2026-09-12. Đọc file này trước; chỉ mở tài liệu liên quan.
 
-## Nhiệm vụ hiện tại
+## Trạng thái hiện tại
 
-- User đã duyệt triển khai [TOOL_CALLING_PLAN.md](TOOL_CALLING_PLAN.md) bằng yêu cầu “làm một lượt dài”. Tiếp tục trong phạm vi, không xin lại từng bước.
-- Handler production đã chuyển sang native Gemini tools, AI_MODE off/on duy nhất. Native D1 journal/executor + pending resolve qua model hoặc button (button không model), final fallback sau write. Query/validation typed, không directRequest/parseConversation/generateConversation trong src.
-- Legacy chat/parser/prompt chuyển vào experiments/ai-trial để giữ regression, src/ai/chat.ts xóa; không runtime import experiments. Kho/bảng receipt cũ và mutation compatibility còn để tests/UI không mất dữ liệu, không có AI handler cũ chạy ngầm. Migration0010 chưa remote, config repo AI off, chưa deploy.
-- Không tiếp tục vá regex `directRequest` hoặc mở rộng wizard. Hội thoại là chính; card hỗ trợ.
+- User đã thử staging và xác nhận trải nghiệm chưa giải quyết pain point: nhắc sai đối tượng, thiếu chủ động, overview dài và persona cứng.
+- Nguyên nhân chính là context/memory chưa đủ, tool không khớp nghiệp vụ và giới hạn một write/turn; không quy toàn bộ lỗi cho Gemini free.
+- Đã chốt giữ Gemini free, Telegram + Cloudflare Worker + D1 + cron/outbox; không thêm provider trả phí.
+- Đã chốt bỏ Google Calendar integration, vẫn giữ task/event/reminder/lịch nội bộ.
+- Đã chốt Gemini nhận context + câu hiện tại và tự chọn chat, hỏi, đọc hoặc nhiều action backend.
+- Kiến trúc đích ưu tiên một Gemini request/turn; tối đa hai khi cần read ngoài snapshot. Không model loop dài.
+- Dữ liệu công việc không nhạy cảm; giảm policy/privacy ceremony nhưng vẫn giữ auth, secret, schema, idempotency và transaction.
+- Kế hoạch mới ở [TOOL_CALLING_PLAN.md](TOOL_CALLING_PLAN.md). Yêu cầu sản phẩm ở [PRODUCT_BRIEF.md](PRODUCT_BRIEF.md).
 
-## Trạng thái sản phẩm
+## Source và cloud
 
-- Native pilot đã được user duyệt/deploy: version95843804-82a7-4bf0-8fb5-2fec691108dd,0010 remote đã áp (không sửa lại). AI_MODE on, Calendar off, tự ngừng model2026-09-13 18:42:18 VN. Trần20/24h rolling; kiểm trước deploy đã dùng4 nên còn16 tức thời, không reset quota. Đề xuất intent cũ expired; task/lịch giữ. Chưa gửi tin thử live sau deploy; chờ user chat. Kiểm config/typecheck/dry-run đạt, webhook không auth403. Những ghi chú chưa deploy phía trên là checkpoint source trước lần phát hành này.
+- Source/staging vẫn là native Gemini tool runtime cũ: tối đa 3 model call, 2 read, 1 write; reminder gắn task; Google code còn nhưng Calendar off.
+- Chưa triển khai kiến trúc one-call, context summary, event/reminder độc lập hoặc proactive planner mới.
+- Không sửa migration 0001–0010 đã áp. Thay schema phải dùng migration mới.
+- Worker staging, D1, Telegram secret và Gemini secret đang tồn tại; không tự deploy, tăng quota, bật paid fallback hoặc xóa dữ liệu.
 
-- Smoke native đã được user duyệt tối đa10; đã dùng2, không cần chạy thêm: câu “thêm cho tớ việc rửa bát deadline7h tối nay” gọi create_task đúng title và19:00+07:00, tool result giả trả applied rồi model đáp tiếng Việt. Latency1154/1284ms. Không DB mutation/deploy. Lời cuối còn hơi thúc giục và gọi task là “xếp lịch”; chưa chứng minh mọi hội thoại. Tổng smoke lịch sử43 request, đợt này còn8 nhưng không tự dùng để kéo dài thử nghiệm. Cần duyệt deploy/bật pilot native với budget mới trước dùng dữ liệu thật.
+## Việc tiếp theo
 
-- Đã có Telegram Worker + D1 + nhắc/session/memory/UI cards; migration 0001–0009 đã áp cloud, không sửa migration đã phát hành.
-- Staging đã bật runtime hội thoại cũ, chưa native tool calling. Capture/date/remind/complete có kiểm thử nhưng user gặp lỗi câu nói tự nhiên bị regex chặn.
-- UI cards dùng revision/token; pending/receipts lưu D1. Calendar adapter có code, Calendar thật vẫn off.
-- Deploy gần nhất đã ghi nhận: `c25e59e0-ee44-48dd-ada2-ef19977c370b`. Kiểm tra thực tế trước thao tác cloud, không suy từ docs.
-- Cần smoke native thật có ngân sách mới trước deploy; ngân sách cũ không tự gia hạn. Fake tests không chứng minh tool selection/persona thật. Chưa đủ generic proposal/clarification draft ngoài prompt/pending confirmed args; không hứa hoàn thành toàn bộ sản phẩm.
-- Cutover source: full suite82+25/typecheck/staging dry-run đạt; architecture check không legacy AI handlers/regex gate trong src. Cloud chưa đổi. Không tạo thêm docs checkpoint riêng.
+Trước thay source, đọc plan mới và lập dependency map chính xác: file giữ/sửa/xóa, migration mới, test cần thay. Trình phạm vi đó cho user và chờ duyệt theo `AGENTS.md`; không bắt đầu vá từng lỗi riêng.
 
-## Quyền và ngân sách
+Sau duyệt, làm theo một đợt có checkpoint sử dụng được: bỏ Google/dead UI → data/context → one-call actions → exact reminder → proactive loop/overview → pilot thật.
 
-- Trước sửa/tạo/xóa/format source: trình file/phạm vi, chờ duyệt; sau duyệt tự làm trong phạm vi đó.
-- Thay docs được phép. Cuối lượt có thay đổi: kiểm staged diff/secrets, commit/push có chọn lọc, không merge/force-push.
-- Nhánh `review/p1-p3`, [PR #1](https://github.com/lebaanhminh2/Tro-ly-AI/pull/1). Không stage file người dùng ngoài phạm vi.
-- Smoke cũ: tổng 41 request đã dùng, không còn ngân sách tự gọi thêm.
-- Pilot user đã duyệt: 20 request/24h, tối đa4/phút, model gemini-3.5-flash-lite; tự ngừng model lúc 2026-09-13 11:58:59 giờ VN. Không tự gia hạn/tăng quota, không khẳng định còn bao nhiêu nếu chưa kiểm.
-- Không lộ .env/.dev.vars, khóa, token hoặc raw lỗi provider. Không tự paid fallback, bật Calendar hoặc tạo tài nguyên mới.
+## Git và vận hành
 
-## Chỉ đọc tiếp khi cần
-
-- Ý định sản phẩm/persona: [PRODUCT_BRIEF.md](PRODUCT_BRIEF.md).
-- Thay code hội thoại và dọn legacy: [TOOL_CALLING_PLAN.md](TOOL_CALLING_PLAN.md).
-- Test/deploy/secrets/recovery: [OPERATIONS.md](OPERATIONS.md).
-- Bằng chứng cũ: `git show 7d568f1:docs/archive/2026-09-12/TEN_FILE.md`, chỉ đọc đúng file khi cần.
+- Nhánh hiện tại `review/p1-p3`, PR #1; không merge/force-push.
+- Chỉ stage file trong phạm vi, kiểm diff/secrets rồi commit/push khi có thay đổi.
+- Không in `.env`, `.dev.vars`, token, key, URL chứa token hoặc raw provider error.
+- Kiểm thử/deploy/secrets/recovery xem [OPERATIONS.md](OPERATIONS.md).
