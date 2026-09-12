@@ -32,7 +32,7 @@ test('approved conversation pilot is bounded without Google integration and secr
   assert.equal(config.vars.AI_MODE,'off');
   assert.equal(staging.vars.AI_MODE,'on'); // User approved the time-bounded native pilot.
   assert.equal(staging.vars.GEMINI_MODEL,'gemini-3.5-flash-lite');
-  assert.equal(staging.vars.AI_DAILY_LIMIT,'20');
+  assert.equal(staging.vars.AI_DAILY_LIMIT,'40');
   assert.ok(Number.isFinite(Date.parse(staging.vars.AI_TRIAL_ENDS_AT)));
   for (const vars of [config.vars, staging.vars]) {
     for (const flag of ['CALENDAR_MODE', 'CALENDAR_WRITES']) assert.equal(vars[flag], undefined);

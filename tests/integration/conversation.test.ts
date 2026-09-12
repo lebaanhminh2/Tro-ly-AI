@@ -251,7 +251,7 @@ test('Worker conversation mode writes a grounded capture and consumes durable qu
   const stopped=await createWorker(undefined,transport,{now:()=>Date.parse('2026-09-12T08:00:00+07:00')}).fetch(new Request('https://local/telegram',{
    method:'POST',headers:{'X-Telegram-Bot-Api-Secret-Token':env.TELEGRAM_WEBHOOK_SECRET},body:JSON.stringify({update_id:2,message:{from:{id:123},chat:{id:123,type:'private'},text}})
   }),{...env,AI_TRIAL_ENDS_AT:'2026-09-11T00:00:00Z'});
-  assert.match(await stopped.text(),/gián đoạn/);assert.equal(calls,1);
+  assert.match(await stopped.text(),/hết thời hạn/);assert.equal(calls,1);
  }finally{await mf.dispose();}
 });
 

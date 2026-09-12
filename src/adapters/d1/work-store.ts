@@ -26,8 +26,9 @@ export class D1WorkStore implements WorkStore {
     const rows=(await query(this.db,`SELECT * FROM (
       SELECT 'session' AS kind,s.id,t.title,s.start_at AS at,s.status FROM sessions s JOIN tasks t ON t.id=s.task_id AND t.owner=s.owner WHERE s.owner=? AND s.start_at>=? AND s.start_at<? AND s.status!='draft'
       UNION ALL SELECT 'reminder',a.id,COALESCE(a.subject,t.title),a.due,a.status FROM task_appointments a LEFT JOIN tasks t ON t.id=a.task_id AND t.owner=a.owner WHERE a.owner=? AND a.due>=? AND a.due<? AND a.status='active'
+      UNION ALL SELECT 'event',id,title,start_at,status FROM local_events WHERE owner=? AND status='scheduled'
       UNION ALL SELECT 'deadline',id,title,CAST((julianday(CASE WHEN deadline_precision='date' THEN deadline||'T00:00:00+07:00' ELSE deadline END)-2440587.5)*86400000 AS INTEGER),status FROM tasks WHERE owner=? AND status='active' AND deadline IS NOT NULL
-    ) WHERE at>=? AND at<? ORDER BY at,kind,id LIMIT 11 OFFSET ?`,owner,from,to,owner,from,to,owner,from,to,cursor).all<Record<string,unknown>>()).results;
+    ) WHERE at>=? AND at<? ORDER BY at,kind,id LIMIT 11 OFFSET ?`,owner,from,to,owner,from,to,owner,owner,from,to,cursor).all<Record<string,unknown>>()).results;
     return {items:rows.slice(0,10),nextCursor:rows.length>10?cursor+10:null,source:'local',timezone:'Asia/Ho_Chi_Minh'};
   }
   async completionUndo(owner:string,taskId:string,version:number,now:number){return !!await query(this.db,'SELECT task_id FROM task_completion_undo WHERE owner=? AND task_id=? AND expected_version=? AND expires>?',owner,taskId,version,now).first();}
@@ -80,6 +81,9 @@ export class D1WorkStore implements WorkStore {
     return (await query(this.db,'SELECT * FROM memories WHERE owner=? AND (expires IS NULL OR expires>?) ORDER BY created DESC,id DESC LIMIT ? OFFSET ?',owner,now,limit,offset).all<Memory>()).results;
   }
   memoryConfirmation(owner:string,id:string){return query(this.db,'SELECT * FROM memory_confirmations WHERE owner=? AND id=?',owner,id).first<import('../../domain/memory.ts').MemoryConfirmation>();}
+  async unsummarized(owner:string,now:number,after:number){
+    return (await query(this.db,'SELECT * FROM conversation_turns WHERE owner=? AND expires>? AND command_id>? ORDER BY command_id LIMIT 40',owner,now,after).all<ConversationTurn>()).results;
+  }
   async history(owner:string,now:number){return (await query(this.db,'SELECT * FROM conversation_turns WHERE owner=? AND expires>? ORDER BY command_id DESC LIMIT 12',owner,now).all<ConversationTurn>()).results.reverse();}
   async focus(owner:string,now:number){return (await query(this.db,'SELECT task_id FROM chat_focus WHERE owner=? AND expires>?',owner,now).first<{task_id:string}>())?.task_id??null;}
   async aiEnabled(owner:string){return (await query(this.db,'SELECT enabled FROM memory_settings WHERE owner=?',owner).first<{enabled:number}>())?.enabled!==0;}
@@ -209,6 +213,7 @@ export class D1WorkStore implements WorkStore {
     const statements: Statement[] = [q(`INSERT INTO transaction_guard(valid) SELECT CASE WHEN
       EXISTS(SELECT 1 FROM owner_leases WHERE owner=? AND token=? AND expires>?) AND
       EXISTS(SELECT 1 FROM command_inbox WHERE owner=? AND update_id=? AND state='pending') THEN 1 ELSE 0 END`, owner, token, now, owner, input.updateId)];
+    statements.push(...(lease.pendingWrites??[]));
     statements.push(...this.mutationStatements(owner,plan.changes,now));
     const payload = JSON.stringify({ method: 'sendMessage', chat_id: input.chat, text: plan.view.text,
       ...(plan.view.buttons.length ? { reply_markup: { inline_keyboard: plan.view.buttons } } : {}) });

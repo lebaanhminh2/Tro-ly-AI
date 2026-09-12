@@ -6,7 +6,7 @@
 - entrypoints nối application/domain/ports/adapters. Không domain SQL/fetch, không runtime import experiments/tests.
 - Schema thực tế: migrations; interface: src/ports; không chép lại toàn schema trong docs.
 - D1 lưu tasks, sessions, appointments, memory, pending, receipts, inbox/outbox và UI revisions.
-- Source production hiện dùng Gemini native tools, AI_MODE off/on; legacy harness chỉ experiments. Cloud giữ bản cũ cho tới checkpoint deploy ghi trong HANDOFF. Native batch source cần0011; cloud hiện đã áp, xem HANDOFF cho version/ngân sách.
+- Source production hiện dùng Gemini native tools, AI_MODE off/on; legacy harness chỉ experiments. Cloud giữ bản cũ cho tới checkpoint deploy ghi trong HANDOFF. Native batch source cần0011; cloud hiện đã áp, xem HANDOFF cho version/ngân sách. Production staged mutations được outer commit lưu cùng receipt/history/outbox.
 
 ## Kiểm tra local
 
@@ -37,7 +37,7 @@ Kiểm kết quả theo hành vi, không lấy số test/audit=0 làm chứng nh
 4. Không giả deploy thành công = người dùng đã nhận tin/AI hiểu đúng.
 5. Rollback code/config có chủ đích; không rollback schema hoặc xóa DB tùy tiện.
 
-Quota/pilot deadline hiện tại đọc HANDOFF + wrangler; không tự gia hạn. Quota runtime20/20 đã đầy ở kiểm tra2026-09-13 đầu ngày; direct smoke còn gọi được không có nghĩa bot còn lượt. Source mới vẫn chạy hẹn đã lưu khi AI off; không phụ thuộc lựa chọn model.
+Quota/pilot deadline hiện tại đọc HANDOFF + wrangler; không tự gia hạn. User đã duyệt tăng trần app40/24h, giữ4/phút; không đồng nghĩa quota Google. Kết quả QA và expiry ở HANDOFF. Source mới vẫn chạy hẹn đã lưu khi AI off; không phụ thuộc lựa chọn model.
 Source mới không có Google/OAuth. Migration lịch sử vẫn giữ để nâng cấp dữ liệu.
 
 ## Checklist bảo mật bắt buộc

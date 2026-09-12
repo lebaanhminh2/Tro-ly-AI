@@ -67,7 +67,7 @@ export async function executeTool(call:ToolCall,store:WorkReader,owner:string,up
  }
  if(call.name==='update_summary'){
   const previous=await store.summary?.(owner);
-  const history=await store.history(owner,now);
+  const history=await store.unsummarized?.(owner,now,previous?.covered_through??-1)??await store.history(owner,now);
   if((previous?.version??0)!==a.expected_version||!history.some(h=>h.command_id===a.through)||Number(a.through)<=Number(previous?.covered_through??-1))throw Error('INVALID_SUMMARY_SOURCE');
   return {result:{status:'planned'},fallback:'Tớ vẫn đang theo mạch câu chuyện nhé.',changes:[{type:'summary-update',owner,content:String(a.content),through:Number(a.through),expectedVersion:Number(a.expected_version),now}]};
  }

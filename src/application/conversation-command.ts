@@ -13,7 +13,12 @@ export async function runToolTurn(initial:ModelContent[],ports:ToolTurnPorts):Pr
  const contents=[...initial];let reads=0,wrote=false,fallback='Hội thoại đang gián đoạn, tớ chưa thực hiện thay đổi nào.';
  for(let step=0;step<2;step++){
   let response:ModelStep;
-  try{response=await ports.model(step,contents,!wrote);}catch{return fallback;}
+  try{response=await ports.model(step,contents,!wrote);}catch(error){
+   const code=error instanceof Error?error.message:'';
+   if(code==='AI_QUOTA')return 'Tớ đã chạm giới hạn gọi AI do bot đặt cho hôm nay. Lời nhắc đã lưu vẫn chạy; khi có lượt trở lại mình trò chuyện tiếp nhé.';
+   if(code==='AI_TRIAL_ENDED')return 'Đợt dùng thử AI đã hết thời hạn cấu hình. Các lời nhắc đã lưu vẫn chạy; cần mở lại thời hạn trước khi chat tiếp.';
+   return fallback;
+  }
   const replies=response.calls.filter(call=>call.name==='respond');
   if(replies.length>1)return 'Tớ chưa xử lý được lượt này, cậu nhắn lại giúp tớ nhé.';
   if(replies.length){
@@ -30,7 +35,7 @@ export async function runToolTurn(initial:ModelContent[],ports:ToolTurnPorts):Pr
   if(writes.length>1||(writes.length&&response.calls.length>1)||wrote)return wrote?fallback:'Cậu đang yêu cầu nhiều thay đổi. Mình xử lý từng việc để tránh làm nhầm nhé.';
   if(reads+response.calls.filter(call=>isReadTool(call.name)).length>2)return 'Tớ cần thu hẹp việc đang tìm. Cậu nói rõ tên hoặc khoảng ngày giúp tớ nhé.';
   contents.push(response.content);
-  const results:Record<string,unknown>[]=[];
+  const results:Record<string,unknown>[]=replies.map(call=>toolResponse(call,{status:'deferred_until_read_result'}));
   for(const call of response.calls){
    if(isReadTool(call.name))reads++;
    let outcome:ToolOutcome;

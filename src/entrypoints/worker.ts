@@ -26,7 +26,8 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
     const service:ChatService=async()=>{throw Error('MISSING_OWNER_LEASE');};
     service.forLease=lease=>async(owner,text,_tasks,input,reader)=>{
       if(!reader||owner!==lease.owner)throw Error('INVALID_CHAT_SCOPE');
-      const journal=new ConversationStore(env.DB),store=new D1WorkStore(env.DB,cardsEnabled);
+      lease.pendingWrites=[];
+      const journal=new ConversationStore(env.DB,statements=>lease.pendingWrites!.push(...statements)),store=new D1WorkStore(env.DB,cardsEnabled);
       const confirmation=input?.callback? /^tool-confirm:([yn]):(.+)$/.exec(input.callback):null;
       const [context,pending]=await Promise.all([buildContext(reader,owner,text||'Xác nhận bằng nút',lease.input.receivedAt??clock.now()),journal.pending(owner,clock.now())]);
       if(confirmation&&(!pending||pending.id!==confirmation[2]))return 'Đề xuất này đã cũ hoặc đã được xử lý.';

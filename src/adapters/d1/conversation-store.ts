@@ -10,7 +10,9 @@ import type {ConversationMutation} from '../../domain/conversation.ts';
 
 export class ConversationStore {
  private db:Database;
- constructor(db:Database){this.db=db;}
+ private stagedPending:{id:string;tool_name:string;args_json:string;reason:string;expires:number}|null=null;
+ private defer?: (statements:Statement[])=>void;
+ constructor(db:Database,defer?:(statements:Statement[])=>void){this.db=db;this.defer=defer;}
  async turn(lease:Lease,initial:ModelContent[],reader:WorkReader,mutations:(changes:Change[],now:number)=>Statement[],
    model:(contents:ModelContent[],allowTools:boolean,step:number)=>Promise<ModelStep>,clock:()=>number){
   const saved=await query(this.db,'SELECT tool_context,tool_reply FROM command_inbox WHERE owner=? AND update_id=?',lease.owner,lease.input.updateId)
@@ -40,6 +42,11 @@ export class ConversationStore {
       resolvedPending=pending.id;
       return {result:{status:'planned',cancelled:true},changes:[{type:'cancel',owner:lease.owner}],fallback:'Ừ, tớ không thực hiện đề xuất đó nhé.'};
      }
+     if(pending.tool_name==='batch'){
+      const args=JSON.parse(pending.args_json) as {calls:ToolCall[]};
+      const reply=await this.commitBatch(lease,args.calls,'',reader,mutations,clock(),pending.id);
+      return {result:{status:'applied',reply},changes:[],fallback:reply};
+     }
      const original={name:pending.tool_name as ToolCall['name'],args:JSON.parse(pending.args_json)};
      if(original.name==='resolve_pending')throw Error('RECURSIVE_CONFIRMATION');
      const outcome=await executeTool(original,reader,lease.owner,lease.input.updateId,clock(),pending.reason==='existing_title');
@@ -60,10 +67,11 @@ export class ConversationStore {
     ],clock());
    }
   });
-  await this.db.batch([this.fence(lease,clock()),query(this.db,'UPDATE command_inbox SET tool_reply=? WHERE owner=? AND update_id=?',reply,lease.owner,lease.input.updateId),query(this.db,'DELETE FROM transaction_guard')]);
+  const finish=[this.fence(lease,clock()),query(this.db,'UPDATE command_inbox SET tool_reply=? WHERE owner=? AND update_id=?',reply,lease.owner,lease.input.updateId),query(this.db,'DELETE FROM transaction_guard')];
+  if(this.defer)this.defer(finish);else await this.db.batch(finish);
   return reply;
  }
- async commitBatch(lease:Lease,calls:ToolCall[],message:string,reader:WorkReader,mutations:(changes:Change[],now:number)=>Statement[],now:number){
+ async commitBatch(lease:Lease,calls:ToolCall[],message:string,reader:WorkReader,mutations:(changes:Change[],now:number)=>Statement[],now:number,confirmationId?:string){
   if(calls.length<1||calls.length>8||message.length>4000)throw Error('INVALID_BATCH');
   const request={batch:calls};
   const prior=await this.writeResult(lease,request);
@@ -71,8 +79,12 @@ export class ConversationStore {
   const changes:Change[]=[],fallbacks:string[]=[];
   const created=new Map<string,import('../../domain/work.ts').Task>();
   const touched=new Set<string>();
+  const plannedBlocks:import('../../domain/session.ts').Session[]=[];
+  const plannedEvents:import('../../domain/event.ts').LocalEvent[]=[];
   const scoped=Object.create(reader) as WorkReader;
   scoped.task=async(owner,id)=>owner===lease.owner?(created.get(id)??await reader.task(owner,id)):null;
+  scoped.sessions=async(owner,from,to)=>[...await reader.sessions(owner,from,to),...plannedBlocks.filter(b=>b.owner===owner&&b.start_at>=from&&b.start_at<to)];
+  scoped.events=async(owner,from,to)=>[...await reader.events?.(owner,from,to)??[],...plannedEvents.filter(e=>e.owner===owner&&e.start_at>=from&&e.start_at<to)];
   for(let index=0;index<calls.length;index++){
    const original=calls[index]!;
    if(isReadTool(original.name)||original.name==='resolve_pending')throw Error('INVALID_BATCH_OPERATION');
@@ -89,18 +101,27 @@ export class ConversationStore {
     if(call.name==='update_task')touched.add(id);
    }
    let outcome:ToolOutcome;
-   try{outcome=await executeTool(call,scoped,lease.owner,lease.input.updateId,now,false,index);}catch(error){
+   try{outcome=await executeTool(call,scoped,lease.owner,lease.input.updateId,now,!!confirmationId,index);}catch(error){
     if(call.name==='update_summary')continue; // Soft memory must not block real work.
     throw error;
    }
+   if(outcome.result.status==='needs_confirmation'){
+    if(confirmationId)throw Error('CONFIRMATION_NO_LONGER_VALID');
+    const pending=this.pendingStatements(lease,'batch',{calls},String(outcome.result.reason),now);
+    const reply=outcome.fallback+' Nhóm thay đổi này chưa được thực hiện.';
+    await this.commitWrite(lease,request,{status:'needs_confirmation',reply},pending.statements,now);
+    return reply;
+   }
    if(!['planned','unchanged'].includes(String(outcome.result.status)))throw Error('BATCH_REQUIRES_CLARIFICATION');
    for(const change of outcome.changes){
+    if(change.type==='session-create')plannedBlocks.push({...change.session,status:'planned'});
+    if(change.type==='event-create')plannedEvents.push(change.event);
     if(change.type==='conversation-task'&&change.title!==null)created.set(change.taskId,{id:change.taskId,owner:lease.owner,title:change.title,deadline:change.deadline?.value??null,version:1,status:'active'});
    }
    changes.push(...outcome.changes);fallbacks.push(outcome.fallback);
   }
   const reply=message.trim()||fallbacks.join('\n');
-  await this.commitWrite(lease,request,{status:'applied',reply},mutations(changes,now),now);
+  await this.commitWrite(lease,request,{status:'applied',reply},[...(confirmationId?this.resolvePendingStatements(lease.owner,confirmationId,true,now):[]),...mutations(changes,now)],now);
   return reply;
  }
  private fence(lease:Lease,now:number){return query(this.db,`INSERT INTO transaction_guard SELECT CASE WHEN
@@ -124,11 +145,12 @@ export class ConversationStore {
    if(!json||json.length>100000)throw Error('INVALID_STEP_RESULT');
    await this.db.batch([this.fence(lease,clock()),query(this.db,"UPDATE tool_steps SET state='done',result_json=? WHERE owner=? AND update_id=? AND step_key=? AND state='started'",json,lease.owner,lease.input.updateId,key),query(this.db,'DELETE FROM transaction_guard')]);
    return result;
-  }catch{
+  }catch(error){
    // A provider may have processed a timed-out request. Never auto-repeat the model step.
    await query(this.db,`UPDATE tool_steps SET state='failed' WHERE owner=? AND update_id=? AND step_key=? AND state='started'
     AND EXISTS(SELECT 1 FROM owner_leases WHERE owner=? AND token=? AND expires>?)`,lease.owner,lease.input.updateId,key,lease.owner,lease.token,clock()).run();
-   throw Error('STEP_UNAVAILABLE');
+   const code=error instanceof Error?error.message:'';
+   throw Error(['AI_QUOTA','AI_TRIAL_ENDED'].includes(code)?code:'STEP_UNAVAILABLE');
   }
  }
 
@@ -144,20 +166,23 @@ export class ConversationStore {
   const prior=await this.writeResult(lease,request);if(prior)return prior;
   const requestJson=JSON.stringify(request),resultJson=JSON.stringify(result);
   if(requestJson.length>16000||resultJson.length>24000)throw Error('TOOL_RESULT_TOO_LARGE');
-  await this.db.batch([this.fence(lease,now),
+  const writes=[this.fence(lease,now),
    query(this.db,"INSERT INTO tool_steps(owner,update_id,step_key,kind,state,request_json,result_json,created) VALUES(?,?,'write','write','done',?,?,?)",lease.owner,lease.input.updateId,requestJson,resultJson,now),
-   ...statements,query(this.db,'DELETE FROM transaction_guard')]);
+   ...statements,query(this.db,'DELETE FROM transaction_guard')];
+  if(this.defer)this.defer(writes);else await this.db.batch(writes);
   return result;
  }
 
  pendingStatements(lease:Lease,name:string,args:Record<string,unknown>,reason:string,now:number){
   const id=`pending_${lease.owner}_${lease.input.updateId}`;
+  if(this.defer)this.stagedPending={id,tool_name:name,args_json:JSON.stringify(args),reason,expires:now+300000};
   return {id,statements:[
    query(this.db,"UPDATE pending_tool_actions SET status='expired' WHERE owner=? AND status='pending'",lease.owner),
    query(this.db,'INSERT INTO pending_tool_actions(id,owner,tool_name,args_json,reason,expires,origin_update_id) VALUES(?,?,?,?,?,?,?)',id,lease.owner,name,JSON.stringify(args),reason,now+300000,lease.input.updateId)
   ]};
  }
  async pending(owner:string,now:number){
+  if(this.stagedPending&&this.stagedPending.expires>now)return this.stagedPending;
   return query(this.db,"SELECT id,tool_name,args_json,reason,expires FROM pending_tool_actions WHERE owner=? AND status='pending' AND expires>?",owner,now)
    .first<{id:string;tool_name:string;args_json:string;reason:string;expires:number}>();
  }

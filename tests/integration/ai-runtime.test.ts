@@ -100,7 +100,7 @@ test('runtime Gemini wiring: context, switches, persistent quota, replay and saf
     assert.ok(bodies[1]!.includes('chào cậu'));
     assert.equal(calls, 2);
     const limited = await request('hết quota');
-    assert.match(await limited.text(), /gián đoạn/);
+    assert.match(await limited.text(), /giới hạn/);
     assert.equal(calls, 2);
     // Changing model cannot bypass the application's shared reservation budget.
     env.GEMINI_MODEL = 'another-model';

@@ -1,8 +1,16 @@
 import type { Input, Task, Proposal, Selection, Plan } from '../domain/work.ts';
+// Structural transaction port; storage implementation supplies the statements.
+export interface PreparedWrite {
+ bind(...values:(string|number|null)[]):PreparedWrite;
+ first<T>():Promise<T|null>;
+ all<T>():Promise<{results:T[]}>;
+ run():Promise<{meta:{changes:number}}>;
+}
 export type Clock = { now(): number };
-export type Lease = { owner: string; token: string; input: Input; attempts: number;
+export type Lease = { pendingWrites?:PreparedWrite[]; owner: string; token: string; input: Input; attempts: number;
   ui?:{card:import('../domain/ui.ts').Card;action:import('../domain/ui.ts').CardAction}; uiStale?:boolean; uiRecovered?:boolean };
 export interface WorkReader {
+  unsummarized?(owner:string,now:number,after:number):Promise<import('../domain/memory.ts').ConversationTurn[]>;
   event?(owner:string,id:string):Promise<import('../domain/event.ts').LocalEvent|null>;
   events?(owner:string,from:number,to:number):Promise<import('../domain/event.ts').LocalEvent[]>;
   appointmentContext?(owner:string,now:number):Promise<Record<string,unknown>[]>;

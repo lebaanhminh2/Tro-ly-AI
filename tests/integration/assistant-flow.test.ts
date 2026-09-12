@@ -195,3 +195,68 @@ test('planning uses real sessions, conflicts roll back, and event cancellation i
   assert.equal((await db.prepare('SELECT status FROM task_appointments WHERE event_id=?').bind(event.id).first<{status:string}>())!.status,'cancelled');
  }finally{await mf.dispose();}
 });
+
+test('production-style deferred write commits actions, receipt and delivery intent together',async()=>{
+ const {ConversationStore}=await import('../../src/adapters/d1/conversation-store.ts');
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
+  const store=new D1WorkStore(db),now=Date.parse('2026-09-13T08:00:00+07:00');
+  await store.accept({owner:'123',chat:123,updateId:1,text:'new task'},now,true);
+  const lease=(await store.claim('123',now))!;lease.pendingWrites=[];
+  const journal=new ConversationStore(db,statements=>lease.pendingWrites!.push(...statements));
+  const calls:import('../../src/ai/contracts.ts').ToolCall[]=[{name:'create_task',args:{title:'one',deadline:null}}];
+  await journal.commitBatch(lease,calls,'saved',store,(c,t)=>store.mutationStatements('123',c,t,true),now);
+  assert.equal((await store.tasks('123',0)).length,0);
+  lease.pendingWrites.push(db.prepare('INSERT INTO transaction_guard VALUES(0)'));
+  await assert.rejects(store.commit(lease,{view:{text:'saved',buttons:[]},changes:[]},now));
+  assert.equal((await store.tasks('123',0)).length,0);
+  assert.equal((await db.prepare("SELECT COUNT(*) AS n FROM tool_steps WHERE kind='write'").first<{n:number}>())!.n,0);
+  lease.pendingWrites.pop();
+  await store.commit(lease,{view:{text:'saved',buttons:[]},changes:[]},now);
+  assert.equal((await store.tasks('123',0)).length,1);
+  assert.equal((await db.prepare('SELECT state FROM outbox WHERE id=?').bind('reply:123:1').first<{state:string}>())!.state,'pending');
+ }finally{await mf.dispose();}
+});
+
+test('summary covers oldest uncompressed history even when recent window has moved on',async()=>{
+ const {buildContext}=await import('../../src/application/context-builder.ts');
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
+  for(let n=1;n<=30;n++)await db.prepare('INSERT INTO conversation_turns(owner,command_id,user_text,assistant_text,created,expires) VALUES(?,?,?,?,0,999999)').bind('123',n,n===1?'Important early decision':'message '+n,'reply '+n).run();
+  const context=JSON.parse((await buildContext(new D1WorkStore(db),'123','next',1000)).context);
+  assert.equal(context.today,'1970-01-01');
+  assert.equal(context.tomorrow,'1970-01-02');
+  assert.ok(context.now.endsWith('+07:00'));
+  assert.equal(context.summary_request.source_turns[0].id,1);
+  assert.ok(context.summary_request.source_turns.some((t:{user:string})=>t.user.includes('Important early decision')));
+ }finally{await mf.dispose();}
+});
+
+test('duplicate task batch can be confirmed as a group without partial writes',async()=>{
+ const {ConversationStore}=await import('../../src/adapters/d1/conversation-store.ts');
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
+  await db.exec("INSERT INTO tasks(id,owner,title,created) VALUES('original','123','duplicate',0)");
+  const store=new D1WorkStore(db),journal=new ConversationStore(db),now=100000;
+  await store.accept({owner:'123',chat:123,updateId:1,text:'create two'},now,false);
+  const lease=(await store.claim('123',now))!;
+  const calls:import('../../src/ai/contracts.ts').ToolCall[]=[{name:'create_task',args:{title:'other',deadline:null}},{name:'create_task',args:{title:'duplicate',deadline:null}}];
+  const mutate=(c:import('../../src/domain/work.ts').Change[],t:number)=>store.mutationStatements('123',c,t,true);
+  const reply=await journal.commitBatch(lease,calls,'saved',store,mutate,now);
+  assert.match(reply,/chưa được thực hiện/);assert.equal((await store.tasks('123',0)).length,1);
+  const pending=(await journal.pending('123',now))!;
+  await store.commit(lease,{view:{text:reply,buttons:[]},changes:[]},now);
+  await store.accept({owner:'123',chat:123,updateId:2,text:'yes'},now,false);
+  const confirmLease=(await store.claim('123',now))!;
+  const call:import('../../src/ai/contracts.ts').ToolCall={name:'resolve_pending',args:{pending_id:pending.id,accept:true}};
+  await journal.turn(confirmLease,[{role:'user',parts:[{text:'yes'}]}],store,mutate,async()=>({content:{role:'model',parts:[{functionCall:call}]},calls:[call],text:''}),()=>now);
+  assert.equal((await store.tasks('123',0)).length,3);
+  assert.equal(await journal.pending('123',now),null);
+ }finally{await mf.dispose();}
+});

@@ -10,12 +10,13 @@ export async function sessionCommand(i:Input,store:WorkReader,now:number):Promis
   if(text==='/today'||cb.startsWith('today-page:')){
     const offset=cb.startsWith('today-page:')?Number(cb.slice(11)):0;
     if(!Number.isSafeInteger(offset)||offset<0||offset>1000)return view('Trang không hợp lệ.');
-    const all=await store.sessions(i.owner,dayStart(now),dayStart(now)+86400000),sessions=all.slice(offset,offset+8);
+    const all=await store.sessions(i.owner,dayStart(now),dayStart(now)+86400000),sessions=all.slice(offset,offset+3);
+    const events=offset===0?await store.events?.(i.owner,dayStart(now),dayStart(now)+86400000)??[]:[];
     const labels={draft:'Chưa chốt',planned:'Đã lên lịch',running:'Đang làm',paused:'Tạm dừng',completed:'Đã kết thúc buổi',skipped:'Đã bỏ buổi',unknown:'Chưa rõ kết quả'};
     const lines=await Promise.all(sessions.map(async s=>`${new Date(s.start_at+7*3600000).toISOString().slice(11,16)} · ${(await store.task(i.owner,s.task_id))?.title??'Công việc'} · ${s.minutes} phút · ${labels[s.status]}`));
-    const result=view(sessions.length?lines.join('\n'):'Hôm nay chưa có buổi nào. Mở /tasks và chọn “Lên buổi”.',sessions.map((s,index)=>[{text:`${index+1}. ${new Date(s.start_at+7*3600000).toISOString().slice(11,16)} · Xem buổi`,callback_data:`session:${s.id}`} ]));
-    if(offset>0)result.view.buttons.push([{text:'Trang trước',callback_data:`today-page:${Math.max(0,offset-8)}`}]);
-    if(all.length>offset+8)result.view.buttons.push([{text:'Trang tiếp',callback_data:`today-page:${offset+8}`}]);
+    const result=view((sessions.length||events.length)?[...events.slice(0,3).map(e=>`${new Date(e.start_at+7*3600000).toISOString().slice(11,16)} · ${e.title}`),...lines].slice(0,3).join('\n'):'Hôm nay chưa có buổi nào. Cậu nói giờ rảnh để tớ giúp xếp việc nhé.',sessions.map((s,index)=>[{text:`${index+1}. ${new Date(s.start_at+7*3600000).toISOString().slice(11,16)} · Xem buổi`,callback_data:`session:${s.id}`} ]));
+    if(offset>0)result.view.buttons.push([{text:'Trang trước',callback_data:`today-page:${Math.max(0,offset-3)}`}]);
+    if(all.length>offset+3)result.view.buttons.push([{text:'Trang tiếp',callback_data:`today-page:${offset+8}`}]);
     if(!sessions.length)result.view.buttons.push([{text:'Công việc',callback_data:'nav:tasks'}]);
     result.changes.push({type:'cancel',owner:i.owner});
     return result;

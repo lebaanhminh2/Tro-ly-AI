@@ -9,6 +9,11 @@ export type ChatService = ((owner: string, text: string, tasks: Awaited<ReturnTy
   forLease?:(lease:import('../ports/work-store.ts').Lease)=>ChatService;
 };
 
+function formatDeadline(value:string){
+ if(value.length===10)return value.split('-').reverse().join('/');
+ const time=Date.parse(value);
+ return Number.isFinite(time)?new Date(time+7*3600000).toISOString().slice(0,16).replace('T',' '):value;
+}
 export async function planCommand(input: Input, store: WorkReader, now: number, chat?: ChatService): Promise<Plan> {
   if(input.callback?.startsWith('tool-confirm:')&&chat){
     const result=await chat(input.owner,'',[],input,store,now);
@@ -84,6 +89,15 @@ export async function planCommand(input: Input, store: WorkReader, now: number, 
   if (text === '/cancel') return { ...view('Đã hủy nhập ngày giờ.'), changes: [{ type: 'cancel', owner }] };
   if (text === '/start' || text === '/help') return view(`Tớ ở đây. Cậu có thể xem việc, lịch hôm nay hoặc cài đặt bên dưới.\n${chat?'Hội thoại tùy theo cài đặt AI của cậu.':'Hội thoại AI chưa bật trong bản thử này. Thêm việc bằng /add tên việc.'}`,
     [[{text:'Công việc',callback_data:'nav:tasks'},{text:'Hôm nay',callback_data:'nav:today'}],[{text:'Cài đặt',callback_data:'nav:settings'},{text:'Bộ nhớ',callback_data:'nav:memory'}]]);
+  if(text==='/tasks'&&store.findTasks){
+    const page=await store.findTasks(owner,'','active',0);
+    const further=page.nextCursor!==null?await store.findTasks(owner,'','active',page.nextCursor):null;
+    const active=[...page.tasks,...(further?.tasks??[])].sort((a,b)=>(a.deadline??'9999').localeCompare(b.deadline??'9999'));
+    const top=active.slice(0,3);
+    const lines=top.map((t,index)=>`${index+1}. ${t.title} — ${t.deadline?formatDeadline(t.deadline):'chưa đặt hạn'}`);
+    return {...view(top.length?`Trước mắt cậu xem ${top.length} việc này nhé:\n${lines.join('\n')}`:'Chưa có việc đang làm. Cậu nhắn tên việc và hạn, tớ ghi cho nhé.',
+      [...top.map(t=>[{text:t.title,callback_data:`task:${t.id}`}]),[{text:'Xem toàn bộ',callback_data:'page:0'}]]),changes:[{type:'cancel',owner}]};
+  }
   if (text === '/tasks' || callback?.startsWith('page:')) {
     const rawOffset = callback?.slice(5) ?? '0';
     if (!/^\d{1,7}$/.test(rawOffset)) return view('Trang không hợp lệ.');

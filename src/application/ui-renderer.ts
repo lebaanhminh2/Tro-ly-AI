@@ -24,7 +24,7 @@ export function renderView(view: View): View {
     });
     const clockRow = row.every(button => /^([01]\d|2[0-3]):[0-5]\d$/.test(button.text));
     // Dynamic entity labels have a full row; other long labels do too.
-    const single = row.some(button => /^(task:|forget:|cal-toggle:|cal-select:|cal-plan:|focus:)/.test(button.callback_data)
+    const single = row.some(button => /^(task:|forget:|focus:)/.test(button.callback_data)
       || Array.from(segmenter.segment(button.text)).length > 12);
     const width = clockRow ? 4 : single ? 1 : 2;
     for (let index = 0; index < row.length; index += width) buttons.push(row.slice(index, index + width));

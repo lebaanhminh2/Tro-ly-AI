@@ -1,7 +1,7 @@
 # Kế hoạch thay luồng trợ lý — phạm vi đã duyệt
 Cập nhật 2026-09-13. Sản phẩm đã chốt; user đã duyệt danh sách thay source và ngân sách tối đa20 request trong lượt tiếp theo. Không coi tài liệu là code đã chạy.
 
-Checkpoint thực hiện xem HANDOFF; chưa nghiệm thu. Protocol JSON tổng hợp đã thử không đạt; triển khai native tools + respond(message), không duy trì hai protocol.
+Checkpoint triển khai và live QA xem HANDOFF; đã có bản để user nghiệm thu. Protocol JSON tổng hợp đã thử không đạt; triển khai native tools + respond(message), không duy trì hai protocol.
 
 ## 1. Đích và bằng chứng rà soát
 - Giữ Telegram/Workers/D1/Gemini free/cron/outbox. Bỏ Google; không đổi provider/framework.
@@ -82,8 +82,8 @@ Các nhóm dưới là phạm vi cho cả đợt; chỉ sửa phần liên quan,
 - Lỗi bắt buộc: invalid JSON/ID, phủ định/giả định, quota429, timeout, DB rollback, crash sau commit, duplicate update, stale button, send uncertain, summary lỗi.
 - Đo request/turn, latency từng chặng, token đầu vào/ra, reminder delivery và chất lượng hội thoại; không dùng số test pass thay chất lượng.
 - Một-call là đường mục tiêu, không cam kết tất cả câu. Structured output đúng schema không bảo đảm đúng ý; nếu smoke không đạt thì báo đúng lỗi trước mở rộng, không prompt vô hạn.
-- Config local hiện đặt20 request/24h và trial end2026-09-13T11:42:18Z; chưa kiểm cloud/quota còn lại. Đây là trần app, không phải hạn mức Gemini free.
-- Xin duyệt riêng trong phạm vi triển khai: tối đa8 request smoke protocol +12 request nghiệm thu tự động, gửi tin thử vào bot riêng, migration/deploy assistant-staging. Không tăng tổng ngân sách pilot, gia hạn runtime hay bật nền AI nếu chưa có đồng ý rõ; hết ngân sách báo blocker.
+- Config sau duyệt bổ sung đặt40 request/24h và trial end2026-09-13T11:42:18Z; chưa kiểm cloud/quota còn lại. Đây là trần app, không phải hạn mức Gemini free.
+- Phạm vi đã được duyệt: tối đa8 request smoke protocol +12 request nghiệm thu tự động, gửi tin thử vào bot riêng, migration/deploy assistant-staging. Không tăng tổng ngân sách pilot, gia hạn runtime hay bật nền AI nếu chưa có đồng ý rõ; hết ngân sách báo blocker.
 - Git local checkpoint; push vẫn đang bị môi trường chặn cần quyền xuất bản riêng. Không để Git push chặn rà soát/code local.
 
 Tham khảo giao thức/quota: [Google structured output](https://ai.google.dev/gemini-api/docs/structured-output), [Google rate limits](https://ai.google.dev/gemini-api/docs/rate-limits). Chưa gọi API Gemini thật trong lượt lập kế hoạch này.
