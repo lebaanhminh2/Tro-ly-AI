@@ -1,9 +1,8 @@
 import type {WorkReader} from '../ports/work-store.ts';
 type Turn={role:'user'|'model';text:string};
 export async function buildContext(store:WorkReader,owner:string,text:string,now:number){
- const focus=await store.focus(owner,now);
+ const [focus,memories,history]=await Promise.all([store.focus(owner,now),store.memories(owner,now),store.history(owner,now)]);
  const tasks=focus?[await store.task(owner,focus)].filter(t=>t!==null):await store.tasks(owner,0);
- const memories=await store.memories(owner,now),history=await store.history(owner,now);
  const turns:Turn[]=history.flatMap(h=>[{role:'user' as const,text:h.user_text},{role:'model' as const,text:h.assistant_text}]);
  turns.push({role:'user',text});
  const context=JSON.stringify({userId:owner,now:new Date(now).toISOString(),timezone:'Asia/Ho_Chi_Minh',focus,

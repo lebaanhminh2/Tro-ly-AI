@@ -12,7 +12,7 @@ export function configured(env: Env) {
 }
 export function aiConfigured(env: Env): boolean {
   if (env.AI_MODE === undefined || env.AI_MODE === 'off') return true;
-  return env.AI_MODE === 'enabled'
+  return (env.AI_MODE === 'enabled'||env.AI_MODE==='conversation')
     && /^[A-Za-z0-9_-]{1,256}$/.test(env.GEMINI_API_KEY ?? '')
     && /^[A-Za-z0-9._-]{1,100}$/.test(env.GEMINI_MODEL ?? '')
     && /^[1-9]\d{0,2}$/.test(env.AI_DAILY_LIMIT ?? '')

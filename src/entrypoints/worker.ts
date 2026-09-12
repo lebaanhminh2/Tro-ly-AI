@@ -15,6 +15,8 @@ import {CalendarService} from '../adapters/google-calendar/service.ts';
 import {GoogleClient} from '../adapters/google-calendar/client.ts';
 import {GoogleTokenVault} from '../adapters/google-calendar/vault.ts';
 import {D1UiStore} from '../adapters/d1/ui-store.ts';
+import {ConversationStore} from '../adapters/d1/conversation-store.ts';
+import {conversationChat} from '../application/conversation-command.ts';
 
 export { flushOutbox };
 export function createWorker(chat?: ChatService, transport: typeof fetch = fetch, clock: Clock = { now: Date.now }, calendarOverride?:CalendarService, cardsEnabled=false) {
@@ -23,6 +25,16 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
   };
   const runtimeChat = (env: Env): ChatService | undefined => {
     if (chat) return chat; // Explicit offline dependency injection; default export has none.
+    if(env.AI_MODE==='conversation'){
+      const receipts=new ConversationStore(env.DB);
+      return conversationChat((owner,id,now,context,turns,resolved)=>receipts.infer(owner,id,now,async()=>{
+        if(resolved)return resolved;
+        if(!await reserveAi(env.DB,'runtime:gemini',`${owner}:${id}`,now,Number(env.AI_DAILY_LIMIT)))throw Error('AI_QUOTA');
+        const client=new GeminiTrial({apiKey:env.GEMINI_API_KEY!,model:env.GEMINI_MODEL!,
+          transport:(url,options)=>transport(url,{...options,redirect:'manual'}),now:()=>clock.now(),timeoutMs:5000,maxRequests:1});
+        return (await client.generateConversation(turns,context)).output;
+      }));
+    }
     if (env.AI_MODE !== 'enabled') return undefined;
     return contextualChat({generate: (turns, context, ids) => {
       // One client per reserved call: durable D1 quota, not isolate lifetime, is authoritative.

@@ -8,11 +8,13 @@ import {memoryStatements} from './memory.ts';
 import type {Memory,ConversationTurn} from '../../domain/memory.ts';
 import {renderView} from '../../application/ui-renderer.ts';
 import {D1UiStore} from './ui-store.ts';
+import {conversationStatements} from './conversation-store.ts';
 
 export class D1WorkStore implements WorkStore {
   private db: Database;
   constructor(db: Database, privateCards = false) { this.db = db; this.cardsEnabled=privateCards; }
   private cardsEnabled:boolean;
+  conversationPending(owner:string,now:number){return query(this.db,'SELECT id,kind,draft,expires FROM conversation_pending WHERE owner=? AND expires>?',owner,now).first<import('../../domain/conversation.ts').PendingConversation>();}
   async calendarResult(lease:Lease,run:()=>Promise<import('../../domain/work.ts').View|null>,clock:import('../../ports/work-store.ts').Clock){
     if(!this.cardsEnabled||(!lease.input.text?.startsWith('/calendar')&&!lease.input.callback?.startsWith('cal-')))return run();
     const receipt=await query(this.db,'SELECT state,view_json FROM ui_calendar_receipts WHERE owner=? AND update_id=?',lease.owner,lease.input.updateId).first<{state:string;view_json:string|null}>();
@@ -94,12 +96,12 @@ export class D1WorkStore implements WorkStore {
     const claim = await query(this.db, `INSERT INTO owner_leases(owner,token,expires) VALUES(?,?,?)
       ON CONFLICT(owner) DO UPDATE SET token=excluded.token,expires=excluded.expires WHERE owner_leases.expires<=?`, owner, token, now + 30000, now).run();
     if (!claim.meta.changes) return null;
-    const row = await query(this.db, "SELECT payload,attempts,update_id FROM command_inbox WHERE owner=? AND state='pending' ORDER BY update_id LIMIT 1", owner).first<{payload:string;attempts:number;update_id:number}>();
+    const row = await query(this.db, "SELECT payload,attempts,update_id,created FROM command_inbox WHERE owner=? AND state='pending' ORDER BY update_id LIMIT 1", owner).first<{payload:string;attempts:number;update_id:number;created:number}>();
     if (!row) { await query(this.db, 'DELETE FROM owner_leases WHERE owner=? AND token=?', owner, token).run(); return null; }
     const counted = await query(this.db, `UPDATE command_inbox SET attempts=attempts+1 WHERE owner=? AND update_id=? AND state='pending'
       AND EXISTS(SELECT 1 FROM owner_leases WHERE owner=? AND token=?)`, owner,row.update_id,owner,token).run();
     if (!counted.meta.changes) return null;
-    return { owner, token, input: JSON.parse(row.payload) as Input, attempts: row.attempts + 1 };
+    return { owner, token, input: {...JSON.parse(row.payload),receivedAt:row.created} as Input, attempts: row.attempts + 1 };
   }
   async release(lease: Lease) { await query(this.db, 'DELETE FROM owner_leases WHERE owner=? AND token=?', lease.owner, lease.token).run(); }
   async commit(lease: Lease, plan: Plan, now: number) {
@@ -111,7 +113,13 @@ export class D1WorkStore implements WorkStore {
       EXISTS(SELECT 1 FROM owner_leases WHERE owner=? AND token=? AND expires>?) AND
       EXISTS(SELECT 1 FROM command_inbox WHERE owner=? AND update_id=? AND state='pending') THEN 1 ELSE 0 END`, owner, token, now, owner, input.updateId)];
     for (const change of plan.changes) {
-      if(change.type==='remember'||change.type==='forget'||change.type==='focus'||change.type==='ai-enabled'||change.type==='memory-confirm'||change.type==='memory-resolve'){
+      if(change.type==='conversation-pending'){
+        if(change.owner!==owner)throw Error('OWNER_MISMATCH');
+        if(change.pending)statements.push(q('INSERT INTO conversation_pending(owner,id,kind,draft,expires) VALUES(?,?,?,?,?) ON CONFLICT(owner) DO UPDATE SET id=excluded.id,kind=excluded.kind,draft=excluded.draft,expires=excluded.expires',owner,change.pending.id,change.pending.kind,change.pending.draft,change.pending.expires));
+        else statements.push(q('DELETE FROM conversation_pending WHERE owner=?',owner));
+      }else if(change.type==='conversation-task'){
+        statements.push(...conversationStatements(this.db,owner,change));
+      }else if(change.type==='remember'||change.type==='forget'||change.type==='focus'||change.type==='ai-enabled'||change.type==='memory-confirm'||change.type==='memory-resolve'){
         statements.push(...memoryStatements(this.db,owner,change));
       }else if (change.type==='session-input'||change.type==='session-create'||change.type==='session-action'||change.type==='preferences') {
         statements.push(...sessionStatements(this.db,owner,change));

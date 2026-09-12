@@ -4,6 +4,12 @@
 
 ## 1. Định nghĩa hoàn thành
 
+### Tiến độ code (không phải nghiệm thu toàn kế hoạch)
+
+User đã duyệt toàn bộ phạm vi. C1 đã có nhánh runtime `AI_MODE=conversation` (staging vẫn off): schema typed capture title+deadline / update deadline, parse nguồn ngày VN giữ precision, conversation receipt chống gọi lại sau commit lỗi, pending clarification ngày lưu D1 và câu trả lời ngày rõ không gọi AI lại. Mutation task/date + receipt applied + focus + reply intent chung transaction. receivedAt lấy từ inbox.created để retry qua nửa đêm không đổi nghĩa “mai”. Migration 0009 chưa áp remote. Full suite 66+25 đạt trước bổ sung receivedAt; tests conversation + typecheck đạt sau bổ sung.
+
+Giới hạn C1 hiện tại: chỉ nhận một số mẫu yêu cầu trực tiếp có evidence; ngày weekday chưa normalize, sẽ hỏi ngày cụ thể. Không được coi đây là hiểu hội thoại đầy đủ. Context vẫn focus hoặc trang đầu; chưa entity search toàn bộ, chưa duplicate-title resolution, inference receipt chưa lưu model/prompt version, lời chat không-mutation vẫn cần guard khẳng định kết quả sai và test live. Pending clarify mới dành cho deadline, chưa confirmation bằng lời hoặc nhiều trường chưa biết. C2 hẹn không bịa duration, task completion, yes/no có binding và C3 live chưa triển khai. Chưa deploy, chưa gọi provider thật. Không yêu cầu user duyệt lại các phần kế tiếp trong phạm vi đã chốt.
+
 Người dùng trò chuyện như với trợ lý. Câu yêu cầu rõ → tự làm trong quyền cho phép → báo kết quả. Chỉ hỏi phần thiếu, xin xác nhận khi có rủi ro/đề xuất chưa được đồng ý. Nút xuất hiện khi cần xác nhận hoặc người dùng muốn tổng quan; không đẩy người dùng sang form chỉ vì chưa nối được nghiệp vụ.
 
 Ví dụ bắt buộc: “Tớ có bài tập tiếng Anh, deadline ngày mai” → một task có title và deadline ngày mai, lưu nguyên tử → “Tớ ghi bài tiếng Anh rồi, hạn ngày mai nhé.” Không hỏi lại có thêm không, không bịa giờ 23:59, không tự xếp buổi. Trả lời có thể ghi rõ ngày DD/MM để người dùng phát hiện hiểu nhầm.
