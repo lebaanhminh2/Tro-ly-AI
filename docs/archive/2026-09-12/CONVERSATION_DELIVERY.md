@@ -1,3 +1,5 @@
+> Bản lưu lịch sử, không phải quy định hiện hành. Xem [mục lục đang dùng](../../README.md). Không đọc mặc định.
+
 # Trợ lý hội thoại — kế hoạch thực thi đã chỉnh hướng
 
 **Đã được thay thế về kế hoạch thực thi bởi [TOOL_CALLING_PLAN.md](TOOL_CALLING_PLAN.md).** Giữ tài liệu này làm lịch sử C1/C2, không tiếp tục mở rộng regex-intent runtime.

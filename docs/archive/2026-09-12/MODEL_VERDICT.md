@@ -1,3 +1,5 @@
+> Bản lưu lịch sử, không phải quy định hiện hành. Xem [mục lục đang dùng](../../README.md). Không đọc mặc định.
+
 # Kết luận kiểm chứng Gemini
 
 Ngày 2026-09-11. Model `gemini-3.5-flash-lite`, prompt `trial-0.4`, dữ liệu giả; không policy, DB hay Calendar thực thi. Người dùng yêu cầu tự thử và kết luận, dừng kéo dài thử nghiệm/xây prototype.

@@ -1,3 +1,5 @@
+> Bản lưu lịch sử, không phải quy định hiện hành. Xem [mục lục đang dùng](../../README.md). Không đọc mặc định.
+
 # Quyết định và giới hạn đã biết
 
 Cập nhật: 2026-09-11. Phân biệt bằng chứng quan sát, đề xuất kỹ thuật và kiểm chứng thực tế.

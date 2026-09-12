@@ -1,3 +1,5 @@
+> Bản lưu lịch sử, không phải quy định hiện hành. Xem [mục lục đang dùng](../../README.md). Không đọc mặc định.
+
 # Luồng UX và giao diện v1
 
 Ngày 2026-09-12. Telegram-first. Các mục thiết kế bên dưới không đồng nghĩa đã triển khai hết; trạng thái đợt sửa thực tế ở mục 0.

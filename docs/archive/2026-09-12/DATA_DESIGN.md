@@ -1,3 +1,5 @@
+> Bản lưu lịch sử, không phải quy định hiện hành. Xem [mục lục đang dùng](../../README.md). Không đọc mặc định.
+
 # Backend, dữ liệu và bộ nhớ v1
 
 Ngày 2026-09-11. Thiết kế đề xuất; chưa phải schema/code được phép tạo. Thuộc [DELIVERY_PLAN](DELIVERY_PLAN.md).

@@ -1,3 +1,5 @@
+> Bản lưu lịch sử, không phải quy định hiện hành. Xem [mục lục đang dùng](../../README.md). Không đọc mặc định.
+
 # P1 — nền backend và công việc
 
 Ngày 2026-09-11. Phạm vi người dùng đã duyệt: cơ cấu nền, task/proposal, authorization, giao dịch inbox/outbox, kiểm thử local; không API thật/push/deploy.

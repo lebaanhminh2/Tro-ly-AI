@@ -1,3 +1,5 @@
+> Bản lưu lịch sử, không phải quy định hiện hành. Xem [mục lục đang dùng](../../README.md). Không đọc mặc định.
+
 # Bot Telegram: bản local
 
 Trạng thái 2026-09-11: code + kiểm thử offline; chưa deploy, chưa nối bot thật hoặc Google Calendar.
@@ -48,7 +50,7 @@ Sau cơ cấu: test mặc định 28 pass, experiments 25 pass (giữ đủ 50 c
 
 ## Bước tiếp theo cần người dùng
 
-Hướng triển khai ngay bên dưới đã tạm gác: ưu tiên duyệt [kiến trúc và kế hoạch](archive/ARCHITECTURE_PLAN.md) trước, không đi cấu hình BotFather/deploy ngay.
+Hướng triển khai ngay bên dưới đã tạm gác: ưu tiên duyệt [kiến trúc và kế hoạch](../ARCHITECTURE_PLAN.md) trước, không đi cấu hình BotFather/deploy ngay.
 
 Kết quả đợt delivery: 50 tests pass, typecheck, migration 0002 local, dry-run pass. Chưa live Telegram/Gemini/deploy.
 Xin duyệt cấu hình kết nối/deploy và Cron; kiểm tra trước quotas, retention, lựa chọn nhập đồng thời và recovery thủ công cho uncertain/failed.

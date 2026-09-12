@@ -1,3 +1,5 @@
+> Bản lưu lịch sử, không phải quy định hiện hành. Xem [mục lục đang dùng](../../README.md). Không đọc mặc định.
+
 # Kế hoạch xây sản phẩm v1 — bản duyệt
 
 Ngày 2026-09-11. Trạng thái: **đề xuất chờ duyệt**. Duyệt kế hoạch không tự cho phép xóa code, gọi API trả phí hay deploy.

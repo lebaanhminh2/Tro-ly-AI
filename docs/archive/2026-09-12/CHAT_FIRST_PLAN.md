@@ -1,3 +1,5 @@
+> Bản lưu lịch sử, không phải quy định hiện hành. Xem [mục lục đang dùng](../../README.md). Không đọc mặc định.
+
 # Hội thoại thực hiện công việc — kế hoạch ưu tiên
 
 2026-09-12. Yêu cầu sản phẩm đã chốt; danh sách code ở cuối chờ duyệt. Dừng mở rộng wizard/menu; UI hiện tại là hỗ trợ, không phải đường dùng chính. Không bật AI trả phí hoặc gọi thử model vô hạn.

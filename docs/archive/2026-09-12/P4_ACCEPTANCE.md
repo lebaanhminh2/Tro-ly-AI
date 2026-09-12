@@ -1,3 +1,5 @@
+> Bản lưu lịch sử, không phải quy định hiện hành. Xem [mục lục đang dùng](../../README.md). Không đọc mặc định.
+
 # P4 — Google Calendar local
 
 Ngày 2026-09-11. Người dùng duyệt code + kiểm thử Google API giả, không cấp quyền tạo Google resource/deploy hay dùng lịch thật.

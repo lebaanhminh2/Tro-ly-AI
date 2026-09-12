@@ -1,122 +1,34 @@
-# Tiếp tục dự án từ đây
+# Tiếp tục từ đây
 
-Cập nhật: 2026-09-11. Phân biệt prototype, kế hoạch và sản phẩm đã triển khai.
+Cập nhật 2026-09-12. Đọc file này trước, không nạp cả docs.
 
-## Quyền và quy trình
+## Nhiệm vụ hiện tại
 
-- Trình file/phạm vi và chờ xác nhận trước khi sửa, tạo, xóa hoặc format mã nguồn; làm liên tục trong phạm vi đã duyệt.
-- Cuối lượt có thay đổi: kiểm tra staged diff/secrets và commit có chọn lọc; không empty commit. Người dùng đã yêu cầu xử lý push/PR; dùng nhánh review, không tự merge/force-push.
-- Remote: https://github.com/lebaanhminh2/Tro-ly-AI.git. Checkpoint trước cơ cấu: `f37233c`.
-- Không tự gọi API, bật billing, deploy hoặc đọc/in secrets. Đọc docs theo nhiệm vụ, không nạp hết mặc định.
+- Đã cơ cấu docs: 5 tài liệu nội dung + 1 link chuyển hướng staging; snapshot cũ ở archive/2026-09-12. Không sửa source/deploy trong đợt docs.
+- Tiếp theo: trình/nhận duyệt phạm vi code trong [TOOL_CALLING_PLAN.md](TOOL_CALLING_PLAN.md).
+- User đã đồng ý hướng tool calling, nhưng lượt gần nhất mới yêu cầu lập kế hoạch và dọn docs; chưa suy thành duyệt sửa toàn bộ protocol.
+- Không tiếp tục vá regex `directRequest` hoặc mở rộng wizard. Hội thoại là chính; card hỗ trợ.
 
-## Trạng thái hiện tại
+## Trạng thái sản phẩm
 
-- Đã cơ cấu theo phê duyệt: code thử/memory/fixtures ở `experiments/ai-trial/`; unit ở `tests/unit/`, tích hợp D1 ở `tests/integration/`.
-- `src/domain/time.ts` là nguồn hàm ngày dùng chung; runtime không import experiments/tests.
-- P1 đã triển khai cấu trúc entrypoints/application/domain/ports/adapters/config và transaction command + task + outbox; xem [P1_ACCEPTANCE.md](P1_ACCEPTANCE.md).
-- Không thêm chức năng sản phẩm hoặc gọi API trong đợt cơ cấu. Local bot vẫn là prototype, chưa deploy/Calendar thật.
-- Live đã dừng: tổng 31 request toàn dự án, kết luận tại [MODEL_VERDICT.md](MODEL_VERDICT.md). Không mở lại chiến dịch cũ.
-- Audit gần nhất trước cơ cấu: 0 với overrides sharp/undici; không coi là chứng nhận bảo mật.
+- Đã có Telegram Worker + D1 + nhắc/session/memory/UI cards; migration 0001–0009 đã áp cloud, không sửa migration đã phát hành.
+- Staging đã bật runtime hội thoại cũ, chưa native tool calling. Capture/date/remind/complete có kiểm thử nhưng user gặp lỗi câu nói tự nhiên bị regex chặn.
+- UI cards dùng revision/token; pending/receipts lưu D1. Calendar adapter có code, Calendar thật vẫn off.
+- Deploy gần nhất đã ghi nhận: `c25e59e0-ee44-48dd-ada2-ef19977c370b`. Kiểm tra thực tế trước thao tác cloud, không suy từ docs.
+- Test ghi nhận gần nhất: 72 tests chính +25 experiments/typecheck/dry-run đạt; không phải nghiệm thu chất lượng hội thoại.
 
-## Bước tiếp theo
+## Quyền và ngân sách
 
-**ƯU TIÊN MỚI: TOOL_CALLING_PLAN.md.** User đồng ý concept Gemini chọn tool/read DB/fill typed fields, backend validate/commit, chỉ hỏi khi cần; yêu cầu source gọn, thay/xóa legacy chứ không thêm đường chạy song song. Đã lập plan file-level, keep/replace/remove, budget3 model/2read/1write tối đa, migration tiến tới, cleanup gates. Lượt này docs-only, CHƯA duyệt code của plan thay protocol (cần xác nhận). Không gọi thêm API/live/deploy, không tự tăng quota. Không vá tiếp directRequest/conversationDeadline whitelist.
+- Trước sửa/tạo/xóa/format source: trình file/phạm vi, chờ duyệt; sau duyệt tự làm trong phạm vi đó.
+- Thay docs được phép. Cuối lượt có thay đổi: kiểm staged diff/secrets, commit/push có chọn lọc, không merge/force-push.
+- Nhánh `review/p1-p3`, [PR #1](https://github.com/lebaanhminh2/Tro-ly-AI/pull/1). Không stage file người dùng ngoài phạm vi.
+- Smoke cũ: tổng 41 request đã dùng, không còn ngân sách tự gọi thêm.
+- Pilot user đã duyệt: 20 request/24h, tối đa4/phút, model gemini-3.5-flash-lite; tự ngừng model lúc 2026-09-13 11:58:59 giờ VN. Không tự gia hạn/tăng quota, không khẳng định còn bao nhiêu nếu chưa kiểm.
+- Không lộ .env/.dev.vars, khóa, token hoặc raw lỗi provider. Không tự paid fallback, bật Calendar hoặc tạo tài nguyên mới.
 
-**LIVE CONVERSATION PILOT ĐÃ BẬT:** user duyệt deploy+20 lượt/24h, gửi chat/task context thật tới Gemini. Đã áp0009 remote (không sửa migration này nữa), upload GEMINI_API_KEY từ local vào Worker secret không lộ, deploy c25e59e0-ee44-48dd-ada2-ef19977c370b. AI_MODE=conversation, model gemini-3.5-flash-lite, daily limit20, AI_TRIAL_ENDS_AT=2026-09-13T04:58:59Z (11:58:59 VN), không gọi provider sau thời hạn; continuation rõ vẫn xử lý không model, hẹn đã lưu vẫn nhắc. Quota check sau deploy=0, memory_settings chưa có row (default enabled). Endpoint không auth403. Calendar off. Full suite72+25/typecheck/dry-run đạt trước key regex điều chỉnh chấp nhận dấu chấm; targeted config test/typecheck đạt sau. Không tự gửi request pilot; user test hội thoại mới. 4req/60s vẫn giữ. Không coi đã chứng minh E2E live sau deploy. Khi hết quota/time cần user duyệt gia hạn, không tự tăng.
+## Chỉ đọc tiếp khi cần
 
-Sau user “oke tiếp đi”: sửa live-smoke regressions bằng pending completion-scope/existing-or-new và guard pendingId completion. “cả bài”, “việc cũ”, “việc mới” dùng resolved intent không gọi AI; task version thay đổi chặn apply. Tests hội thoại targeted6 đạt, full suite đang kiểm trước commit. Prompt bump conversation-c1-v2 (model metadata đồng bộ), chỉnh ví dụ không mời lưu không binding, fatigue không tự hoãn. V2 chưa live, không gọi thêm API/budget0;0009 vẫn chưa remote, AI off. Không nhầm đạt fake tests với bot đã bật.
-
-Kết quả cuối checkpoint: 72 tests chính +25 experiments đạt, typecheck/staging dry-run đạt. Chưa deploy và chưa gọi thêm model.
-
-Live smoke completed with explicit approval: 10/10 Gemini requests, synthetic only, gemini-3.5-flash-lite / conversation-c1-v1. No DB/cloud mutations, no deploy. Results docs/CONVERSATION_SMOKE.md. Mean1143.5ms,5936 tokens, all schema valid; two weak cases existing-title ambiguity and “xong rồi” classified complete but backend safely blocks with bad generic clarification. Case10 model asks save without pending binding. Need targeted clarification/pending/persona fixes within conversation plan, not loosen authorization. Budget now0 (historical total41 requests), no auto rerun. UI staging unchanged; AI still off/0009 not remote. Harness was inline, not new source files.
-
-Pre-live checkpoint: receipts ghi model/prompt version/source/inference_ms; social reply guard một số mẫu success-claim khi không có mutation, có test.71+25 tests, typecheck/dry-run đạt.0009 vẫn chưa áp remote, cloud AI off. Cần xin quyền smoke tối đa10 request synthetic Gemini model gemini-3.5-flash-lite đã dùng trước (không lặp campaign cũ), không cloud data/mutation/deploy/paid fallback; dừng429/auth/unavailable. Không có quyền tự gọi mới từ budget31 đã hết. C2 language/undo general còn giới hạn, không tuyên bố full product.
-
-Checkpoint completion (user duyệt tiếp): conversation complete/reopen + migration0009 task status/undo (CHƯA remote). Atomic complete dừng appointments/session reminders, đóng session còn mở và trả kết quả; reopen15 phút guard version, không hồi sinh nhắc. Tests explicit-vs-partial completion, undo/stale version đạt. Full test:all69+25 đạt trước final unit guard; targeted unit3/typecheck đạt sau, staging dry-run đạt trước guard. Chưa deploy/AI live. Còn C2/C3 limitations trong CONVERSATION_DELIVERY, không gọi tất cả đã xong, không yêu cầu user duyệt code lại.
-
-Conversation checkpoint sau các lượt ngắt: thêm schema remind/overview/rest/resume; task_appointments trong0009 chưa remote; queue 2 lượt dựa sent_at, ack reply, trigger pause cancel, reschedule thay hẹn/task, không duration giả. Runtime conversation gọi queue/ack nhưng cloud AI_MODE off nên CHƯA live. Named task query ngoài trang đầu, duplicate exact title pending confirm “ừ, thêm đi” không gọi model lại; guard pendingId. Full suite 68 tests chính+25 experiments, typecheck/dry-run đạt. Còn task completion, confirmation/undo tổng quát, context/Unicode resolution, metadata/latency, smoke live và deploy sau duyệt ngân sách. Không coi đã làm hết C2/C3; tiếp tục trong phạm vi đã duyệt, không hỏi lại code. Migration0009 chưa áp cloud nên còn được chỉnh trước release.
-
-Conversation implementation checkpoint: user duyệt toàn bộ CONVERSATION_DELIVERY. Thêm domain/conversation, application/conversation-command, D1 conversation-store, migration0009 chưa remote. Gemini adapter generateConversation dùng schema mới, AI_MODE=conversation nối vào Worker nhưng cloud vẫn off. C1 tự capture nhiều trường/date precision + update deadline có guard nguồn/user scope, receipt chống retry duplicate, pending clarify ngày + cancel, reply không button sau commit, receivedAt từ inbox.created. 66+25 full suite đạt trước final receivedAt, targeted conversation/typecheck đạt sau. Còn C1 limitations/C2/C3 ở CONVERSATION_DELIVERY; tuyệt đối chưa coi đã xong kế hoạch hoặc bật live. Không thêm SDK/framework, không xóa prototype, không sửa migration0008 đã deploy.
-
-**ƯU TIÊN MỚI NHẤT: CONVERSATION_DELIVERY.md.** User tái chốt muốn chat LLM làm việc ngầm, tự lưu capture title+deadline rõ, chỉ confirm khi cần/overview mới button. Rà code: AI schema một field, capture luôn confirm, selectedScope UI, context thiếu sessions/pending; chưa đáp ứng. Đã lập C1 task nhiều trường/date precision/receipts → C2 hẹn+confirmation bằng lời → C3 smoke live ngân sách riêng. Lượt này chỉ docs, chưa code/deploy/live. Danh sách files trong plan cần user duyệt trước sửa code, không mở rộng UI tiếp. Nút là hỗ trợ, không yêu cầu user tự kiểm từng form. Không hứa Gemini bật là tự đủ executor.
-
-Ưu tiên hiện tại đã đổi rõ theo user: CHAT-FIRST executor, không tối ưu nút/wizard tiếp. Xem [CHAT_FIRST_PLAN.md](CHAT_FIRST_PLAN.md): source hiện chỉ capture title cần button và update đẩy về UI, chưa task+deadline đa trường/date-only. Yêu cầu chốt auto-capture rõ ràng + báo sau commit, clarify phần thiếu, confirm theo tác động/ngữ cảnh, buttons chỉ hỗ trợ. Lượt này chỉ tài liệu/phân tích; C1–C3 files và migration 0009 chờ user duyệt trước code. Không bật Gemini/Calendar thật, không sửa 0008 đã áp.
-
-**BẢN ĐỂ USER TEST ĐÃ DEPLOY:** 2026-09-12, staging version 119d8205-66b9-4396-a5fa-0d9be4c66ee4. Migration 0008 đã áp remote (ui_cards/actions/deliveries/calendar_receipts/text_inputs) — không sửa lại migration đã áp. Worker default outbox bật UI cards; preview cũ giữ riêng. 62 tests chính +25 experiments đạt, typecheck/dry-run/workerd đạt. Flow text date gắn card đang mở, nav/input cũ bị vô hiệu, capture có nút tiếp, menu/settings, Today 8 mục/trang. Calendar UI+receipt/memory/settings test qua Worker đạt. AI/Calendar thật off. User cần /start mới để test iPhone; không bảo họ cấu hình token nữa. Đây là nghiệm thu UI staging, chưa release v1/chat-first LLM. Không xóa/replay task/nhắc cloud cũ.
-
-Checkpoint tiếp theo: ui_calendar_receipts thêm vào migration 0008 CHƯA remote. Trong cardsEnabled mode, Calendar command được reserve trước side effect, lưu View sau khi chạy dưới owner lease; retry UI commit lấy receipt done, receipt started không chạy nghiệp vụ lại mà trả trạng thái cần kiểm tra. Test tiêm lỗi UI commit và mất kết quả provider đạt. Đây là at-most-once conservative, KHÔNG atomic transaction với Google; crash trước gọi provider cũng có thể đòi kiểm tra thủ công. Nhãn task/memory/Calendar/AI bỏ slice riêng để dùng grapheme renderer chung, task next-page kiểm tra có trang tiếp thật. Test:all 61+25 đạt, typecheck và staging dry-run đạt. UI mới vẫn false, chưa deploy. Còn kiểm tra ma trận đầy đủ memory/settings/Calendar UI mode, text-input nối card cũ và thứ tự liên kết flow trước chuyển default/bật staging. Tiếp tục phạm vi đã duyệt, không hỏi lại.
-
-Checkpoint tiếp: recoverOnInteraction cho edit uncertain có message ID đã biết. Khi user bấm lại, xác minh owner/chat/message/token, tạo một card mới từ view ĐÃ COMMIT với action token mới, expire card cũ; không execute lại callback. Không auto retry edit vì request cũ có thể tới muộn; không recover send chưa rõ message ID. Test recovery sai owner/message, một replacement, stale sender bị fence và initial-send không retry đạt. Calendar cal-select đặt selected=0/1 rõ ràng có fence thay toggle mù, cal-toggle cũ trả stale; replay không đảo trạng thái. Full suite trước test bổ sung cuối: 59+25 đạt; test initial-send bổ sung đạt riêng, typecheck/dry-run đạt. CHƯA deploy hoặc áp 0008 remote. Còn Calendar side effect receipt/UI commit atomic gap và full matrix trước bật mode mới.
-
-Checkpoint UI reliability: raw callbacks từ reminder đã sent được adopt vào ui_cards sau kiểm owner/chat/message/generation/planned và nút có thật trong payload. Raw callbacks card thường vẫn từ chối. Có early ACK riêng theo outbox ID trước nghiệp vụ, prepareUi dưới lease vẫn xác thực lại. editMessageText lỗi chính xác message-not-found/cannot-edit tạo replacement một lần, vô hiệu card cũ và phát lại actions bằng token mới; timeout không fallback send. Test:all 59 tests chính +25 experiments đạt; guard bổ sung nguồn reminder khi resume adoption được test riêng và typecheck đạt; staging dry-run đạt. CHƯA bật mode mới, CHƯA migration remote/deploy. Còn uncertain recovery, Calendar side effects/transition, full matrix/iPhone. Không yêu cầu user duyệt lại hoặc test bản chưa bật.
-
-UI integration checkpoint mới: createWorker tham số thứ 5 cardsEnabled=false mặc định. Khi true, D1WorkStore.prepareUi resolve token gắn owner/message/revision trước planCommand; stale chỉ notice, không nghiệp vụ. Commit UI transition cùng business batch, flush UI sau outbox cả webhook/cron; 429 retry persistent tối đa 3. Test Worker capture/list/detail/back/wizard cùng message ID, replay không mutation. Chưa deploy/remote migration, chưa bật mặc định vì reminders vẫn raw callbacks (sẽ bị từ chối trong mode mới), ACK chưa tách sớm cho Calendar chậm, deleted-card fallback/uncertain recovery chưa xong. Tiếp tục trong phạm vi đã duyệt, không yêu cầu user test UI mới lúc này.
-
-Kiểm tra checkpoint integration: test:all đạt (58 tests chính +25 experiments), typecheck và staging dry-run đạt. Không gọi Telegram/Gemini/Google thật trong đợt này; không deploy.
-
-UI lifecycle tiếp tục trong phạm vi đã duyệt: thêm migrations/0008_ui_cards.sql (chưa cloud), domain/ui.ts, D1UiStore (create/resolve/update statement builders/claim/finish/recover), tests/integration/ui-lifecycle.test.ts. Telegram hỗ trợ editMessageText và exact-prefix no-op 400 thành sent chỉ cho edit, tests liên quan và workerd cập nhật. CHƯA tích hợp module UI mới vào worker/store/dispatcher, CHƯA chuyển màn, CHƯA deploy. Tiếp tục notice/ACK, deleted-card fallback, recovery edit uncertain rồi nối toàn bộ flow; không cần user duyệt lại. Không đọc secrets hay gửi tin cloud ở lượt này.
-
-Kiểm tra checkpoint UI lifecycle: test:all đạt (56 tests chính +25 experiments), typecheck và staging dry-run đạt. Tình trạng card uncertain hiện chặn gửi tiếp; chưa triển khai reconcile. Không áp migration/deploy khi chưa tích hợp và kiểm thử toàn đợt.
-
-Hội thoại-first được user tái khẳng định và đã ghi thành yêu cầu bắt buộc trong PRODUCT_BRIEF/DECISIONS: AI hiểu/ngữ cảnh → backend lưu/hỏi/xác nhận theo quyền; xác nhận bằng lời gắn proposal; nút/card hỗ trợ, wizard fallback. User duyệt tiếp tục UI_REMEDIATION_PLAN. Đã bắt đầu phần nền: ui-renderer.ts chung chuẩn hóa nhãn theo grapheme, rows và callback bytes; gọi trước commit và ở Telegram send/preview (bao phủ nhắc). 54 tests chính +25 experiments đạt, typecheck/dry-run đạt; test transport bổ sung text hợp lệ để không bỏ qua nhánh network sau validation. CHƯA hoàn thành A/B/C, CHƯA deploy đợt này. Còn card/flow revision + edit tại chỗ + notice/ACK + serialize/reconcile outbox và chuyển tất cả UI; không tuyên bố lỗi nút cũ đã giải quyết bằng renderer. Tiếp tục phạm vi đã duyệt, không yêu cầu user duyệt lại từng bước. Không bật AI/Calendar.
-
-Yêu cầu mới: user nhấn mạnh rà toàn bộ source UI/callback, không vá từng ảnh và không nhầm LLM intent với UI. Đã lập [UI_REMEDIATION_PLAN.md](UI_REMEDIATION_PLAN.md): root cause View thiếu lifecycle, default sendMessage, clear theo change type, renderer phân tán, wizard thiếu step revision, outbox thiếu card ordering. Kế hoạch A hợp đồng/card delivery → B chuyển mọi UI kể cả Calendar/AI → C test ma trận + iPhone rồi deploy. Chỉ docs ở lượt này, chưa sửa code. Cần duyệt files/phạm vi trong plan trước triển khai.
-
-Đợt UX được duyệt và triển khai 2026-09-12: task list/detail nút ngắn, ẩn focus khi AI off; wizard ngày/giờ/thời lượng dùng D1 input+expiry và callback, không migration; Today chọn từng buổi; nút theo trạng thái; một running session (application+DB guard); callback quên cũ không xóa context; gỡ keyboard card app qua outbox, silent repeat confirmations; bỏ quiet cả reminder và Calendar slot, giữ pause/no catch-up. UX_FLOWS mục 0 ghi phạm vi/giới hạn. Full suite sau thay đổi chính: 51 tests chính +25 experiments đạt, typecheck/dry-run đạt; bổ sung guard pause/DB test sau đó và chạy lại UX integration/typecheck đạt. Deploy staging e3ee96bd-b282-4431-8d74-b9b76d545333, AI/Calendar off. Cần user mở /tasks mới để nghiệm thu UI iPhone; không gọi đây là xong v1. Chưa picker phút tùy ý bằng nút, chưa task lifecycle/PATCH Google. Không sửa bản ghi task/nhắc cloud thủ công.
-
-UX review 2026-09-12: user đã xác nhận bot trả lời /tasks và tạo việc được; ảnh bộc lộ callback spam, nút cắt, form lịch khó. User yêu cầu bỏ quiet và duyệt tự rà toàn bộ luồng rồi trình một đợt sửa. Kết quả/phạm vi file tại [UX_REVIEW.md](UX_REVIEW.md), chưa sửa code hay deploy trong lượt review. Tái hiện hàm: invalid session buttons ở 4 trạng thái, Today 2 sessions chỉ điều khiển s1, forget:missing vẫn lập side effect xóa context. Giữ pause chủ động + 2 lượt/lần hẹn, bỏ quiet; chưa coi yêu cầu này là cho phép reset jobs cũ. Chờ duyệt phạm vi code UX review; chưa bật AI/Calendar.
-
-Kết quả sửa redirect: 50/50 tests chính + 25/25 experiments đạt; typecheck/staging dry-run đạt. Deploy staging version ca88ec98-0148-4507-bc83-c5ee7ca59d3f thành công, AI/Calendar off. Cần user gửi /tasks MỚI để xác nhận gửi thành công thật; chưa có bằng chứng outbound live sau sửa. Không cần nhập secrets hoặc setWebhook lại.
-
-Sửa tương thích Workers được duyệt: bỏ redirect:error trong Telegram/Google/Gemini runtime, dùng manual và từ chối non-2xx/chuyển hướng; Telegram giữ uncertain khi redirect, không tự retry. Google transport được gọi qua closure tránh lỗi receiver của native fetch. tests/integration/workers-fetch.test.ts transpile code thật vào workerd, thay duy nhất mạng bằng outboundService giả: gửi thành công, redirect bị từ chối, không có request tới đích bẫy; cả Gemini đi qua entrypoint + D1. Đây là bài học từ mock fetch Node không phát hiện được API runtime khác biệt. Chờ nghiệm thu /tasks mới sau deploy, không reset outbox cũ.
-
-Chẩn đoán chiều gửi Telegram được duyệt: API adapter log chỉ event/code/phase/httpStatus/apiStatus, không exception/raw response/token/URL/chat. tests/integration/telegram.test.ts thêm regression không lộ secrets; 4 test liên quan + typecheck đạt. Đã deploy version a36b60b5-6f25-41de-92a1-f5eb43223f33. Trước sửa: D1 có 4 command done, 4 outbox uncertain, endpoint không auth trả 403; inbound đã hoạt động nhưng chưa rõ nguyên nhân outbound. Không reset/retry uncertain. Đang mở wrangler tail và chờ user gửi /tasks mới để có mã lỗi. AI/Calendar vẫn off.
-
-Webhook registration được duyệt: scripts/telegram-setup.ps1 có -RegisterWebhook, nhập token ẩn, đọc .dev.vars.webhook-secret.dpapi bằng DPAPI cùng user Windows. Khóa đúng bot ID/username và staging URL, từ chối webhook khác, không drop_pending_updates, max_connections=1; kiểm tra getWebhookInfo sau đăng ký, không tự retry timeout. 12 self-tests offline đạt. User đã lưu TELEGRAM_USER_ID; agent đã tạo/upload TELEGRAM_WEBHOOK_SECRET 64 hex và bản mã hóa ignored. Chưa thực sự đăng ký webhook: cần user chạy script -RegisterWebhook rồi thử /tasks. Không cần lấy lại ID hoặc tạo lại secret.
-
-Telegram setup mới nhất: user đã lưu TELEGRAM_BOT_TOKEN trên cloud, đã thu hồi token từng lộ trong chat. HTTPS đã kiểm tra được GET / 404, POST /telegram 503 khi thiếu cấu hình. Chưa xác nhận user ID/webhook secret. getMe do user chạy xác nhận @Minh_Anh_cua_Minh_bot, getUpdates báo rỗng. Đã được duyệt tạo scripts/telegram-setup.ps1: prompt token ẩn, getMe/getWebhookInfo/getUpdates không offset, không mutation; mã mới xác định ID, không đoán owner. 6 self-tests offline đạt trên Windows PowerShell; chưa chạy bằng token thật. Hướng dẫn user chạy file, gửi mã mới vào đúng bot, Enter rồi đọc kết quả. Không lặp lại snippet copy-paste dài; không đọc token từ chat.
-
-Mới nhất 2026-09-12: user duyệt tự xử lý lỗi migration và tiếp tục deploy. Bọc CASE trong 0001, bỏ dấu chấm phẩy trong comment 0003 (không đổi logic); test mới tests/unit/migration-compat.test.ts. Cả 7 migrations remote đã áp, migrations list báo không còn pending. Đã deploy personal-assistant-staging, version ae096766-6020-43de-aec3-1f96f9161e28, cron mỗi phút, URL https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev. Wrangler tự đăng ký workers.dev subdomain ở lần deploy đầu. Secrets list rỗng, AI/Calendar off, chưa Telegram webhook. 48 tests chính + 25 experiments đạt; typecheck đạt. HTTPS smoke ngay sau deploy lỗi TLS handshake bằng Node và curl, chưa xác nhận endpoint hoạt động (có thể propagation, chưa kết luận). Bước tiếp: kiểm tra HTTPS lại, hướng dẫn user nhập token MỚI trực tiếp qua wrangler secret put; không dùng token từng lộ trong chat. Chưa nghiệm thu P5.
-
-Lượt migrations/deploy được duyệt 2026-09-12: `db:staging` thất bại ngay 0001 với D1 `incomplete input` (7500). Read-only xác nhận cả 7 migrations còn pending, sqlite_master chỉ có _cf_KV và d1_migrations; chưa bảng nghiệp vụ. Chưa deploy. Nghi trigger có CASE...END không bọc ngoặc (Cloudflare workers-sdk issue #4727); splitter Wrangler local vẫn trả đúng 7 statements, nên chưa chứng minh nguyên nhân server. Cần duyệt sửa migrations/0001_initial.sql bọc biểu thức CASE và thêm tests/unit/migration-compat.test.ts trước khi thử lại cloud; không bỏ trigger/guard hoặc đánh dấu migration đã áp thủ công.
-
-Cloud setup 2026-09-12 (được duyệt): Wrangler đăng nhập thành công, một account; đã tạo D1 `assistant-staging` region APAC và cập nhật UUID staging trong wrangler.jsonc. Chưa áp migrations remote, chưa deploy/secrets/webhook, AI/Calendar vẫn off. Tiếp theo cần duyệt migrations và deploy staging ban đầu; không tạo DB lần nữa.
-
-Cập nhật staging 2026-09-12: đã chuẩn bị env staging riêng trong wrangler, cron mỗi phút/outbox, flags off, UUID placeholder; scripts check/deploy/migration có guard placeholder trước remote. Hướng dẫn tại [STAGING_SETUP.md](STAGING_SETUP.md). 46/46 tests chính + 25/25 experiments đạt, typecheck và dry-run local/staging đạt; kiểm tra readiness cố ý từ chối placeholder (exit 1). Chưa tạo cloud resource, đăng ký webhook hay gọi API provider thật. Tiếp theo hỏi tình trạng Cloudflare/bot và xin duyệt thao tác cloud với đích cụ thể; không tự deploy.
-
-Cập nhật 2026-09-12: đã duyệt nối AI runtime trong worker/env và tests/integration/ai-runtime.test.ts, không live/deploy. Runtime dùng contextualChat + Gemini adapter + quota D1; hướng dẫn và giới hạn tại [P5_RUNTIME.md](P5_RUNTIME.md). Các đoạn P1–P4 bên dưới là lịch sử; sau đợt này tiếp tục chuẩn bị staging trong P5, không mở lại kiểm chứng model.
-
-Nghiệm thu đợt runtime: 43/43 tests mặc định, 25/25 experiments, typecheck và Workers dry-run đạt. Chưa nghiệm thu toàn bộ P5; chưa cloud/pilot.
-
-Đợt sửa review P4 đã được duyệt: hủy nhắc local khi remote đổi/xóa, fencing toàn bộ writer, tách lỗi đọc trước POST khỏi uncertain insert. Thay đổi tại Calendar service và regression tests; không API thật/deploy/merge.
-
-P4 đã hoàn tất bàn giao code/local sau lượt bị ngắt: 40/40 tests mặc định, 25/25 experiments, typecheck/dry-run pass; migration 0007 local đã áp dụng. Xem P4_ACCEPTANCE trước bước tiếp theo: cần review giới hạn Calendar/session-link và cấu hình staging trước pilot, không tự bật live hoặc merge.
-
-P4 được duyệt và triển khai local: Google adapter/OAuth+vault, sync/slots, confirmed write/reconcile; migration 0007. [P4_ACCEPTANCE.md](P4_ACCEPTANCE.md) ghi test và giới hạn. Calendar/AI thật vẫn off; chưa consent/live/deploy. Không tự merge PR.
-
-Review P1–P3: đã sửa phạm vi nghỉ (giữ nhắc ngày sau), xác nhận xóa memory dùng một lần/expiry, phân trang memory và sent_at cho khoảng follow-up. Migration 0006; regression tại tests/integration/review-fixes.test.ts. Không merge/deploy/API thật trong đợt sửa.
-
-Kết quả mới nhất: 36/36 tests mặc định + 25/25 experiments, typecheck/migration 0006 local/Workers dry-run đều pass. Bốn findings đã có regression; không coi đây là audit bảo mật toàn diện.
-
-GitHub: [PR #1](https://github.com/lebaanhminh2/Tro-ly-AI/pull/1), base main=checkpoint f37233c, head review/p1-p3. Nhánh làm việc review/p1-p3, chưa merge. Kết quả P3: 35 tests + 25 experiments, typecheck/migration/dry-run pass. Tiếp theo review PR hoặc trình P4, không tự gọi AI thật.
-
-P3 được duyệt và triển khai local: memory/history/focus/expiry, AI toggle, contextual adapter và quota D1. Xem [P3_ACCEPTANCE.md](P3_ACCEPTANCE.md). Không gọi API AI thật thêm. Người dùng đã yêu cầu xử lý push/PR GitHub; được phép đưa code đã scan lên remote và mở PR, không tự merge.
-
-P2 người dùng đã duyệt với quy tắc **2 lượt mỗi lần hẹn, không trần theo ngày**. Đã triển khai local sessions/Today/nhắc/settings; bằng chứng và giới hạn tại [P2_ACCEPTANCE.md](P2_ACCEPTANCE.md). Không tự mở P3 hoặc gọi API/live.
-
-1. P1 đã được người dùng duyệt và thực hiện local; ghi kết quả tại P1_ACCEPTANCE. Không tự suy đã duyệt D1–D6 toàn bộ.
-2. Mốc tiếp theo P2 (Today/session/nhắc), trình phạm vi trước khi code. Không cấu hình BotFather hoặc deploy mặc định.
-3. Dùng kết luận model đã có; giải quyết dữ liệu AI trước live cá nhân, không thử prompt vô hạn.
-
-## Đọc theo nhu cầu
-
-| Nhiệm vụ | Nguồn |
-| --- | --- |
-| Mốc, phạm vi và tiêu chí | [DELIVERY_PLAN.md](DELIVERY_PLAN.md) |
-| Persona/người dùng | [PRODUCT_BRIEF.md](PRODUCT_BRIEF.md) |
-| Module/database/nhớ | [DATA_DESIGN.md](DATA_DESIGN.md) |
-| UI và luồng | [UX_FLOWS.md](UX_FLOWS.md) |
-| Bảo mật/phát hành | [SECURITY_RELEASE.md](SECURITY_RELEASE.md) |
-| Prompt giao việc | [VIBE_WORKFLOW.md](VIBE_WORKFLOW.md) |
-| Prototype và cách chạy | [LOCAL_BOT.md](LOCAL_BOT.md) |
-| Mục lục/nguồn lịch sử | [README.md](README.md) |
+- Ý định sản phẩm/persona: [PRODUCT_BRIEF.md](PRODUCT_BRIEF.md).
+- Thay code hội thoại và dọn legacy: [TOOL_CALLING_PLAN.md](TOOL_CALLING_PLAN.md).
+- Test/deploy/secrets/recovery: [OPERATIONS.md](OPERATIONS.md).
+- Bằng chứng cũ: [archive/README.md](archive/README.md), chỉ mở đúng file.

@@ -1,3 +1,5 @@
+> Bản lưu lịch sử, không phải quy định hiện hành. Xem [mục lục đang dùng](../../README.md). Không đọc mặc định.
+
 # Spec cũ: ứng viên thiết kế chưa duyệt
 
 Cập nhật: 2026-09-11. **Bối cảnh tham khảo, không phải đặc tả triển khai.**

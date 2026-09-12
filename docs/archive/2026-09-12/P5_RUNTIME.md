@@ -1,3 +1,5 @@
+> Bản lưu lịch sử, không phải quy định hiện hành. Xem [mục lục đang dùng](../../README.md). Không đọc mặc định.
+
 # P5 — nối AI vào runtime (local)
 
 Ngày 2026-09-12. Phạm vi được duyệt: worker, cấu hình, integration test và docs. Không deploy, gọi provider thật, thêm SDK hay đổi model đã kiểm chứng.

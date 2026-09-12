@@ -1,3 +1,5 @@
+> Bản lưu lịch sử, không phải quy định hiện hành. Xem [mục lục đang dùng](../../README.md). Không đọc mặc định.
+
 # Conversation smoke — 2026-09-12
 
 User approved at most 10 Gemini generateContent requests, synthetic data only, model gemini-3.5-flash-lite. No cloud mutation, no paid fallback, no retries. Stop on quota/auth/model errors.

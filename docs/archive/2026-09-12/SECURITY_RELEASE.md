@@ -1,3 +1,5 @@
+> Bản lưu lịch sử, không phải quy định hiện hành. Xem [mục lục đang dùng](../../README.md). Không đọc mặc định.
+
 # Bảo mật, kiểm thử và vận hành v1
 
 Ngày 2026-09-11. Checklist theo rủi ro, không chứng nhận “không có lỗ hổng”. Thuộc [DELIVERY_PLAN](DELIVERY_PLAN.md).

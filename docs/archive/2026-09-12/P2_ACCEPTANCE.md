@@ -1,3 +1,5 @@
+> Bản lưu lịch sử, không phải quy định hiện hành. Xem [mục lục đang dùng](../../README.md). Không đọc mặc định.
+
 # P2 — Today, buổi làm và nhắc
 
 Ngày 2026-09-11. Chỉ nghiệm thu local; chưa Telegram thật, Cron cloud hoặc Gemini.

@@ -1,3 +1,5 @@
+> Bản lưu lịch sử, không phải quy định hiện hành. Xem [mục lục đang dùng](../../README.md). Không đọc mặc định.
+
 # Kế hoạch sửa UI Telegram theo hệ thống
 
 2026-09-12. Người dùng đã duyệt tiếp tục sửa UI/UX, đồng thời xác nhận hội thoại là chính. Kế hoạch đang triển khai, chưa nghiệm thu. Tài liệu này thay cách xử lý từng lỗi ảnh trong UX_REVIEW; các khoảng trống nghiệp vụ ở đó vẫn còn. Không mở rộng wizard thành đường chính, không bật provider trong đợt UI.

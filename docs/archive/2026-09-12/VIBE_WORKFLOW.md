@@ -1,3 +1,5 @@
+> Bản lưu lịch sử, không phải quy định hiện hành. Xem [mục lục đang dùng](../../README.md). Không đọc mặc định.
+
 # Cách làm cùng AI và prompt giao việc
 
 Ngày 2026-09-11. Dành cho người dùng vibe code; không phải skill hoặc cấu hình agent tự chạy.
