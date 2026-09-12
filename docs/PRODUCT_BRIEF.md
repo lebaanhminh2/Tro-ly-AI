@@ -14,6 +14,8 @@ Cập nhật: 2026-09-11. Persona đã thống nhất; các phần ghi “dự k
 
 ## Mục tiêu
 
+Ưu tiên triển khai mới nhất: [CONVERSATION_DELIVERY.md](CONVERSATION_DELIVERY.md). Ví dụ bắt buộc: “có bài tiếng Anh, deadline ngày mai” được hiểu và lưu task+deadline ngày trong một lượt nếu rõ, rồi báo đã thêm. Không xin xác nhận capture rõ ràng hoặc đưa form mặc định. Deadline chỉ ngày không bị gán giờ giả. Quy tắc quan trọng bên dưới không có nghĩa mọi mutation đều cần user bấm nút.
+
 Ưu tiên mới được tái xác nhận: dừng mở rộng UI/wizard, hoàn thiện executor hội thoại theo [CHAT_FIRST_PLAN](CHAT_FIRST_PLAN.md). Câu rõ như “tớ có task A, deadline ngày mai” phải lưu tên+hạn ngay rồi báo tự nhiên; ngày-only không tự gán giờ. Button chỉ khi confirm cần thiết hoặc user cần tổng quan. Đây là yêu cầu đã chốt; rule chi tiết từng loại mutation và files triển khai theo kế hoạch, không cho model ghi SQL trực tiếp.
 
 Giảm gánh nặng tự tổ chức, giúp biết bước tiếp theo phù hợp, cân bằng sức khỏe và công việc, quay lại dễ dàng sau khi lệch lịch. Không ép tuân thủ một lịch kín hoặc tối đa hóa năng suất.

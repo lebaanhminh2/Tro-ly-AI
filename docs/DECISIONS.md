@@ -116,3 +116,6 @@ Nguồn:
 # Quyết định bổ sung đã chốt — 2026-09-12
 
 Hội thoại tự nhiên là giao diện chính, không phải chatbot slash-command có persona. AI hiểu bối cảnh và đề xuất command; backend tự lưu trong quyền cho phép hoặc hỏi/xác nhận theo quy tắc. Xác nhận bằng lời được hỗ trợ ở sản phẩm cuối, gắn proposal/owner/version/TTL như nút. Card/nút là hỗ trợ, wizard fallback; không buộc người dùng đi lại form khi câu nói đã đủ. Xem PRODUCT_BRIEF. Bật Gemini chưa đủ: intent routing và confirmation bằng lời hiện chưa hoàn thiện. Quyết định này ưu tiên hơn mô tả cũ “chat để nói, nút để thao tác”. Bỏ quiet tự động đã chốt; giữ pause chủ động và 2 lượt/lần hẹn.
+# Ưu tiên thực thi hội thoại — 2026-09-12
+
+User chốt capture trực tiếp có đủ thông tin tự lưu (gồm title+deadline), báo sau commit. Không capture-confirm mặc định như prototype, không bắt chọn UI scope trước mọi update. Confirmation theo rủi ro/mơ hồ/đề xuất của trợ lý, chấp nhận bằng lời có binding. Kế hoạch code kế tiếp CONVERSATION_DELIVERY.md; dừng mở rộng wizard/menu. UI card đã có giữ cho confirmation/overview. Chưa duyệt bật API live trong quyết định này.
