@@ -1,6 +1,6 @@
 # Tiếp tục từ đây
 
-Cập nhật 2026-09-12. Đọc file này trước; chỉ mở tài liệu liên quan.
+Cập nhật 2026-09-13. Đọc file này trước; chỉ mở tài liệu liên quan.
 
 ## Đã chốt
 
@@ -21,7 +21,9 @@ Cập nhật 2026-09-12. Đọc file này trước; chỉ mở tài liệu liên
 
 ## Tiếp theo
 
-Lập dependency map chính xác và trình danh sách file giữ/sửa/xóa cho user. Chỉ sau khi được duyệt theo `AGENTS.md` mới thay source; không vá riêng từng lỗi hoặc deploy giữa chừng.
+Đã rà source và lập phạm vi file/lifecycle/cutover trong TOOL_CALLING_PLAN mục5–7; chờ user duyệt một lần trước thay source theo `AGENTS.md`. Sau duyệt tự kiểm nội bộ xuyên suốt, user nghiệm thu cuối. Chưa chạy Gemini live, test suite hay sửa code trong lượt lập kế hoạch.
+- Phát hiện cần xử lý thêm: unique pending/owner, Telegram thiếu reply ID, summary không được nhớ hành động chưa commit, lưu outbox trước gửi, chuyển reminder cũ không gửi lặp.
+- Protocol một-call + hành động/lời đáp là mục tiêu cần smoke đúng model; quota20 request/24h trong config là trần app, không phải quota Google. Quyền smoke/deploy đề xuất chưa được cấp lại.
 
 ## Vận hành
 
