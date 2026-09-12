@@ -8,7 +8,9 @@ export async function processInbox(store: WorkStore, owner: string, clock: Clock
     const lease = await store.claim(owner, clock.now());
     if (!lease) break;
     try {
-      const plan = lease.attempts > 3
+      await store.prepareUi?.(lease,clock.now());
+      const plan = lease.uiStale ? {view:{text:'Lựa chọn đã cũ. Mở lại danh sách nhé.',buttons:[],silent:true},changes:[]}
+        : lease.attempts > 3
         ? { view: { text: 'Lệnh này chưa thực hiện được sau nhiều lần thử. Không có thay đổi từ lệnh này được lưu; cậu có thể gửi lại yêu cầu.', buttons: [] }, changes: [] }
         : await planCommand(lease.input, store, clock.now(), chat, calendar ? {command: input=>calendar.command(input,{token:lease.token})} : undefined);
       if(['/start','/help','/settings','/memory','/today','/tasks'].includes(lease.input.text??'')&&!plan.changes.some(c=>c.type==='cancel'))

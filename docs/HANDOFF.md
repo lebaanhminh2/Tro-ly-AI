@@ -20,6 +20,10 @@ Cập nhật: 2026-09-11. Phân biệt prototype, kế hoạch và sản phẩm 
 
 ## Bước tiếp theo
 
+UI integration checkpoint mới: createWorker tham số thứ 5 cardsEnabled=false mặc định. Khi true, D1WorkStore.prepareUi resolve token gắn owner/message/revision trước planCommand; stale chỉ notice, không nghiệp vụ. Commit UI transition cùng business batch, flush UI sau outbox cả webhook/cron; 429 retry persistent tối đa 3. Test Worker capture/list/detail/back/wizard cùng message ID, replay không mutation. Chưa deploy/remote migration, chưa bật mặc định vì reminders vẫn raw callbacks (sẽ bị từ chối trong mode mới), ACK chưa tách sớm cho Calendar chậm, deleted-card fallback/uncertain recovery chưa xong. Tiếp tục trong phạm vi đã duyệt, không yêu cầu user test UI mới lúc này.
+
+Kiểm tra checkpoint integration: test:all đạt (58 tests chính +25 experiments), typecheck và staging dry-run đạt. Không gọi Telegram/Gemini/Google thật trong đợt này; không deploy.
+
 UI lifecycle tiếp tục trong phạm vi đã duyệt: thêm migrations/0008_ui_cards.sql (chưa cloud), domain/ui.ts, D1UiStore (create/resolve/update statement builders/claim/finish/recover), tests/integration/ui-lifecycle.test.ts. Telegram hỗ trợ editMessageText và exact-prefix no-op 400 thành sent chỉ cho edit, tests liên quan và workerd cập nhật. CHƯA tích hợp module UI mới vào worker/store/dispatcher, CHƯA chuyển màn, CHƯA deploy. Tiếp tục notice/ACK, deleted-card fallback, recovery edit uncertain rồi nối toàn bộ flow; không cần user duyệt lại. Không đọc secrets hay gửi tin cloud ở lượt này.
 
 Kiểm tra checkpoint UI lifecycle: test:all đạt (56 tests chính +25 experiments), typecheck và staging dry-run đạt. Tình trạng card uncertain hiện chặn gửi tiếp; chưa triển khai reconcile. Không áp migration/deploy khi chưa tích hợp và kiểm thử toàn đợt.

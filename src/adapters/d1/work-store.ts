@@ -7,10 +7,20 @@ import { sessionStatements } from './session-store.ts';
 import {memoryStatements} from './memory.ts';
 import type {Memory,ConversationTurn} from '../../domain/memory.ts';
 import {renderView} from '../../application/ui-renderer.ts';
+import {D1UiStore} from './ui-store.ts';
 
 export class D1WorkStore implements WorkStore {
   private db: Database;
-  constructor(db: Database) { this.db = db; }
+  constructor(db: Database, privateCards = false) { this.db = db; this.cardsEnabled=privateCards; }
+  private cardsEnabled:boolean;
+  async prepareUi(lease:Lease,now:number){
+    if(!this.cardsEnabled||!lease.input.callback)return;
+    const input=lease.input;
+    const resolved=input.messageId?await new D1UiStore(this.db).resolve(input.owner,input.chat,input.messageId,input.callback!,now):null;
+    if(!resolved){lease.uiStale=true;return;}
+    lease.ui=resolved;
+    lease.input={...input,callback:resolved.action.action};
+  }
   runningSession(owner:string){return query(this.db,"SELECT * FROM sessions WHERE owner=? AND status='running' ORDER BY start_at LIMIT 1",owner).first<Session>();}
   memory(owner:string,id:string){return query(this.db,'SELECT * FROM memories WHERE owner=? AND id=?',owner,id).first<Memory>();}
   async memories(owner:string,now:number,offset=0,limit=30){
@@ -94,9 +104,19 @@ export class D1WorkStore implements WorkStore {
     const payload = JSON.stringify({ method: 'sendMessage', chat_id: input.chat, text: plan.view.text,
       ...(plan.view.buttons.length ? { reply_markup: { inline_keyboard: plan.view.buttons } } : {}) });
     if(input.text&&!input.text.startsWith('/')&&!plan.changes.some(c=>c.type==='forget'))statements.push(q('INSERT INTO conversation_turns(owner,command_id,user_text,assistant_text,created,expires) VALUES(?,?,?,?,?,?)',owner,input.updateId,input.text,plan.view.text,now,now+7*86400000));
-    if(!plan.view.silent)statements.push(q(`INSERT INTO outbox(id,payload,available) SELECT ?,?,? FROM command_inbox WHERE owner=? AND update_id=? AND delivery=1`,
+    if(this.cardsEnabled&&input.callbackId){
+      statements.push(q('INSERT OR IGNORE INTO outbox(id,payload,available) VALUES(?,?,?)',`ack:${owner}:${input.updateId}`,
+        JSON.stringify({method:'answerCallbackQuery',callback_query_id:input.callbackId,
+          ...(lease.uiStale||plan.view.silent?{text:'Lựa chọn đã cũ hoặc đã xử lý. Mở lại danh sách nhé.'}:{})}),now));
+    }
+    const ui=new D1UiStore(this.db);
+    if(this.cardsEnabled&&lease.ui&&!lease.uiStale){
+      statements.push(...ui.update(lease.ui.card,lease.ui.action,{...plan.view,silent:false},plan.view.buttons.length?'active':'completed',now));
+    }else if(this.cardsEnabled&&!lease.uiStale&&plan.view.buttons.length){
+      statements.push(...ui.create(owner,input.chat,plan.view,now,now+900000).statements);
+    }else if(!plan.view.silent&&!lease.uiStale)statements.push(q(`INSERT INTO outbox(id,payload,available) SELECT ?,?,? FROM command_inbox WHERE owner=? AND update_id=? AND delivery=1`,
       `reply:${owner}:${input.updateId}`,payload,now,owner,input.updateId));
-    if(input.messageId&&input.callback&&(plan.changes.some(c=>c.type==='resolve'||c.type==='session-action'||c.type==='memory-resolve')||plan.view.silent)){
+    if(!this.cardsEnabled&&input.messageId&&input.callback&&(plan.changes.some(c=>c.type==='resolve'||c.type==='session-action'||c.type==='memory-resolve')||plan.view.silent)){
       // Only remove buttons on a card previously sent by this application to this owner.
       statements.push(q(`INSERT OR IGNORE INTO outbox(id,payload,available) SELECT ?,?,? WHERE EXISTS
         (SELECT 1 FROM outbox WHERE message_id=? AND state='sent' AND json_extract(payload,'$.chat_id')=? AND json_extract(payload,'$.method')='sendMessage')`,

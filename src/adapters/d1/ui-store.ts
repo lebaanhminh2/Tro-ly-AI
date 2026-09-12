@@ -2,6 +2,7 @@ import {query, type Database, type Statement} from './database.ts';
 import {renderView} from '../../application/ui-renderer.ts';
 import {actionAvailable, type Card, type CardAction, type CardStatus} from '../../domain/ui.ts';
 import type {View} from '../../domain/work.ts';
+import {deliver} from '../telegram/api.ts';
 
 type UiDelivery = {id: string; card_id: string; revision: number; state: string; attempts: number; claim_token: string | null};
 export type CardDelivery = {job: UiDelivery; card: Card; token: string; payload: Record<string, unknown>};
@@ -11,6 +12,27 @@ export type CardDelivery = {job: UiDelivery; card: Card; token: string; payload:
 export class D1UiStore {
   constructor(privateDb: Database) { this.db = privateDb; }
   private db: Database;
+  async flush(owner:string,botToken:string,transport:typeof fetch,clock:()=>number){
+    await this.recover(clock());
+    const due=(await query(this.db,`SELECT c.id FROM ui_cards c JOIN ui_deliveries d ON d.card_id=c.id AND d.revision=c.revision
+      WHERE c.owner=? AND d.state='pending' AND d.available<=? ORDER BY d.available,d.id LIMIT 4`,owner,clock()).all<{id:string}>()).results;
+    for(const row of due){
+      const delivery=await this.claim(owner,row.id,clock());if(!delivery)continue;
+      const result=await deliver(botToken,delivery.payload,transport);
+      if(result.state==='pending')await this.retry(delivery,clock(),result.retryAfter??60);
+      else await this.finish(delivery,result.state,clock(),result.messageId);
+    }
+  }
+  private async retry(delivery:CardDelivery,now:number,seconds:number){
+    await this.db.batch([
+      query(this.db,`INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM ui_cards c JOIN ui_deliveries d ON d.card_id=c.id
+        WHERE c.id=? AND c.owner=? AND c.lease_token=? AND c.lease_until>? AND d.id=? AND d.claim_token=? AND d.state='sending') THEN 1 ELSE 0 END`,
+        delivery.card.id,delivery.card.owner,delivery.token,now,delivery.job.id,delivery.token),
+      query(this.db,"UPDATE ui_deliveries SET state=CASE WHEN attempts>=3 THEN 'failed' ELSE 'pending' END,available=? WHERE id=?",now+Math.min(86400,Math.max(1,seconds))*1000,delivery.job.id),
+      query(this.db,'UPDATE ui_cards SET lease_token=NULL,lease_until=NULL WHERE id=?',delivery.card.id),
+      query(this.db,'DELETE FROM transaction_guard')
+    ]);
+  }
   card(owner: string, id: string) { return query(this.db, 'SELECT * FROM ui_cards WHERE owner=? AND id=?', owner, id).first<Card>(); }
 
   private encode(id: string, owner: string, revision: number, view: View) {

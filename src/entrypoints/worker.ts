@@ -14,9 +14,13 @@ import {GeminiTrial} from '../ai/gemini.ts';
 import {CalendarService} from '../adapters/google-calendar/service.ts';
 import {GoogleClient} from '../adapters/google-calendar/client.ts';
 import {GoogleTokenVault} from '../adapters/google-calendar/vault.ts';
+import {D1UiStore} from '../adapters/d1/ui-store.ts';
 
 export { flushOutbox };
-export function createWorker(chat?: ChatService, transport: typeof fetch = fetch, clock: Clock = { now: Date.now }, calendarOverride?:CalendarService) {
+export function createWorker(chat?: ChatService, transport: typeof fetch = fetch, clock: Clock = { now: Date.now }, calendarOverride?:CalendarService, cardsEnabled=false) {
+  const flushCards=async(env:Env)=>{
+    if(cardsEnabled&&env.DELIVERY_MODE==='outbox')await new D1UiStore(env.DB).flush(env.TELEGRAM_USER_ID,env.TELEGRAM_BOT_TOKEN!,transport,()=>clock.now());
+  };
   const runtimeChat = (env: Env): ChatService | undefined => {
     if (chat) return chat; // Explicit offline dependency injection; default export has none.
     if (env.AI_MODE !== 'enabled') return undefined;
@@ -37,7 +41,7 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
   return {
     async scheduled(_event: unknown, env: Env) {
       if (!configured(env)) return;
-      const store = new D1WorkStore(env.DB);
+      const store = new D1WorkStore(env.DB,cardsEnabled);
       const calendarService=calendar(env);
       await expireMemory(env.DB,clock.now());
       await recoverInterrupted(env.DB, clock.now()); // Handles only legacy prototype updates and delivery leases.
@@ -47,6 +51,7 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
       try{await calendarService?.tick();}catch{/* Error state remains visible via /calendar; never log tokens. */}
       await queueReminders(env.DB,env.TELEGRAM_USER_ID,clock.now());
       await flushOutbox(env, transport, clock.now());
+      await flushCards(env);
     },
     async fetch(request: Request, env: Env): Promise<Response> {
       const url=new URL(request.url);
@@ -89,15 +94,16 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
       try { input = incoming(JSON.parse(raw)); } catch { return new Response('Bad request', { status: 400 }); }
       if (!input || input.owner !== env.TELEGRAM_USER_ID) return new Response('OK');
       try {
-        const store = new D1WorkStore(env.DB);
+        const store = new D1WorkStore(env.DB,cardsEnabled);
         const isNew = await store.accept(input, clock.now(), env.DELIVERY_MODE === 'outbox');
-        if (env.DELIVERY_MODE === 'outbox' && input.callbackId) {
+        if (!cardsEnabled && env.DELIVERY_MODE === 'outbox' && input.callbackId) {
           await query(env.DB, 'INSERT OR IGNORE INTO outbox(id,payload,available) VALUES(?,?,?)', `ack:${input.owner}:${input.updateId}`,
             JSON.stringify({ method: 'answerCallbackQuery', callback_query_id: input.callbackId }),clock.now()).run();
           await flushOutbox(env, transport, clock.now());
         }
         await processInbox(store, input.owner, clock, runtimeChat(env),4,calendar(env));
         await flushOutbox(env, transport, clock.now());
+        await flushCards(env);
         if (env.DELIVERY_MODE === 'outbox' || !isNew) return new Response('OK');
         const result = await store.result(input.owner, input.updateId);
         return result ? Response.json(message(input.chat,result.text,result.buttons)) : new Response('OK');
