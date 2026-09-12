@@ -4,11 +4,11 @@ import type { Env } from '../../config/env.ts';
 import { deliver } from '../telegram/api.ts';
 import { reminderAllowed } from './reminders.ts';
 
-export async function flushOutbox(env: Env, transport: typeof fetch = fetch, now = Date.now(), clock:()=>number = Date.now) {
+export async function flushOutbox(env: Env, transport: typeof fetch = fetch, now = Date.now(), clock:()=>number = Date.now, onlyId?:string) {
   const wallStart=clock();
   const currentTime=()=>now+Math.max(0,clock()-wallStart);
   if (env.DELIVERY_MODE !== 'outbox' || !configured(env)) return;
-  const rows = (await query(env.DB, "SELECT id,payload,reminder_id FROM outbox WHERE state='pending' AND available<=? AND attempts<3 ORDER BY available,id LIMIT 4", now)
+  const rows = (await query(env.DB, "SELECT id,payload,reminder_id FROM outbox WHERE state='pending' AND available<=? AND attempts<3 AND (? IS NULL OR id=?) ORDER BY available,id LIMIT 4", now,onlyId??null,onlyId??null)
     .all<{ id: string; payload: string;reminder_id:string|null }>()).results;
   for (const row of rows) {
     const attemptAt=currentTime();

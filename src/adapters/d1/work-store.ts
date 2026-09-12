@@ -16,7 +16,10 @@ export class D1WorkStore implements WorkStore {
   async prepareUi(lease:Lease,now:number){
     if(!this.cardsEnabled||!lease.input.callback)return;
     const input=lease.input;
-    const resolved=input.messageId?await new D1UiStore(this.db).resolve(input.owner,input.chat,input.messageId,input.callback!,now):null;
+    const ui=new D1UiStore(this.db);
+    const resolved=input.messageId?(input.callback!.startsWith('ui:')
+      ?await ui.resolve(input.owner,input.chat,input.messageId,input.callback!,now)
+      :await ui.adoptReminder(input.owner,input.chat,input.messageId,input.callback!,now)):null;
     if(!resolved){lease.uiStale=true;return;}
     lease.ui=resolved;
     lease.input={...input,callback:resolved.action.action};

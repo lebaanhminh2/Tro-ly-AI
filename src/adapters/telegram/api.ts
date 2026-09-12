@@ -21,7 +21,7 @@ export function incoming(raw: unknown): Incoming | null {
   return { updateId: u.update_id, owner: String(from.id), chat: chat.id, text: m.text };
 }
 
-export type Delivery = { state: 'sent' | 'pending' | 'failed' | 'uncertain'; retryAfter?: number; messageId?: number };
+export type Delivery = { state: 'sent' | 'pending' | 'failed' | 'uncertain'; retryAfter?: number; messageId?: number; reason?:'EDIT_UNAVAILABLE' };
 export async function deliver(token: string, payload: Record<string, unknown>, transport: typeof fetch = fetch, timeout = 8000): Promise<Delivery> {
   if (!['sendMessage','answerCallbackQuery','editMessageReplyMarkup','editMessageText'].includes(String(payload.method))) return { state: 'failed' };
   const controller = new AbortController();
@@ -58,6 +58,9 @@ export async function deliver(token: string, payload: Record<string, unknown>, t
       && typeof data.description === 'string' && /^Bad Request: message is not modified(?:$|:)/.test(data.description)
       && typeof body.message_id === 'number' && Number.isSafeInteger(body.message_id) && body.message_id > 0)
       return {state:'sent',messageId:body.message_id};
+    if(editing&&response.status===400&&data.ok===false&&data.error_code===400
+      && typeof data.description==='string'&&/^Bad Request: (message to edit not found|message can't be edited)$/.test(data.description))
+      return {state:'failed',reason:'EDIT_UNAVAILABLE'};
     if (response.ok && data.ok === true && (method === 'answerCallbackQuery' ? data.result === true : typeof messageId === 'number' && Number.isSafeInteger(messageId)))
       return { state: 'sent', ...(typeof messageId === 'number' ? { messageId } : {}) };
     const retry = record(data.parameters).retry_after;

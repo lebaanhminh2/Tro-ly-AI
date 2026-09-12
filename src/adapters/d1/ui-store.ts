@@ -19,7 +19,8 @@ export class D1UiStore {
     for(const row of due){
       const delivery=await this.claim(owner,row.id,clock());if(!delivery)continue;
       const result=await deliver(botToken,delivery.payload,transport);
-      if(result.state==='pending')await this.retry(delivery,clock(),result.retryAfter??60);
+      if(result.reason==='EDIT_UNAVAILABLE')await this.replaceUnavailable(delivery,clock());
+      else if(result.state==='pending')await this.retry(delivery,clock(),result.retryAfter??60);
       else await this.finish(delivery,result.state,clock(),result.messageId);
     }
   }
@@ -30,6 +31,28 @@ export class D1UiStore {
         delivery.card.id,delivery.card.owner,delivery.token,now,delivery.job.id,delivery.token),
       query(this.db,"UPDATE ui_deliveries SET state=CASE WHEN attempts>=3 THEN 'failed' ELSE 'pending' END,available=? WHERE id=?",now+Math.min(86400,Math.max(1,seconds))*1000,delivery.job.id),
       query(this.db,'UPDATE ui_cards SET lease_token=NULL,lease_until=NULL WHERE id=?',delivery.card.id),
+      query(this.db,'DELETE FROM transaction_guard')
+    ]);
+  }
+  private async replaceUnavailable(delivery:CardDelivery,now:number){
+    if(delivery.card.message_id===null)throw Error('NOT_AN_EDIT');
+    const view=JSON.parse(delivery.card.view_json) as View;
+    const actions=(await query(this.db,'SELECT token,action FROM ui_actions WHERE card_id=? AND revision=?',delivery.card.id,delivery.card.revision)
+      .all<{token:string;action:string}>()).results;
+    const lookup=new Map(actions.map(a=>[`ui:${a.token}`,a.action]));
+    const restored={...view,buttons:view.buttons.map(row=>row.map(button=>{
+      const action=lookup.get(button.callback_data);if(!action)throw Error('MISSING_CARD_ACTION');
+      return {...button,callback_data:action};
+    }))};
+    const next=this.create(delivery.card.owner,delivery.card.chat_id,restored,now,Math.max(now+60000,delivery.card.expires));
+    await this.db.batch([
+      query(this.db,`INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM ui_cards c JOIN ui_deliveries d ON d.card_id=c.id
+        WHERE c.id=? AND c.owner=? AND c.lease_token=? AND c.lease_until>? AND c.revision=? AND d.id=? AND d.state='sending' AND d.claim_token=?) THEN 1 ELSE 0 END`,
+        delivery.card.id,delivery.card.owner,delivery.token,now,delivery.card.revision,delivery.job.id,delivery.token),
+      query(this.db,"UPDATE ui_deliveries SET state='failed' WHERE id=?",delivery.job.id),
+      query(this.db,"UPDATE ui_cards SET status='expired',lease_token=NULL,lease_until=NULL WHERE id=?",delivery.card.id),
+      query(this.db,'UPDATE ui_actions SET consumed=1 WHERE card_id=?',delivery.card.id),
+      ...next.statements,
       query(this.db,'DELETE FROM transaction_guard')
     ]);
   }
@@ -62,6 +85,37 @@ export class D1UiStore {
     if (!action) return null;
     const card = await this.card(owner,action.card_id);
     return card && actionAvailable(card,action,owner,chat,message,now) ? {card,action} : null;
+  }
+
+  async adoptReminder(owner:string,chat:number,message:number,callback:string,now:number){
+    // Only a sent reminder from our outbox may enter this legacy bridge, once.
+    const existing=await query(this.db,'SELECT * FROM ui_cards WHERE owner=? AND chat_id=? AND message_id=?',owner,chat,message).first<Card>();
+    if(existing){
+      // Resume a first adoption interrupted before business commit, not a later revision.
+      if(existing.revision!==1)return null;
+      const source=await query(this.db,`SELECT o.id FROM outbox o JOIN reminders r ON r.id=o.reminder_id
+        JOIN sessions s ON s.id=r.session_id AND s.owner=r.owner
+        WHERE o.state='sent' AND o.message_id=? AND r.owner=? AND r.generation=s.generation
+        AND s.status='planned' AND json_extract(o.payload,'$.chat_id')=? LIMIT 1`,message,owner,chat).first();
+      if(!source)return null;
+      const action=await query(this.db,'SELECT * FROM ui_actions WHERE card_id=? AND owner=? AND revision=1 AND action=?',existing.id,owner,callback).first<CardAction>();
+      return action&&actionAvailable(existing,action,owner,chat,message,now)?{card:existing,action}:null;
+    }
+    const row=await query(this.db,`SELECT o.payload FROM outbox o JOIN reminders r ON r.id=o.reminder_id
+      JOIN sessions s ON s.id=r.session_id AND s.owner=r.owner
+      WHERE o.state='sent' AND o.message_id=? AND r.owner=? AND r.generation=s.generation
+      AND s.status='planned' AND json_extract(o.payload,'$.chat_id')=? LIMIT 1`,message,owner,chat).first<{payload:string}>();
+    if(!row)return null;
+    const payload=JSON.parse(row.payload) as {text:string;reply_markup?:{inline_keyboard?:View['buttons']}};
+    const buttons=payload.reply_markup?.inline_keyboard??[];
+    if(!buttons.flat().some(button=>button.callback_data===callback))return null;
+    const created=this.create(owner,chat,{text:payload.text,buttons},now,now+900000);
+    await this.db.batch([...created.statements,
+      query(this.db,'UPDATE ui_cards SET message_id=?,rendered_revision=1 WHERE id=?',message,created.id),
+      query(this.db,"UPDATE ui_deliveries SET state='sent' WHERE card_id=? AND revision=1",created.id)]);
+    const action=await query(this.db,'SELECT * FROM ui_actions WHERE card_id=? AND owner=? AND action=?',created.id,owner,callback).first<CardAction>();
+    const card=await this.card(owner,created.id);
+    return action&&card?{card,action}:null;
   }
 
   update(card: Card, action: CardAction, view: View, status: CardStatus, now: number): Statement[] {

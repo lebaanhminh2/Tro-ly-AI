@@ -96,6 +96,16 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
       try {
         const store = new D1WorkStore(env.DB,cardsEnabled);
         const isNew = await store.accept(input, clock.now(), env.DELIVERY_MODE === 'outbox');
+        if(cardsEnabled&&env.DELIVERY_MODE==='outbox'&&input.callbackId&&isNew){
+          const action=input.messageId&&input.callback?.startsWith('ui:')
+            ?await new D1UiStore(env.DB).resolve(input.owner,input.chat,input.messageId,input.callback,clock.now()):null;
+          const ackId=`ack:${input.owner}:${input.updateId}`;
+          // Resolve only for feedback here. Revalidate under the owner lease before mutation.
+          await query(env.DB,'INSERT OR IGNORE INTO outbox(id,payload,available) VALUES(?,?,?)',ackId,
+            JSON.stringify({method:'answerCallbackQuery',callback_query_id:input.callbackId,
+              text:input.callback?.startsWith('ui:')&&!action?'Lựa chọn đã cũ hoặc đang cập nhật. Mở lại danh sách nhé.':'Đã nhận, đang xử lý.'}),clock.now()).run();
+          await flushOutbox(env,transport,clock.now(),()=>clock.now(),ackId);
+        }
         if (!cardsEnabled && env.DELIVERY_MODE === 'outbox' && input.callbackId) {
           await query(env.DB, 'INSERT OR IGNORE INTO outbox(id,payload,available) VALUES(?,?,?)', `ack:${input.owner}:${input.updateId}`,
             JSON.stringify({ method: 'answerCallbackQuery', callback_query_id: input.callbackId }),clock.now()).run();

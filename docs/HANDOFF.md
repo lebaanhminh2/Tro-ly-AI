@@ -20,6 +20,8 @@ Cập nhật: 2026-09-11. Phân biệt prototype, kế hoạch và sản phẩm 
 
 ## Bước tiếp theo
 
+Checkpoint UI reliability: raw callbacks từ reminder đã sent được adopt vào ui_cards sau kiểm owner/chat/message/generation/planned và nút có thật trong payload. Raw callbacks card thường vẫn từ chối. Có early ACK riêng theo outbox ID trước nghiệp vụ, prepareUi dưới lease vẫn xác thực lại. editMessageText lỗi chính xác message-not-found/cannot-edit tạo replacement một lần, vô hiệu card cũ và phát lại actions bằng token mới; timeout không fallback send. Test:all 59 tests chính +25 experiments đạt; guard bổ sung nguồn reminder khi resume adoption được test riêng và typecheck đạt; staging dry-run đạt. CHƯA bật mode mới, CHƯA migration remote/deploy. Còn uncertain recovery, Calendar side effects/transition, full matrix/iPhone. Không yêu cầu user duyệt lại hoặc test bản chưa bật.
+
 UI integration checkpoint mới: createWorker tham số thứ 5 cardsEnabled=false mặc định. Khi true, D1WorkStore.prepareUi resolve token gắn owner/message/revision trước planCommand; stale chỉ notice, không nghiệp vụ. Commit UI transition cùng business batch, flush UI sau outbox cả webhook/cron; 429 retry persistent tối đa 3. Test Worker capture/list/detail/back/wizard cùng message ID, replay không mutation. Chưa deploy/remote migration, chưa bật mặc định vì reminders vẫn raw callbacks (sẽ bị từ chối trong mode mới), ACK chưa tách sớm cho Calendar chậm, deleted-card fallback/uncertain recovery chưa xong. Tiếp tục trong phạm vi đã duyệt, không yêu cầu user test UI mới lúc này.
 
 Kiểm tra checkpoint integration: test:all đạt (58 tests chính +25 experiments), typecheck và staging dry-run đạt. Không gọi Telegram/Gemini/Google thật trong đợt này; không deploy.

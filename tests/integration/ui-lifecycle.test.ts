@@ -7,6 +7,37 @@ import {D1UiStore} from '../../src/adapters/d1/ui-store.ts';
 import {createWorker} from '../../src/entrypoints/worker.ts';
 import type {Env} from '../../src/config/env.ts';
 
+test('sent reminder bridge rejects forged buttons and deleted cards get one replacement with fresh actions',async()=>{
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const file of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync(`migrations/${file}`,'utf8').replace(/\r?\n/g,' '));
+  const ui=new D1UiStore(db),now=100000;
+  await db.exec("INSERT INTO tasks(id,owner,title,created) VALUES('t','123','test',0); INSERT INTO sessions(id,owner,task_id,start_at,minutes,status,expires) VALUES('s','123','t',100000,25,'planned',900000); INSERT INTO reminders(id,owner,session_id,generation,ordinal,due) VALUES('r','123','s',1,1,100000);");
+  const payload={method:'sendMessage',chat_id:123,text:'Reminder',reply_markup:{inline_keyboard:[[{text:'Start',callback_data:'s:start:s:1'}]]}};
+  await db.prepare("INSERT INTO outbox(id,payload,state,available,message_id,reminder_id) VALUES('reminder',?,'sent',0,77,'r')").bind(JSON.stringify(payload)).run();
+  assert.equal(await ui.adoptReminder('123',123,77,'rest',now),null);
+  assert.equal(await ui.adoptReminder('999',999,77,'s:start:s:1',now),null);
+  const adopted=(await ui.adoptReminder('123',123,77,'s:start:s:1',now))!;
+  assert.ok(adopted);assert.ok(await ui.adoptReminder('123',123,77,'s:start:s:1',now));
+  await db.batch(ui.update(adopted.card,adopted.action,{text:'Running',buttons:[[{text:'Pause',callback_data:'s:pause:s:2'}]]},'active',now));
+  assert.equal(await ui.adoptReminder('123',123,77,'s:start:s:1',now),null);
+  let sends=0,edits=0;
+  const transport:typeof fetch=async(url)=>{
+   if(String(url).endsWith('editMessageText')){edits++;return Response.json({ok:false,error_code:400,description:'Bad Request: message to edit not found'},{status:400});}
+   sends++;return Response.json({ok:true,result:{message_id:88}});
+  };
+  await ui.flush('123','fake',transport,()=>now);
+  await ui.flush('123','fake',transport,()=>now);
+  await ui.flush('123','fake',transport,()=>now);
+  assert.equal(edits,1);assert.equal(sends,1);
+  assert.equal((await ui.card('123',adopted.card.id))!.status,'expired');
+  const replacement=await db.prepare('SELECT view_json FROM ui_cards WHERE owner=? AND message_id=?').bind('123',88).first<{view_json:string}>();
+  const button=JSON.parse(replacement!.view_json).buttons[0][0].callback_data;
+  assert.equal((await ui.resolve('123',123,88,button,now))!.action.action,'s:pause:s:2');
+ }finally{await mf.dispose();}
+});
+
 test('Worker UI mode: create, confirm, list/detail/back edits and stale notices without duplicate task',async()=>{
  const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
  try{
