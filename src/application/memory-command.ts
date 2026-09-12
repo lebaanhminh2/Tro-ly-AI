@@ -10,6 +10,7 @@ export async function memoryCommand(i:Input,store:WorkReader,now:number):Promise
   const buttons=memories.map(m=>[{text:'Quên: '+m.content,callback_data:`forget:${m.id}`}]);
   if(offset>0)buttons.push([{text:'Trang trước',callback_data:`memory-page:${Math.max(0,offset-8)}`}]);
   if(rows.length>8)buttons.push([{text:'Trang tiếp',callback_data:`memory-page:${offset+8}`}]);
+  buttons.push([{text:'Trang chính',callback_data:'nav:home'}]);
   return {view:{text:memories.length?memories.map(m=>`${m.kind==='temporary'?'Hôm nay':'Đã nhớ'}: ${m.content}`).join('\n'):'Chưa lưu điều gì ở trang này. /remember nội dung để ghi nhớ; /mood nội dung cho hôm nay.',buttons},changes:[]};
  }
  if(text.startsWith('/remember ')||text.startsWith('/mood ')){

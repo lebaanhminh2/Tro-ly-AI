@@ -33,6 +33,9 @@ test('real workerd fetch supports production adapters and never follows credenti
     import {deliver} from './src/adapters/telegram/api.ts';
     import {GoogleClient} from './src/adapters/google-calendar/client.ts';
     export default {async fetch(request, env) {
+      if (new URL(request.url).pathname === '/card-probe') return worker.fetch(new Request('https://test.invalid/telegram',{
+        method:'POST',headers:{'X-Telegram-Bot-Api-Secret-Token':'x'.repeat(32)},body:JSON.stringify({update_id:99,message:{from:{id:123},chat:{id:123,type:'private'},text:'/tasks'}})
+      }),{...env,DELIVERY_MODE:'outbox',TELEGRAM_BOT_TOKEN:'123:fake'});
       if (new URL(request.url).pathname === '/telegram') return worker.fetch(request, env);
       const result = {};
       result.telegram = await deliver('123:fake', {method:'sendMessage',chat_id:123,text:'test'});
@@ -77,5 +80,9 @@ test('real workerd fetch supports production adapters and never follows credenti
       assert.ok((await response.text()).includes(expected));
     }
     assert.equal(leakedRequests, 0);
+    const cardsResponse=await mf.dispatchFetch('https://test.invalid/card-probe');
+    assert.equal(cardsResponse.status,200);
+    const rendered=await db.prepare('SELECT rendered_revision,message_id FROM ui_cards LIMIT 1').first<{rendered_revision:number;message_id:number}>();
+    assert.equal(rendered!.rendered_revision,1);assert.equal(rendered!.message_id,7);
   } finally {await mf.dispose();}
 });

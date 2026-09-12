@@ -4,6 +4,8 @@ Ngày 2026-09-12. Telegram-first. Các mục thiết kế bên dưới không đ
 
 ## 0. Đợt UX đã triển khai local
 
+Cập nhật 2026-09-12: UI cards đã deploy staging. Navigation/wizard sửa cùng card, callback opaque có owner/message/revision, thông báo stale qua ACK; nhập ngày giờ thủ công cũng nối vào card đang mở. /start có menu, capture có hành động tiếp theo, settings có nút nghỉ/mở lại. Gỡ keyboard + send mới ở mô tả cũ dưới đây đã được thay bởi editMessageText cho UI outbox. Card bị xóa có replacement, edit uncertain phục hồi trên card mới khi user tương tác, không execute lại nghiệp vụ. Cần test hiển thị iPhone trước nghiệm thu UI.
+
 - Tasks: danh sách chọn một việc → chi tiết, nút ngắn; không hiện trò chuyện khi AI off. Thành công nói rõ tên việc. Callback xác nhận đã xử lý không tạo tin trả lời lặp.
 - Gỡ keyboard cũ qua outbox sau commit, chỉ với message ID của card app đã gửi tới đúng owner. Gỡ thất bại không mất thay đổi đã lưu; không retry mù với uncertain. Đây là gỡ nút + trả card mới, chưa phải sửa nội dung mọi card cũ tại chỗ.
 - Ngày hẹn/hạn: hôm nay, ngày mai, ngày kia → chọn giờ → thời lượng 15/25/45 phút cho session → confirm. Giờ khác/phút khác vẫn nhập tay. Nút tối đa 4 ô cho giờ ngắn HH:mm, thao tác chính tối đa 2. Chọn ngày mới vô hiệu lựa chọn cũ; D1 lưu task/expiry, phần lựa chọn trung gian nằm trong callback, không mất khi restart.

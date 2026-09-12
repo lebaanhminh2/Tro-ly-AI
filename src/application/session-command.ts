@@ -7,11 +7,16 @@ import { deadlineValue } from '../domain/time.ts';
 export async function sessionCommand(i:Input,store:WorkReader,now:number):Promise<Plan|null>{
   const view=(text:string,buttons:Plan['view']['buttons']=[]):Plan=>({view:{text,buttons},changes:[]});
   const cb=i.callback??'',text=cb==='rest'?'/rest':i.text??'';
-  if(text==='/today'){
-    const sessions=await store.sessions(i.owner,dayStart(now),dayStart(now)+86400000);
+  if(text==='/today'||cb.startsWith('today-page:')){
+    const offset=cb.startsWith('today-page:')?Number(cb.slice(11)):0;
+    if(!Number.isSafeInteger(offset)||offset<0||offset>1000)return view('Trang không hợp lệ.');
+    const all=await store.sessions(i.owner,dayStart(now),dayStart(now)+86400000),sessions=all.slice(offset,offset+8);
     const labels={draft:'Chưa chốt',planned:'Đã lên lịch',running:'Đang làm',paused:'Tạm dừng',completed:'Đã kết thúc buổi',skipped:'Đã bỏ buổi',unknown:'Chưa rõ kết quả'};
     const lines=await Promise.all(sessions.map(async s=>`${new Date(s.start_at+7*3600000).toISOString().slice(11,16)} · ${(await store.task(i.owner,s.task_id))?.title??'Công việc'} · ${s.minutes} phút · ${labels[s.status]}`));
     const result=view(sessions.length?lines.join('\n'):'Hôm nay chưa có buổi nào. Mở /tasks và chọn “Lên buổi”.',sessions.map((s,index)=>[{text:`${index+1}. ${new Date(s.start_at+7*3600000).toISOString().slice(11,16)} · Xem buổi`,callback_data:`session:${s.id}`} ]));
+    if(offset>0)result.view.buttons.push([{text:'Trang trước',callback_data:`today-page:${Math.max(0,offset-8)}`}]);
+    if(all.length>offset+8)result.view.buttons.push([{text:'Trang tiếp',callback_data:`today-page:${offset+8}`}]);
+    if(!sessions.length)result.view.buttons.push([{text:'Công việc',callback_data:'nav:tasks'}]);
     result.changes.push({type:'cancel',owner:i.owner});
     return result;
   }
@@ -19,14 +24,16 @@ export async function sessionCommand(i:Input,store:WorkReader,now:number):Promis
     const s=await store.session(i.owner,cb.slice(8));
     if(!s)return view('Buổi này không còn. Mở /today để xem lại.');
     const task=await store.task(i.owner,s.task_id);
-    return view(`${task?.title??'Công việc'} · ${s.minutes} phút\n${new Date(s.start_at+7*3600000).toISOString().slice(0,16).replace('T',' ')} (giờ Việt Nam)`,sessionButtons(s));
+    const labels={draft:'Chưa chốt',planned:'Đã lên lịch',running:'Đang làm',paused:'Tạm dừng',completed:'Đã kết thúc',skipped:'Đã bỏ buổi',unknown:'Chưa rõ kết quả'};
+    return view(`${task?.title??'Công việc'} · ${s.minutes} phút\n${labels[s.status]}\n${new Date(s.start_at+7*3600000).toISOString().slice(0,16).replace('T',' ')} (giờ Việt Nam)`,[...sessionButtons(s),[{text:'Hôm nay',callback_data:'nav:today'}]]);
   }
-  if(text==='/settings')return view('Nhắc theo giờ cậu hẹn, không chặn giờ yên lặng. /rest dừng nhắc hôm nay; /resume mở lại nhưng không gửi bù các nhắc đã hủy. Mỗi lần hẹn tối đa 2 lượt nhắc, không giới hạn theo ngày.');
+  if(text==='/settings')return view('Nhắc theo giờ cậu hẹn, không chặn giờ yên lặng. Nghỉ hôm nay dừng nhắc tới hết ngày; mở lại không gửi bù các nhắc đã hủy. Mỗi lần hẹn tối đa 2 lượt nhắc, không giới hạn theo ngày.',
+    [[{text:'Nghỉ hôm nay',callback_data:'nav:rest'},{text:'Mở lại nhắc',callback_data:'nav:resume'}],[{text:'Bộ nhớ',callback_data:'nav:memory'},{text:'Trang chính',callback_data:'nav:home'}]]);
   if(text==='/quiet'||text.startsWith('/quiet '))return view('Đã bỏ giờ yên lặng. Dùng /rest nếu muốn dừng nhắc hôm nay.');
   if(text==='/rest'||text==='/resume'){
     const p:Preferences=await store.preferences(i.owner)??{owner:i.owner,quiet_start:1320,quiet_end:420,pause_until:0};
     p.pause_until=text==='/rest'?dayStart(now)+86400000:0;
-    return {...view(text==='/rest'?'Đã dừng nhắc tới hết hôm nay.':'Đã mở nhắc lại. Không gửi bù các nhắc đã hủy; cậu có thể hẹn lại buổi cần nhắc.'),changes:[{type:'preferences',preferences:p},{type:'cancel',owner:i.owner}]};
+    return {...view(text==='/rest'?'Đã dừng nhắc tới hết hôm nay.':'Đã mở nhắc lại. Không gửi bù các nhắc đã hủy; cậu có thể hẹn lại buổi cần nhắc.',[[{text:'Cài đặt',callback_data:'nav:settings'},{text:'Hôm nay',callback_data:'nav:today'}]]),changes:[{type:'preferences',preferences:p},{type:'cancel',owner:i.owner}]};
   }
   if(cb.startsWith('schedule:')){
     const task=await store.task(i.owner,cb.slice(9));if(!task)return view('Không tìm thấy việc.');

@@ -31,15 +31,29 @@ export class D1WorkStore implements WorkStore {
     return normalized;
   }
   async prepareUi(lease:Lease,now:number){
-    if(!this.cardsEnabled||!lease.input.callback)return;
+    if(!this.cardsEnabled)return;
     const input=lease.input;
     const ui=new D1UiStore(this.db);
+    if(!input.callback){
+      if(input.text&&!input.text.startsWith('/')){
+        const pending=(await this.sessionInput(input.owner))??await this.selection(input.owner);
+        if(pending&&pending.expires>now){
+          const resolved=await ui.textInput(input.owner,input.chat,now);
+          if(resolved)lease.ui=resolved;
+        }
+      }
+      return;
+    }
     const resolved=input.messageId?(input.callback!.startsWith('ui:')
       ?await ui.resolve(input.owner,input.chat,input.messageId,input.callback!,now)
       :await ui.adoptReminder(input.owner,input.chat,input.messageId,input.callback!,now)):null;
     if(!resolved){
       if(input.messageId)lease.uiRecovered=await ui.recoverOnInteraction(input.owner,input.chat,input.messageId,input.callback!,now);
       lease.uiStale=true;return;
+    }
+    if(/^(w:|due:|cancel-input$)/.test(resolved.action.action)){
+      const flow=await query(this.db,'SELECT card_id FROM ui_text_inputs WHERE owner=? AND expires>?',input.owner,now).first<{card_id:string}>();
+      if(!flow||flow.card_id!==resolved.card.id){lease.uiStale=true;return;}
     }
     lease.ui=resolved;
     lease.input={...input,callback:resolved.action.action};
@@ -133,12 +147,28 @@ export class D1WorkStore implements WorkStore {
           ...(lease.uiStale||plan.view.silent?{text:'Lựa chọn đã cũ hoặc đã xử lý. Mở lại danh sách nhé.'}:{})}),now));
     }
     const ui=new D1UiStore(this.db);
+    let renderedCard:string|undefined;
     if(this.cardsEnabled&&lease.ui&&!lease.uiStale){
-      statements.push(...ui.update(lease.ui.card,lease.ui.action,{...plan.view,silent:false},plan.view.buttons.length?'active':'completed',now));
+      renderedCard=lease.ui.card.id;
+      // Text validation errors must leave the input flow active even if the view has no buttons.
+      const pendingInput=await this.sessionInput(owner)??await this.selection(owner);
+      const inputContinues=!!pendingInput&&!plan.changes.some(c=>c.type==='cancel'||c.type==='session-create');
+      const nextView={...plan.view,silent:false};
+      if(inputContinues&&!nextView.buttons.length)nextView.buttons=[[{text:'Hủy',callback_data:'cancel-input'}]];
+      statements.push(...ui.update(lease.ui.card,lease.ui.action,nextView,nextView.buttons.length?'active':'completed',now));
     }else if(this.cardsEnabled&&!lease.uiStale&&plan.view.buttons.length){
-      statements.push(...ui.create(owner,input.chat,plan.view,now,now+900000).statements);
+      const created=ui.create(owner,input.chat,plan.view,now,now+900000);renderedCard=created.id;
+      statements.push(...created.statements);
     }else if(!plan.view.silent&&!lease.uiStale)statements.push(q(`INSERT INTO outbox(id,payload,available) SELECT ?,?,? FROM command_inbox WHERE owner=? AND update_id=? AND delivery=1`,
       `reply:${owner}:${input.updateId}`,payload,now,owner,input.updateId));
+    if(this.cardsEnabled&&!lease.uiStale){
+      if(renderedCard){
+        statements.push(q('DELETE FROM ui_text_inputs WHERE owner=?',owner));
+        statements.push(q(`INSERT INTO ui_text_inputs(owner,card_id,expires) SELECT ?,?,MAX(expires) FROM
+          (SELECT expires FROM session_input WHERE owner=? UNION ALL SELECT expires FROM selections WHERE owner=?)
+          HAVING MAX(expires)>?`,owner,renderedCard,owner,owner,now));
+      }else if(plan.changes.some(c=>c.type==='cancel'))statements.push(q('DELETE FROM ui_text_inputs WHERE owner=?',owner));
+    }
     if(!this.cardsEnabled&&input.messageId&&input.callback&&(plan.changes.some(c=>c.type==='resolve'||c.type==='session-action'||c.type==='memory-resolve')||plan.view.silent)){
       // Only remove buttons on a card previously sent by this application to this owner.
       statements.push(q(`INSERT OR IGNORE INTO outbox(id,payload,available) SELECT ?,?,? WHERE EXISTS

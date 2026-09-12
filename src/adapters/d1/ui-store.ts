@@ -61,6 +61,8 @@ export class D1UiStore {
   private encode(id: string, owner: string, revision: number, view: View) {
     const rendered = renderView(view);
     const actions: Statement[] = [];
+    actions.push(query(this.db,'INSERT INTO ui_actions(token,card_id,owner,revision,action) VALUES(?,?,?,?,?)',
+      crypto.randomUUID().replaceAll('-',''),id,owner,revision,'__text__'));
     const buttons = rendered.buttons.map(row => row.map(button => {
       const token = crypto.randomUUID().replaceAll('-', '');
       actions.push(query(this.db, 'INSERT INTO ui_actions(token,card_id,owner,revision,action) VALUES(?,?,?,?,?)', token,id,owner,revision,button.callback_data));
@@ -85,6 +87,14 @@ export class D1UiStore {
     if (!action) return null;
     const card = await this.card(owner,action.card_id);
     return card && actionAvailable(card,action,owner,chat,message,now) ? {card,action} : null;
+  }
+  async textInput(owner:string,chat:number,now:number){
+    const binding=await query(this.db,'SELECT card_id FROM ui_text_inputs WHERE owner=? AND expires>?',owner,now).first<{card_id:string}>();
+    if(!binding)return null;
+    const card=await this.card(owner,binding.card_id);
+    if(!card||card.message_id===null)return null;
+    const action=await query(this.db,"SELECT * FROM ui_actions WHERE card_id=? AND owner=? AND revision=? AND action='__text__'",card.id,owner,card.revision).first<CardAction>();
+    return action&&actionAvailable(card,action,owner,chat,card.message_id,now)?{card,action}:null;
   }
 
   async recoverOnInteraction(owner:string,chat:number,message:number,callback:string,now:number){

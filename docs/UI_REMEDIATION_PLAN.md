@@ -6,6 +6,10 @@
 
 ### Tiến độ triển khai (chưa nghiệm thu)
 
+**Mới nhất:** bản UI được deploy staging ngày 2026-09-12, version `119d8205-66b9-4396-a5fa-0d9be4c66ee4`; migration 0008 đã áp remote, không sửa tiếp migration này. Default export bật cards cho DELIVERY_MODE=outbox; preview vẫn harness cũ. 62 tests chính +25 experiments, typecheck/workerd/dry-run đạt. Text input gắn card đang mở qua ui_text_inputs, nav/cancel kiểm flow, menu/start/settings và hành động tiếp theo sau capture đã có; Today phân trang 8 mục trong giới hạn reader 30. Test Worker cover memory/settings/Calendar selection, wizard nhập tay và stale. Các checkpoint phía dưới là lịch sử.
+
+**Cần nghiệm thu iPhone:** /start mới → Công việc → chi tiết → quay lại không thêm tin; đặt hạn nhập tay và bấm chọn; memory/settings; nhắc buổi. Không hứa không cắt ở mọi cỡ chữ iOS; tên đầy đủ ở nội dung, labels grapheme fallback. AI/Calendar thật vẫn off. Old raw navigation callbacks báo stale, không tự tái dựng màn cũ; reminder sent có cầu nối đúng owner/session. UI_Calendar receipt giảm lặp nhưng không atomic với Google. LLM intent/confirmation bằng lời chưa hoàn thiện, không gọi bản này là sản phẩm cuối.
+
 - Đã có renderer chung và tests grapheme/layout.
 - Đã thêm `domain/ui.ts`, migration `0008_ui_cards.sql`, `adapters/d1/ui-store.ts`: card/action/delivery bền vững, callback token opaque gắn owner/message/revision, statement builders ghép cùng transaction nghiệp vụ, lease từng card và guard kết quả sender.
 - Đã thêm Telegram editMessageText/no-op edit và test trong workerd. Test lifecycle bao phủ replay, sai owner/message, chưa render, rollback nghiệp vụ+UI, restart store, sender quá hạn và uncertain không tự retry.

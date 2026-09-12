@@ -121,4 +121,10 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
     }
   };
 }
-export default createWorker();
+const cardWorker=createWorker(undefined,fetch,{now:Date.now},undefined,true);
+const previewWorker=createWorker();
+// Production outbox delivery uses versioned cards. Preview remains a local response-only harness.
+export default {
+  fetch(request:Request,env:Env){return (env.DELIVERY_MODE==='outbox'?cardWorker:previewWorker).fetch(request,env);},
+  scheduled(event:unknown,env:Env){return (env.DELIVERY_MODE==='outbox'?cardWorker:previewWorker).scheduled(event,env);}
+};

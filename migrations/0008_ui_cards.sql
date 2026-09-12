@@ -40,3 +40,8 @@ CREATE TABLE ui_calendar_receipts (
  view_json TEXT,
  PRIMARY KEY(owner,update_id)
 );
+CREATE TABLE ui_text_inputs (
+ owner TEXT PRIMARY KEY,
+ card_id TEXT NOT NULL REFERENCES ui_cards(id),
+ expires INTEGER NOT NULL
+);

@@ -41,6 +41,33 @@ class FakeGoogle implements CalendarProvider,TokenProvider {
   }
 }
 
+test('Calendar controls use versioned UI cards through Worker and replay cannot toggle selection',async()=>{
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const file of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync(`migrations/${file}`,'utf8').replace(/\r?\n/g,' '));
+  const api=new FakeGoogle(),vault=new GoogleTokenVault('ab'.repeat(32));let now=Date.parse('2026-09-18T09:00:00+07:00');
+  await db.prepare("INSERT INTO calendar_connections(owner,refresh_cipher,revision,status) VALUES('123',?,1,'ready')").bind(await vault.seal('123','fake')).run();
+  const service=new CalendarService({db,provider:api,tokens:api,vault,owner:'123',origin:'https://local.example',writes:false,now:()=>now});
+  const env:Env={DB:db,TELEGRAM_USER_ID:'123',TELEGRAM_WEBHOOK_SECRET:'x'.repeat(32),TELEGRAM_BOT_TOKEN:'123:fake',DELIVERY_MODE:'outbox',CALENDAR_MODE:'enabled',CALENDAR_WRITES:'off',GOOGLE_CLIENT_ID:'fake',GOOGLE_CLIENT_SECRET:'fake',GOOGLE_TOKEN_KEY:'ab'.repeat(32),PUBLIC_ORIGIN:'https://local.example',AI_MODE:'off'};
+  const sent:Record<string,any>[]=[];let sequence=0;
+  const transport:typeof fetch=async(url,init)=>{const method=String(url).split('/').at(-1)!;const body=JSON.parse(String(init?.body));sent.push({method,...body});return Response.json({ok:true,result:method==='answerCallbackQuery'?true:{message_id:55}});};
+  const run=async(text:string,callback=false)=>{
+    now+=100;const update_id=++sequence;
+    const body=callback?{update_id,callback_query:{id:`cb${update_id}`,data:text,from:{id:123},message:{message_id:55,chat:{id:123,type:'private'}}}}:{update_id,message:{from:{id:123},chat:{id:123,type:'private'},text}};
+    const response=await createWorker(undefined,transport,{now:()=>now},service,true).fetch(new Request('https://local.example/telegram',{method:'POST',headers:{'X-Telegram-Bot-Api-Secret-Token':env.TELEGRAM_WEBHOOK_SECRET},body:JSON.stringify(body)}),env);
+    assert.equal(response.status,200);
+  };
+  await run('/calendar list');const select=sent.at(-1)!.reply_markup.inline_keyboard[0][0].callback_data;
+  assert.match(select,/^ui:/);await run(select,true);
+  assert.equal(sent.at(-1)!.method,'editMessageText');
+  const count=(await db.prepare('SELECT COUNT(*) AS n FROM calendars WHERE selected=1').first<{n:number}>())!.n;
+  const length=sent.length;await run(select,true);
+  assert.equal(sent.length,length+1);assert.equal(sent.at(-1)!.method,'answerCallbackQuery');
+  assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM calendars WHERE selected=1').first<{n:number}>())!.n,count);
+ }finally{await mf.dispose();}
+});
+
 test('calendar timezone/all-day/recurring instance conflict and simple slots',()=>{
  const interval=eventInterval({start:{date:'2026-03-08'},end:{date:'2026-03-09'}},'America/New_York')!;
  assert.equal((interval.end-interval.start)/3600000,23);

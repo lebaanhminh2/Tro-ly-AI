@@ -90,7 +90,7 @@ test('Worker UI mode: create, confirm, list/detail/back edits and stale notices 
   await run(confirm,proposalMessage);
   assert.equal(sent.at(-1)!.method,'editMessageText');
   assert.equal(sent.at(-1)!.message_id,proposalMessage);
-  assert.deepEqual(sent.at(-1)!.reply_markup.inline_keyboard,[]);
+  assert.ok(sent.at(-1)!.reply_markup.inline_keyboard.flat().some((b:any)=>b.text==='Xem việc'));
   const count=sent.length;await run(confirm,proposalMessage);
   assert.equal(sent.length,count+1);assert.equal(sent.at(-1)!.method,'answerCallbackQuery');
   assert.match(sent.at(-1)!.text,/đã cũ/);
@@ -121,6 +121,38 @@ test('Worker UI mode: create, confirm, list/detail/back edits and stale notices 
   const beforeOld=sent.length;await run(oldDay,listMessage);
   assert.equal(sent.length,beforeOld+1);assert.equal(sent.at(-1)!.method,'answerCallbackQuery');
   assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM sessions').first<{n:number}>())!.n,1);
+  // Text entered after opening the date flow updates the same card, not a detached proposal.
+  await run('/tasks');const textCard=message;
+  await run(sent.at(-1)!.reply_markup.inline_keyboard[0][0].callback_data,textCard);
+  await run(sent.at(-1)!.reply_markup.inline_keyboard[0][0].callback_data,textCard);
+  const oldCancel=sent.at(-1)!.reply_markup.inline_keyboard.at(-1)[0].callback_data;
+  const textSends=sent.filter(p=>p.method==='sendMessage').length;
+  await run('not a date');
+  assert.equal(sent.at(-1)!.method,'editMessageText');assert.equal(sent.at(-1)!.message_id,textCard);
+  await run('01/01/2030 12:30');
+  assert.equal(sent.at(-1)!.method,'editMessageText');
+  await run(sent.at(-1)!.reply_markup.inline_keyboard[0][0].callback_data,textCard);
+  assert.equal(sent.filter(p=>p.method==='sendMessage').length,textSends);
+  assert.match((await db.prepare('SELECT deadline FROM tasks LIMIT 1').first<{deadline:string}>())!.deadline,/2030/);
+  await run(oldCancel,textCard);assert.equal(sent.at(-1)!.method,'answerCallbackQuery');
+  await run('/start');const homeCard=message;
+  await run(sent.at(-1)!.reply_markup.inline_keyboard[1][0].callback_data,homeCard);
+  assert.match(sent.at(-1)!.text,/không chặn giờ yên lặng/);
+  await run(sent.at(-1)!.reply_markup.inline_keyboard[0][0].callback_data,homeCard);
+  assert.match(sent.at(-1)!.text,/dừng nhắc/);
+  await run(sent.at(-1)!.reply_markup.inline_keyboard[0][0].callback_data,homeCard);
+  await run(sent.at(-1)!.reply_markup.inline_keyboard[0][1].callback_data,homeCard);
+  assert.match(sent.at(-1)!.text,/mở nhắc lại/);
+  await run('/remember thích trà');await run('/memory');const memoryCard=message;
+  const forget=sent.at(-1)!.reply_markup.inline_keyboard[0][0].callback_data;
+  await run(forget,memoryCard);assert.match(sent.at(-1)!.text,/Đã quên/);
+  const afterForget=sent.length;await run(forget,memoryCard);
+  assert.equal(sent.length,afterForget+1);assert.equal(sent.at(-1)!.method,'answerCallbackQuery');
+  await run('/remember thích cacao');await run('/forgetall');const forgetCard=message;
+  const forgetAll=sent.at(-1)!.reply_markup.inline_keyboard[0][0].callback_data;
+  await run(forgetAll,forgetCard);assert.match(sent.at(-1)!.text,/Đã xóa bộ nhớ/);
+  assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM memories').first<{n:number}>())!.n,0);
+  const afterAll=sent.length;await run(forgetAll,forgetCard);assert.equal(sent.length,afterAll+1);
  }finally{await mf.dispose();}
 });
 
