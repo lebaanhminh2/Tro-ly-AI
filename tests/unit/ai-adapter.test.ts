@@ -2,6 +2,39 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { parseReply } from '../../src/ai/contracts.ts';
 import { GeminiTrial } from '../../src/ai/gemini.ts';
+import {modelStep,toolResponse} from '../../src/ai/contracts.ts';
+import {validateTool} from '../../src/ai/policy.ts';
+
+test('native function calling preserves signature and call ID across tool response without JSON-output mode',async()=>{
+ const content={role:'model' as const,parts:[{thoughtSignature:'opaque-signature',functionCall:{id:'call-1',name:'create_task',args:{title:'rửa bát',deadline:{value:'2026-09-12T19:00:00+07:00',precision:'datetime'}}}}]};
+ const inputs:{role:'user'|'model';parts:Record<string,unknown>[]}[][]=[];let calls=0;
+ const client=new GeminiTrial({apiKey:'fake',model:'test-model',maxRequests:3,transport:async(_url,init)=>{
+  calls++;const body=JSON.parse(String(init?.body));inputs.push(body.contents);
+  assert.ok(body.tools[0].functionDeclarations.some((t:{name:string})=>t.name==='create_task'));
+  assert.equal(body.generationConfig.responseMimeType,undefined);
+  return Response.json({candidates:[{finishReason:'STOP',content:calls===1?content:{role:'model',parts:[{text:'Tớ ghi rồi nhé.'}]}}]});
+ }});
+ const user={role:'user' as const,parts:[{text:'Thêm cho tớ việc rửa bát deadline 7h tối nay nhé'}]};
+ const first=await client.generateTools([user],'Synthetic system');
+ const call=first.output.calls[0]!;validateTool(call,Date.parse('2026-09-12T08:00:00+07:00'));
+ assert.equal(first.output.content.parts[0]!.thoughtSignature,'opaque-signature');
+ const response=toolResponse(call,{status:'applied',task_id:'t1'});
+ assert.deepEqual(response,{functionResponse:{id:'call-1',name:'create_task',response:{status:'applied',task_id:'t1'}}});
+ const final=await client.generateTools([user,first.output.content,{role:'user',parts:[response]}],'Synthetic system',false);
+ assert.deepEqual(inputs[1]![1],content);assert.equal(final.output.text,'Tớ ghi rồi nhé.');
+});
+
+test('tools validate typed fields instead of requiring a natural-language phrase',()=>{
+ const now=Date.parse('2026-09-12T08:00:00+07:00');
+ assert.doesNotThrow(()=>validateTool({name:'create_task',args:{title:'Rửa bát',deadline:{value:'2026-09-12T19:00:00+07:00',precision:'datetime'}}},now));
+ assert.doesNotThrow(()=>validateTool({name:'create_task',args:{title:'Việc chỉ có ngày',deadline:{value:'2026-09-13',precision:'date'}}},now));
+ assert.throws(()=>validateTool({name:'create_task',args:{title:'test',deadline:null,owner:'other'}},now),/INVALID_TOOL_FIELDS/);
+ assert.throws(()=>validateTool({name:'create_task',args:{title:'test',deadline:{value:'2026-02-30',precision:'date'}}},now),/INVALID_DATE/);
+ assert.throws(()=>validateTool({name:'create_task',args:{title:'test',deadline:{value:'2026-09-12T24:00:00Z',precision:'datetime'}}},now),/INVALID_TIME/);
+ assert.throws(()=>validateTool({name:'update_task',args:{task_id:'t',expected_version:1,patch:{owner:'other'}}},now),/INVALID_TOOL_FIELDS/);
+ assert.throws(()=>validateTool({name:'set_reminder',args:{task_id:'t',expected_version:1,at:'2026-09-11T19:00:00+07:00'}},now),/REMINDER_IN_PAST/);
+ assert.throws(()=>modelStep({candidates:[{finishReason:'STOP',content:{role:'model',parts:[{functionCall:{name:'run_sql',args:{sql:'DROP TABLE tasks'}}}]}}]}),/UNKNOWN_TOOL/);
+});
 
 const turns = [{ role: 'user' as const, text: 'đổi hạn môn A sang mai' }];
 const chat = { kind: 'chat', reply: 'ừ, cậu kể tiếp đi', draft: null };

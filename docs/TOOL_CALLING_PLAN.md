@@ -1,6 +1,8 @@
 # Thay đường hội thoại bằng gọi công cụ — phạm vi duyệt
 
-2026-09-12. Chỉ kế hoạch, chưa sửa source/deploy. Đây là kế hoạch thực thi ưu tiên thay CONVERSATION_DELIVERY; yêu cầu sản phẩm/persona không đổi. Không mở thêm kiến trúc UI, provider hay framework.
+2026-09-12. Đã được user duyệt triển khai bằng yêu cầu làm một lượt dài. Đang thay source, chưa cutover/deploy. Yêu cầu sản phẩm/persona không đổi; không thêm UI/provider/framework.
+
+Checkpoint: đã có function declarations/response parsing/data validation và adapter native giữ nguyên model parts/call ID, không dùng JSON response schema cho tool mode. Các entrypoint cũ chưa chuyển, executor/receipts/cleanup chưa hoàn tất; đây chưa phải bot function calling đã chạy. API đối chiếu [Google generateContent](https://ai.google.dev/api/generate-content) và [function calling](https://ai.google.dev/gemini-api/docs/function-calling); không đổi model theo ví dụ tài liệu.
 
 ## 1. Luồng duy nhất
 

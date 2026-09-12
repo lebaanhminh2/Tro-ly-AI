@@ -1,6 +1,7 @@
 import { PERSONA, PROMPT_VERSION } from './persona.ts';
 import { parseReply, REPLY_SCHEMA } from './contracts.ts';
 import type { Reply, Turn } from './contracts.ts';
+import {TOOL_DECLARATIONS,modelStep,type ModelContent} from './contracts.ts';
 import {CONVERSATION_SCHEMA,parseConversation,type ConversationIntent} from '../domain/conversation.ts';
 
 export class TrialError extends Error {
@@ -25,6 +26,16 @@ export class GeminiTrial {
   }
   get requestsUsed() { return this.total; }
 
+  generateTools(contents:ModelContent[],systemInstruction:string,allowTools=true){
+    if(!contents.length||contents.length>24||contents.some(c=>!['user','model'].includes(c.role)||!Array.isArray(c.parts)||!c.parts.length)
+      ||contents.at(-1)?.role!=='user'||JSON.stringify(contents).length+systemInstruction.length>48000)throw new TrialError('INVALID_INPUT');
+    // Native content is forwarded intact, including functionCall IDs and thought signatures.
+    const turns=contents.map(c=>({role:c.role,text:JSON.stringify(c.parts)}));
+    return this.generateTyped(turns,'',null,raw=>modelStep(JSON.parse(raw)),systemInstruction,'tools-v1',{
+      contents,tools:[{functionDeclarations:TOOL_DECLARATIONS}],toolConfig:{functionCallingConfig:{mode:allowTools?'AUTO':'NONE'}}
+    });
+  }
+
   generate(turns:Turn[],context:string,allowedIds:string[]=[]){
     return this.generateTyped<Reply>(turns,context,REPLY_SCHEMA,text=>parseReply(text,turns,allowedIds),PERSONA);
   }
@@ -41,7 +52,7 @@ Khi người dùng chỉ hỏi ví dụ/giải thích, trả lời nội dung đ
 Không thực hiện thao tác ví dụ/giả định/tentative. Hỏi nếu có nhiều việc trùng tên hoặc không rõ thao tác. Không giả đã thực hiện thao tác ngoài schema.`;
     return this.generateTyped<ConversationIntent>(turns,context,CONVERSATION_SCHEMA,parseConversation,prompt,'conversation-c1-v2');
   }
-  private async generateTyped<T>(turns: Turn[], context: string, schema:unknown,parse:(text:string)=>T,prompt:string,promptVersion=PROMPT_VERSION): Promise<{
+  private async generateTyped<T>(turns: Turn[], context: string, schema:unknown,parse:(text:string)=>T,prompt:string,promptVersion=PROMPT_VERSION,native?:{contents:ModelContent[];tools:unknown[];toolConfig:unknown}): Promise<{
     output: T; metrics: { model: string; promptVersion: string; requestsUsed: number; latencyMs: number; tokens: Record<string, number> }
   }> {
     if (!turns.length || turns.length > 24 || turns.at(-1)?.role !== 'user' ||
@@ -67,7 +78,8 @@ Không thực hiện thao tác ví dụ/giả định/tentative. Hỏi nếu có
             contents: turns.map((t, i) => ({ role: t.role, parts: [{
               text: i === 0 ? JSON.stringify({ contextData: context, message: t.text }) : t.text
             }] })),
-            generationConfig: { responseMimeType: 'application/json', responseJsonSchema: schema, maxOutputTokens: 2048 }
+            generationConfig: native?{maxOutputTokens:2048}:{ responseMimeType: 'application/json', responseJsonSchema: schema, maxOutputTokens: 2048 },
+            ...native
           })
         });
       // No automatic retries: 429/5xx/timeouts may consume quota; caller must explicitly retry.
@@ -81,7 +93,7 @@ Không thực hiện thao tác ví dụ/giả định/tentative. Hỏi nếu có
       };
       const candidate = body.candidates?.[0];
       if (candidate?.finishReason !== 'STOP') throw new TrialError('INCOMPLETE_OR_BLOCKED_RESPONSE');
-      const text = candidate.content?.parts?.filter(p => !p.thought).map(p => p.text ?? '').join('');
+      const text = native?JSON.stringify(body):candidate.content?.parts?.filter(p => !p.thought).map(p => p.text ?? '').join('');
       if (!text) throw new TrialError('EMPTY_RESPONSE');
       let output: T;
       try { output = parse(text); } catch { throw new TrialError('INVALID_MODEL_OUTPUT'); }

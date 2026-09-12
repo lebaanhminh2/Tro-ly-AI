@@ -4,9 +4,9 @@ Cập nhật 2026-09-12. Đọc file này trước, không nạp cả docs.
 
 ## Nhiệm vụ hiện tại
 
-- Đã cơ cấu docs: 5 tài liệu nội dung + 1 link chuyển hướng staging. User duyệt xóa 27 Markdown archive; lịch sử ở Git `7d568f1`. Không sửa source/deploy.
-- Tiếp theo: trình/nhận duyệt phạm vi code trong [TOOL_CALLING_PLAN.md](TOOL_CALLING_PLAN.md).
-- User đã đồng ý hướng tool calling, nhưng lượt gần nhất mới yêu cầu lập kế hoạch và dọn docs; chưa suy thành duyệt sửa toàn bộ protocol.
+- User đã duyệt triển khai [TOOL_CALLING_PLAN.md](TOOL_CALLING_PLAN.md) bằng yêu cầu “làm một lượt dài”. Tiếp tục trong phạm vi, không xin lại từng bước.
+- Đã làm phần giao thức: native function declarations/calls/responses trong contracts/gemini, validateTool kiểm dữ liệu không kiểm mẫu câu; test giữ call ID/thoughtSignature, tool allowlist, ngày/patch/owner fields. Chưa có executor/orchestrator native hoàn chỉnh, chưa cutover/deploy.
+- Các API generate cũ tạm còn để test/caller hiện tại không gãy; bắt buộc xóa/chuyển trial-only ra experiments khi cutover, không tuyên bố đã dọn sạch. Không chạy hai runtime AI song song trên cloud.
 - Không tiếp tục vá regex `directRequest` hoặc mở rộng wizard. Hội thoại là chính; card hỗ trợ.
 
 ## Trạng thái sản phẩm
@@ -15,7 +15,7 @@ Cập nhật 2026-09-12. Đọc file này trước, không nạp cả docs.
 - Staging đã bật runtime hội thoại cũ, chưa native tool calling. Capture/date/remind/complete có kiểm thử nhưng user gặp lỗi câu nói tự nhiên bị regex chặn.
 - UI cards dùng revision/token; pending/receipts lưu D1. Calendar adapter có code, Calendar thật vẫn off.
 - Deploy gần nhất đã ghi nhận: `c25e59e0-ee44-48dd-ada2-ef19977c370b`. Kiểm tra thực tế trước thao tác cloud, không suy từ docs.
-- Test ghi nhận gần nhất: 72 tests chính +25 experiments/typecheck/dry-run đạt; không phải nghiệm thu chất lượng hội thoại.
+- Checkpoint protocol: 74 tests chính +25 experiments đạt; targeted adapter/typecheck/staging dry-run đạt sau guard giờ24:00. Chưa thử provider thật cho function calling.
 
 ## Quyền và ngân sách
 
