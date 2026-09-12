@@ -11,6 +11,8 @@ Cập nhật 2026-09-12. Đọc file này trước, không nạp cả docs.
 
 ## Trạng thái sản phẩm
 
+- Smoke native đã được user duyệt tối đa10; đã dùng2, không cần chạy thêm: câu “thêm cho tớ việc rửa bát deadline7h tối nay” gọi create_task đúng title và19:00+07:00, tool result giả trả applied rồi model đáp tiếng Việt. Latency1154/1284ms. Không DB mutation/deploy. Lời cuối còn hơi thúc giục và gọi task là “xếp lịch”; chưa chứng minh mọi hội thoại. Tổng smoke lịch sử43 request, đợt này còn8 nhưng không tự dùng để kéo dài thử nghiệm. Cần duyệt deploy/bật pilot native với budget mới trước dùng dữ liệu thật.
+
 - Đã có Telegram Worker + D1 + nhắc/session/memory/UI cards; migration 0001–0009 đã áp cloud, không sửa migration đã phát hành.
 - Staging đã bật runtime hội thoại cũ, chưa native tool calling. Capture/date/remind/complete có kiểm thử nhưng user gặp lỗi câu nói tự nhiên bị regex chặn.
 - UI cards dùng revision/token; pending/receipts lưu D1. Calendar adapter có code, Calendar thật vẫn off.
