@@ -14,6 +14,8 @@ Cập nhật: 2026-09-11. Persona đã thống nhất; các phần ghi “dự k
 
 ## Mục tiêu
 
+Ưu tiên mới được tái xác nhận: dừng mở rộng UI/wizard, hoàn thiện executor hội thoại theo [CHAT_FIRST_PLAN](CHAT_FIRST_PLAN.md). Câu rõ như “tớ có task A, deadline ngày mai” phải lưu tên+hạn ngay rồi báo tự nhiên; ngày-only không tự gán giờ. Button chỉ khi confirm cần thiết hoặc user cần tổng quan. Đây là yêu cầu đã chốt; rule chi tiết từng loại mutation và files triển khai theo kế hoạch, không cho model ghi SQL trực tiếp.
+
 Giảm gánh nặng tự tổ chức, giúp biết bước tiếp theo phù hợp, cân bằng sức khỏe và công việc, quay lại dễ dàng sau khi lệch lịch. Không ép tuân thủ một lịch kín hoặc tối đa hóa năng suất.
 
 Telegram là giao diện chính, **hội thoại tự nhiên là đường sử dụng chính đã chốt**. Người dùng không phải nhớ lệnh hoặc điền form để quản lý việc. Card/nút hỗ trợ xem nhanh, xác nhận và thao tác khi tiện; wizard chỉ là fallback. Mini App chưa thuộc v1.
