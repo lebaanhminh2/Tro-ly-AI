@@ -114,6 +114,20 @@ test('Bot API classifies failures without retrying or leaking token', async () =
   assert.equal(timed.state,'uncertain');
 });
 
+test('edit message and no-op edit are successful without misclassifying other HTTP 400 errors', async () => {
+  const payload={method:'editMessageText',chat_id:123,message_id:7,text:'Updated',reply_markup:{inline_keyboard:[]}};
+  const result=await deliver('fake',payload,async(_url,init)=>{
+    assert.equal(init?.redirect,'manual');
+    assert.deepEqual(JSON.parse(String(init?.body)).reply_markup,{inline_keyboard:[]});
+    return Response.json({ok:true,result:{message_id:7}});
+  });
+  assert.deepEqual(result,{state:'sent',messageId:7});
+  const noop:typeof fetch=async()=>Response.json({ok:false,error_code:400,description:'Bad Request: message is not modified: specified new message content and reply markup are exactly the same'},{status:400});
+  assert.deepEqual(await deliver('fake',payload,noop),{state:'sent',messageId:7});
+  assert.equal((await deliver('fake',{...payload,method:'sendMessage'},noop)).state,'failed');
+  assert.equal((await deliver('fake',payload,async()=>Response.json({ok:false,error_code:400,description:'Bad Request: message to edit not found'},{status:400}))).state,'failed');
+});
+
 test('delivery diagnostics expose only fixed labels and numeric status, never provider secrets', async () => {
   const logs: string[] = [];
   const original = console.warn;

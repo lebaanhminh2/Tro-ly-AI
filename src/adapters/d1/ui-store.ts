@@ -1,0 +1,103 @@
+import {query, type Database, type Statement} from './database.ts';
+import {renderView} from '../../application/ui-renderer.ts';
+import {actionAvailable, type Card, type CardAction, type CardStatus} from '../../domain/ui.ts';
+import type {View} from '../../domain/work.ts';
+
+type UiDelivery = {id: string; card_id: string; revision: number; state: string; attempts: number; claim_token: string | null};
+export type CardDelivery = {job: UiDelivery; card: Card; token: string; payload: Record<string, unknown>};
+
+// Statement builders are composed with business mutations in the caller's D1 batch.
+// This module never commits business data on a callback's behalf.
+export class D1UiStore {
+  constructor(privateDb: Database) { this.db = privateDb; }
+  private db: Database;
+  card(owner: string, id: string) { return query(this.db, 'SELECT * FROM ui_cards WHERE owner=? AND id=?', owner, id).first<Card>(); }
+
+  private encode(id: string, owner: string, revision: number, view: View) {
+    const rendered = renderView(view);
+    const actions: Statement[] = [];
+    const buttons = rendered.buttons.map(row => row.map(button => {
+      const token = crypto.randomUUID().replaceAll('-', '');
+      actions.push(query(this.db, 'INSERT INTO ui_actions(token,card_id,owner,revision,action) VALUES(?,?,?,?,?)', token,id,owner,revision,button.callback_data));
+      return {text: button.text, callback_data: `ui:${token}`};
+    }));
+    return {view: {...rendered, buttons}, actions};
+  }
+
+  create(owner: string, chat: number, view: View, now: number, expires: number) {
+    if (!/^\d+$/.test(owner) || String(chat) !== owner || !Number.isSafeInteger(chat) || expires <= now) throw Error('INVALID_CARD_OWNER_OR_EXPIRY');
+    const id = crypto.randomUUID(), encoded = this.encode(id,owner,1,view);
+    return {id, statements: [
+      query(this.db, "INSERT INTO ui_cards(id,owner,chat_id,revision,status,view_json,expires) VALUES(?,?,?,1,'active',?,?)", id,owner,chat,JSON.stringify(encoded.view),expires),
+      ...encoded.actions,
+      query(this.db, 'INSERT INTO ui_deliveries(id,card_id,revision,available) VALUES(?,?,1,?)', crypto.randomUUID(),id,now)
+    ]};
+  }
+
+  async resolve(owner: string, chat: number, message: number, callback: string, now: number) {
+    if (!/^ui:[a-f0-9]{32}$/.test(callback)) return null;
+    const action = await query(this.db, 'SELECT * FROM ui_actions WHERE token=? AND owner=?',callback.slice(3),owner).first<CardAction>();
+    if (!action) return null;
+    const card = await this.card(owner,action.card_id);
+    return card && actionAvailable(card,action,owner,chat,message,now) ? {card,action} : null;
+  }
+
+  update(card: Card, action: CardAction, view: View, status: CardStatus, now: number): Statement[] {
+    if (action.card_id !== card.id || action.owner !== card.owner || action.revision !== card.revision) throw Error('CARD_ACTION_MISMATCH');
+    const revision = card.revision + 1, encoded = this.encode(card.id,card.owner,revision,view);
+    return [
+      query(this.db, `INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(
+        SELECT 1 FROM ui_cards c JOIN ui_actions a ON a.card_id=c.id
+        WHERE c.id=? AND c.owner=? AND c.revision=? AND c.rendered_revision=c.revision
+        AND c.status='active' AND c.expires>? AND a.token=? AND a.owner=c.owner AND a.revision=c.revision AND a.consumed=0)
+        THEN 1 ELSE 0 END`,card.id,card.owner,card.revision,now,action.token),
+      query(this.db,'UPDATE ui_actions SET consumed=1 WHERE card_id=? AND revision=?',card.id,card.revision),
+      query(this.db,'UPDATE ui_cards SET revision=?,status=?,view_json=? WHERE id=? AND owner=?',revision,status,JSON.stringify(encoded.view),card.id,card.owner),
+      ...encoded.actions,
+      query(this.db,"UPDATE ui_deliveries SET state='superseded' WHERE card_id=? AND state='pending'",card.id),
+      query(this.db,'INSERT INTO ui_deliveries(id,card_id,revision,available) VALUES(?,?,?,?)',crypto.randomUUID(),card.id,revision,now),
+      query(this.db,'DELETE FROM transaction_guard')
+    ];
+  }
+
+  async claim(owner: string, id: string, now: number): Promise<CardDelivery | null> {
+    const token = crypto.randomUUID();
+    const claimed = await query(this.db, `UPDATE ui_cards SET lease_token=?,lease_until=? WHERE id=? AND owner=?
+      AND (lease_until IS NULL OR lease_until<=?) AND EXISTS(SELECT 1 FROM ui_deliveries j WHERE j.card_id=ui_cards.id
+      AND j.revision=ui_cards.revision AND j.state='pending' AND j.available<=?)
+      AND NOT EXISTS(SELECT 1 FROM ui_deliveries j WHERE j.card_id=ui_cards.id AND j.state IN ('sending','uncertain'))`,
+      token,now+30000,id,owner,now,now).run();
+    if (!claimed.meta.changes) return null;
+    const card = (await this.card(owner,id))!;
+    const job = await query(this.db,'SELECT * FROM ui_deliveries WHERE card_id=? AND revision=?',id,card.revision).first<UiDelivery>();
+    if (!job) throw Error('MISSING_CARD_DELIVERY');
+    const started = await query(this.db, `UPDATE ui_deliveries SET state='sending',attempts=attempts+1,claim_token=? WHERE id=? AND state='pending'
+      AND EXISTS(SELECT 1 FROM ui_cards WHERE id=? AND lease_token=? AND revision=ui_deliveries.revision)`,token,job.id,id,token).run();
+    if (!started.meta.changes) return null;
+    const view = JSON.parse(card.view_json) as View;
+    return {job,card,token,payload: {
+      method: card.message_id === null ? 'sendMessage' : 'editMessageText', chat_id: card.chat_id,
+      ...(card.message_id === null ? {} : {message_id: card.message_id}),text:view.text,reply_markup:{inline_keyboard:view.buttons}
+    }};
+  }
+
+  async finish(delivery: CardDelivery, outcome: 'sent' | 'failed' | 'uncertain', now: number, messageId?: number) {
+    if (outcome === 'sent' && (!Number.isSafeInteger(messageId) || messageId! <= 0
+      || (delivery.card.message_id !== null && delivery.card.message_id !== messageId))) throw Error('INVALID_DELIVERY_MESSAGE');
+    await this.db.batch([
+      query(this.db, `INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM ui_cards c JOIN ui_deliveries j ON j.card_id=c.id
+        WHERE c.id=? AND c.owner=? AND c.lease_token=? AND c.lease_until>? AND c.revision=? AND j.id=? AND j.state='sending' AND j.claim_token=?) THEN 1 ELSE 0 END`,
+        delivery.card.id,delivery.card.owner,delivery.token,now,delivery.card.revision,delivery.job.id,delivery.token),
+      query(this.db,'UPDATE ui_deliveries SET state=? WHERE id=?',outcome,delivery.job.id),
+      ...(outcome === 'sent' ? [query(this.db,'UPDATE ui_cards SET rendered_revision=?,message_id=? WHERE id=?',delivery.card.revision,messageId!,delivery.card.id)] : []),
+      query(this.db,'UPDATE ui_cards SET lease_token=NULL,lease_until=NULL WHERE id=?',delivery.card.id),
+      query(this.db,'DELETE FROM transaction_guard')
+    ]);
+  }
+
+  async recover(now: number) {
+    // An expired HTTP request may still be in flight: block further edits instead of guessing.
+    await query(this.db, `UPDATE ui_deliveries SET state='uncertain' WHERE state='sending' AND EXISTS
+      (SELECT 1 FROM ui_cards c WHERE c.id=ui_deliveries.card_id AND c.lease_until<=?)`,now).run();
+  }
+}

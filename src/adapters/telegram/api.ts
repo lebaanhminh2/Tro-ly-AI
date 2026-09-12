@@ -23,7 +23,7 @@ export function incoming(raw: unknown): Incoming | null {
 
 export type Delivery = { state: 'sent' | 'pending' | 'failed' | 'uncertain'; retryAfter?: number; messageId?: number };
 export async function deliver(token: string, payload: Record<string, unknown>, transport: typeof fetch = fetch, timeout = 8000): Promise<Delivery> {
-  if (!['sendMessage','answerCallbackQuery','editMessageReplyMarkup'].includes(String(payload.method))) return { state: 'failed' };
+  if (!['sendMessage','answerCallbackQuery','editMessageReplyMarkup','editMessageText'].includes(String(payload.method))) return { state: 'failed' };
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeout);
   let phase: 'request' | 'response' = 'request';
@@ -34,7 +34,7 @@ export async function deliver(token: string, payload: Record<string, unknown>, t
   };
   try {
     const { method, ...body } = payload;
-    if (method === 'sendMessage') {
+    if (method === 'sendMessage' || method === 'editMessageText') {
       const markup = record(body.reply_markup);
       const view = renderView({text: String(body.text ?? ''), buttons: (markup.inline_keyboard ?? []) as Button[][]});
       body.text = view.text;
@@ -52,6 +52,12 @@ export async function deliver(token: string, payload: Record<string, unknown>, t
       return {state: 'uncertain'};
     }
     const data = record(await response.json()), messageId = record(data.result).message_id;
+    const editing = method === 'editMessageText' || method === 'editMessageReplyMarkup';
+    // Only the specific no-op response is successful. Other HTTP 400 errors remain failures.
+    if (editing && response.status === 400 && data.ok === false && data.error_code === 400
+      && typeof data.description === 'string' && /^Bad Request: message is not modified(?:$|:)/.test(data.description)
+      && typeof body.message_id === 'number' && Number.isSafeInteger(body.message_id) && body.message_id > 0)
+      return {state:'sent',messageId:body.message_id};
     if (response.ok && data.ok === true && (method === 'answerCallbackQuery' ? data.result === true : typeof messageId === 'number' && Number.isSafeInteger(messageId)))
       return { state: 'sent', ...(typeof messageId === 'number' ? { messageId } : {}) };
     const retry = record(data.parameters).retry_after;

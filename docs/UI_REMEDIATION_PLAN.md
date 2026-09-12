@@ -4,6 +4,14 @@
 
 ## 1. Ranh giới LLM và UI
 
+### Tiến độ triển khai (chưa nghiệm thu)
+
+- Đã có renderer chung và tests grapheme/layout.
+- Đã thêm `domain/ui.ts`, migration `0008_ui_cards.sql`, `adapters/d1/ui-store.ts`: card/action/delivery bền vững, callback token opaque gắn owner/message/revision, statement builders ghép cùng transaction nghiệp vụ, lease từng card và guard kết quả sender.
+- Đã thêm Telegram editMessageText/no-op edit và test trong workerd. Test lifecycle bao phủ replay, sai owner/message, chưa render, rollback nghiệp vụ+UI, restart store, sender quá hạn và uncertain không tự retry.
+- **Chưa nối UI store vào entrypoint/commit/dispatcher hiện tại.** Chưa chuyển các màn cũ. Migration chưa áp lên cloud, chưa deploy. Không hiểu các module nền đã test là lỗi UI trên điện thoại đã sửa.
+- Còn notice/ACK, fallback card bị xóa, recovery/reconcile cho edit uncertain và tích hợp A→B→C. Module mới hiện chọn chặn card khi uncertain, không giả đã triển khai recovery tự động.
+
 Chat tự nhiên là đường nhập chính mong muốn: người dùng nói yêu cầu → LLM trích ý định/tham số → backend xác thực/đòi thông tin thiếu → đề xuất → xác nhận khi cần. Nút là đường nhanh và fallback, không ép người dùng đi wizard nếu câu nói đã đủ. LLM và nút phải dùng cùng application command và cùng renderer. Không giao layout, callback payload, quyền thực thi hay vòng đời card cho model.
 
 Thực tế src/ai/chat.ts hiện chỉ tạo proposal capture trong trường hợp hẹp, update_task đẩy về nút. Chưa có việc LLM gọi đầy đủ form lên lịch/đổi hạn. Không hứa bật Gemini là tự có hành vi ấy. Tích hợp đó là bước sau, không phải điều kiện sửa UI.
