@@ -82,6 +82,9 @@ test('OAuth browser/state replay, scope separation, paginated sync/410, confirme
   const run=(text:string,cb=false)=>service.command({owner:'123',chat:123,updateId:++command,...(cb?{callback:text}:{text})});
   await assert.rejects(service.command({owner:'999',chat:999,updateId:1,text:'/calendar list'}));
   const list=(await run('/calendar list'))!;await run(list.buttons[0]![0]!.callback_data,true);
+  const selectedBefore=await db.prepare('SELECT COUNT(*) AS n FROM calendars WHERE selected=1').first<{n:number}>();
+  await run(list.buttons[0]![0]!.callback_data,true); // Repeated explicit selection never toggles back.
+  assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM calendars WHERE selected=1').first<{n:number}>())!.n,selectedBefore!.n);
   const setup=(await run('/calendar setup'))!;assert.equal(api.creates,0);
   await run(setup.buttons[0]![0]!.callback_data,true);assert.equal(api.creates,1);
   await run(setup.buttons[0]![0]!.callback_data,true);assert.equal(api.creates,1);

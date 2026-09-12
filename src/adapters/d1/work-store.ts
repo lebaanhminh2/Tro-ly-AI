@@ -20,7 +20,10 @@ export class D1WorkStore implements WorkStore {
     const resolved=input.messageId?(input.callback!.startsWith('ui:')
       ?await ui.resolve(input.owner,input.chat,input.messageId,input.callback!,now)
       :await ui.adoptReminder(input.owner,input.chat,input.messageId,input.callback!,now)):null;
-    if(!resolved){lease.uiStale=true;return;}
+    if(!resolved){
+      if(input.messageId)lease.uiRecovered=await ui.recoverOnInteraction(input.owner,input.chat,input.messageId,input.callback!,now);
+      lease.uiStale=true;return;
+    }
     lease.ui=resolved;
     lease.input={...input,callback:resolved.action.action};
   }

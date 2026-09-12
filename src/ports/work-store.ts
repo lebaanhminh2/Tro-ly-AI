@@ -1,7 +1,7 @@
 import type { Input, Task, Proposal, Selection, Plan } from '../domain/work.ts';
 export type Clock = { now(): number };
 export type Lease = { owner: string; token: string; input: Input; attempts: number;
-  ui?:{card:import('../domain/ui.ts').Card;action:import('../domain/ui.ts').CardAction}; uiStale?:boolean };
+  ui?:{card:import('../domain/ui.ts').Card;action:import('../domain/ui.ts').CardAction}; uiStale?:boolean; uiRecovered?:boolean };
 export interface WorkReader {
   runningSession(owner:string):Promise<import('../domain/session.ts').Session|null>;
   memory(owner:string,id:string):Promise<import('../domain/memory.ts').Memory|null>;

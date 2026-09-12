@@ -87,6 +87,35 @@ export class D1UiStore {
     return card && actionAvailable(card,action,owner,chat,message,now) ? {card,action} : null;
   }
 
+  async recoverOnInteraction(owner:string,chat:number,message:number,callback:string,now:number){
+    if(!/^ui:[a-f0-9]{32}$/.test(callback))return false;
+    const action=await query(this.db,'SELECT * FROM ui_actions WHERE token=? AND owner=?',callback.slice(3),owner).first<CardAction>();
+    if(!action)return false;
+    const card=await this.card(owner,action.card_id);
+    if(!card||card.chat_id!==chat||card.message_id!==message||card.status==='expired'||card.expires<=now)return false;
+    const stuck=await query(this.db,"SELECT id FROM ui_deliveries WHERE card_id=? AND revision=? AND state='uncertain'",card.id,card.revision).first<{id:string}>();
+    if(!stuck)return false;
+    // Do not retry the uncertain edit: an old in-flight edit could overwrite a newer revision.
+    // A user's new click recovers the latest committed view on a different message instead.
+    const view=JSON.parse(card.view_json) as View;
+    const actions=(await query(this.db,'SELECT token,action FROM ui_actions WHERE card_id=? AND revision=?',card.id,card.revision).all<{token:string;action:string}>()).results;
+    const lookup=new Map(actions.map(a=>[`ui:${a.token}`,a.action]));
+    const next=this.create(owner,chat,{...view,text:'Đã mở lại trạng thái đã lưu. Cậu kiểm tra trước khi thao tác tiếp nhé.\n'+view.text,
+      buttons:view.buttons.map(row=>row.map(button=>{
+        const raw=lookup.get(button.callback_data);if(!raw)throw Error('MISSING_CARD_ACTION');
+        return {...button,callback_data:raw};
+      }))},now,card.expires);
+    await this.db.batch([
+      query(this.db,`INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM ui_cards c JOIN ui_deliveries d ON d.card_id=c.id
+        WHERE c.id=? AND c.owner=? AND c.chat_id=? AND c.message_id=? AND c.revision=? AND c.status!='expired' AND d.id=? AND d.state='uncertain') THEN 1 ELSE 0 END`,
+        card.id,owner,chat,message,card.revision,stuck.id),
+      query(this.db,"UPDATE ui_cards SET status='expired',lease_token=NULL,lease_until=NULL WHERE id=?",card.id),
+      query(this.db,'UPDATE ui_actions SET consumed=1 WHERE card_id=?',card.id),
+      ...next.statements,query(this.db,'DELETE FROM transaction_guard')
+    ]);
+    return true;
+  }
+
   async adoptReminder(owner:string,chat:number,message:number,callback:string,now:number){
     // Only a sent reminder from our outbox may enter this legacy bridge, once.
     const existing=await query(this.db,'SELECT * FROM ui_cards WHERE owner=? AND chat_id=? AND message_id=?',owner,chat,message).first<Card>();

@@ -117,6 +117,24 @@ test('UI dispatcher persists Telegram 429 retry and stops at its attempt budget'
  }finally{await mf.dispose();}
 });
 
+test('uncertain initial send is never resent or recovered from an unbound message',async()=>{
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const file of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync(`migrations/${file}`,'utf8').replace(/\r?\n/g,' '));
+  const ui=new D1UiStore(db);let now=100000,calls=0;
+  const created=ui.create('123',123,{text:'test',buttons:[[{text:'Open',callback_data:'page:0'}]]},now,now+900000);
+  await db.batch(created.statements);
+  const callback=JSON.parse((await ui.card('123',created.id))!.view_json).buttons[0][0].callback_data;
+  const lost:typeof fetch=async()=>{calls++;throw Error('synthetic timeout');};
+  await ui.flush('123','fake',lost,()=>now);
+  now+=120000;await ui.flush('123','fake',lost,()=>now);
+  assert.equal(calls,1);
+  assert.equal(await ui.recoverOnInteraction('123',123,12345,callback,now),false);
+  assert.equal((await ui.card('123',created.id))!.message_id,null);
+ }finally{await mf.dispose();}
+});
+
 test('UI cards: opaque actions, owner/message/revision fencing, atomic rollback and in-place delivery',async()=>{
   const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
   try {
@@ -162,5 +180,15 @@ test('UI cards: opaque actions, owner/message/revision fencing, atomic rollback 
     now+=30001;await ui.recover(now);
     await assert.rejects(ui.finish(final,'sent',now,7)); // stale sender cannot publish success
     assert.equal(await ui.claim('123',created.id,now),null); // no blind retry on uncertain
+    assert.equal(await ui.recoverOnInteraction('999',999,7,newButton,now),false);
+    assert.equal(await ui.recoverOnInteraction('123',123,8,newButton,now),false);
+    assert.equal(await ui.recoverOnInteraction('123',123,7,newButton,now),true);
+    assert.equal(await ui.recoverOnInteraction('123',123,7,newButton,now),false);
+    assert.equal((await ui.card('123',created.id))!.status,'expired');
+    let recoverySends=0;
+    await ui.flush('123','fake',async()=>{recoverySends++;return Response.json({ok:true,result:{message_id:99}});},()=>now);
+    await ui.flush('123','fake',async()=>{recoverySends++;return Response.json({ok:true,result:{message_id:100}});},()=>now);
+    assert.equal(recoverySends,1);
+    assert.equal(await ui.resolve('123',123,7,newButton,now),null);
   } finally {await mf.dispose();}
 });

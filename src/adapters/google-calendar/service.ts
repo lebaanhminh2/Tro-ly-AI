@@ -289,11 +289,15 @@ export class CalendarService {
           if(!p)throw new CalendarError('CONFIRMATION_EXPIRED');return view(p.action==='setup'?await this.setup(fence):await this.disconnect());
         }
         if(text==='/calendar list')await this.discover();
-        if(cb.startsWith('cal-toggle:')){
-          const ref=await this.q('SELECT * FROM calendars WHERE owner=? AND id=?',input.owner,cb.slice(11)).first<CalendarRef>();
+        if(cb.startsWith('cal-toggle:'))throw new CalendarError('STALE_CALENDAR_CONTROL');
+        if(cb.startsWith('cal-select:')){
+          const match=/^cal-select:([01]):(.+)$/.exec(cb);
+          if(!match)throw new CalendarError('INVALID_CALENDAR_CONTROL');
+          const selected=Number(match[1]);
+          const ref=await this.q('SELECT * FROM calendars WHERE owner=? AND id=?',input.owner,match[2]!).first<CalendarRef>();
           if(!ref||ref.managed)throw new CalendarError('CALENDAR_NOT_AVAILABLE');
-          if(!ref.selected&&(await this.refs()).filter(r=>r.selected&&!r.managed).length>=3)throw new CalendarError('SELECTED_CALENDAR_LIMIT');
-          await this.q('UPDATE calendars SET selected=1-selected,synced_at=NULL WHERE owner=? AND id=?',input.owner,ref.id).run();
+          if(selected&&!ref.selected&&(await this.refs()).filter(r=>r.selected&&!r.managed).length>=3)throw new CalendarError('SELECTED_CALENDAR_LIMIT');
+          await this.options.db.batch([fence(),this.q('UPDATE calendars SET selected=?,synced_at=NULL WHERE owner=? AND id=? AND selected!=?',selected,input.owner,ref.id,selected),this.q('DELETE FROM transaction_guard')]);
         }
         if(cb.startsWith('cal-plan:'))return this.alternatives(cb.slice(9));
         if(cb.startsWith('cal-write:'))return view(await this.confirm(cb.slice(10),fence));
@@ -304,7 +308,7 @@ export class CalendarService {
         if(!Number.isSafeInteger(page)||page<0||page>1000)throw new CalendarError('INVALID_PAGE');
         const external=refs.filter(r=>!r.managed);
         return {text:`Google: ${c?.status??'chưa kết nối'}. ${jobs.map(j=>`${j.status}: ${j.n}`).join(', ')}\n/calendar connect · /calendar list · /calendar setup · /calendar sync · /calendar disconnect\nChọn lịch đọc bên dưới; slot cần sync mới, chỉ là đề xuất.`,buttons:[
-          ...external.slice(page,page+10).map(r=>[{text:`${r.selected?'✓':'○'} ${r.name.slice(0,40)}`,callback_data:`cal-toggle:${r.id}`}]),
+          ...external.slice(page,page+10).map(r=>[{text:`${r.selected?'✓':'○'} ${r.name.slice(0,40)}`,callback_data:`cal-select:${r.selected?0:1}:${r.id}`}]),
           ...(page>0?[[{text:'Trang trước',callback_data:`cal-page:${Math.max(0,page-10)}`}]]:[]),
           ...(external.length>page+10?[[{text:'Trang tiếp',callback_data:`cal-page:${page+10}`}]]:[]),
           ...sessions.map(s=>[{text:`Tìm slot cho buổi ${s.id} · ${s.minutes} phút`,callback_data:`cal-plan:${s.id}`}])
