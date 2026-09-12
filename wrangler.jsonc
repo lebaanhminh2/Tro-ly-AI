@@ -11,10 +11,10 @@
       "workers_dev": true,
       "preview_urls": false,
       "vars": {
-        "AI_MODE": "off",
+        "AI_MODE": "on",
         "GEMINI_MODEL": "gemini-3.5-flash-lite",
         "AI_DAILY_LIMIT": "20",
-        "AI_TRIAL_ENDS_AT": "2026-09-13T04:58:59Z",
+        "AI_TRIAL_ENDS_AT": "2026-09-13T11:42:18Z",
         "CALENDAR_MODE": "off",
         "CALENDAR_WRITES": "off",
         "DELIVERY_MODE": "outbox"

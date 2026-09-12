@@ -30,7 +30,7 @@ test('staging has a distinct worker and database, outbox and minute scheduler', 
 
 test('approved conversation pilot is bounded while Calendar remains off and secrets stay private', () => {
   assert.equal(config.vars.AI_MODE,'off');
-  assert.equal(staging.vars.AI_MODE,'off'); // Native cutover requires a new approved live budget.
+  assert.equal(staging.vars.AI_MODE,'on'); // User approved the time-bounded native pilot.
   assert.equal(staging.vars.GEMINI_MODEL,'gemini-3.5-flash-lite');
   assert.equal(staging.vars.AI_DAILY_LIMIT,'20');
   assert.ok(Number.isFinite(Date.parse(staging.vars.AI_TRIAL_ENDS_AT)));

@@ -24,7 +24,7 @@ Kiểm kết quả theo hành vi, không lấy số test/audit=0 làm chứng nh
 - Worker personal-assistant-staging; DB assistant-staging. UUID/flags trong wrangler.jsonc.
 - Origin: https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev
 - Bot @Minh_Anh_cua_Minh_bot; private owner allowlist. Telegram webhook đã đăng ký.
-- Migration0001–0009 đã áp; migration tiếp theo phải mới, không sửa lịch sử.
+- Migration0001–0010 đã áp; migration tiếp theo phải mới, không sửa lịch sử.
 - Cloud có Telegram secrets và Gemini key. Không tải/in giá trị cloud secret.
 - Local .dev.vars.webhook-secret.dpapi là bản webhook secret mã hóa cho user Windows hiện tại, ignored Git; không phải token bot.
 - `scripts/telegram-setup.ps1`: -SelfTest offline; -RegisterWebhook thay kết nối thật, chỉ dùng khi có quyền, không chạy để “kiểm tra cho chắc”.

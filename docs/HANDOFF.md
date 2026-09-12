@@ -11,6 +11,8 @@ Cập nhật 2026-09-12. Đọc file này trước, không nạp cả docs.
 
 ## Trạng thái sản phẩm
 
+- Native pilot đã được user duyệt/deploy: version95843804-82a7-4bf0-8fb5-2fec691108dd,0010 remote đã áp (không sửa lại). AI_MODE on, Calendar off, tự ngừng model2026-09-13 18:42:18 VN. Trần20/24h rolling; kiểm trước deploy đã dùng4 nên còn16 tức thời, không reset quota. Đề xuất intent cũ expired; task/lịch giữ. Chưa gửi tin thử live sau deploy; chờ user chat. Kiểm config/typecheck/dry-run đạt, webhook không auth403. Những ghi chú chưa deploy phía trên là checkpoint source trước lần phát hành này.
+
 - Smoke native đã được user duyệt tối đa10; đã dùng2, không cần chạy thêm: câu “thêm cho tớ việc rửa bát deadline7h tối nay” gọi create_task đúng title và19:00+07:00, tool result giả trả applied rồi model đáp tiếng Việt. Latency1154/1284ms. Không DB mutation/deploy. Lời cuối còn hơi thúc giục và gọi task là “xếp lịch”; chưa chứng minh mọi hội thoại. Tổng smoke lịch sử43 request, đợt này còn8 nhưng không tự dùng để kéo dài thử nghiệm. Cần duyệt deploy/bật pilot native với budget mới trước dùng dữ liệu thật.
 
 - Đã có Telegram Worker + D1 + nhắc/session/memory/UI cards; migration 0001–0009 đã áp cloud, không sửa migration đã phát hành.
