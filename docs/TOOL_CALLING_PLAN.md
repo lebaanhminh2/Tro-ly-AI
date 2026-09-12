@@ -1,128 +1,96 @@
-# Kế hoạch sửa luồng hội thoại nhẹ và context-driven
+# Thay đường hội thoại bằng gọi công cụ — phạm vi duyệt
 
-Cập nhật 2026-09-12. Tài liệu này thay kế hoạch một-write-per-turn cũ. Chưa phê duyệt thay source; trước khi sửa code phải trình danh sách file/phạm vi theo `AGENTS.md`.
+2026-09-12. Đã được user duyệt triển khai bằng yêu cầu làm một lượt dài. Đang thay source, chưa cutover/deploy. Yêu cầu sản phẩm/persona không đổi; không thêm UI/provider/framework.
 
-## 1. Nguyên tắc đã chốt
+**Trạng thái mới nhất:** đã cutover source handler sang native tool calling, chỉ off/on; gỡ directRequest/legacy JSON-intent khỏi src. Pending resolve qua model hoặc nút đều dùng executor; nút không gọi provider. Legacy harness chuyển vào experiments giữ tests. Production giảm khoảng500 dòng, không dependency mới. Cloud chưa deploy,0010 chưa remote. Cần smoke native với quyền mới; generic draft clarification/assistant-origin proposal và semantic authorization vẫn cần kiểm chứng, không coi test pass là mọi ca hội thoại đều đúng. Các checkpoint bên dưới là tiến trình kỹ thuật trước cutover source.
 
-- Gemini là lớp hiểu ý định và giao tiếp: nhận context + câu hiện tại, tự chọn trả lời, hỏi, đọc hoặc yêu cầu nhiều hành động backend.
-- Một provider request cho mỗi tin nhắn là mặc định. Không gọi Gemini lại chỉ để diễn đạt kết quả ghi thành công.
-- Backend tải trước context nghiệp vụ đủ dùng để giảm read loop. Lượt model thứ hai chỉ dành cho ca thật sự cần kết quả đọc chưa có; tối đa hai request trong một turn.
-- Cho phép nhiều action trong một turn. Backend kiểm cả nhóm rồi commit nguyên tử; không thực hiện âm thầm một nửa.
-- Công cụ nghiệp vụ phải khớp cách nói đời thường. Một action có thể tạo các bản ghi liên quan, ví dụ task + deadline + reminder.
-- Không tối ưu bằng cách bỏ xác thực, bảo vệ secret, schema, idempotency hoặc transaction.
+Checkpoint: đã có function declarations/response parsing/data validation và adapter native giữ nguyên model parts/call ID, không dùng JSON response schema cho tool mode. Các entrypoint cũ chưa chuyển, executor/receipts/cleanup chưa hoàn tất; đây chưa phải bot function calling đã chạy. API đối chiếu [Google generateContent](https://ai.google.dev/api/generate-content) và [function calling](https://ai.google.dev/gemini-api/docs/function-calling); không đổi model theo ví dụ tài liệu.
 
-## 2. Luồng đích
+Checkpoint executor: tool-executor dùng typed args/WorkReader, trả result+mutation plan; loop bounded trong conversation-command dùng ports model/execute/commit, không retry mutation khi final-model lỗi. D1 find_tasks/get_agenda owner-scoped/paginated. Còn nối step receipts/pending/commit với runtime, hỗ trợ xóa deadline và dọn các handler cũ; code trung gian chưa deploy. Không thêm file executor thứ hai.
 
-Telegram → xác thực/dedupe → Context Snapshot → Gemini → `message + actions[]` hoặc clarification → validate nhóm action → commit D1 → gửi message → lưu turn/context delta.
+Checkpoint journal: migration0010 thêm tool_steps (unique write/turn) và pending_tool_actions chuẩn. ConversationStore.step/commitWrite lưu kết quả và guard owner lease; model bước mất kết quả không gọi lại, write receipt cùng transaction nghiệp vụ. Pending có owner/TTL/one-use; test rollback/replay/input mismatch/sender hết lease đạt. Chưa nối orchestrator production hoặc áp migration; không coi code legacy đã được dọn.
 
-Gemini có ba kết quả chính:
+Checkpoint nối D1: ConversationStore.turn kết nối journal với bounded loop/executor và commit shared mutationStatements, context+reply snapshot trong inbox. Replay trả applied result mà không chạy nghiệp vụ lại; final model lỗi dùng fallback kết quả đã lưu. Test tạo task typed deadline19:00 và mất final reply/model đạt. Chưa handler production/pending confirmation consumption/cleanup; không deploy.
 
-1. `message` và không action: chat thuần, gửi ngay.
-2. Câu hỏi làm rõ: lưu pending intent ngắn rồi gửi câu hỏi.
-3. Một hoặc nhiều action kèm lời đáp chỉ được gửi sau khi commit thành công.
+## 1. Luồng duy nhất
 
-Nếu action thất bại, backend dùng lỗi ngắn theo persona; không gửi lời “đã xong” do model soạn trước. Khi Gemini cần đọc ngoài snapshot, backend thực hiện read, nối result vào context và cho phép đúng một lần gọi bổ sung.
+Telegram → inbox/owner lease → context nhỏ → Gemini → tool call có kiểu → backend validate/execute → tool result → trả lời người dùng.
 
-## 3. Context Snapshot
+Gemini quyết định cần đọc dữ liệu nào, chọn tool và điền trường. Backend quyết định quyền, độ hợp lệ và commit. Không dùng regex mẫu câu để cấp quyền sau model. Câu “thêm cho tớ việc rửa bát deadline 7h tối nay” phải tạo task với deadline 19:00 giờ Việt Nam nếu thời gian còn phù hợp, không đi qua wizard hay confirm thừa. Nếu user chỉ nói deadline ngày thì giữ date-only. Model nhận current time/timezone để normalize; backend kiểm tra ISO/date/calendar validity, precision và thứ tự thời gian, không bắt whitelist cách nói ngày giờ.
 
-Mỗi request nhận:
+Một turn xử lý ba kết quả: chat thuần, tool call, hoặc clarification/confirmation đang chờ. Một executor dùng chung cho lời nói và nút xác nhận; không có “executor UI” và “executor LLM” với hai luật khác nhau.
 
-- thời gian/múi giờ;
-- persona và rule ngắn;
-- rolling conversation summary;
-- 8–12 lượt gần nhất trong ngân sách;
-- memory liên quan;
-- pending intent;
-- trạng thái năng lượng/kế hoạch gần đây nếu có;
-- danh sách compact của toàn bộ active task ở quy mô hiện tại, event/reminder gần và work plan hôm nay;
-- câu hiện tại.
+## 2. Công cụ tối thiểu
 
-Khi dữ liệu lớn hơn ngân sách, gửi workload summary + mục liên quan thay vì dump toàn DB. Task/event/reminder thật luôn lấy từ DB, không từ conversation summary.
+| Tool | Trường chính | Quyền |
+| --- | --- | --- |
+| find_tasks | query, status, cursor | Đọc theo owner do server gắn, kết quả giới hạn/có trang tiếp |
+| get_agenda | from, to, cursor | Đọc task deadlines, appointments và sessions local; Google chỉ khi đã kết nối/bật, không giả đã đọc Google |
+| create_task | title, deadline {value, precision} hoặc null | Tự ghi yêu cầu trực tiếp rõ; không tự tạo reminder từ deadline |
+| update_task | task_id, expected_version, patch deadline/status | Tự đổi khi target và yêu cầu rõ; operation completion/undo tái dùng logic hiện có |
+| set_reminder | task_id, expected_version, at | Tái dùng task_appointments, không bịa duration; nói rõ thay hẹn cũ nếu có |
+| set_reminder_pause | until hoặc resume | Tái dùng pause, không suy “mệt” thành pause |
+| remember_preference | content, lifetime | Chỉ lưu yêu cầu nhớ trực tiếp, không suy diễn fact lâu dài |
 
-Summary không dùng một API call riêng theo chu kỳ cứng. Khi đến ngưỡng khoảng 10–12 lượt, đổi chủ đề hoặc context gần đầy, yêu cầu Gemini trả `summary_update` trong cùng response đang xử lý. Summary là soft context; task và memory dài hạn có nguồn riêng.
+Không generic SQL, URL fetch, delete_everything, arbitrary tool name hay patch mọi cột. Không tự thêm Google writes, fuzzy search service, vector DB, scheduler/agent framework. Đọc item detail có thể ghép vào find_tasks theo ID nếu cần, không tạo hàng chục tool CRUD vụn.
 
-## 4. Hợp đồng hành động tối thiểu
+## 3. Quyền và confirmation không ép form
 
-Ưu tiên ít tool, trường rõ và composite action:
+- Tool args là dữ liệu không tin cậy: schema strict, owner từ request, ID thuộc owner, version đúng; trường không có trong schema bị từ chối. Confidence do model báo không phải quyền.
+- Capture rõ và sửa một mục trong quyền đã chốt tự làm; không kiểm lại câu bằng regex. Giữ metadata nguồn turn/draft để audit, không coi substring evidence là bằng chứng hiểu đúng ngữ nghĩa.
+- Cần xác nhận khi trợ lý tự đề xuất thay đổi, nhiều thay đổi, xóa/phạm vi chưa được phép hoặc xung đột. V1 chỉ một tool ghi/turn: nhiều yêu cầu được hỏi/chia rõ, không âm thầm thực hiện một nửa.
+- Một pending action chuẩn chứa id/owner/operation/validated args/entity versions/expiry/state. Phân biệt pending clarification (chưa đủ args) và pending confirmation (đủ args nhưng chưa được user đồng ý), không các reason-specific branch completion-scope/existing-or-new/duplicate-title rải rác.
+- Nói “ừ”, bổ sung thông tin hoặc đổi ý được Gemini xử lý cùng pending context. Nút có ID pending và đi thẳng cùng executor. Chỉ fast-path yes/no nếu binding duy nhất, đúng TTL/version và không nội dung sửa thêm; không dùng regex để hiểu nghiệp vụ.
+- “Mệt”, ví dụ, lời trích dẫn và dữ liệu task/Calendar không phải quyền ghi. Đây vẫn là rủi ro semantic của LLM: phải test nhiều cách nói/phủ định, không hứa tool calling tự bảo đảm đúng.
 
-| Action | Mục đích |
+## 4. Trần chi phí và hành vi lỗi
+
+- Một turn tối đa 3 lượt model (initial → sau read → final sau write), tối đa 2 tool đọc, 1 tool ghi. Batch các read độc lập; không agent loop vô hạn. Chat thuần 1 lượt; write rõ + lời chốt thường 2 lượt. Không hứa mọi task chỉ 1 request.
+- Sau write: phản hồi tự nhiên từ tool result đã commit. Nếu hết quota/lỗi model ở lượt cuối, dùng câu xác nhận ngắn do backend dựng từ kết quả, không lặp tool ghi. Không cần model lần hai nếu response không cần diễn giải; đây là tối ưu sau đo, không trộn hai protocol.
+- Mỗi provider request đều reserve quota D1; model/tool step có ID và receipt. Retry update/step không tạo mutation trùng. Ghi result local+mutation trong cùng transaction; Google giữ reconciliation riêng.
+- 20 request của pilot cũ không đồng nghĩa 20 lượt chat/tool loop. Không tự tăng hoặc gia hạn, không dùng lại budget smoke đã hết. Live mới cần trình request budget rõ.
+- Giữ timeout/bounded input/output, endpoint cố định/manual redirects, redacted error. Ghi phase timings và counts để phân biệt DB/model/Telegram, không raw key/chat trong log.
+- Chưa gọi công cụ hoặc write thất bại → không nói đã xong. Write đã commit nhưng final chat lỗi → báo kết quả thật bằng fallback, không nói toàn yêu cầu thất bại.
+
+## 5. Giữ / thay / loại bỏ
+
+| Phần hiện tại | Xử lý dứt điểm |
 | --- | --- |
-| `search_work` | Chỉ dùng khi snapshot chưa đủ để xác định item |
-| `create_task` | Tạo task, deadline/estimate/next action/reminder tùy chọn trong một transaction |
-| `update_task` | Sửa một task đã xác định hoặc đánh dấu hoàn thành |
-| `create_event` | Tạo event nội bộ và reminder tùy chọn |
-| `create_reminder` | Tạo reminder độc lập hoặc liên kết item |
-| `update_reminder` | Đổi giờ/hủy reminder |
-| `apply_work_plan` | Ghi/thay kế hoạch làm việc nội bộ, không đổi deadline |
-| `remember` | Lưu memory có nguồn, phạm vi và thời hạn |
+| Telegram webhook, D1 transactions, owner isolation, outbox, UI card lifecycle | Giữ, chỉ nối tool result/pending khi cần |
+| tasks, sessions, task_appointments, reminders, memory, Calendar adapter | Giữ mục đích nghiệp vụ; không xóa khi còn dữ liệu/consumer |
+| ai/gemini.ts GeminiTrial: generate + generateConversation | Thay adapter production bằng một protocol Gemini function calling; trial-only code chỉ trong experiments nếu harness còn cần |
+| ai/contracts.ts, ai/policy.ts | Thay bằng schema tool/result và policy thao tác; bỏ selectedScope UI và draft field/value cũ |
+| ai/chat.ts trialChat/contextualChat | Xóa khỏi runtime và source production; chuyển đúng phần harness cần sang experiments hoặc bỏ entrypoint harness hết dùng sau đối chiếu tests |
+| application/conversation-command.ts | Thay logic intent-kind/regex bằng orchestrator ngắn, không nối thêm branch cạnh code cũ |
+| domain/conversation.ts directRequest/conversationDeadline/unsupportedSuccessClaim | Loại khỏi đường runtime sau chuyển; type/schema mới tái dùng file. Giữ domain date validation chung, không giữ whitelist từ ngữ như lớp gate |
+| conversation_pending + reason-specific draft | Migration sang pending action versioned; expire pending cũ có thông báo, không execute lại hoặc đoán convert |
+| conversation_receipts | Tái dùng/tiến hóa thành model+tool receipts có step IDs; không tạo hệ logging/receipt thứ ba |
+| AI_MODE enabled/conversation/off | Kết thúc chỉ off/on và một chat handler production. Chuyển config và tests cùng lần cutover; không duy trì legacy feature flag lâu dài |
+| Quota/callsite appointments phụ thuộc AI_MODE=conversation | Bỏ coupling: dữ liệu nhắc đã lưu tiếp tục chạy dù AI off, dùng chung dispatcher, không tạo lịch nền mới |
+| Inline prompt trong Gemini và persona cũ chồng nhau | Một persona+tool instruction production có version, không copy ba prompt |
+| Tests mock schema cũ/harness | Giữ intent safety/date/replay cases, viết lại assertions theo protocol mới; không xóa failures cho xanh |
 
-Không generic SQL, arbitrary URL hay tool registry động. ID cũ phải đến từ snapshot/read result; reminder mới không được buộc gắn một task có sẵn.
+## 6. Danh sách file có thể thay đổi
 
-## 5. Nhiều action nhưng không loop nặng
+Ưu tiên sửa file hiện hữu, không thêm module nếu chỉ bọc một hàm:
+- `src/ai/{gemini,contracts,policy,persona}.ts`: tool declarations, protocol mapping, policy và persona duy nhất. `src/ai/chat.ts` bỏ runtime/xóa sau chuyển test imports.
+- `src/application/{conversation-command,context-builder,plan-command,process-inbox}.ts`: orchestrator/context/router; các command UI chỉ chuyển phần nghiệp vụ trùng về executor chung, không viết lại UI.
+- `src/domain/{conversation,time,work}.ts`, `src/ports/work-store.ts`: tool/pending contracts và domain validation.
+- `src/adapters/d1/{conversation-store,work-store,memory,reminders}.ts`, `src/entrypoints/worker.ts`, `src/config/env.ts`: receipts/executor/query/quota, một runtime; chỉ sửa session-store nếu cần hợp nhất giao dịch dùng chung.
+- Tối đa một file mới `src/application/tool-executor.ts` nếu giúp tách orchestration khỏi nghiệp vụ; không thêm registry động/dependency injection framework.
+- Migration mới `0010_tool_turns.sql` sau kiểm tra số cuối, **không sửa 0001–0009 đã áp**. Giữ data; obsolete tables/columns chỉ drop sau xác minh zero references và backup/restore, không để chạy job truy cập chúng nữa.
+- `wrangler.jsonc`, `package.json`, docs liên quan chỉ khi loại nhánh/script cũ hoặc cấu hình cutover. Không thay dependencies nếu native API đã đủ.
+- Tests conversation/ai-adapter/policy/ai-runtime/workers-fetch và architecture; experiments chỉ chỉnh để không import code trial đã bỏ khỏi src. Không rewrite toàn thư mục test.
 
-- Gemini có thể trả nhiều function call độc lập trong một response.
-- Quan hệ phụ thuộc được đóng trong composite action: `create_task` có thể kèm reminder, `create_event` có thể kèm notification.
-- Backend validate toàn bộ action trước khi ghi và batch trong một transaction khi cùng DB.
-- Message đi kèm action là bản nháp gửi sau thành công; fallback do backend dùng khi commit/model có vấn đề.
-- Giới hạn số action và kích thước payload để chống lỗi/quota, không giới hạn cứng một write.
-- Không gọi model lần hai sau write. Chỉ read-miss đặc biệt mới được thêm một call.
+## 7. Trình tự làm và điều kiện xong
 
-Mục tiêu request:
+1. Chụp baseline file/import/callsite, bảng/jobs và test; cập nhật bảng giữ/thay/bỏ với dependency thật. Git checkpoint, không copy nguyên src vào archive thứ hai.
+2. Triển khai schema+adapter và executor mới trong file thay thế, test fake native function calls/results; chưa bật live hoặc deploy nửa chừng.
+3. Chuyển mọi entrypoint/caller, pending/receipt và config một lượt; xóa imports/branches/helpers cũ không dùng, bảo toàn tests hữu ích. Một path AI production, không fallback âm thầm sang protocol cũ.
+4. Test end-to-end: capture “thêm cho tớ…7h tối nay”, lookup ngoài trang đầu, nhiều trùng tên, pending answer, read→write→reply, “mệt”/ví dụ/phủ định, stale version, duplicate update/tool call, crash sau commit, quota giữa turn, malformed tool/unknown owner/SQL injection. Workerd thật, provider fake.
+5. Kiểm tra sạch: architecture test/import search chứng minh không legacy chat entrypoint/directRequest/runtime regex whitelist; mọi table/job có consumer+mục đích; không dead feature flag. Báo diff số file/LOC/dependencies/bundle để review, không ép chỉ tiêu LOC làm code khó đọc.
+6. Cập nhật một hướng dẫn vận hành và HANDOFF mới, chuyển plan cũ thành historical link thay vì nối mãi status mâu thuẫn. Chỉ sau đạt mới xin ngân sách smoke live/cutover cho user thử.
 
-- chat thuần: 1;
-- capture/update rõ: 1;
-- nhiều thay đổi rõ: 1;
-- read ngoài snapshot rồi trả lời/thay đổi: tối đa 2;
-- exact reminder khi đến hạn: 0 request, trừ khi còn ngân sách và cần lời nhắn mới.
+## Không làm trong đợt này
 
-## 6. Quyền tự chủ và xác nhận
-
-Tự làm khi user yêu cầu trực tiếp, target đủ rõ và thay đổi nội bộ có thể hoàn tác. Không cần confirmation chỉ vì có nhiều action.
-
-Hỏi/xác nhận khi thiếu trường bắt buộc, nhiều target hợp lý, user đang giả định/nói ví dụ, xóa/bulk/khó hoàn tác hoặc trợ lý tự đề xuất một thay đổi lớn. Confidence do model chỉ hỗ trợ lựa chọn; backend không xây semantic gate phức tạp.
-
-Giữ owner isolation, tool allowlist/schema, timestamp validity, idempotency, version/transaction và secret redaction. Bỏ các policy ceremony không trực tiếp ngăn mất dữ liệu, ghi nhầm hàng loạt hoặc lạm dụng API.
-
-## 7. Chủ động nhưng tiết kiệm quota
-
-Cron chỉ tìm trigger đến hạn, không gọi Gemini mỗi phút.
-
-- Exact reminder: gửi message đã tạo/lưu trước; luôn có fallback.
-- Proactive nudge: được tạo khi lập plan hoặc trong một lượt planning giới hạn, sau đó scheduler gửi.
-- Giai đoạn đầu không quá một lượt planning nền/ngày; replanning ưu tiên ghép vào lần user đang chat.
-- Follow-up gắn đúng reminder/task và chỉ dừng bởi phản hồi liên quan, không bởi mọi tin nhắn.
-
-App phải có app-level quota, không paid fallback. Khi hết quota, exact reminder và thao tác deterministic vẫn hoạt động; chat AI báo ngắn là tạm hết lượt.
-
-## 8. Giữ, thay và bỏ
-
-Giữ Telegram webhook, D1, outbox, owner lease, receipts/idempotency, transaction, cron và domain logic dùng được.
-
-Thay context builder, conversation summary/pending state, model response orchestration, tool schema/executor, reminder độc lập, event nội bộ, proactive plan/nudge và overview ưu tiên.
-
-Bỏ Google Calendar runtime/OAuth/vault/sync/config/UI/tests liên quan và wizard không còn consumer. Migration đã áp không sửa; bảng cũ có thể để inert cho đến khi có quyết định reset dữ liệu riêng.
-
-## 9. Trình tự triển khai sau duyệt source
-
-1. Chụp dependency map và trình chính xác file giữ/sửa/xóa.
-2. Bỏ Google runtime và dead consumers, giữ staging chạy được.
-3. Thêm migration mới cho event, reminder độc lập, summary/pending/work state; không sửa migration cũ.
-4. Xây Context Snapshot và cơ chế summary piggyback.
-5. Đổi protocol sang one-call decision + batched/composite actions.
-6. Làm exact reminder và phản hồi đúng scope; kiểm chứng gửi thật.
-7. Làm work plan/proactive nudge và overview 1–3 việc.
-8. Tinh chỉnh persona trên hội thoại dài, không sửa prompt vô hạn.
-9. Test fake toàn luồng, rồi một pilot live có quota/stop criteria rõ.
-
-## 10. Điều kiện nghiệm thu
-
-- “18h48 nhắc cắm cơm” tạo reminder độc lập đúng giờ.
-- Một câu tạo task + deadline + reminder bằng một model request và một transaction.
-- Event không bị lưu thành task thường.
-- Chat xã hội không ghi nghiệp vụ.
-- Pending “nhắc làm bài” → “8h tối” nối đúng ý định.
-- Qua hơn 20 lượt vẫn giữ quyết định quan trọng nhờ summary + recent turns.
-- Follow-up chỉ áp dụng cho đúng item; bỏ lỡ không tạo spam/nợ.
-- Overview trả 1–3 hành động ưu tiên thay vì dump 10–20 dòng.
-- Gemini lỗi/quota không làm mất exact reminder, ghi trùng hoặc báo sai thành công.
-- Không còn runtime/import Google và không có secret trong source/log/Git.
+Không thêm UI, multi-agent, Mini App, XP, nhiều provider, lịch nền tự tạo hay rewrite Calendar. Không xóa dữ liệu người dùng để làm code gọn. Không biến “LLM làm mọi việc” thành quyền tùy ý gọi SQL hoặc tự lên lịch khi user chỉ tâm sự.
