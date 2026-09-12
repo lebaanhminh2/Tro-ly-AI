@@ -13,6 +13,32 @@ import type {Database} from '../../src/adapters/d1/database.ts';
 import {createWorker} from '../../src/entrypoints/worker.ts';
 import {buildContext} from '../../src/application/context-builder.ts';
 import {executeTool} from '../../src/application/tool-executor.ts';
+import type {ModelStep,ToolCall} from '../../src/ai/contracts.ts';
+
+test('native D1 turn commits typed tool once, caches final reply and resumes safely after final generation loss',async()=>{
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const file of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync(`migrations/${file}`,'utf8').replace(/\r?\n/g,' '));
+  const store=new D1WorkStore(db),journal=new ConversationStore(db);let now=Date.parse('2026-09-12T12:00:00+07:00'),calls=0;
+  await store.accept({owner:'123',chat:123,updateId:1,text:'Thêm cho tớ việc rửa bát deadline 7h tối nay nhé'},now,false);
+  const lease=(await store.claim('123',now))!;
+  const call:ToolCall={name:'create_task',args:{title:'rửa bát',deadline:{value:'2026-09-12T19:00:00+07:00',precision:'datetime'}}};
+  const model=async():Promise<ModelStep>=>{
+   calls++;if(calls===1)return {content:{role:'model',parts:[{functionCall:call,thoughtSignature:'sig'}]},calls:[call],text:''};
+   throw Error('quota after write');
+  };
+  const initial=[{role:'user' as const,parts:[{text:lease.input.text!}]}];
+  const run=()=>journal.turn(lease,initial,store,(changes,time)=>store.mutationStatements('123',changes,time,true),model,()=>now);
+  assert.match(await run(),/đã thêm/);assert.equal(calls,2);
+  assert.match(await run(),/đã thêm/);assert.equal(calls,2);
+  const tasks=await store.tasks('123',0);assert.equal(tasks.length,1);assert.equal(tasks[0]!.deadline,'2026-09-12T19:00:00+07:00');
+  assert.equal((await db.prepare("SELECT COUNT(*) AS n FROM tool_steps WHERE kind='write'").first<{n:number}>())!.n,1);
+  // Simulate losing only the final cached reply after the write: step receipts still prevent repeats.
+  await db.prepare('UPDATE command_inbox SET tool_reply=NULL WHERE owner=? AND update_id=1').bind('123').run();
+  assert.match(await run(),/đã thêm/);assert.equal(calls,2);assert.equal((await store.tasks('123',0)).length,1);
+ }finally{await mf.dispose();}
+});
 
 test('native step receipts replay reads/model without calls and atomically fence the only write',async()=>{
  const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});

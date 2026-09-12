@@ -1,10 +1,49 @@
 import {query,type Database,type Statement} from './database.ts';
 import type {Lease} from '../../ports/work-store.ts';
+import type {WorkReader} from '../../ports/work-store.ts';
+import type {ModelContent,ModelStep,ToolCall} from '../../ai/contracts.ts';
+import {isReadTool} from '../../ai/policy.ts';
+import {executeTool,type ToolOutcome} from '../../application/tool-executor.ts';
+import {runToolTurn} from '../../application/conversation-command.ts';
+import type {Change} from '../../domain/work.ts';
 import {parseConversation,type ConversationIntent,type ConversationMutation} from '../../domain/conversation.ts';
 
 export class ConversationStore {
  private db:Database;
  constructor(db:Database){this.db=db;}
+ async turn(lease:Lease,initial:ModelContent[],reader:WorkReader,mutations:(changes:Change[],now:number)=>Statement[],
+   model:(contents:ModelContent[],allowTools:boolean)=>Promise<ModelStep>,clock:()=>number){
+  const saved=await query(this.db,'SELECT tool_context,tool_reply FROM command_inbox WHERE owner=? AND update_id=?',lease.owner,lease.input.updateId)
+   .first<{tool_context:string|null;tool_reply:string|null}>();
+  if(!saved)throw Error('MISSING_COMMAND');
+  if(saved.tool_reply!==null)return saved.tool_reply;
+  const context=saved.tool_context?JSON.parse(saved.tool_context) as ModelContent[]:initial;
+  if(!saved.tool_context)await this.db.batch([this.fence(lease,clock()),query(this.db,'UPDATE command_inbox SET tool_context=? WHERE owner=? AND update_id=? AND tool_context IS NULL',JSON.stringify(initial),lease.owner,lease.input.updateId),query(this.db,'DELETE FROM transaction_guard')]);
+  const readIndexes=new Map<number,number>();
+  const request=(call:ToolCall)=>({name:call.name,args:call.args});
+  const reply=await runToolTurn(context,{
+   model:(step,contents,allowTools)=>this.step(lease,`model:${step}`,'model',{contents,allowTools},clock,()=>model(contents,allowTools)),
+   execute:async(step,call)=>{
+    if(isReadTool(call.name)){
+     const index=readIndexes.get(step)??0;readIndexes.set(step,index+1);
+     return this.step(lease,`read:${step}:${index}`,'read',request(call),clock,()=>executeTool(call,reader,lease.owner,lease.input.updateId,clock()));
+    }
+    const existing=await this.writeResult(lease,request(call));
+    if(existing)return {result:existing,changes:[],fallback:String(existing.fallback??'Thao tác đã được ghi nhận.')};
+    return executeTool(call,reader,lease.owner,lease.input.updateId,clock());
+   },
+   commit:async(_step,call,outcome)=>{
+    if(outcome.result.status==='needs_confirmation'){
+     const pending=this.pendingStatements(lease,call.name,call.args,String(outcome.result.reason),clock());
+     return this.commitWrite(lease,request(call),{...outcome.result,pendingId:pending.id,fallback:outcome.fallback},pending.statements,clock());
+    }
+    const result={...outcome.result,status:'applied',fallback:outcome.fallback};
+    return this.commitWrite(lease,request(call),result,mutations(outcome.changes,clock()),clock());
+   }
+  });
+  await this.db.batch([this.fence(lease,clock()),query(this.db,'UPDATE command_inbox SET tool_reply=? WHERE owner=? AND update_id=?',reply,lease.owner,lease.input.updateId),query(this.db,'DELETE FROM transaction_guard')]);
+  return reply;
+ }
  private fence(lease:Lease,now:number){return query(this.db,`INSERT INTO transaction_guard SELECT CASE WHEN
   EXISTS(SELECT 1 FROM owner_leases WHERE owner=? AND token=? AND expires>?) AND
   EXISTS(SELECT 1 FROM command_inbox WHERE owner=? AND update_id=? AND state='pending') THEN 1 ELSE 0 END`,lease.owner,lease.token,now,lease.owner,lease.input.updateId);}
@@ -116,10 +155,10 @@ export async function queueAppointments(db:Database,owner:string,now:number){
  }
 }
 
-export function conversationStatements(db:Database,owner:string,c:ConversationMutation){
+export function conversationStatements(db:Database,owner:string,c:ConversationMutation,native=false){
  if(c.owner!==owner)throw Error('OWNER_MISMATCH');
  const q=(sql:string,...args:(string|number|null)[])=>query(db,sql,...args);
- const statements=[q("INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM conversation_receipts WHERE owner=? AND update_id=? AND state='ready') THEN 1 ELSE 0 END",owner,c.updateId)];
+ const statements=[q(`INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM ${native?'tool_steps':'conversation_receipts'} WHERE owner=? AND update_id=? AND ${native?"kind='write' AND state='done'":"state='ready'"}) THEN 1 ELSE 0 END`,owner,c.updateId)];
  if(c.pendingId)statements.push(q("INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM conversation_pending WHERE owner=? AND id=? AND expires>?) THEN 1 ELSE 0 END",owner,c.pendingId,c.created));
  if(c.title!==null){
   if(c.expectedVersion!==null)throw Error('INVALID_CAPTURE_VERSION');
@@ -129,6 +168,6 @@ export function conversationStatements(db:Database,owner:string,c:ConversationMu
   statements.push(q('INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM tasks WHERE owner=? AND id=? AND version=?) THEN 1 ELSE 0 END',owner,c.taskId,c.expectedVersion));
   statements.push(q('UPDATE tasks SET deadline=?,deadline_precision=?,version=version+1 WHERE owner=? AND id=?',c.deadline.value,c.deadline.precision,owner,c.taskId));
  }
- statements.push(q("UPDATE conversation_receipts SET state='applied' WHERE owner=? AND update_id=?",owner,c.updateId));
+ if(!native)statements.push(q("UPDATE conversation_receipts SET state='applied' WHERE owner=? AND update_id=?",owner,c.updateId));
  return statements;
 }

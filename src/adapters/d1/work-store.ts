@@ -124,19 +124,14 @@ export class D1WorkStore implements WorkStore {
     return { owner, token, input: {...JSON.parse(row.payload),receivedAt:row.created} as Input, attempts: row.attempts + 1 };
   }
   async release(lease: Lease) { await query(this.db, 'DELETE FROM owner_leases WHERE owner=? AND token=?', lease.owner, lease.token).run(); }
-  async commit(lease: Lease, plan: Plan, now: number) {
-    // Validate and normalize before constructing any database mutation.
-    plan = {...plan, view: renderView(plan.view)};
-    const { owner, input, token } = lease;
-    const q = (sql: string, ...args: (string | number | null)[]) => query(this.db, sql, ...args);
-    const statements: Statement[] = [q(`INSERT INTO transaction_guard(valid) SELECT CASE WHEN
-      EXISTS(SELECT 1 FROM owner_leases WHERE owner=? AND token=? AND expires>?) AND
-      EXISTS(SELECT 1 FROM command_inbox WHERE owner=? AND update_id=? AND state='pending') THEN 1 ELSE 0 END`, owner, token, now, owner, input.updateId)];
-    for (const change of plan.changes) {
+  mutationStatements(owner:string,changes:Plan['changes'],now:number,native=false):Statement[]{
+    const q=(sql:string,...args:(string|number|null)[])=>query(this.db,sql,...args);
+    const statements:Statement[]=[];
+    for (const change of changes) {
       if(change.type==='conversation-completion'){
         if(change.owner!==owner)throw Error('OWNER_MISMATCH');
         if(change.pendingId)statements.push(q('INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM conversation_pending WHERE owner=? AND id=? AND expires>?) THEN 1 ELSE 0 END',owner,change.pendingId,now));
-        statements.push(q("INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM conversation_receipts WHERE owner=? AND update_id=? AND state='ready') AND EXISTS(SELECT 1 FROM tasks WHERE owner=? AND id=? AND version=? AND status=?) THEN 1 ELSE 0 END",owner,change.updateId,owner,change.taskId,change.expectedVersion,change.operation==='complete'?'active':'completed'));
+        statements.push(q(`INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM ${native?'tool_steps':'conversation_receipts'} WHERE owner=? AND update_id=? AND ${native?"kind='write' AND state='done'":"state='ready'"}) AND EXISTS(SELECT 1 FROM tasks WHERE owner=? AND id=? AND version=? AND status=?) THEN 1 ELSE 0 END`,owner,change.updateId,owner,change.taskId,change.expectedVersion,change.operation==='complete'?'active':'completed'));
         if(change.operation==='reopen')statements.push(q('INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM task_completion_undo WHERE owner=? AND task_id=? AND expected_version=? AND expires>?) THEN 1 ELSE 0 END',owner,change.taskId,change.expectedVersion,now));
         statements.push(q('UPDATE tasks SET status=?,version=version+1 WHERE owner=? AND id=?',change.operation==='complete'?'completed':'active',owner,change.taskId));
         if(change.operation==='complete'){
@@ -145,20 +140,20 @@ export class D1WorkStore implements WorkStore {
           statements.push(q("UPDATE reminders SET status='cancelled' WHERE owner=? AND status IN ('pending','queued') AND session_id IN (SELECT id FROM sessions WHERE owner=? AND task_id=?)",owner,owner,change.taskId));
           statements.push(q("UPDATE sessions SET status=CASE WHEN status IN ('running','paused') THEN 'completed' ELSE 'skipped' END,spent_ms=spent_ms+CASE WHEN active_since IS NULL THEN 0 ELSE MAX(0,?-active_since) END,active_since=NULL,version=version+1 WHERE owner=? AND task_id=? AND status NOT IN ('completed','skipped')",now,owner,change.taskId));
         }else statements.push(q('DELETE FROM task_completion_undo WHERE owner=? AND task_id=?',owner,change.taskId));
-        statements.push(q("UPDATE conversation_receipts SET state='applied' WHERE owner=? AND update_id=?",owner,change.updateId));
+        if(!native)statements.push(q("UPDATE conversation_receipts SET state='applied' WHERE owner=? AND update_id=?",owner,change.updateId));
       }else if(change.type==='conversation-appointment'){
         if(change.owner!==owner||change.due<=now)throw Error('INVALID_APPOINTMENT');
         if(change.pendingId)statements.push(q('INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM conversation_pending WHERE owner=? AND id=? AND expires>?) THEN 1 ELSE 0 END',owner,change.pendingId,now));
-        statements.push(q("INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM conversation_receipts WHERE owner=? AND update_id=? AND state='ready') AND EXISTS(SELECT 1 FROM tasks WHERE owner=? AND id=? AND version=?) THEN 1 ELSE 0 END",owner,change.updateId,owner,change.taskId,change.expectedVersion));
+        statements.push(q(`INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM ${native?'tool_steps':'conversation_receipts'} WHERE owner=? AND update_id=? AND ${native?"kind='write' AND state='done'":"state='ready'"}) AND EXISTS(SELECT 1 FROM tasks WHERE owner=? AND id=? AND version=?) THEN 1 ELSE 0 END`,owner,change.updateId,owner,change.taskId,change.expectedVersion));
         statements.push(q("UPDATE task_appointments SET status='cancelled' WHERE owner=? AND task_id=? AND status='active'",owner,change.taskId));
         statements.push(q('INSERT INTO task_appointments(id,owner,task_id,due) VALUES(?,?,?,?)',change.id,owner,change.taskId,change.due));
-        statements.push(q("UPDATE conversation_receipts SET state='applied' WHERE owner=? AND update_id=?",owner,change.updateId));
+        if(!native)statements.push(q("UPDATE conversation_receipts SET state='applied' WHERE owner=? AND update_id=?",owner,change.updateId));
       }else if(change.type==='conversation-pending'){
         if(change.owner!==owner)throw Error('OWNER_MISMATCH');
         if(change.pending)statements.push(q('INSERT INTO conversation_pending(owner,id,kind,draft,expires) VALUES(?,?,?,?,?) ON CONFLICT(owner) DO UPDATE SET id=excluded.id,kind=excluded.kind,draft=excluded.draft,expires=excluded.expires',owner,change.pending.id,change.pending.kind,change.pending.draft,change.pending.expires));
         else statements.push(q('DELETE FROM conversation_pending WHERE owner=?',owner));
       }else if(change.type==='conversation-task'){
-        statements.push(...conversationStatements(this.db,owner,change));
+        statements.push(...conversationStatements(this.db,owner,change,native));
       }else if(change.type==='remember'||change.type==='forget'||change.type==='focus'||change.type==='ai-enabled'||change.type==='memory-confirm'||change.type==='memory-resolve'){
         statements.push(...memoryStatements(this.db,owner,change));
       }else if (change.type==='session-input'||change.type==='session-create'||change.type==='session-action'||change.type==='preferences') {
@@ -186,6 +181,17 @@ export class D1WorkStore implements WorkStore {
         statements.push(q("UPDATE proposals SET status=? WHERE id=? AND owner=? AND status='pending'", change.accept ? 'accepted' : 'rejected',p.id,owner));
       }
     }
+    return statements;
+  }
+  async commit(lease: Lease, plan: Plan, now: number) {
+    // Validate and normalize before constructing any database mutation.
+    plan = {...plan, view: renderView(plan.view)};
+    const { owner, input, token } = lease;
+    const q = (sql: string, ...args: (string | number | null)[]) => query(this.db, sql, ...args);
+    const statements: Statement[] = [q(`INSERT INTO transaction_guard(valid) SELECT CASE WHEN
+      EXISTS(SELECT 1 FROM owner_leases WHERE owner=? AND token=? AND expires>?) AND
+      EXISTS(SELECT 1 FROM command_inbox WHERE owner=? AND update_id=? AND state='pending') THEN 1 ELSE 0 END`, owner, token, now, owner, input.updateId)];
+    statements.push(...this.mutationStatements(owner,plan.changes,now));
     const payload = JSON.stringify({ method: 'sendMessage', chat_id: input.chat, text: plan.view.text,
       ...(plan.view.buttons.length ? { reply_markup: { inline_keyboard: plan.view.buttons } } : {}) });
     if(input.text&&!input.text.startsWith('/')&&!plan.changes.some(c=>c.type==='forget'))statements.push(q('INSERT INTO conversation_turns(owner,command_id,user_text,assistant_text,created,expires) VALUES(?,?,?,?,?,?)',owner,input.updateId,input.text,plan.view.text,now,now+7*86400000));

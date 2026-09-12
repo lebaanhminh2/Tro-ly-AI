@@ -32,6 +32,10 @@ export async function runToolTurn(initial:ModelContent[],ports:ToolTurnPorts):Pr
     results.push(toolResponse(call,{status:'rejected',reason:'invalid_or_unavailable_tool'}));continue;
    }
    if(isReadTool(call.name)){results.push(toolResponse(call,outcome.result));continue;}
+   if(outcome.result.status==='applied'){
+    // A persisted tool result from a previous attempt is not executed again.
+    wrote=true;fallback=outcome.fallback;results.push(toolResponse(call,outcome.result));continue;
+   }
    if(outcome.changes.length){
     let committed:Record<string,unknown>;
     try{committed=await ports.commit(step,call,outcome);}catch{

@@ -8,6 +8,8 @@ Checkpoint executor: tool-executor dùng typed args/WorkReader, trả result+mut
 
 Checkpoint journal: migration0010 thêm tool_steps (unique write/turn) và pending_tool_actions chuẩn. ConversationStore.step/commitWrite lưu kết quả và guard owner lease; model bước mất kết quả không gọi lại, write receipt cùng transaction nghiệp vụ. Pending có owner/TTL/one-use; test rollback/replay/input mismatch/sender hết lease đạt. Chưa nối orchestrator production hoặc áp migration; không coi code legacy đã được dọn.
 
+Checkpoint nối D1: ConversationStore.turn kết nối journal với bounded loop/executor và commit shared mutationStatements, context+reply snapshot trong inbox. Replay trả applied result mà không chạy nghiệp vụ lại; final model lỗi dùng fallback kết quả đã lưu. Test tạo task typed deadline19:00 và mất final reply/model đạt. Chưa handler production/pending confirmation consumption/cleanup; không deploy.
+
 ## 1. Luồng duy nhất
 
 Telegram → inbox/owner lease → context nhỏ → Gemini → tool call có kiểu → backend validate/execute → tool result → trả lời người dùng.

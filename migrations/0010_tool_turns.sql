@@ -1,3 +1,5 @@
+ALTER TABLE command_inbox ADD COLUMN tool_context TEXT;
+ALTER TABLE command_inbox ADD COLUMN tool_reply TEXT;
 CREATE TABLE tool_steps (
  owner TEXT NOT NULL,
  update_id INTEGER NOT NULL,
