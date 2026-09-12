@@ -14,6 +14,21 @@ export class D1WorkStore implements WorkStore {
   private db: Database;
   constructor(db: Database, privateCards = false) { this.db = db; this.cardsEnabled=privateCards; }
   private cardsEnabled:boolean;
+  async findTasks(owner:string,text:string,status:'active'|'completed'|'all',cursor:number){
+    if(text.length>160||!Number.isSafeInteger(cursor)||cursor<0||cursor>10000||!['active','completed','all'].includes(status))throw Error('INVALID_QUERY');
+    const rows=(await query(this.db,`SELECT * FROM tasks WHERE owner=? AND (?='all' OR status=?)
+      AND (?='' OR instr(lower(title),lower(?))>0) ORDER BY created,id LIMIT 11 OFFSET ?`,owner,status,status,text,text,cursor).all<Task>()).results;
+    return {tasks:rows.slice(0,10),nextCursor:rows.length>10?cursor+10:null};
+  }
+  async agenda(owner:string,from:number,to:number,cursor:number){
+    if(!Number.isFinite(from)||!Number.isFinite(to)||to<=from||to-from>31*86400000||!Number.isSafeInteger(cursor)||cursor<0||cursor>10000)throw Error('INVALID_AGENDA_RANGE');
+    const rows=(await query(this.db,`SELECT * FROM (
+      SELECT 'session' AS kind,s.id,t.title,s.start_at AS at,s.status FROM sessions s JOIN tasks t ON t.id=s.task_id AND t.owner=s.owner WHERE s.owner=? AND s.start_at>=? AND s.start_at<? AND s.status!='draft'
+      UNION ALL SELECT 'reminder',a.id,t.title,a.due,a.status FROM task_appointments a JOIN tasks t ON t.id=a.task_id AND t.owner=a.owner WHERE a.owner=? AND a.due>=? AND a.due<? AND a.status='active'
+      UNION ALL SELECT 'deadline',id,title,CAST((julianday(CASE WHEN deadline_precision='date' THEN deadline||'T00:00:00+07:00' ELSE deadline END)-2440587.5)*86400000 AS INTEGER),status FROM tasks WHERE owner=? AND status='active' AND deadline IS NOT NULL
+    ) WHERE at>=? AND at<? ORDER BY at,kind,id LIMIT 11 OFFSET ?`,owner,from,to,owner,from,to,owner,from,to,cursor).all<Record<string,unknown>>()).results;
+    return {items:rows.slice(0,10),nextCursor:rows.length>10?cursor+10:null,source:'local',googleCalendarIncluded:false,timezone:'Asia/Ho_Chi_Minh'};
+  }
   async completionUndo(owner:string,taskId:string,version:number,now:number){return !!await query(this.db,'SELECT task_id FROM task_completion_undo WHERE owner=? AND task_id=? AND expected_version=? AND expires>?',owner,taskId,version,now).first();}
   async conversationTasks(owner:string,text:string){
     return (await query(this.db,`SELECT * FROM tasks WHERE owner=? AND instr(lower(?),lower(title))>0 ORDER BY length(title) DESC,created DESC LIMIT 20`,owner,text).all<Task>()).results;

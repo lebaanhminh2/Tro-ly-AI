@@ -4,6 +4,8 @@
 
 Checkpoint: đã có function declarations/response parsing/data validation và adapter native giữ nguyên model parts/call ID, không dùng JSON response schema cho tool mode. Các entrypoint cũ chưa chuyển, executor/receipts/cleanup chưa hoàn tất; đây chưa phải bot function calling đã chạy. API đối chiếu [Google generateContent](https://ai.google.dev/api/generate-content) và [function calling](https://ai.google.dev/gemini-api/docs/function-calling); không đổi model theo ví dụ tài liệu.
 
+Checkpoint executor: tool-executor dùng typed args/WorkReader, trả result+mutation plan; loop bounded trong conversation-command dùng ports model/execute/commit, không retry mutation khi final-model lỗi. D1 find_tasks/get_agenda owner-scoped/paginated. Còn nối step receipts/pending/commit với runtime, hỗ trợ xóa deadline và dọn các handler cũ; code trung gian chưa deploy. Không thêm file executor thứ hai.
+
 ## 1. Luồng duy nhất
 
 Telegram → inbox/owner lease → context nhỏ → Gemini → tool call có kiểu → backend validate/execute → tool result → trả lời người dùng.

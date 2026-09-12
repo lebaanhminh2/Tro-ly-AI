@@ -12,6 +12,32 @@ import type {ConversationIntent} from '../../src/domain/conversation.ts';
 import type {Database} from '../../src/adapters/d1/database.ts';
 import {createWorker} from '../../src/entrypoints/worker.ts';
 import {buildContext} from '../../src/application/context-builder.ts';
+import {executeTool} from '../../src/application/tool-executor.ts';
+
+test('native tool executor reads scoped data and plans writes from typed args, independent of phrasing',async()=>{
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync(`migrations/${f}`,'utf8').replace(/\r?\n/g,' '));
+  const store=new D1WorkStore(db),now=Date.parse('2026-09-12T08:00:00+07:00');
+  await db.prepare("INSERT INTO tasks(id,owner,title,deadline,deadline_precision,created) VALUES('mine','123','rửa bát','2026-09-12','date',0)").run();
+  await db.prepare("INSERT INTO tasks(id,owner,title,created) VALUES('foreign','999','private',0)").run();
+  const found=await executeTool({name:'find_tasks',args:{query:'',status:'all',cursor:0}},store,'123',1,now);
+  assert.ok(JSON.stringify(found.result).includes('mine'));assert.ok(!JSON.stringify(found.result).includes('private'));
+  const agenda=await executeTool({name:'get_agenda',args:{from:'2026-09-12T00:00:00+07:00',to:'2026-09-13T00:00:00+07:00',cursor:0}},store,'123',1,now);
+  assert.equal(agenda.result.googleCalendarIncluded,false);assert.ok(JSON.stringify(agenda.result).includes('rửa bát'));
+  const duplicate=await executeTool({name:'create_task',args:{title:'rửa bát',deadline:null}},store,'123',1,now);
+  assert.equal(duplicate.result.status,'needs_confirmation');assert.equal(duplicate.changes.length,0);
+  const capture=await executeTool({name:'create_task',args:{title:'bài văn',deadline:{value:'2026-09-12T19:00:00+07:00',precision:'datetime'}}},store,'123',2,now);
+  assert.equal(capture.result.status,'planned');assert.equal(capture.changes.length,1);
+  assert.equal((await store.tasks('123',0)).length,1); // Executor plans, commit is explicit.
+  const stale=await executeTool({name:'update_task',args:{task_id:'mine',expected_version:99,patch:{status:'completed'}}},store,'123',3,now);
+  assert.equal(stale.result.reason,'stale_version');assert.equal(stale.changes.length,0);
+  const foreign=await executeTool({name:'set_reminder',args:{task_id:'foreign',expected_version:1,at:'2026-09-12T19:00:00+07:00'}},store,'123',4,now);
+  assert.equal(foreign.result.reason,'task_not_found');
+  await assert.rejects(executeTool({name:'create_task',args:{title:'x',deadline:null,owner:'999'}},store,'123',5,now),/INVALID_TOOL_FIELDS/);
+ }finally{await mf.dispose();}
+});
 
 test('live-smoke regressions: ambiguous completion and existing-title capture retain scoped clarification',async()=>{
  const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});

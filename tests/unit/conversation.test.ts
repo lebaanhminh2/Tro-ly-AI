@@ -1,6 +1,32 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {conversationDeadline,parseConversation,directRequest,unsupportedSuccessClaim} from '../../src/domain/conversation.ts';
+import {runToolTurn} from '../../src/application/conversation-command.ts';
+import type {ToolCall,ModelStep} from '../../src/ai/contracts.ts';
+
+test('tool turn reads then writes once, commits before final response and survives final model failure',async()=>{
+ const read:ToolCall={name:'find_tasks',args:{query:'bài',status:'active',cursor:0}};
+ const write:ToolCall={name:'update_task',args:{task_id:'t',expected_version:1,patch:{status:'completed'}}};
+ const step=(call:ToolCall):ModelStep=>({content:{role:'model',parts:[{functionCall:call,thoughtSignature:'keep'}]},calls:[call],text:''});
+ const events:string[]=[];
+ const text=await runToolTurn([{role:'user',parts:[{text:'Xong bài rồi'}]}],{
+  model:async(n,contents,allow)=>{events.push(`model:${n}`);if(n===0)return step(read);if(n===1){assert.equal(contents.at(-1)!.role,'user');return step(write);}assert.equal(allow,false);throw Error('quota');},
+  execute:async(_n,call)=>{events.push(call.name);return {result:{status:isRead(call)?'ok':'planned'},changes:isRead(call)?[]:[{type:'cancel',owner:'123'}],fallback:'Đã hoàn thành bài.'};},
+  commit:async()=>{events.push('commit');return {status:'applied'};}
+ });
+ assert.equal(text,'Đã hoàn thành bài.');assert.deepEqual(events,['model:0','find_tasks','model:1','update_task','commit','model:2']);
+ function isRead(call:ToolCall){return call.name==='find_tasks';}
+});
+
+test('tool turn rejects parallel writes before executing any mutation',async()=>{
+ const calls:ToolCall[]=[{name:'create_task',args:{title:'a',deadline:null}},{name:'create_task',args:{title:'b',deadline:null}}];
+ let executions=0;
+ const result=await runToolTurn([{role:'user',parts:[{text:'test'}]}],{
+  model:async()=>({content:{role:'model',parts:[]},calls,text:''}),
+  execute:async()=>{executions++;throw Error('must not execute');},commit:async()=>{throw Error('must not commit');}
+ });
+ assert.equal(executions,0);assert.match(result,/nhiều thay đổi/);
+});
 test('conversation date precision preserves date-only and relative dates use Vietnam midnight',()=>{
  const now=Date.parse('2026-09-12T23:55:00+07:00');
  assert.deepEqual(conversationDeadline('ngày mai',now),{value:'2026-09-13',precision:'date'});
