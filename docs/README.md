@@ -2,7 +2,7 @@
 
 ## Đọc có chọn lọc
 
-Bắt đầu bằng [HANDOFF.md](HANDOFF.md). Chỉ mở tài liệu liên quan nhiệm vụ, không đọc toàn bộ docs/archive.
+Bắt đầu bằng [HANDOFF.md](HANDOFF.md). Chỉ mở tài liệu liên quan nhiệm vụ, không đọc toàn bộ docs.
 
 | Tài liệu | Nguồn chính cho |
 | --- | --- |
@@ -30,7 +30,8 @@ Tài liệu chỉ tốn context của coding agent khi được đọc/đính k�
 
 ## Lịch sử
 
-[Kho lịch sử](archive/README.md) giữ bản cũ để điều tra quyết định/test, không có hiệu lực thay yêu cầu hiện tại.
-Không tự mở lại milestone, hạn mức API hoặc kế hoạch cũ từ archive.
+Không giữ bản sao lịch sử trong workspace. 27 file Markdown archive đã được xóa theo duyệt của người dùng; vẫn có tại Git commit `7d568f1`.
+Đọc một file cũ khi cần bằng `git show 7d568f1:docs/archive/2026-09-12/TEN_FILE.md`. Hai tài liệu thử ban đầu nằm trực tiếp dưới `docs/archive/` ở commit đó.
+Không tự khôi phục cả kho hoặc mở lại ngân sách/quyết định cũ. Lịch sử không thay yêu cầu hiện tại.
 
 Prompt tiếp tục ngắn: “Đọc docs/HANDOFF.md, kiểm tra git status và tiếp tục nhiệm vụ hiện tại trong phạm vi đã duyệt. Chỉ đọc thêm tài liệu cần thiết.”

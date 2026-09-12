@@ -4,7 +4,7 @@ Cập nhật 2026-09-12. Đọc file này trước, không nạp cả docs.
 
 ## Nhiệm vụ hiện tại
 
-- Đã cơ cấu docs: 5 tài liệu nội dung + 1 link chuyển hướng staging; snapshot cũ ở archive/2026-09-12. Không sửa source/deploy trong đợt docs.
+- Đã cơ cấu docs: 5 tài liệu nội dung + 1 link chuyển hướng staging. User duyệt xóa 27 Markdown archive; lịch sử ở Git `7d568f1`. Không sửa source/deploy.
 - Tiếp theo: trình/nhận duyệt phạm vi code trong [TOOL_CALLING_PLAN.md](TOOL_CALLING_PLAN.md).
 - User đã đồng ý hướng tool calling, nhưng lượt gần nhất mới yêu cầu lập kế hoạch và dọn docs; chưa suy thành duyệt sửa toàn bộ protocol.
 - Không tiếp tục vá regex `directRequest` hoặc mở rộng wizard. Hội thoại là chính; card hỗ trợ.
@@ -31,4 +31,4 @@ Cập nhật 2026-09-12. Đọc file này trước, không nạp cả docs.
 - Ý định sản phẩm/persona: [PRODUCT_BRIEF.md](PRODUCT_BRIEF.md).
 - Thay code hội thoại và dọn legacy: [TOOL_CALLING_PLAN.md](TOOL_CALLING_PLAN.md).
 - Test/deploy/secrets/recovery: [OPERATIONS.md](OPERATIONS.md).
-- Bằng chứng cũ: [archive/README.md](archive/README.md), chỉ mở đúng file.
+- Bằng chứng cũ: `git show 7d568f1:docs/archive/2026-09-12/TEN_FILE.md`, chỉ đọc đúng file khi cần.
