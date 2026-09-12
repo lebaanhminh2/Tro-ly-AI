@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { Miniflare } from 'miniflare';
 import worker, { createWorker, flushOutbox } from '../../src/entrypoints/worker.ts';
 import { deliver } from '../../src/adapters/telegram/api.ts';
@@ -16,12 +16,7 @@ test('Telegram webhook and D1: complete flow, duplicate, owner, stale, expiry, r
   const mf = new Miniflare({ modules: true, script: 'export default { fetch() { return new Response("test"); } }', d1Databases: ['DB'] });
   try {
     const d1 = await mf.getD1Database('DB');
-    await d1.exec(readFileSync('migrations/0001_initial.sql', 'utf8').replace(/\r?\n/g, ' '));
-    await d1.exec(readFileSync('migrations/0002_delivery.sql', 'utf8').replace(/\r?\n/g, ' '));
-    await d1.exec(readFileSync('migrations/0003_command_transactions.sql', 'utf8').replace(/\r?\n/g, ' '));
-    await d1.exec(readFileSync('migrations/0004_sessions_reminders.sql', 'utf8').replace(/\r?\n/g, ' '));
-    await d1.exec(readFileSync('migrations/0005_memory_conversation.sql', 'utf8').replace(/\r?\n/g, ' '));
-    await d1.exec(readFileSync('migrations/0006_review_fixes.sql', 'utf8').replace(/\r?\n/g, ' '));
+    for(const file of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort()) await d1.exec(readFileSync('migrations/'+file,'utf8').replace(/\r?\n/g,' '));
     const db = d1 as unknown as Database;
     const secret = 'synthetic-webhook-secret-12345678';
     const env: Env = { DB: db, TELEGRAM_USER_ID: '123456', TELEGRAM_WEBHOOK_SECRET: secret, AI_MODE: 'off' };
@@ -156,7 +151,7 @@ test('outbox persisted replies, callback ack, retry cap, restart recovery and co
   const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
   try {
     const db=await mf.getD1Database('DB') as unknown as Database & {exec(sql:string):Promise<unknown>};
-    for(const file of ['0001_initial.sql','0002_delivery.sql','0003_command_transactions.sql','0004_sessions_reminders.sql','0005_memory_conversation.sql','0006_review_fixes.sql']) await db.exec(readFileSync(`migrations/${file}`,'utf8').replace(/\r?\n/g,' '));
+    for(const file of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort()) await db.exec(readFileSync(`migrations/${file}`,'utf8').replace(/\r?\n/g,' '));
     const env:Env={DB:db,TELEGRAM_USER_ID:'123',TELEGRAM_WEBHOOK_SECRET:'synthetic-secret-long-enough',DELIVERY_MODE:'outbox',TELEGRAM_BOT_TOKEN:'123:fake'};
     const calls:string[]=[];
     const transport:typeof fetch=async(url)=>{calls.push(String(url).split('/').at(-1)!); return Response.json({ok:true,result:String(url).endsWith('answerCallbackQuery')?true:{message_id:99}});};

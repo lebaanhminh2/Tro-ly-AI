@@ -87,7 +87,7 @@ function Register-StagingWebhook {
     if ($after.result.last_error_date) {
         & $Emit 'Telegram co ghi nhan loi giao tin (co the tu truoc). Can kiem tra khi gui tin moi.'
     }
-    & $Emit 'Mo bot tren dien thoai va gui /tasks. AI/Calendar van tat.'
+    & $Emit 'Mo bot tren dien thoai va gui /tasks. Trang thai AI phu thuoc cau hinh hien tai.'
     & $Emit 'Dang ky thanh cong chua chung minh bot da tra loi; bao lai ket qua /tasks.'
 }
 

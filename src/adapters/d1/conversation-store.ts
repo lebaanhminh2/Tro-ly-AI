@@ -23,6 +23,7 @@ export class ConversationStore {
   let resolvedPending:string|null=null;
   const request=(call:ToolCall)=>({name:call.name,args:call.args});
   const reply=await runToolTurn(context,{
+   batch:(calls,message)=>this.commitBatch(lease,calls,message,reader,mutations,clock()),
    model:(step,contents,allowTools)=>this.step(lease,`model:${step}`,'model',{contents,allowTools},clock,()=>model(contents,allowTools,step)),
    execute:async(step,call)=>{
     validateTool(call,clock());
@@ -60,6 +61,46 @@ export class ConversationStore {
    }
   });
   await this.db.batch([this.fence(lease,clock()),query(this.db,'UPDATE command_inbox SET tool_reply=? WHERE owner=? AND update_id=?',reply,lease.owner,lease.input.updateId),query(this.db,'DELETE FROM transaction_guard')]);
+  return reply;
+ }
+ async commitBatch(lease:Lease,calls:ToolCall[],message:string,reader:WorkReader,mutations:(changes:Change[],now:number)=>Statement[],now:number){
+  if(calls.length<1||calls.length>8||message.length>4000)throw Error('INVALID_BATCH');
+  const request={batch:calls};
+  const prior=await this.writeResult(lease,request);
+  if(prior)return String(prior.reply);
+  const changes:Change[]=[],fallbacks:string[]=[];
+  const created=new Map<string,import('../../domain/work.ts').Task>();
+  const touched=new Set<string>();
+  const scoped=Object.create(reader) as WorkReader;
+  scoped.task=async(owner,id)=>owner===lease.owner?(created.get(id)??await reader.task(owner,id)):null;
+  for(let index=0;index<calls.length;index++){
+   const original=calls[index]!;
+   if(isReadTool(original.name)||original.name==='resolve_pending')throw Error('INVALID_BATCH_OPERATION');
+   const call={...original,args:{...original.args}};
+   // A new task can be referenced by its earlier action index, never an invented DB ID.
+   if(typeof call.args.task_id==='string'&&/^@\d+$/.test(call.args.task_id)){
+    const n=Number(call.args.task_id.slice(1));
+    if(n>=index||!created.has(`tool${lease.owner}_${lease.input.updateId}_${n}`))throw Error('INVALID_LOCAL_REFERENCE');
+    call.args.task_id=`tool${lease.owner}_${lease.input.updateId}_${n}`;
+   }
+   if(call.name==='update_task'||call.name==='set_reminder'||call.name==='plan_work'){
+    const id=String(call.args.task_id);
+    if(touched.has(id))throw Error('CONFLICTING_BATCH_WRITES');
+    if(call.name==='update_task')touched.add(id);
+   }
+   let outcome:ToolOutcome;
+   try{outcome=await executeTool(call,scoped,lease.owner,lease.input.updateId,now,false,index);}catch(error){
+    if(call.name==='update_summary')continue; // Soft memory must not block real work.
+    throw error;
+   }
+   if(!['planned','unchanged'].includes(String(outcome.result.status)))throw Error('BATCH_REQUIRES_CLARIFICATION');
+   for(const change of outcome.changes){
+    if(change.type==='conversation-task'&&change.title!==null)created.set(change.taskId,{id:change.taskId,owner:lease.owner,title:change.title,deadline:change.deadline?.value??null,version:1,status:'active'});
+   }
+   changes.push(...outcome.changes);fallbacks.push(outcome.fallback);
+  }
+  const reply=message.trim()||fallbacks.join('\n');
+  await this.commitWrite(lease,request,{status:'applied',reply},mutations(changes,now),now);
   return reply;
  }
  private fence(lease:Lease,now:number){return query(this.db,`INSERT INTO transaction_guard SELECT CASE WHEN
@@ -135,14 +176,15 @@ export async function appointmentAllowed(db:Database,reminderId:string,now:numbe
  return !!row&&row.status==='active'&&row.due<=now&&now<row.due+3600000&&row.pause_until<=now&&(match[2]==='1'||!row.responded);
 }
 
-export async function acknowledgeAppointments(db:Database,owner:string){
+export async function acknowledgeAppointments(db:Database,owner:string,messageId?:number){
+ if(!Number.isSafeInteger(messageId)||Number(messageId)<=0)return;
  await query(db,`UPDATE task_appointments SET responded=1 WHERE owner=? AND responded=0 AND EXISTS(SELECT 1 FROM outbox o
-  WHERE o.reminder_id='appointment:'||task_appointments.id||':1' AND o.state IN ('sent','sending','uncertain'))`,owner).run();
+  WHERE o.reminder_id IN ('appointment:'||task_appointments.id||':1','appointment:'||task_appointments.id||':2') AND o.message_id=? AND o.state='sent')`,owner,messageId!).run();
 }
 
 export async function queueAppointments(db:Database,owner:string,now:number){
  await query(db,"UPDATE task_appointments SET status='expired' WHERE owner=? AND status='active' AND due+3600000<=?",owner,now).run();
- const appointments=(await query(db,`SELECT a.id,a.due,t.title FROM task_appointments a JOIN tasks t ON t.id=a.task_id AND t.owner=a.owner WHERE a.owner=? AND a.status='active' AND a.due<=? ORDER BY a.due LIMIT 10`,owner,now).all<{id:string;due:number;title:string}>()).results;
+ const appointments=(await query(db,`SELECT a.id,a.due,COALESCE(a.subject,t.title) AS title,a.message FROM task_appointments a LEFT JOIN tasks t ON t.id=a.task_id AND t.owner=a.owner WHERE a.owner=? AND a.status='active' AND a.due<=? ORDER BY a.due LIMIT 10`,owner,now).all<{id:string;due:number;title:string;message:string|null}>()).results;
  for(const a of appointments){
   if(!await appointmentAllowed(db,`appointment:${a.id}:1`,now)){
    await query(db,"UPDATE task_appointments SET status='cancelled' WHERE id=? AND status='active'",a.id).run();continue;
@@ -153,7 +195,7 @@ export async function queueAppointments(db:Database,owner:string,now:number){
   const reminderId=`appointment:${a.id}:${ordinal}`;
   if(!await appointmentAllowed(db,reminderId,now))continue;
   await query(db,'INSERT OR IGNORE INTO outbox(id,payload,available,reminder_id) VALUES(?,?,?,?)',reminderId,
-   JSON.stringify({method:'sendMessage',chat_id:Number(owner),text:ordinal===1?`Đến giờ cậu hẹn làm “${a.title}” rồi nhé.`:`Tớ nhắc thêm lần này thôi: “${a.title}”.`}),now,reminderId).run();
+   JSON.stringify({method:'sendMessage',chat_id:Number(owner),text:ordinal===1?(a.message||`Đến giờ cậu hẹn làm “${a.title}” rồi nhé.`):`Tớ nhắc thêm lần này thôi: “${a.title}”.`}),now,reminderId).run();
  }
 }
 

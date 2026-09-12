@@ -1,4 +1,4 @@
-export type ToolName='find_tasks'|'get_agenda'|'create_task'|'update_task'|'set_reminder'|'set_reminder_pause'|'remember_preference'|'resolve_pending';
+export type ToolName='update_event'|'reschedule_reminder'|'plan_work'|'session_action'|'acknowledge_reminder'|'cancel_reminder'|'create_event'|'create_reminder'|'respond'|'save_clarification'|'close_clarification'|'update_summary'|'find_tasks'|'get_agenda'|'create_task'|'update_task'|'set_reminder'|'set_reminder_pause'|'remember_preference'|'resolve_pending';
 export type ToolCall={name:ToolName;args:Record<string,unknown>;id?:string};
 export type ModelContent={role:'user'|'model';parts:Record<string,unknown>[]};
 export type ModelStep={content:ModelContent;calls:ToolCall[];text:string};
@@ -7,9 +7,24 @@ const integer={type:'INTEGER'};
 const deadline={type:'OBJECT',nullable:true,properties:{value:str,precision:{type:'STRING',enum:['date','datetime']}},required:['value','precision']};
 const declaration=(name:ToolName,description:string,properties:Record<string,unknown>,required=Object.keys(properties))=>({name,description,parameters:{type:'OBJECT',properties,required}});
 export const TOOL_DECLARATIONS=[
+ declaration('update_event','Move or cancel one known local event. Cancel leaves start unchanged. Existing linked reminders are cancelled; create the replacement only when user wants it.',{event_id:str,expected_version:integer,cancelled:{type:'BOOLEAN'},start:str,end:{type:'STRING',nullable:true}}),
+ declaration('reschedule_reminder','Move one active reminder. Old delivery is cancelled and a new reminder cycle created with a new ID only on user request.',{reminder_id:str,expected_version:integer,at:str,message:str}),
+
+ declaration('plan_work','Plan one work block for a known task. Duration is an estimate, not progress. Requires known user availability; do not fill every gap or create another unanswered reminder cycle.',{task_id:str,expected_version:integer,at:str,minutes:integer}),
+ declaration('session_action','Start, pause, finish a work block (not the whole task), skip or snooze it. Use session ID/version from context.',{session_id:str,expected_version:integer,action:{type:'STRING',enum:['start','pause','finish','skip','snooze']}}),
+ declaration('acknowledge_reminder','Mark the one reminder the user is answering as responded; does not complete its task or other reminders.',{reminder_id:str,expected_version:integer}),
+ declaration('cancel_reminder','Cancel one known reminder the user no longer wants. Does not delete its task.',{reminder_id:str,expected_version:integer}),
+
+ declaration('create_event','Create a fixed meeting/class/appointment in the local agenda. Not a task. End is optional, do not invent duration. Reminder is optional.',{title:str,start:str,end:{type:'STRING',nullable:true},remind_at:{type:'STRING',nullable:true},message:str}),
+ declaration('create_reminder','Create a NEW standalone reminder by its subject. Use this for a new named activity such as cooking rice, never attach it to an unrelated existing task. No work duration.',{subject:str,at:str,message:str}),
+ declaration('respond','Provide the user-facing reply to send after the other actions succeed. May accompany writes and clarification questions in the same response. Plain social chat may just return text.',{message:str}),
+ declaration('save_clarification','Save only the unfinished part while executing clear actions. task_id is null for no task or @index for a task created earlier in this batch.',{subject:str,question:str,task_id:{type:'STRING',nullable:true}}),
+ declaration('close_clarification','Close a known question after resolving it with the other actions, or when the user cancels it.',{pending_id:str,cancelled:{type:'BOOLEAN'}}),
+ declaration('update_summary','Optional memory maintenance. Summarize only provided historical turns through summary_request.through, never the current turn or uncommitted actions. Do not replace missing history with guesses.',{content:str,through:integer,expected_version:integer}),
+
  declaration('resolve_pending','Accept or reject the exact pending action only when the user clearly answers it. Never use to approve your own suggestion.',{pending_id:str,accept:{type:'BOOLEAN'}}),
  declaration('find_tasks','Find tasks owned by the user. Query by title, or pass an empty query to list. Use returned IDs/versions, never invent them.',{query:str,status:{type:'STRING',enum:['active','completed','all']},cursor:integer}),
- declaration('get_agenda','Read local task deadlines, appointments and work sessions for a time interval. Does not imply Google Calendar is connected.',{from:str,to:str,cursor:integer}),
+ declaration('get_agenda','Read local task deadlines, appointments and work sessions for a time interval.',{from:str,to:str,cursor:integer}),
  declaration('create_task','Create a task the user directly asked to record. Deadline is optional, date-only must not acquire an invented hour. No reminder is created automatically.',{title:str,deadline}),
  declaration('update_task','Update one known task after the user directly requests the change. Include only fields to change in patch. Completion is for the whole task, not a work session.',{task_id:str,expected_version:integer,patch:{type:'OBJECT',properties:{deadline,status:{type:'STRING',enum:['active','completed']}}}}),
  declaration('set_reminder','Set a reminder time for one task. This is not a work session and has no duration. Replaces the active standalone reminder for this task.',{task_id:str,expected_version:integer,at:str}),
@@ -35,7 +50,7 @@ export function modelStep(raw:unknown):ModelStep{
    calls.push({name:call.name as ToolName,args,...(typeof call.id==='string'?{id:call.id}:{})});
   }else if(typeof part.text==='string'&&part.thought!==true)text+=part.text;
  }
- if(calls.length>3||text.length>4000||(!calls.length&&!text.trim()))throw Error('INVALID_MODEL_STEP');
+ if(calls.length>8||text.length>4000||(!calls.length&&!text.trim()))throw Error('INVALID_MODEL_STEP');
  return {content:{role:'model',parts},calls,text};
 }
 export function toolResponse(call:ToolCall,result:Record<string,unknown>):Record<string,unknown>{

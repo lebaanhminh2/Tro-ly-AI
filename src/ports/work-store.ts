@@ -3,6 +3,12 @@ export type Clock = { now(): number };
 export type Lease = { owner: string; token: string; input: Input; attempts: number;
   ui?:{card:import('../domain/ui.ts').Card;action:import('../domain/ui.ts').CardAction}; uiStale?:boolean; uiRecovered?:boolean };
 export interface WorkReader {
+  event?(owner:string,id:string):Promise<import('../domain/event.ts').LocalEvent|null>;
+  events?(owner:string,from:number,to:number):Promise<import('../domain/event.ts').LocalEvent[]>;
+  appointmentContext?(owner:string,now:number):Promise<Record<string,unknown>[]>;
+  clarifications?(owner:string,now:number):Promise<import('../domain/conversation.ts').Clarification[]>;
+  summary?(owner:string):Promise<import('../domain/conversation.ts').Summary|null>;
+
   findTasks?(owner:string,query:string,status:'active'|'completed'|'all',cursor:number):Promise<{tasks:Task[];nextCursor:number|null}>;
   agenda?(owner:string,from:number,to:number,cursor:number):Promise<Record<string,unknown>>;
   completionUndo?(owner:string,taskId:string,version:number,now:number):Promise<boolean>;
@@ -26,7 +32,6 @@ export interface WorkReader {
   selection(owner: string): Promise<Selection | null>;
 }
 export interface WorkStore extends WorkReader {
-  calendarResult?(lease:Lease,run:()=>Promise<import('../domain/work.ts').View|null>,clock:Clock):Promise<import('../domain/work.ts').View|null>;
   prepareUi?(lease:Lease,now:number):Promise<void>;
   accept(input: Input, now: number, delivery: boolean): Promise<boolean>;
   claim(owner: string, now: number): Promise<Lease | null>;

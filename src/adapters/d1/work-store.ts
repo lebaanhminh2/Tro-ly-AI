@@ -8,6 +8,7 @@ import {memoryStatements} from './memory.ts';
 import type {Memory,ConversationTurn} from '../../domain/memory.ts';
 import {renderView} from '../../application/ui-renderer.ts';
 import {D1UiStore} from './ui-store.ts';
+import {localEvents,eventStatements} from './event-store.ts';
 import {conversationStatements} from './conversation-store.ts';
 
 export class D1WorkStore implements WorkStore {
@@ -24,10 +25,10 @@ export class D1WorkStore implements WorkStore {
     if(!Number.isFinite(from)||!Number.isFinite(to)||to<=from||to-from>31*86400000||!Number.isSafeInteger(cursor)||cursor<0||cursor>10000)throw Error('INVALID_AGENDA_RANGE');
     const rows=(await query(this.db,`SELECT * FROM (
       SELECT 'session' AS kind,s.id,t.title,s.start_at AS at,s.status FROM sessions s JOIN tasks t ON t.id=s.task_id AND t.owner=s.owner WHERE s.owner=? AND s.start_at>=? AND s.start_at<? AND s.status!='draft'
-      UNION ALL SELECT 'reminder',a.id,t.title,a.due,a.status FROM task_appointments a JOIN tasks t ON t.id=a.task_id AND t.owner=a.owner WHERE a.owner=? AND a.due>=? AND a.due<? AND a.status='active'
+      UNION ALL SELECT 'reminder',a.id,COALESCE(a.subject,t.title),a.due,a.status FROM task_appointments a LEFT JOIN tasks t ON t.id=a.task_id AND t.owner=a.owner WHERE a.owner=? AND a.due>=? AND a.due<? AND a.status='active'
       UNION ALL SELECT 'deadline',id,title,CAST((julianday(CASE WHEN deadline_precision='date' THEN deadline||'T00:00:00+07:00' ELSE deadline END)-2440587.5)*86400000 AS INTEGER),status FROM tasks WHERE owner=? AND status='active' AND deadline IS NOT NULL
     ) WHERE at>=? AND at<? ORDER BY at,kind,id LIMIT 11 OFFSET ?`,owner,from,to,owner,from,to,owner,from,to,cursor).all<Record<string,unknown>>()).results;
-    return {items:rows.slice(0,10),nextCursor:rows.length>10?cursor+10:null,source:'local',googleCalendarIncluded:false,timezone:'Asia/Ho_Chi_Minh'};
+    return {items:rows.slice(0,10),nextCursor:rows.length>10?cursor+10:null,source:'local',timezone:'Asia/Ho_Chi_Minh'};
   }
   async completionUndo(owner:string,taskId:string,version:number,now:number){return !!await query(this.db,'SELECT task_id FROM task_completion_undo WHERE owner=? AND task_id=? AND expected_version=? AND expires>?',owner,taskId,version,now).first();}
   async conversationTasks(owner:string,text:string){
@@ -35,23 +36,6 @@ export class D1WorkStore implements WorkStore {
   }
   async sameTitleTasks(owner:string,title:string){return (await query(this.db,'SELECT * FROM tasks WHERE owner=? AND title=? ORDER BY created LIMIT 2',owner,title).all<Task>()).results;}
   conversationPending(owner:string,now:number){return query(this.db,'SELECT id,kind,draft,expires FROM conversation_pending WHERE owner=? AND expires>?',owner,now).first<import('../../domain/conversation.ts').PendingConversation>();}
-  async calendarResult(lease:Lease,run:()=>Promise<import('../../domain/work.ts').View|null>,clock:import('../../ports/work-store.ts').Clock){
-    if(!this.cardsEnabled||(!lease.input.text?.startsWith('/calendar')&&!lease.input.callback?.startsWith('cal-')))return run();
-    const receipt=await query(this.db,'SELECT state,view_json FROM ui_calendar_receipts WHERE owner=? AND update_id=?',lease.owner,lease.input.updateId).first<{state:string;view_json:string|null}>();
-    if(receipt?.state==='done')return receipt.view_json?JSON.parse(receipt.view_json):null;
-    if(receipt)return {text:'Lần xử lý Calendar trước bị gián đoạn; có thể thay đổi đã được lưu. Mở /calendar để kiểm tra. Tớ không tự thực hiện lại yêu cầu này.',buttons:[]};
-    const started=await query(this.db,`INSERT OR IGNORE INTO ui_calendar_receipts(owner,update_id,state)
-      SELECT ?,?,'started' WHERE EXISTS(SELECT 1 FROM owner_leases WHERE owner=? AND token=? AND expires>?)`,
-      lease.owner,lease.input.updateId,lease.owner,lease.token,clock.now()).run();
-    if(!started.meta.changes)throw Error('CALENDAR_RECEIPT_NOT_CLAIMED');
-    const view=await run();
-    const normalized=view?renderView(view):null;
-    const saved=await query(this.db,`UPDATE ui_calendar_receipts SET state='done',view_json=? WHERE owner=? AND update_id=? AND state='started'
-      AND EXISTS(SELECT 1 FROM owner_leases WHERE owner=? AND token=? AND expires>?)`,
-      normalized?JSON.stringify(normalized):null,lease.owner,lease.input.updateId,lease.owner,lease.token,clock.now()).run();
-    if(!saved.meta.changes)throw Error('CALENDAR_RECEIPT_LEASE_EXPIRED');
-    return normalized;
-  }
   async prepareUi(lease:Lease,now:number){
     if(!this.cardsEnabled)return;
     const input=lease.input;
@@ -80,6 +64,15 @@ export class D1WorkStore implements WorkStore {
     lease.ui=resolved;
     lease.input={...input,callback:resolved.action.action};
   }
+  event(owner:string,id:string){return query(this.db,'SELECT * FROM local_events WHERE owner=? AND id=?',owner,id).first<import('../../domain/event.ts').LocalEvent>();}
+  events(owner:string,from:number,to:number){return localEvents(this.db,owner,from,to);}
+  async appointmentContext(owner:string,now:number){
+   return (await query(this.db,"SELECT a.id,a.task_id,a.event_id,COALESCE(a.subject,t.title) AS subject,a.due,a.responded,a.version,o.message_id,o.state AS delivery_state FROM task_appointments a LEFT JOIN tasks t ON t.id=a.task_id AND t.owner=a.owner LEFT JOIN outbox o ON o.reminder_id='appointment:'||a.id||':1' WHERE a.owner=? AND a.status='active' AND a.due>? AND a.due<? ORDER BY a.due LIMIT 40",owner,now-3600000,now+7*86400000).all<Record<string,unknown>>()).results;
+  }
+  async clarifications(owner:string,now:number){
+    return (await query(this.db,"SELECT * FROM conversation_clarifications WHERE owner=? AND status='waiting' AND expires>? ORDER BY created,id LIMIT 12",owner,now).all<import('../../domain/conversation.ts').Clarification>()).results;
+  }
+  summary(owner:string){return query(this.db,'SELECT content,covered_through,version,updated FROM conversation_summaries WHERE owner=?',owner).first<import('../../domain/conversation.ts').Summary>();}
   runningSession(owner:string){return query(this.db,"SELECT * FROM sessions WHERE owner=? AND status='running' ORDER BY start_at LIMIT 1",owner).first<Session>();}
   memory(owner:string,id:string){return query(this.db,'SELECT * FROM memories WHERE owner=? AND id=?',owner,id).first<Memory>();}
   async memories(owner:string,now:number,offset=0,limit=30){
@@ -87,7 +80,7 @@ export class D1WorkStore implements WorkStore {
     return (await query(this.db,'SELECT * FROM memories WHERE owner=? AND (expires IS NULL OR expires>?) ORDER BY created DESC,id DESC LIMIT ? OFFSET ?',owner,now,limit,offset).all<Memory>()).results;
   }
   memoryConfirmation(owner:string,id:string){return query(this.db,'SELECT * FROM memory_confirmations WHERE owner=? AND id=?',owner,id).first<import('../../domain/memory.ts').MemoryConfirmation>();}
-  async history(owner:string,now:number){return (await query(this.db,'SELECT * FROM conversation_turns WHERE owner=? AND expires>? ORDER BY command_id DESC LIMIT 4',owner,now).all<ConversationTurn>()).results.reverse();}
+  async history(owner:string,now:number){return (await query(this.db,'SELECT * FROM conversation_turns WHERE owner=? AND expires>? ORDER BY command_id DESC LIMIT 12',owner,now).all<ConversationTurn>()).results.reverse();}
   async focus(owner:string,now:number){return (await query(this.db,'SELECT task_id FROM chat_focus WHERE owner=? AND expires>?',owner,now).first<{task_id:string}>())?.task_id??null;}
   async aiEnabled(owner:string){return (await query(this.db,'SELECT enabled FROM memory_settings WHERE owner=?',owner).first<{enabled:number}>())?.enabled!==0;}
   async sessions(owner:string,start:number,end:number){return (await query(this.db,"SELECT * FROM sessions WHERE owner=? AND start_at>=? AND start_at<? AND status!='draft' ORDER BY start_at LIMIT 30",owner,start,end).all<Session>()).results;}
@@ -105,9 +98,9 @@ export class D1WorkStore implements WorkStore {
   async accept(input: Input, now: number, delivery: boolean) {
     const response = await query(this.db, 'INSERT OR IGNORE INTO command_inbox(owner,update_id,payload,created,delivery) VALUES(?,?,?,?,?)',
       input.owner, input.updateId, JSON.stringify(input), now, delivery ? 1 : 0).run();
-    await query(this.db,`UPDATE reminders SET status='cancelled' WHERE owner=? AND ordinal=2
+    if(response.meta.changes>0&&input.replyToMessageId)await query(this.db,`UPDATE reminders SET status='cancelled' WHERE owner=? AND ordinal=2
       AND status IN ('pending','queued') AND EXISTS(SELECT 1 FROM command_inbox WHERE owner=? AND update_id=? AND state='pending')
-      AND EXISTS(SELECT 1 FROM outbox WHERE reminder_id=reminders.session_id||':'||reminders.generation||':1' AND state IN ('sent','sending','uncertain'))`,input.owner,input.owner,input.updateId).run();
+      AND EXISTS(SELECT 1 FROM outbox WHERE reminder_id IN (reminders.session_id||':'||reminders.generation||':1',reminders.session_id||':'||reminders.generation||':2') AND state='sent' AND message_id=?)`,input.owner,input.owner,input.updateId,input.replyToMessageId).run();
     return response.meta.changes > 0;
   }
   async pendingOwners() { return (await query(this.db, "SELECT DISTINCT owner FROM command_inbox WHERE state='pending' LIMIT 4").all<{owner: string}>()).results.map(r => r.owner); }
@@ -128,7 +121,32 @@ export class D1WorkStore implements WorkStore {
     const q=(sql:string,...args:(string|number|null)[])=>query(this.db,sql,...args);
     const statements:Statement[]=[];
     for (const change of changes) {
-      if(change.type==='conversation-completion'){
+      if(change.type==='event-update'){
+        if(change.owner!==owner)throw Error('OWNER_MISMATCH');
+        statements.push(q("INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM local_events WHERE owner=? AND id=? AND version=?) THEN 1 ELSE 0 END",owner,change.id,change.expectedVersion));
+        statements.push(q("UPDATE local_events SET start_at=?,end_at=?,status=?,version=version+1 WHERE owner=? AND id=?",change.start,change.end,change.cancelled?'cancelled':'scheduled',owner,change.id));
+        statements.push(q("UPDATE task_appointments SET status='cancelled',version=version+1 WHERE owner=? AND event_id=? AND status='active'",owner,change.id));
+      }else if(change.type==='reminder-action'){
+        if(change.owner!==owner)throw Error('OWNER_MISMATCH');
+        statements.push(q("INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM task_appointments WHERE id=? AND owner=? AND version=? AND status='active') THEN 1 ELSE 0 END",change.id,owner,change.expectedVersion));
+        statements.push(change.action==='cancel'?q("UPDATE task_appointments SET status='cancelled',version=version+1 WHERE id=? AND owner=?",change.id,owner):q("UPDATE task_appointments SET responded=1,version=version+1 WHERE id=? AND owner=?",change.id,owner));
+      }else if(change.type==='event-create'){
+        statements.push(...eventStatements(this.db,owner,change,now));
+      }else if(change.type==='standalone-reminder'){
+        if(change.owner!==owner||change.due<=now)throw Error('INVALID_REMINDER');
+        statements.push(q("INSERT INTO task_appointments(id,owner,task_id,due,subject,message,event_id) VALUES(?,?,NULL,?,?,?,?)",change.id,owner,change.due,change.subject,change.message,change.eventId??null));
+      }else if(change.type==='clarification-create'){
+        const c=change.clarification;if(c.owner!==owner)throw Error('OWNER_MISMATCH');
+        statements.push(q("INSERT INTO conversation_clarifications(id,owner,subject,question,task_id,created,expires) VALUES(?,?,?,?,?,?,?)",c.id,owner,c.subject,c.question,c.task_id,c.created,c.expires));
+      }else if(change.type==='clarification-close'){
+        if(change.owner!==owner)throw Error('OWNER_MISMATCH');
+        statements.push(q("INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM conversation_clarifications WHERE id=? AND owner=? AND status='waiting' AND expires>?) THEN 1 ELSE 0 END",change.id,owner,change.now));
+        statements.push(q("UPDATE conversation_clarifications SET status=? WHERE id=? AND owner=?",change.status,change.id,owner));
+      }else if(change.type==='summary-update'){
+        if(change.owner!==owner)throw Error('OWNER_MISMATCH');
+        statements.push(q("INSERT INTO transaction_guard SELECT CASE WHEN COALESCE((SELECT version FROM conversation_summaries WHERE owner=?),0)=? THEN 1 ELSE 0 END",owner,change.expectedVersion));
+        statements.push(q("INSERT INTO conversation_summaries(owner,content,covered_through,updated) VALUES(?,?,?,?) ON CONFLICT(owner) DO UPDATE SET content=excluded.content,covered_through=excluded.covered_through,version=version+1,updated=excluded.updated",owner,change.content,change.through,change.now));
+      }else if(change.type==='conversation-completion'){
         if(change.owner!==owner)throw Error('OWNER_MISMATCH');
         if(change.pendingId)statements.push(q('INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM conversation_pending WHERE owner=? AND id=? AND expires>?) THEN 1 ELSE 0 END',owner,change.pendingId,now));
         statements.push(q(`INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM ${native?'tool_steps':'conversation_receipts'} WHERE owner=? AND update_id=? AND ${native?"kind='write' AND state='done'":"state='ready'"}) AND EXISTS(SELECT 1 FROM tasks WHERE owner=? AND id=? AND version=? AND status=?) THEN 1 ELSE 0 END`,owner,change.updateId,owner,change.taskId,change.expectedVersion,change.operation==='complete'?'active':'completed'));
@@ -194,7 +212,7 @@ export class D1WorkStore implements WorkStore {
     statements.push(...this.mutationStatements(owner,plan.changes,now));
     const payload = JSON.stringify({ method: 'sendMessage', chat_id: input.chat, text: plan.view.text,
       ...(plan.view.buttons.length ? { reply_markup: { inline_keyboard: plan.view.buttons } } : {}) });
-    if(input.text&&!input.text.startsWith('/')&&!plan.changes.some(c=>c.type==='forget'))statements.push(q('INSERT INTO conversation_turns(owner,command_id,user_text,assistant_text,created,expires) VALUES(?,?,?,?,?,?)',owner,input.updateId,input.text,plan.view.text,now,now+7*86400000));
+    if(input.text&&!input.text.startsWith('/')&&!plan.changes.some(c=>c.type==='forget'))statements.push(q('INSERT INTO conversation_turns(owner,command_id,user_text,assistant_text,created,expires) VALUES(?,?,?,?,?,?)',owner,input.updateId,input.text,plan.view.text,now,now+30*86400000));
     if(this.cardsEnabled&&input.callbackId){
       statements.push(q('INSERT OR IGNORE INTO outbox(id,payload,available) VALUES(?,?,?)',`ack:${owner}:${input.updateId}`,
         JSON.stringify({method:'answerCallbackQuery',callback_query_id:input.callbackId,

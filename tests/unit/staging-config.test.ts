@@ -28,14 +28,14 @@ test('staging has a distinct worker and database, outbox and minute scheduler', 
   assert.equal(staging.vars.DELIVERY_MODE, 'outbox');
 });
 
-test('approved conversation pilot is bounded while Calendar remains off and secrets stay private', () => {
+test('approved conversation pilot is bounded without Google integration and secrets stay private', () => {
   assert.equal(config.vars.AI_MODE,'off');
   assert.equal(staging.vars.AI_MODE,'on'); // User approved the time-bounded native pilot.
   assert.equal(staging.vars.GEMINI_MODEL,'gemini-3.5-flash-lite');
   assert.equal(staging.vars.AI_DAILY_LIMIT,'20');
   assert.ok(Number.isFinite(Date.parse(staging.vars.AI_TRIAL_ENDS_AT)));
   for (const vars of [config.vars, staging.vars]) {
-    for (const flag of ['CALENDAR_MODE', 'CALENDAR_WRITES']) assert.equal(vars[flag], 'off');
+    for (const flag of ['CALENDAR_MODE', 'CALENDAR_WRITES']) assert.equal(vars[flag], undefined);
     assert.ok(!Object.keys(vars).some(key => /TOKEN|SECRET|KEY|TELEGRAM_USER_ID/.test(key)));
   }
   assert.ok(!staging.routes?.length);

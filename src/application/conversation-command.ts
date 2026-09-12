@@ -7,15 +7,26 @@ export type ToolTurnPorts={
  model:(step:number,contents:ModelContent[],allowTools:boolean)=>Promise<ModelStep>;
  execute:(step:number,call:ToolCall)=>Promise<ToolOutcome>;
  commit:(step:number,call:ToolCall,outcome:ToolOutcome)=>Promise<Record<string,unknown>>;
+ batch?:(calls:ToolCall[],message:string)=>Promise<string>;
 };
 export async function runToolTurn(initial:ModelContent[],ports:ToolTurnPorts):Promise<string>{
  const contents=[...initial];let reads=0,wrote=false,fallback='Hội thoại đang gián đoạn, tớ chưa thực hiện thay đổi nào.';
- for(let step=0;step<3;step++){
+ for(let step=0;step<2;step++){
   let response:ModelStep;
   try{response=await ports.model(step,contents,!wrote);}catch{return fallback;}
+  const replies=response.calls.filter(call=>call.name==='respond');
+  if(replies.length>1)return 'Tớ chưa xử lý được lượt này, cậu nhắn lại giúp tớ nhé.';
+  if(replies.length){
+   const args=replies[0]!.args;
+   if(Object.keys(args).length!==1||typeof args.message!=='string'||!args.message.trim()||args.message.length>4000)return fallback;
+   response={...response,text:args.message,calls:response.calls.filter(call=>call.name!=='respond')};
+  }
   if(!response.calls.length)return response.text;
   const writes=response.calls.filter(call=>!isReadTool(call.name));
-  // Reject the whole group before any write; never silently execute only the first mutation.
+  if(writes.length>1&&response.calls.length===writes.length&&ports.batch){
+   try{return await ports.batch(writes,response.text);}catch{return 'Tớ chưa lưu được nhóm thay đổi này. Chưa thực hiện thêm; mình kiểm tra lại nhé.';}
+  }
+  // Mixed reads/writes require the read result first; never execute a guessed half.
   if(writes.length>1||(writes.length&&response.calls.length>1)||wrote)return wrote?fallback:'Cậu đang yêu cầu nhiều thay đổi. Mình xử lý từng việc để tránh làm nhầm nhé.';
   if(reads+response.calls.filter(call=>isReadTool(call.name)).length>2)return 'Tớ cần thu hẹp việc đang tìm. Cậu nói rõ tên hoặc khoảng ngày giúp tớ nhé.';
   contents.push(response.content);
@@ -47,6 +58,7 @@ export async function runToolTurn(initial:ModelContent[],ports:ToolTurnPorts):Pr
     }
    }
   }
+  if(wrote)return response.text.trim()||fallback;
   contents.push({role:'user',parts:results});
  }
  return fallback;

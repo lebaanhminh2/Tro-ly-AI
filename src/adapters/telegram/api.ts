@@ -18,7 +18,10 @@ export function incoming(raw: unknown): Incoming | null {
       ...(typeof m.message_id==='number'&&Number.isSafeInteger(m.message_id)&&m.message_id>0?{messageId:m.message_id}:{}) };
   }
   if (typeof m.text !== 'string' || m.text.length > 4096) return null;
-  return { updateId: u.update_id, owner: String(from.id), chat: chat.id, text: m.text };
+  const replyId = record(m.reply_to_message).message_id;
+  return { updateId: u.update_id, owner: String(from.id), chat: chat.id, text: m.text,
+    ...(Number.isSafeInteger(m.message_id) && Number(m.message_id)>0 ? {messageId:Number(m.message_id)} : {}),
+    ...(Number.isSafeInteger(replyId) && Number(replyId)>0 ? {replyToMessageId:Number(replyId)} : {}) };
 }
 
 export type Delivery = { state: 'sent' | 'pending' | 'failed' | 'uncertain'; retryAfter?: number; messageId?: number; reason?:'EDIT_UNAVAILABLE' };

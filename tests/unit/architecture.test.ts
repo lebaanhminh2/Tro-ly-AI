@@ -21,3 +21,10 @@ test('production AI has one native protocol and no natural-language regex author
   const source=readFileSync(file,'utf8');assert.doesNotMatch(source,/directRequest|selectedScope|parseConversation|parseReply|from ['"][^'"]*experiments/);
  }
 });
+
+test('Google integration is absent from runtime sources', () => {
+  for (const file of readdirSync('src', {recursive:true})) {
+    if (typeof file !== 'string' || !file.endsWith('.ts')) continue;
+    assert.doesNotMatch(readFileSync(join('src',file),'utf8'), /google-calendar|GOOGLE_CLIENT|GOOGLE_TOKEN|CALENDAR_MODE|oauth\/google/);
+  }
+});

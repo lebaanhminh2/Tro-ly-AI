@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {readFileSync,readdirSync} from 'node:fs';
 import {Miniflare} from 'miniflare';
 import type {Database} from '../../src/adapters/d1/database.ts';
 import {D1WorkStore} from '../../src/adapters/d1/work-store.ts';
@@ -14,7 +14,7 @@ test('P3 memory context, expiry, forget, owner isolation, chat capture confirmat
  const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
  try{
   const db=await mf.getD1Database('DB') as unknown as Database&{exec(s:string):Promise<unknown>};
-  for(const file of ['0001_initial.sql','0002_delivery.sql','0003_command_transactions.sql','0004_sessions_reminders.sql','0005_memory_conversation.sql','0006_review_fixes.sql'])
+  for(const file of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())
     await db.exec(readFileSync(`migrations/${file}`,'utf8').replace(/\r?\n/g,' '));
   const store=new D1WorkStore(db);let now=Date.parse('2026-09-11T08:00:00+07:00'),seq=0,calls=0;
   let seen:{turns:Turn[];context:string}|undefined;

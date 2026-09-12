@@ -4,24 +4,30 @@ import type { Input, Plan, Proposal, Button } from '../domain/work.ts';
 import type { WorkReader } from '../ports/work-store.ts';
 import { sessionCommand } from './session-command.ts';
 import {memoryCommand} from './memory-command.ts';
-import type { CalendarCommands } from '../ports/calendar.ts';
 import {dayStart} from '../domain/session.ts';
 export type ChatService = ((owner: string, text: string, tasks: Awaited<ReturnType<WorkReader['tasks']>>,input?:Input,store?:WorkReader,now?:number) => Promise<string|Plan>) & {
   forLease?:(lease:import('../ports/work-store.ts').Lease)=>ChatService;
 };
 
-export async function planCommand(input: Input, store: WorkReader, now: number, chat?: ChatService, calendar?: CalendarCommands): Promise<Plan> {
+export async function planCommand(input: Input, store: WorkReader, now: number, chat?: ChatService): Promise<Plan> {
   if(input.callback?.startsWith('tool-confirm:')&&chat){
     const result=await chat(input.owner,'',[],input,store,now);
     return typeof result==='string'?{view:{text:result,buttons:[]},changes:[]}:result;
   }
+  // Normal chat always reaches the model, even after an old wizard was opened.
+  if(chat&&input.text&&!input.text.startsWith('/')&&!input.callback){
+    if(!await store.aiEnabled(input.owner))return {view:{text:'Hội thoại AI đang tắt; cậu có thể mở lại bằng /ai on.',buttons:[]},changes:[]};
+    const result=await chat(input.owner,input.text,[],input,store,now);
+    const plan=typeof result==='string'?{view:{text:result,buttons:[]},changes:[] as import('../domain/work.ts').Change[]}:result;
+    plan.changes.push({type:'cancel',owner:input.owner});
+    return plan;
+  }
   const navigation:Record<string,string>={'nav:tasks':'/tasks','nav:today':'/today','nav:settings':'/settings','nav:memory':'/memory','nav:home':'/start','nav:resume':'/resume','nav:rest':'/rest'};
   if(input.callback&&navigation[input.callback]){
-    const result=await planCommand({...input,text:navigation[input.callback],callback:undefined},store,now,chat,calendar);
+    const result=await planCommand({...input,text:navigation[input.callback],callback:undefined},store,now,chat);
     if(!result.changes.some(c=>c.type==='cancel'))result.changes.push({type:'cancel',owner:input.owner});
     return result;
   }
-  if(calendar){const calendarView=await calendar.command(input);if(calendarView)return {view:calendarView,changes:[]};}
   if(input.callback?.startsWith('focus:')&&(!chat||!await store.aiEnabled(input.owner)))return {view:{text:'Hội thoại AI chưa bật. Cậu vẫn có thể quản lý việc và lên lịch nhé.',buttons:[]},changes:[]};
   const memoryPlan=await memoryCommand(input,store,now);if(memoryPlan)return memoryPlan;
   const sessionPlan=await sessionCommand(input,store,now);

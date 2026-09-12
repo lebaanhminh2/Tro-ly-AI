@@ -3,11 +3,10 @@ export type Env = { DB: Database; TELEGRAM_USER_ID: string; TELEGRAM_WEBHOOK_SEC
   GEMINI_API_KEY?: string; GEMINI_MODEL?: string; AI_DAILY_LIMIT?: string;
   AI_TRIAL_ENDS_AT?:string;
   TELEGRAM_BOT_TOKEN?: string; DELIVERY_MODE?: 'outbox' | 'preview';
-  CALENDAR_MODE?: 'off'|'enabled'; CALENDAR_WRITES?: 'off'|'enabled';
-  GOOGLE_CLIENT_ID?: string; GOOGLE_CLIENT_SECRET?: string; GOOGLE_TOKEN_KEY?: string; PUBLIC_ORIGIN?: string };
+};
 export function configured(env: Env) {
   return /^\d+$/.test(env.TELEGRAM_USER_ID ?? '') && (env.TELEGRAM_WEBHOOK_SECRET?.length ?? 0) >= 24
-    && !!env.DB && aiConfigured(env) && calendarConfigured(env)
+    && !!env.DB && aiConfigured(env)
     && (env.DELIVERY_MODE === undefined || env.DELIVERY_MODE === 'preview' ||
       (env.DELIVERY_MODE === 'outbox' && /^\d+:[A-Za-z0-9_-]+$/.test(env.TELEGRAM_BOT_TOKEN ?? '')));
 }
@@ -18,9 +17,4 @@ export function aiConfigured(env: Env): boolean {
     && /^[A-Za-z0-9._-]{1,100}$/.test(env.GEMINI_MODEL ?? '')
     && /^[1-9]\d{0,2}$/.test(env.AI_DAILY_LIMIT ?? '')
     && Number(env.AI_DAILY_LIMIT) <= 500;
-}
-export function calendarConfigured(env:Env){
-  if(env.CALENDAR_MODE===undefined||env.CALENDAR_MODE==='off')return true;
-  if(env.CALENDAR_MODE!=='enabled'||!env.GOOGLE_CLIENT_ID||!env.GOOGLE_CLIENT_SECRET||!/^[a-f0-9]{64}$/.test(env.GOOGLE_TOKEN_KEY??''))return false;
-  try{const u=new URL(env.PUBLIC_ORIGIN??'');return u.protocol==='https:'&&u.origin===env.PUBLIC_ORIGIN&&!u.username&&!u.password;}catch{return false;}
 }

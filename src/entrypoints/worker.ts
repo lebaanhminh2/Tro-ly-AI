@@ -10,16 +10,13 @@ import type { Clock } from '../ports/work-store.ts';
 import { queueReminders } from '../adapters/d1/reminders.ts';
 import {expireMemory, reserveAi} from '../adapters/d1/memory.ts';
 import {Gemini} from '../ai/gemini.ts';
-import {CalendarService} from '../adapters/google-calendar/service.ts';
-import {GoogleClient} from '../adapters/google-calendar/client.ts';
-import {GoogleTokenVault} from '../adapters/google-calendar/vault.ts';
 import {D1UiStore} from '../adapters/d1/ui-store.ts';
 import {ConversationStore,queueAppointments,acknowledgeAppointments} from '../adapters/d1/conversation-store.ts';
 import {TOOL_PERSONA} from '../ai/persona.ts';
 import {buildContext} from '../application/context-builder.ts';
 
 export { flushOutbox };
-export function createWorker(chat?: ChatService, transport: typeof fetch = fetch, clock: Clock = { now: Date.now }, calendarOverride?:CalendarService, cardsEnabled=false) {
+export function createWorker(chat?: ChatService, transport: typeof fetch = fetch, clock: Clock = { now: Date.now }, cardsEnabled=false) {
   const flushCards=async(env:Env)=>{
     if(cardsEnabled&&env.DELIVERY_MODE==='outbox')await new D1UiStore(env.DB).flush(env.TELEGRAM_USER_ID,env.TELEGRAM_BOT_TOKEN!,transport,()=>clock.now());
   };
@@ -33,7 +30,7 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
       const confirmation=input?.callback? /^tool-confirm:([yn]):(.+)$/.exec(input.callback):null;
       const [context,pending]=await Promise.all([buildContext(reader,owner,text||'Xác nhận bằng nút',lease.input.receivedAt??clock.now()),journal.pending(owner,clock.now())]);
       if(confirmation&&(!pending||pending.id!==confirmation[2]))return 'Đề xuất này đã cũ hoặc đã được xử lý.';
-      const initial=[{role:'user' as const,parts:[{text:JSON.stringify({contextData:JSON.parse(context.context),pending})}]},
+      const initial=[{role:'user' as const,parts:[{text:JSON.stringify({contextData:JSON.parse(context.context),pending,replyToMessageId:input?.replyToMessageId??null})}]},
         ...context.turns.map(turn=>({role:turn.role,parts:[{text:turn.text}]}))];
       const reply=await journal.turn(lease,initial,reader,(changes,now)=>store.mutationStatements(owner,changes,now,true),async(contents,allowTools,step)=>{
         if(confirmation){
@@ -53,48 +50,21 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
     };
     return service;
   };
-  const calendar=(env:Env)=>{
-    if(env.CALENDAR_MODE!=='enabled')return undefined;
-    if(calendarOverride)return calendarOverride;
-    const client=new GoogleClient({clientId:env.GOOGLE_CLIENT_ID!,clientSecret:env.GOOGLE_CLIENT_SECRET!,redirectUri:env.PUBLIC_ORIGIN!+'/oauth/google/callback'},transport);
-    return new CalendarService({db:env.DB,provider:client,tokens:client,vault:new GoogleTokenVault(env.GOOGLE_TOKEN_KEY!),owner:env.TELEGRAM_USER_ID,origin:env.PUBLIC_ORIGIN!,writes:env.CALENDAR_WRITES==='enabled',now:()=>clock.now()});
-  };
   return {
     async scheduled(_event: unknown, env: Env) {
       if (!configured(env)) return;
       const store = new D1WorkStore(env.DB,cardsEnabled);
-      const calendarService=calendar(env);
       await expireMemory(env.DB,clock.now());
       await recoverInterrupted(env.DB, clock.now()); // Handles only legacy prototype updates and delivery leases.
       for (const owner of await store.pendingOwners()) {
-        if (owner === env.TELEGRAM_USER_ID) await processInbox(store, owner, clock, runtimeChat(env),4,calendarService);
+        if (owner === env.TELEGRAM_USER_ID) await processInbox(store, owner, clock, runtimeChat(env),4);
       }
-      try{await calendarService?.tick();}catch{/* Error state remains visible via /calendar; never log tokens. */}
       await queueReminders(env.DB,env.TELEGRAM_USER_ID,clock.now());
       if(cardsEnabled)await queueAppointments(env.DB,env.TELEGRAM_USER_ID,clock.now());
       await flushOutbox(env, transport, clock.now());
       await flushCards(env);
     },
     async fetch(request: Request, env: Env): Promise<Response> {
-      const url=new URL(request.url);
-      if(url.pathname.startsWith('/oauth/google/')){
-        if(!configured(env)||env.CALENDAR_MODE!=='enabled')return new Response('Not found',{status:404});
-        const headers={'Cache-Control':'no-store','Referrer-Policy':'no-referrer','Content-Type':'text/plain; charset=utf-8'};
-        if(request.method!=='GET'||url.origin!==env.PUBLIC_ORIGIN)return new Response('Forbidden',{status:403,headers});
-        const service=calendar(env)!;
-        try{
-          if(url.pathname==='/oauth/google/start'&&url.searchParams.getAll('ticket').length===1){
-            const result=await service.start(url.searchParams.get('ticket')!);
-            return new Response(null,{status:302,headers:{...headers,Location:result.url,'Set-Cookie':`__Host-calendar=${result.browser}; Secure; HttpOnly; SameSite=Lax; Path=/; Max-Age=600`}});
-          }
-          if(url.pathname==='/oauth/google/callback'&&url.searchParams.getAll('state').length===1&&url.searchParams.getAll('code').length===1&&!url.searchParams.has('error')){
-            const browser=(request.headers.get('Cookie')??'').split(';').map(s=>s.trim()).find(s=>s.startsWith('__Host-calendar='))?.slice(16)??'';
-            await service.callback(url.searchParams.get('state')!,browser,url.searchParams.get('code')!);
-            return new Response('Đã kết nối Google. Quay lại Telegram và dùng /calendar list.',{headers:{...headers,'Set-Cookie':'__Host-calendar=; Secure; HttpOnly; SameSite=Lax; Path=/; Max-Age=0'}});
-          }
-        }catch{/* Return only generic error, never provider body or query params. */}
-        return new Response('Liên kết không hợp lệ, hết hạn hoặc kết nối chưa thành công. Tạo lại từ bot.',{status:400,headers});
-      }
       if (new URL(request.url).pathname !== '/telegram') return new Response('Not found', { status: 404 });
       if (request.method !== 'POST') return new Response('Method not allowed', { status: 405 });
       if (!configured(env)) return new Response('Unavailable', { status: 503 });
@@ -118,7 +88,7 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
       try {
         const store = new D1WorkStore(env.DB,cardsEnabled);
         const isNew = await store.accept(input, clock.now(), env.DELIVERY_MODE === 'outbox');
-        if(isNew&&cardsEnabled)await acknowledgeAppointments(env.DB,input.owner);
+        if(isNew&&cardsEnabled)await acknowledgeAppointments(env.DB,input.owner,input.replyToMessageId);
         if(cardsEnabled&&env.DELIVERY_MODE==='outbox'&&input.callbackId&&isNew){
           const action=input.messageId&&input.callback?.startsWith('ui:')
             ?await new D1UiStore(env.DB).resolve(input.owner,input.chat,input.messageId,input.callback,clock.now()):null;
@@ -134,7 +104,7 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
             JSON.stringify({ method: 'answerCallbackQuery', callback_query_id: input.callbackId }),clock.now()).run();
           await flushOutbox(env, transport, clock.now());
         }
-        await processInbox(store, input.owner, clock, runtimeChat(env),4,calendar(env));
+        await processInbox(store, input.owner, clock, runtimeChat(env),4);
         await flushOutbox(env, transport, clock.now());
         await flushCards(env);
         if (env.DELIVERY_MODE === 'outbox' || !isNew) return new Response('OK');
@@ -144,7 +114,7 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
     }
   };
 }
-const cardWorker=createWorker(undefined,fetch,{now:Date.now},undefined,true);
+const cardWorker=createWorker(undefined,fetch,{now:Date.now},true);
 const previewWorker=createWorker();
 // Production outbox delivery uses versioned cards. Preview remains a local response-only harness.
 export default {

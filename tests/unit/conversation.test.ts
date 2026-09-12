@@ -14,7 +14,7 @@ test('tool turn reads then writes once, commits before final response and surviv
   execute:async(_n,call)=>{events.push(call.name);return {result:{status:isRead(call)?'ok':'planned'},changes:isRead(call)?[]:[{type:'cancel',owner:'123'}],fallback:'Đã hoàn thành bài.'};},
   commit:async()=>{events.push('commit');return {status:'applied'};}
  });
- assert.equal(text,'Đã hoàn thành bài.');assert.deepEqual(events,['model:0','find_tasks','model:1','update_task','commit','model:2']);
+ assert.equal(text,'Đã hoàn thành bài.');assert.deepEqual(events,['model:0','find_tasks','model:1','update_task','commit']);
  function isRead(call:ToolCall){return call.name==='find_tasks';}
 });
 

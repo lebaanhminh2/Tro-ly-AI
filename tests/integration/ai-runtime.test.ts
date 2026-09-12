@@ -20,7 +20,7 @@ test('native Worker creates a pending card and its confirmation button commits w
    const body=JSON.parse(String(init?.body)),method=String(url).split('/').at(-1)!;sent.push({method,...body});
    return Response.json({ok:true,result:method==='answerCallbackQuery'?true:{message_id:77}});
   };
-  const worker=createWorker(undefined,transport,{now:()=>Date.parse('2026-09-12T12:00:00+07:00')},undefined,true);
+  const worker=createWorker(undefined,transport,{now:()=>Date.parse('2026-09-12T12:00:00+07:00')},true);
   const run=(body:unknown)=>worker.fetch(new Request('https://local/telegram',{method:'POST',headers:{'X-Telegram-Bot-Api-Secret-Token':env.TELEGRAM_WEBHOOK_SECRET},body:JSON.stringify(body)}),env);
   assert.equal((await run({update_id:1,message:{from:{id:123},chat:{id:123,type:'private'},text:'Thêm cho tớ việc rửa bát'}})).status,200);
   const button=sent.at(-1)!.reply_markup.inline_keyboard[0][0].callback_data;

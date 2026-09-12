@@ -16,8 +16,10 @@ export function memoryStatements(db:Database,owner:string,c:MemoryChange){
  if(c.type==='memory-resolve')return [
   q("INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM memory_confirmations WHERE owner=? AND id=? AND status='pending' AND expires>?) THEN 1 ELSE 0 END",owner,c.id,c.now),
   q('UPDATE memory_confirmations SET status=? WHERE owner=? AND id=?',c.accept?'accepted':'rejected',owner,c.id),
-  ...(c.accept?[q('DELETE FROM memories WHERE owner=?',owner),q('DELETE FROM conversation_turns WHERE owner=?',owner),q('DELETE FROM chat_focus WHERE owner=?',owner),q("UPDATE command_inbox SET payload='{}',result=NULL WHERE owner=? AND state='done'",owner)]:[]),q('DELETE FROM transaction_guard')];
+  ...(c.accept?[q('DELETE FROM conversation_summaries WHERE owner=?',owner),q('DELETE FROM conversation_clarifications WHERE owner=?',owner),q('DELETE FROM memories WHERE owner=?',owner),q('DELETE FROM conversation_turns WHERE owner=?',owner),q('DELETE FROM chat_focus WHERE owner=?',owner),q("UPDATE command_inbox SET payload='{}',result=NULL WHERE owner=? AND state='done'",owner)]:[]),q('DELETE FROM transaction_guard')];
  if(c.type==='forget')return [
+  q('DELETE FROM conversation_summaries WHERE owner=? AND EXISTS(SELECT 1 FROM memories WHERE owner=? AND id=?)',owner,owner,c.id),
+  q('DELETE FROM conversation_clarifications WHERE owner=? AND EXISTS(SELECT 1 FROM memories WHERE owner=? AND id=?)',owner,owner,c.id),
   q('DELETE FROM conversation_turns WHERE owner=? AND EXISTS(SELECT 1 FROM memories WHERE owner=? AND id=?)',owner,owner,c.id),
   q('DELETE FROM chat_focus WHERE owner=? AND EXISTS(SELECT 1 FROM memories WHERE owner=? AND id=?)',owner,owner,c.id),
   q("UPDATE command_inbox SET payload='{}',result=NULL WHERE owner=? AND state='done' AND EXISTS(SELECT 1 FROM memories WHERE owner=? AND id=?)",owner,owner,c.id),
@@ -39,6 +41,8 @@ export async function expireMemory(db:Database,now:number){
   query(db,'DELETE FROM memories WHERE expires IS NOT NULL AND expires<=?',now),
   query(db,'DELETE FROM conversation_turns WHERE expires<=?',now),
   query(db,'DELETE FROM chat_focus WHERE expires<=?',now),
-  query(db,"UPDATE command_inbox SET payload='{}',result=NULL WHERE state='done' AND created<?",now-7*86400000)
+  query(db,"UPDATE conversation_clarifications SET status='expired' WHERE status='waiting' AND expires<=?",now),
+  query(db,'DELETE FROM tool_steps WHERE created<? AND EXISTS(SELECT 1 FROM command_inbox i WHERE i.owner=tool_steps.owner AND i.update_id=tool_steps.update_id AND i.state=\'done\')',now-30*86400000),
+  query(db,"UPDATE command_inbox SET payload='{}',result=NULL,tool_context=NULL,tool_reply=NULL WHERE state='done' AND created<?",now-30*86400000)
  ]);
 }

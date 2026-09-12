@@ -1,5 +1,7 @@
-# Kế hoạch thay luồng trợ lý — phạm vi chờ duyệt
-Cập nhật 2026-09-13. Sản phẩm đã chốt; danh sách thay source dưới đây cần user duyệt một lần. Không coi tài liệu là code đã chạy.
+# Kế hoạch thay luồng trợ lý — phạm vi đã duyệt
+Cập nhật 2026-09-13. Sản phẩm đã chốt; user đã duyệt danh sách thay source và ngân sách tối đa20 request trong lượt tiếp theo. Không coi tài liệu là code đã chạy.
+
+Checkpoint thực hiện xem HANDOFF; chưa nghiệm thu. Protocol JSON tổng hợp đã thử không đạt; triển khai native tools + respond(message), không duy trì hai protocol.
 
 ## 1. Đích và bằng chứng rà soát
 - Giữ Telegram/Workers/D1/Gemini free/cron/outbox. Bỏ Google; không đổi provider/framework.

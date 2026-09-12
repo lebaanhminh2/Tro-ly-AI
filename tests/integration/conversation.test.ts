@@ -31,13 +31,13 @@ test('native D1 turn commits typed tool once, caches final reply and resumes saf
   };
   const initial=[{role:'user' as const,parts:[{text:lease.input.text!}]}];
   const run=()=>journal.turn(lease,initial,store,(changes,time)=>store.mutationStatements('123',changes,time,true),model,()=>now);
-  assert.match(await run(),/đã thêm/);assert.equal(calls,2);
-  assert.match(await run(),/đã thêm/);assert.equal(calls,2);
+  assert.match(await run(),/đã thêm/);assert.equal(calls,1);
+  assert.match(await run(),/đã thêm/);assert.equal(calls,1);
   const tasks=await store.tasks('123',0);assert.equal(tasks.length,1);assert.equal(tasks[0]!.deadline,'2026-09-12T19:00:00+07:00');
   assert.equal((await db.prepare("SELECT COUNT(*) AS n FROM tool_steps WHERE kind='write'").first<{n:number}>())!.n,1);
   // Simulate losing only the final cached reply after the write: step receipts still prevent repeats.
   await db.prepare('UPDATE command_inbox SET tool_reply=NULL WHERE owner=? AND update_id=1').bind('123').run();
-  assert.match(await run(),/đã thêm/);assert.equal(calls,2);assert.equal((await store.tasks('123',0)).length,1);
+  assert.match(await run(),/đã thêm/);assert.equal(calls,1);assert.equal((await store.tasks('123',0)).length,1);
   await store.commit(lease,{view:{text:'done',buttons:[]},changes:[]},now);
   await store.accept({owner:'123',chat:123,updateId:2,text:'Thêm việc cùng tên'},now,false);
   const duplicateLease=(await store.claim('123',now))!;
@@ -51,7 +51,7 @@ test('native D1 turn commits typed tool once, caches final reply and resumes saf
   const confirmed=await journal.turn(confirmLease,[{role:'user',parts:[{text:'Ừ thêm đi'}]}],store,(changes,time)=>store.mutationStatements('123',changes,time,true),async()=>{
     confirmations++;return confirmations===1?{content:{role:'model',parts:[{functionCall:confirm}]},calls:[confirm],text:''}:{content:{role:'model',parts:[{text:'Đã thêm việc mới nhé.'}]},calls:[],text:'Đã thêm việc mới nhé.'};
   },()=>now);
-  assert.match(confirmed,/Đã thêm/);assert.equal((await store.tasks('123',0)).length,2);assert.equal(await journal.pending('123',now),null);
+  assert.match(confirmed,/đã thêm/i);assert.equal((await store.tasks('123',0)).length,2);assert.equal(await journal.pending('123',now),null);
  }finally{await mf.dispose();}
 });
 
@@ -101,7 +101,7 @@ test('native tool executor reads scoped data and plans writes from typed args, i
   const found=await executeTool({name:'find_tasks',args:{query:'',status:'all',cursor:0}},store,'123',1,now);
   assert.ok(JSON.stringify(found.result).includes('mine'));assert.ok(!JSON.stringify(found.result).includes('private'));
   const agenda=await executeTool({name:'get_agenda',args:{from:'2026-09-12T00:00:00+07:00',to:'2026-09-13T00:00:00+07:00',cursor:0}},store,'123',1,now);
-  assert.equal(agenda.result.googleCalendarIncluded,false);assert.ok(JSON.stringify(agenda.result).includes('rửa bát'));
+  assert.equal(agenda.result.source,'local');assert.ok(JSON.stringify(agenda.result).includes('rửa bát'));
   const duplicate=await executeTool({name:'create_task',args:{title:'rửa bát',deadline:null}},store,'123',1,now);
   assert.equal(duplicate.result.status,'needs_confirmation');assert.equal(duplicate.changes.length,0);
   const capture=await executeTool({name:'create_task',args:{title:'bài văn',deadline:{value:'2026-09-12T19:00:00+07:00',precision:'datetime'}}},store,'123',2,now);
@@ -192,7 +192,7 @@ test('spoken reminder has no invented duration, two sends per appointment, reply
   now+=60000;await queueAppointments(db,'123',now);await flush();assert.equal(sent.length,2);
   intent.deadlineText='hôm nay 10h';intent.evidence='Nhắc bài tiếng Anh hôm nay 10h';await run(intent.evidence);
   now=Date.parse('2026-09-12T10:00:00+07:00');await queueAppointments(db,'123',now);await flush();assert.equal(sent.length,3);
-  await acknowledgeAppointments(db,'123');now+=900000;await queueAppointments(db,'123',now);await flush();assert.equal(sent.length,3);
+  await acknowledgeAppointments(db,'123',3);now+=900000;await queueAppointments(db,'123',now);await flush();assert.equal(sent.length,3);
   intent.deadlineText='hôm nay 11h';intent.evidence='Nhắc bài tiếng Anh hôm nay 11h';await run(intent.evidence);
   now=Date.parse('2026-09-12T11:00:00+07:00');await queueAppointments(db,'123',now);
   intent.deadlineText='hôm nay 12h';intent.evidence='Nhắc bài tiếng Anh hôm nay 12h';await run(intent.evidence);
@@ -238,20 +238,20 @@ test('Worker conversation mode writes a grounded capture and consumes durable qu
   let calls=0;const text='Tớ có bài tiếng Anh, dl ngày mai';
   const transport:typeof fetch=async(_url,init)=>{
    calls++;assert.equal(init?.redirect,'manual');
-   return Response.json({candidates:[{finishReason:'STOP',content:calls===1?{role:'model',parts:[{functionCall:{name:'create_task',args:{title:'bài tiếng Anh',deadline:{value:'2026-09-13',precision:'date'}}}}]}:{role:'model',parts:[{text:'Tớ ghi rồi nhé.'}]}}]});
+   return Response.json({candidates:[{finishReason:'STOP',content:{role:'model',parts:[{functionCall:{name:'create_task',args:{title:'bài tiếng Anh',deadline:{value:'2026-09-13',precision:'date'}}}}]}}]});
   };
   const env={DB:db,TELEGRAM_USER_ID:'123',TELEGRAM_WEBHOOK_SECRET:'x'.repeat(32),AI_MODE:'on',GEMINI_API_KEY:'fake',GEMINI_MODEL:'test-model',AI_DAILY_LIMIT:'2'};
   const send=()=>createWorker(undefined,transport,{now:()=>Date.parse('2026-09-12T08:00:00+07:00')}).fetch(new Request('https://local/telegram',{
    method:'POST',headers:{'X-Telegram-Bot-Api-Secret-Token':env.TELEGRAM_WEBHOOK_SECRET},body:JSON.stringify({update_id:1,message:{from:{id:123},chat:{id:123,type:'private'},text}})
   }),env);
-  assert.match(await (await send()).text(),/Tớ ghi/);await send();assert.equal(calls,2);
+  assert.match(await (await send()).text(),/đã thêm/);await send();assert.equal(calls,1);
   assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM tasks').first<{n:number}>())!.n,1);
-  assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM ai_reservations').first<{n:number}>())!.n,2);
-  assert.equal((await db.prepare("SELECT COUNT(*) AS n FROM tool_steps WHERE kind='model'").first<{n:number}>())!.n,2);
+  assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM ai_reservations').first<{n:number}>())!.n,1);
+  assert.equal((await db.prepare("SELECT COUNT(*) AS n FROM tool_steps WHERE kind='model'").first<{n:number}>())!.n,1);
   const stopped=await createWorker(undefined,transport,{now:()=>Date.parse('2026-09-12T08:00:00+07:00')}).fetch(new Request('https://local/telegram',{
    method:'POST',headers:{'X-Telegram-Bot-Api-Secret-Token':env.TELEGRAM_WEBHOOK_SECRET},body:JSON.stringify({update_id:2,message:{from:{id:123},chat:{id:123,type:'private'},text}})
   }),{...env,AI_TRIAL_ENDS_AT:'2026-09-11T00:00:00Z'});
-  assert.match(await stopped.text(),/gián đoạn/);assert.equal(calls,2);
+  assert.match(await stopped.text(),/gián đoạn/);assert.equal(calls,1);
  }finally{await mf.dispose();}
 });
 

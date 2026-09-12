@@ -9,7 +9,7 @@ export class Gemini {
   this.options=options;
  }
  async generateTools(contents:ModelContent[],systemInstruction=TOOL_PERSONA,allowTools=true){
-  if(!contents.length||contents.length>24||contents.at(-1)?.role!=='user'||contents.some(c=>!['user','model'].includes(c.role)||!Array.isArray(c.parts)||!c.parts.length)
+  if(!contents.length||contents.length>32||contents.at(-1)?.role!=='user'||contents.some(c=>!['user','model'].includes(c.role)||!Array.isArray(c.parts)||!c.parts.length)
     ||JSON.stringify(contents).length+systemInstruction.length>48000)throw new ModelError('INVALID_INPUT');
   const controller=new AbortController(),started=Date.now(),timer=setTimeout(()=>controller.abort(),this.options.timeoutMs??5000);
   try{

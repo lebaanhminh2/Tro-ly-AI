@@ -16,8 +16,6 @@ test('real workerd fetch supports production adapters and never follows credenti
     counts.set(url.pathname, count);
     if (count === 2) return new Response('', {status: 302, headers: {location: 'https://credential-trap.invalid/'}});
     if (url.hostname === 'api.telegram.org') return Response.json({ok: true, result: {message_id: 7}});
-    if (url.pathname === '/token') return Response.json({access_token: 'access'});
-    if (url.pathname === '/revoke') return new Response('');
     if (url.hostname === 'generativelanguage.googleapis.com') return Response.json({candidates: [{finishReason: 'STOP', content: {role:'model',parts: [{text:'hello'}]}}]});
     throw Error('Unexpected outbound request');
   };
@@ -31,7 +29,6 @@ test('real workerd fetch supports production adapters and never follows credenti
   const script = `
     import worker from './src/entrypoints/worker.ts';
     import {deliver} from './src/adapters/telegram/api.ts';
-    import {GoogleClient} from './src/adapters/google-calendar/client.ts';
     export default {async fetch(request, env) {
       if (new URL(request.url).pathname === '/card-probe') return worker.fetch(new Request('https://test.invalid/telegram',{
         method:'POST',headers:{'X-Telegram-Bot-Api-Secret-Token':'x'.repeat(32)},body:JSON.stringify({update_id:99,message:{from:{id:123},chat:{id:123,type:'private'},text:'/tasks'}})
@@ -42,11 +39,6 @@ test('real workerd fetch supports production adapters and never follows credenti
       result.telegramRedirect = await deliver('123:fake', {method:'sendMessage',chat_id:123,text:'test'});
       result.clearKeyboard = await deliver('123:fake', {method:'editMessageReplyMarkup',chat_id:123,message_id:7,reply_markup:{inline_keyboard:[]}});
       result.editText = await deliver('123:fake', {method:'editMessageText',chat_id:123,message_id:7,text:'Updated',reply_markup:{inline_keyboard:[]}});
-      const google = new GoogleClient({clientId:'fake',clientSecret:'fake',redirectUri:'https://test.invalid/oauth/google/callback'});
-      result.refresh = await google.refresh('fake');
-      try {await google.refresh('fake');} catch(e) {result.refreshRedirect = e.message;}
-      await google.revoke('fake'); result.revoke = true;
-      try {await google.revoke('fake');} catch(e) {result.revokeRedirect = e.message;}
       return Response.json(result);
     }};`;
   const mf = new Miniflare({modulesRoot: process.cwd(), modules: [{type: 'ESModule', path: resolve('runtime-probe.js'), contents: script}, ...modules],
@@ -67,10 +59,6 @@ test('real workerd fetch supports production adapters and never follows credenti
     assert.equal(result.telegramRedirect.state, 'uncertain');
     assert.equal(result.clearKeyboard.state, 'sent');
     assert.equal(result.editText.state, 'sent');
-    assert.equal(result.refresh, 'access');
-    assert.equal(result.refreshRedirect, 'GOOGLE_HTTP_302');
-    assert.equal(result.revoke, true);
-    assert.equal(result.revokeRedirect, 'REVOCATION_UNCONFIRMED');
     for (const [id, text, expected] of [[1, '/ai on', ''], [2, 'hello', 'hello'], [3, 'again', 'gián đoạn']] as const) {
       const response = await mf.dispatchFetch('https://test.invalid/telegram', {
         method: 'POST', headers: {'X-Telegram-Bot-Api-Secret-Token': 'x'.repeat(32)},

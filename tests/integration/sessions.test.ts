@@ -25,8 +25,8 @@ test('session lifecycle, two reminders per appointment, no daily cap, snooze, re
     let db=await mf.getD1Database('DB') as unknown as Database&{exec(s:string):Promise<unknown>};
     for(const f of ['0001_initial.sql','0002_delivery.sql','0003_command_transactions.sql','0004_sessions_reminders.sql','0005_memory_conversation.sql','0006_review_fixes.sql'])await db.exec(readFileSync(`migrations/${f}`,'utf8').replace(/\r?\n/g,' '));
     let store=new D1WorkStore(db),now=Date.parse('2026-09-11T08:00:00+07:00'),id=0;
-    const run=async(text:string,callback=false)=>{
-      const input={owner:'123',chat:123,updateId:++id,...(callback?{callback:text}:{text})};
+    const run=async(text:string,callback=false,replyToMessageId?:number)=>{
+      const input={owner:'123',chat:123,updateId:++id,...(replyToMessageId?{replyToMessageId}:{}),...(callback?{callback:text}:{text})};
       await store.accept(input,now,false);await processInbox(store,'123',{now:()=>now});return store.result('123',id);
     };
     await run('/add Task');await run('yes:p123_1',true);
@@ -53,7 +53,7 @@ test('session lifecycle, two reminders per appointment, no daily cap, snooze, re
     const snoozed=(await store.session('123',third))!;assert.equal(snoozed.generation,2);
     now=snoozed.start_at;await queueReminders(db,'123',now);await flushOutbox(env(),transport,now,()=>0);
     assert.equal(sent.length,7);
-    await run('tớ nghe rồi'); // Any reply after first reminder suppresses its follow-up.
+    await run('tớ nghe rồi',false,7); // Reply to this reminder suppresses only its follow-up.
     now+=900000;await queueReminders(db,'123',now);await flushOutbox(env(),transport,now,()=>0);assert.equal(sent.length,7);
     await run(`s:start:${third}:${snoozed.version}`,true);
     const running=(await store.session('123',third))!;assert.equal(running.status,'running');
