@@ -6,6 +6,7 @@ import type { Session,Preferences } from '../../domain/session.ts';
 import { sessionStatements } from './session-store.ts';
 import {memoryStatements} from './memory.ts';
 import type {Memory,ConversationTurn} from '../../domain/memory.ts';
+import {renderView} from '../../application/ui-renderer.ts';
 
 export class D1WorkStore implements WorkStore {
   private db: Database;
@@ -55,6 +56,8 @@ export class D1WorkStore implements WorkStore {
   }
   async release(lease: Lease) { await query(this.db, 'DELETE FROM owner_leases WHERE owner=? AND token=?', lease.owner, lease.token).run(); }
   async commit(lease: Lease, plan: Plan, now: number) {
+    // Validate and normalize before constructing any database mutation.
+    plan = {...plan, view: renderView(plan.view)};
     const { owner, input, token } = lease;
     const q = (sql: string, ...args: (string | number | null)[]) => query(this.db, sql, ...args);
     const statements: Statement[] = [q(`INSERT INTO transaction_guard(valid) SELECT CASE WHEN

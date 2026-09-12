@@ -113,3 +113,6 @@ Nguồn:
 - Google credentials, Telegram token, AI key lưu bí mật, không log/commit.
 - Có đường xuất/sao lưu dữ liệu và giải thích cách ngắt kết nối trước khi dùng thật lâu dài.
 - Có kiểm thử luồng và thử thật trên iPhone, không chỉ dựa vào code biên dịch thành công.
+# Quyết định bổ sung đã chốt — 2026-09-12
+
+Hội thoại tự nhiên là giao diện chính, không phải chatbot slash-command có persona. AI hiểu bối cảnh và đề xuất command; backend tự lưu trong quyền cho phép hoặc hỏi/xác nhận theo quy tắc. Xác nhận bằng lời được hỗ trợ ở sản phẩm cuối, gắn proposal/owner/version/TTL như nút. Card/nút là hỗ trợ, wizard fallback; không buộc người dùng đi lại form khi câu nói đã đủ. Xem PRODUCT_BRIEF. Bật Gemini chưa đủ: intent routing và confirmation bằng lời hiện chưa hoàn thiện. Quyết định này ưu tiên hơn mô tả cũ “chat để nói, nút để thao tác”. Bỏ quiet tự động đã chốt; giữ pause chủ động và 2 lượt/lần hẹn.

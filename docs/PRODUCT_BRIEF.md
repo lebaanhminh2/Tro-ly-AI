@@ -16,7 +16,11 @@ Cập nhật: 2026-09-11. Persona đã thống nhất; các phần ghi “dự k
 
 Giảm gánh nặng tự tổ chức, giúp biết bước tiếp theo phù hợp, cân bằng sức khỏe và công việc, quay lại dễ dàng sau khi lệch lịch. Không ép tuân thủ một lịch kín hoặc tối đa hóa năng suất.
 
-Telegram là giao diện chính: chat để nói, nút để thao tác, Mini App để xem khi cần. Trang Today dự kiến ưu tiên NOW / NEXT / TODAY WIN; backlog vẫn truy cập được nhưng không phải trang chủ.
+Telegram là giao diện chính, **hội thoại tự nhiên là đường sử dụng chính đã chốt**. Người dùng không phải nhớ lệnh hoặc điền form để quản lý việc. Card/nút hỗ trợ xem nhanh, xác nhận và thao tác khi tiện; wizard chỉ là fallback. Mini App chưa thuộc v1.
+
+Luồng bắt buộc: lời nói + bối cảnh → AI trích ý định/dữ liệu → backend kiểm tra quyền/quy tắc → lưu trong phạm vi được phép, hỏi phần thiếu hoặc xin xác nhận → trả lời tự nhiên dựa trên kết quả thực tế. Mức xác nhận theo thao tác/ngữ cảnh, không mặc định hỏi lại mọi thứ. Lời xác nhận như “ừ, chuyển đi” phải được gắn với proposal đang chờ, đúng thực thể/phiên bản/TTL; khi mơ hồ phải hỏi lại. Nút và lời nói đi vào cùng command nghiệp vụ. Không cho model tự chạy SQL, bịa dữ liệu hay nói đã lưu trước khi commit. “Tớ mệt” không tự trở thành lệnh hủy lịch. Đây là tiêu chí sản phẩm cuối, không tuyên bố code hiện đã đáp ứng.
+
+Trang Today dự kiến ưu tiên NOW / NEXT / TODAY WIN; backlog vẫn truy cập được nhưng không phải trang chủ.
 
 ## Persona đã thống nhất
 

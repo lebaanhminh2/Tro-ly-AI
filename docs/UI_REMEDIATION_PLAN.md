@@ -1,6 +1,6 @@
 # Kế hoạch sửa UI Telegram theo hệ thống
 
-2026-09-12. Rà source hiện tại sau 6270268 theo yêu cầu người dùng. Chỉ lập kế hoạch, chưa sửa code/deploy. Tài liệu này thay cách xử lý từng lỗi ảnh trong UX_REVIEW; các khoảng trống nghiệp vụ ở đó vẫn còn.
+2026-09-12. Người dùng đã duyệt tiếp tục sửa UI/UX, đồng thời xác nhận hội thoại là chính. Kế hoạch đang triển khai, chưa nghiệm thu. Tài liệu này thay cách xử lý từng lỗi ảnh trong UX_REVIEW; các khoảng trống nghiệp vụ ở đó vẫn còn. Không mở rộng wizard thành đường chính, không bật provider trong đợt UI.
 
 ## 1. Ranh giới LLM và UI
 

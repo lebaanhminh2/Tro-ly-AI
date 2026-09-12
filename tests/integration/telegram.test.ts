@@ -106,9 +106,9 @@ test('Bot API classifies failures without retrying or leaking token', async () =
     });
     assert.equal(result.state,state); assert.equal(count,1);
   }
-  assert.equal((await deliver('secret',{method:'sendMessage'},async()=>{throw new Error('secret');})).state,'uncertain');
-  assert.equal((await deliver('secret',{method:'sendMessage'},async()=>new Response('bad JSON'))).state,'uncertain');
-  const timed=await deliver('secret',{method:'sendMessage'},async(_url,options)=>new Promise((_resolve,reject)=>{
+  assert.equal((await deliver('secret',{method:'sendMessage',text:'test'},async()=>{throw new Error('secret');})).state,'uncertain');
+  assert.equal((await deliver('secret',{method:'sendMessage',text:'test'},async()=>new Response('bad JSON'))).state,'uncertain');
+  const timed=await deliver('secret',{method:'sendMessage',text:'test'},async(_url,options)=>new Promise((_resolve,reject)=>{
     options?.signal?.addEventListener('abort',()=>reject(new Error('secret')));
   }),5);
   assert.equal(timed.state,'uncertain');

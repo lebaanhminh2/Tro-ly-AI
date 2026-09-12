@@ -1,4 +1,5 @@
 import type { Button, Input } from '../../domain/work.ts';
+import {renderView} from '../../application/ui-renderer.ts';
 export type { Button };
 export type Incoming = Input;
 function record(value: unknown): Record<string, unknown> {
@@ -33,6 +34,12 @@ export async function deliver(token: string, payload: Record<string, unknown>, t
   };
   try {
     const { method, ...body } = payload;
+    if (method === 'sendMessage') {
+      const markup = record(body.reply_markup);
+      const view = renderView({text: String(body.text ?? ''), buttons: (markup.inline_keyboard ?? []) as Button[][]});
+      body.text = view.text;
+      if (body.reply_markup) body.reply_markup = {...markup, inline_keyboard: view.buttons};
+    }
     const response = await transport(`https://api.telegram.org/bot${token}/${method}`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
       signal: controller.signal, redirect: 'manual'
@@ -65,5 +72,6 @@ export async function deliver(token: string, payload: Record<string, unknown>, t
   finally { clearTimeout(timer); }
 }
 export function message(chat: number, text: string, buttons: Button[][] = []) {
+  ({text, buttons} = renderView({text, buttons}));
   return { method: 'sendMessage', chat_id: chat, text, ...(buttons.length ? { reply_markup: { inline_keyboard: buttons } } : {}) };
 }
