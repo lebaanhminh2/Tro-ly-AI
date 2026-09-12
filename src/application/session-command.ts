@@ -37,6 +37,7 @@ export async function sessionCommand(i:Input,store:WorkReader,now:number):Promis
   }
   if(cb.startsWith('schedule:')){
     const task=await store.task(i.owner,cb.slice(9));if(!task)return view('Không tìm thấy việc.');
+    if(task.status==='completed')return view('Việc này đã hoàn thành. Mở lại việc trước khi lên buổi mới nhé.');
     const previous=await store.sessionInput(i.owner);
     const expires=Math.max(now+900000,(previous?.expires??0)+1);
     const buttons=[0,1,2].map((days)=>[{text:days===0?'Hôm nay':days===1?'Ngày mai':'Ngày kia',callback_data:`w:${expires}:day:${dayStart(now)+days*86400000}`}]);
@@ -50,6 +51,7 @@ export async function sessionCommand(i:Input,store:WorkReader,now:number):Promis
     const pending=await store.sessionInput(i.owner);
     if(!pending||pending.expires<=now||String(pending.expires)!==rawExpiry)return view('Lựa chọn lịch đã cũ. Chọn việc để lên lịch lại nhé.');
     const task=await store.task(i.owner,pending.task_id);if(!task)return view('Việc không còn tồn tại.');
+    if(task.status==='completed')return {...view('Việc đã hoàn thành, tớ hủy bước lên lịch đang dở nhé.'),changes:[{type:'cancel',owner:i.owner}]};
     const back={text:'Chọn lại ngày',callback_data:`schedule:${task.id}`};
     const cancel={text:'Hủy',callback_data:'cancel-input'};
     const value=Number(rawValue);
@@ -104,6 +106,7 @@ export async function sessionCommand(i:Input,store:WorkReader,now:number):Promis
   if(!parsed||!Number.isInteger(minutes)||minutes<5||minutes>180||extra.length||Date.parse(parsed)<now)
     return view('Cần giờ tương lai và số phút: DD/MM/YYYY HH:mm | 25. /cancel để hủy.');
   const task=await store.task(i.owner,pending.task_id);if(!task)return view('Việc không còn tồn tại.');
+  if(task.status==='completed')return {...view('Việc đã hoàn thành, tớ hủy bước lên lịch đang dở nhé.'),changes:[{type:'cancel',owner:i.owner}]};
   const s:Session={id:`b${i.updateId}`,owner:i.owner,task_id:task.id,start_at:Date.parse(parsed),minutes,status:'draft',version:1,generation:1,expires:now+300000,active_since:null,spent_ms:0};
   return {...view(`Buổi “${task.title}”: ${rawDate}, ${minutes} phút. Chốt nhé?`,sessionButtons(s)),changes:[{type:'session-create',session:s}]};
 }

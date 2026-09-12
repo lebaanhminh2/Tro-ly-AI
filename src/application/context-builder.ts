@@ -8,7 +8,7 @@ export async function buildContext(store:WorkReader,owner:string,text:string,now
  const turns:Turn[]=history.flatMap(h=>[{role:'user' as const,text:h.user_text},{role:'model' as const,text:h.assistant_text}]);
  turns.push({role:'user',text});
  const context=JSON.stringify({userId:owner,now:new Date(now).toISOString(),timezone:'Asia/Ho_Chi_Minh',focus,
- tasks:tasks.map(t=>({id:t.id,title:t.title,deadline:t.deadline,version:t.version})),
+ tasks:tasks.map(t=>({id:t.id,title:t.title,deadline:t.deadline,version:t.version,status:t.status??'active'})),
  memories:memories.map(m=>({content:m.content,kind:m.kind,source:m.source,expires:m.expires}))});
  while(turns.length>1&&context.length+turns.reduce((n,t)=>n+t.text.length,0)>10000)turns.splice(0,2);
  if(context.length+text.length>14000)throw Error('CONTEXT_TOO_LARGE');

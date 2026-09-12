@@ -13,6 +13,35 @@ import type {Database} from '../../src/adapters/d1/database.ts';
 import {createWorker} from '../../src/entrypoints/worker.ts';
 import {buildContext} from '../../src/application/context-builder.ts';
 
+test('task completion requires explicit scope, stops pending reminders, and undo preserves newer data',async()=>{
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync(`migrations/${f}`,'utf8').replace(/\r?\n/g,' '));
+  const store=new D1WorkStore(db),receipts=new ConversationStore(db);let now=100000,id=0;
+  await db.exec("INSERT INTO tasks(id,owner,title,created) VALUES('t','123','bài tiếng Anh',0); INSERT INTO task_appointments(id,owner,task_id,due) VALUES('a','123','t',150000); INSERT INTO sessions(id,owner,task_id,start_at,minutes,status,expires) VALUES('s','123','t',150000,25,'planned',999999); INSERT INTO reminders(id,owner,session_id,generation,ordinal,due) VALUES('r','123','s',1,1,150000);");
+  let intent:ConversationIntent={kind:'complete',reply:'unused',title:null,taskId:'t',deadlineText:null,evidence:'Xong rồi'};
+  const chat=conversationChat((owner,update,time,_context,_turns,resolved)=>receipts.infer(owner,update,time,async()=>resolved??intent));
+  const run=async(text:string)=>{const update=++id;await store.accept({owner:'123',chat:123,updateId:update,text},now,false);await processInbox(store,'123',{now:()=>now},chat);return (await store.result('123',update))!;};
+  await run(intent.evidence!);assert.equal((await store.task('123','t'))!.status,'active');
+  intent={...intent,evidence:'Tớ làm xong bài tiếng Anh rồi'};
+  assert.match((await run(intent.evidence!)).text,/dừng các nhắc/);
+  assert.equal((await store.task('123','t'))!.status,'completed');
+  assert.equal((await db.prepare("SELECT status FROM task_appointments WHERE id='a'").first<{status:string}>())!.status,'cancelled');
+  assert.equal((await store.session('123','s'))!.status,'skipped');
+  assert.equal((await db.prepare("SELECT status FROM reminders WHERE id='r'").first<{status:string}>())!.status,'cancelled');
+  intent={...intent,kind:'reopen',evidence:'Hoàn tác việc bài tiếng Anh'};
+  assert.match((await run(intent.evidence!)).text,/mở lại/);
+  assert.equal((await store.task('123','t'))!.status,'active');
+  assert.equal((await store.session('123','s'))!.status,'skipped');
+  intent={...intent,kind:'complete',evidence:'Xong bài tiếng Anh rồi'};await run(intent.evidence!);
+  await db.prepare("UPDATE tasks SET version=version+1 WHERE id='t'").run();
+  intent={...intent,kind:'reopen',evidence:'Hoàn tác việc bài tiếng Anh'};
+  assert.match((await run(intent.evidence!)).text,/Không thể hoàn tác/);
+  assert.equal((await store.task('123','t'))!.status,'completed');
+ }finally{await mf.dispose();}
+});
+
 test('spoken reminder has no invented duration, two sends per appointment, reply/rest/reschedule cancel old jobs',async()=>{
  const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
  try{

@@ -34,9 +34,10 @@ export class GeminiTrial {
 Trả đúng schema. kind capture: user trực tiếp nói có việc cần làm, trích title nguyên văn, deadlineText nguyên văn nếu có, taskId=null, evidence nguyên văn câu yêu cầu hiện tại.
 kind deadline: user trực tiếp yêu cầu đổi hạn của task xác định được trong context, title=null, taskId đúng ID, deadlineText/evidence nguyên văn. Không bịa giờ cho ngày-only.
 kind remind: user hẹn nhắc một task có thật; taskId đúng ID, title=null, deadlineText là ngày giờ nguyên văn (ví dụ mai 9h), evidence nguyên văn yêu cầu. Hẹn nhắc không phải buổi làm, không tự tạo duration.
+kind complete: user nói rõ xong toàn bộ task, không phải xong buổi/phần. kind reopen: user yêu cầu hoàn tác đánh dấu xong. Với hai kind này taskId có thật, title/deadlineText=null, evidence nguyên văn. “Xong rồi” không rõ task/buổi thì hỏi lại.
 kind overview: user hỏi tổng quan công việc/lịch hôm nay. kind rest/resume: user yêu cầu dừng nhắc hôm nay hoặc mở lại nhắc, không suy từ câu chỉ nói mệt. Các kind này title/taskId/deadlineText=null, evidence nguyên văn yêu cầu.
 kind chat/clarify: các trường hành động đều null. Không bao giờ khẳng định đã lưu/đổi/hủy dữ liệu ở reply: backend sẽ tự báo kết quả sau commit.
-Không thực hiện thao tác ví dụ/giả định/tentative. Hỏi nếu có nhiều việc trùng tên hoặc không rõ thao tác. Chưa hỗ trợ hoàn thành task trong schema này, nói rõ chứ không giả đã làm.`;
+Không thực hiện thao tác ví dụ/giả định/tentative. Hỏi nếu có nhiều việc trùng tên hoặc không rõ thao tác. Không giả đã thực hiện thao tác ngoài schema.`;
     return this.generateTyped<ConversationIntent>(turns,context,CONVERSATION_SCHEMA,parseConversation,prompt,'conversation-c1-v1');
   }
   private async generateTyped<T>(turns: Turn[], context: string, schema:unknown,parse:(text:string)=>T,prompt:string,promptVersion=PROMPT_VERSION): Promise<{

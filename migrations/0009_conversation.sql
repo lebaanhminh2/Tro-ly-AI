@@ -1,4 +1,12 @@
 ALTER TABLE tasks ADD COLUMN deadline_precision TEXT CHECK(deadline_precision IN ('date','datetime'));
+ALTER TABLE tasks ADD COLUMN status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','completed'));
+CREATE TABLE task_completion_undo (
+ owner TEXT NOT NULL,
+ task_id TEXT NOT NULL REFERENCES tasks(id),
+ expected_version INTEGER NOT NULL,
+ expires INTEGER NOT NULL,
+ PRIMARY KEY(owner,task_id)
+);
 UPDATE tasks SET deadline_precision='datetime' WHERE deadline IS NOT NULL;
 CREATE TRIGGER task_deadline_precision AFTER UPDATE OF deadline ON tasks
 BEGIN

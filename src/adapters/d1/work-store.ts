@@ -14,6 +14,7 @@ export class D1WorkStore implements WorkStore {
   private db: Database;
   constructor(db: Database, privateCards = false) { this.db = db; this.cardsEnabled=privateCards; }
   private cardsEnabled:boolean;
+  async completionUndo(owner:string,taskId:string,version:number,now:number){return !!await query(this.db,'SELECT task_id FROM task_completion_undo WHERE owner=? AND task_id=? AND expected_version=? AND expires>?',owner,taskId,version,now).first();}
   async conversationTasks(owner:string,text:string){
     return (await query(this.db,`SELECT * FROM tasks WHERE owner=? AND instr(lower(?),lower(title))>0 ORDER BY length(title) DESC,created DESC LIMIT 20`,owner,text).all<Task>()).results;
   }
@@ -117,7 +118,19 @@ export class D1WorkStore implements WorkStore {
       EXISTS(SELECT 1 FROM owner_leases WHERE owner=? AND token=? AND expires>?) AND
       EXISTS(SELECT 1 FROM command_inbox WHERE owner=? AND update_id=? AND state='pending') THEN 1 ELSE 0 END`, owner, token, now, owner, input.updateId)];
     for (const change of plan.changes) {
-      if(change.type==='conversation-appointment'){
+      if(change.type==='conversation-completion'){
+        if(change.owner!==owner)throw Error('OWNER_MISMATCH');
+        statements.push(q("INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM conversation_receipts WHERE owner=? AND update_id=? AND state='ready') AND EXISTS(SELECT 1 FROM tasks WHERE owner=? AND id=? AND version=? AND status=?) THEN 1 ELSE 0 END",owner,change.updateId,owner,change.taskId,change.expectedVersion,change.operation==='complete'?'active':'completed'));
+        if(change.operation==='reopen')statements.push(q('INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM task_completion_undo WHERE owner=? AND task_id=? AND expected_version=? AND expires>?) THEN 1 ELSE 0 END',owner,change.taskId,change.expectedVersion,now));
+        statements.push(q('UPDATE tasks SET status=?,version=version+1 WHERE owner=? AND id=?',change.operation==='complete'?'completed':'active',owner,change.taskId));
+        if(change.operation==='complete'){
+          statements.push(q('INSERT INTO task_completion_undo(owner,task_id,expected_version,expires) VALUES(?,?,?,?) ON CONFLICT(owner,task_id) DO UPDATE SET expected_version=excluded.expected_version,expires=excluded.expires',owner,change.taskId,change.expectedVersion+1,now+900000));
+          statements.push(q("UPDATE task_appointments SET status='cancelled' WHERE owner=? AND task_id=? AND status='active'",owner,change.taskId));
+          statements.push(q("UPDATE reminders SET status='cancelled' WHERE owner=? AND status IN ('pending','queued') AND session_id IN (SELECT id FROM sessions WHERE owner=? AND task_id=?)",owner,owner,change.taskId));
+          statements.push(q("UPDATE sessions SET status=CASE WHEN status IN ('running','paused') THEN 'completed' ELSE 'skipped' END,spent_ms=spent_ms+CASE WHEN active_since IS NULL THEN 0 ELSE MAX(0,?-active_since) END,active_since=NULL,version=version+1 WHERE owner=? AND task_id=? AND status NOT IN ('completed','skipped')",now,owner,change.taskId));
+        }else statements.push(q('DELETE FROM task_completion_undo WHERE owner=? AND task_id=?',owner,change.taskId));
+        statements.push(q("UPDATE conversation_receipts SET state='applied' WHERE owner=? AND update_id=?",owner,change.updateId));
+      }else if(change.type==='conversation-appointment'){
         if(change.owner!==owner||change.due<=now)throw Error('INVALID_APPOINTMENT');
         if(change.pendingId)statements.push(q('INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM conversation_pending WHERE owner=? AND id=? AND expires>?) THEN 1 ELSE 0 END',owner,change.pendingId,now));
         statements.push(q("INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM conversation_receipts WHERE owner=? AND update_id=? AND state='ready') AND EXISTS(SELECT 1 FROM tasks WHERE owner=? AND id=? AND version=?) THEN 1 ELSE 0 END",owner,change.updateId,owner,change.taskId,change.expectedVersion));

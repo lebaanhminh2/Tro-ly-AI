@@ -20,3 +20,11 @@ test('typed intent rejects unknown execution fields and ungrounded or tentative 
  assert.throws(()=>parseConversation(JSON.stringify({...intent,execute:true})));
  assert.throws(()=>parseConversation(JSON.stringify({...intent,kind:'chat'})));
 });
+
+test('completion never treats unfinished or partial work as a completed task',()=>{
+ for(const text of ['Tớ chưa làm xong bài tiếng Anh','Tớ xong một phần bài tiếng Anh','Xong buổi làm bài tiếng Anh','Xong rồi']){
+  assert.equal(directRequest(text,{kind:'complete',reply:'unused',title:null,taskId:'t',deadlineText:null,evidence:text}),false);
+ }
+ const text='Tớ làm xong bài tiếng Anh rồi';
+ assert.equal(directRequest(text,{kind:'complete',reply:'unused',title:null,taskId:'t',deadlineText:null,evidence:text}),true);
+});
