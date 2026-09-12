@@ -1,5 +1,7 @@
 # Trợ lý hội thoại — kế hoạch thực thi đã chỉnh hướng
 
+**Đã được thay thế về kế hoạch thực thi bởi [TOOL_CALLING_PLAN.md](TOOL_CALLING_PLAN.md).** Giữ tài liệu này làm lịch sử C1/C2, không tiếp tục mở rộng regex-intent runtime.
+
 2026-09-12. Yêu cầu sản phẩm đã chốt. Phạm vi code bên dưới chờ duyệt; chưa bật provider/deploy trong lượt lập kế hoạch. Ưu tiên tài liệu này hơn việc mở rộng menu/wizard/UI_REMEDIATION_PLAN. Giữ nền dữ liệu và UI an toàn đã xây, không viết lại toàn bộ.
 
 ## 1. Định nghĩa hoàn thành
