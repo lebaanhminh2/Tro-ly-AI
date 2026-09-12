@@ -15,6 +15,9 @@ export class D1WorkStore implements WorkStore {
   private db: Database;
   constructor(db: Database, privateCards = false) { this.db = db; this.cardsEnabled=privateCards; }
   private cardsEnabled:boolean;
+  async priorityTasks(owner:string){
+    return (await query(this.db,"SELECT * FROM tasks WHERE owner=? AND status='active' ORDER BY deadline IS NULL, CASE WHEN deadline_precision='date' THEN julianday(deadline||'T00:00:00+07:00') ELSE julianday(deadline) END,created,id LIMIT 3",owner).all<Task>()).results;
+  }
   async findTasks(owner:string,text:string,status:'active'|'completed'|'all',cursor:number){
     if(text.length>160||!Number.isSafeInteger(cursor)||cursor<0||cursor>10000||!['active','completed','all'].includes(status))throw Error('INVALID_QUERY');
     const rows=(await query(this.db,`SELECT * FROM tasks WHERE owner=? AND (?='all' OR status=?)

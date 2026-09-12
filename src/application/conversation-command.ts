@@ -24,7 +24,16 @@ export async function runToolTurn(initial:ModelContent[],ports:ToolTurnPorts):Pr
   if(replies.length){
    const args=replies[0]!.args;
    if(Object.keys(args).length!==1||typeof args.message!=='string'||!args.message.trim()||args.message.length>4000)return fallback;
-   response={...response,text:args.message,calls:response.calls.filter(call=>call.name!=='respond')};
+   const originalCalls=response.calls;
+   const mapped=originalCalls.filter(call=>call.name!=='respond').map(call=>{
+    const target=call.args.task_id;
+    if(typeof target!=='string'||!/^@\d+$/.test(target))return call;
+    const index=Number(target.slice(1));
+    if(index>=originalCalls.length||originalCalls[index]!.name!=='create_task')return call;
+    const shifted=originalCalls.slice(0,index).filter(c=>c.name!=='respond').length;
+    return {...call,args:{...call.args,task_id:'@'+shifted}};
+   });
+   response={...response,text:args.message,calls:mapped};
   }
   if(!response.calls.length)return response.text;
   const writes=response.calls.filter(call=>!isReadTool(call.name));

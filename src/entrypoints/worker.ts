@@ -33,7 +33,10 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
       if(confirmation&&(!pending||pending.id!==confirmation[2]))return 'Đề xuất này đã cũ hoặc đã được xử lý.';
       const initial=[{role:'user' as const,parts:[{text:JSON.stringify({contextData:JSON.parse(context.context),pending,replyToMessageId:input?.replyToMessageId??null})}]},
         ...context.turns.map(turn=>({role:turn.role,parts:[{text:turn.text}]}))];
-      const reply=await journal.turn(lease,initial,reader,(changes,now)=>store.mutationStatements(owner,changes,now,true),async(contents,allowTools,step)=>{
+      const snapshotReader=Object.create(reader) as typeof reader;
+      const summaryRequest=JSON.parse(context.context).summary_request as {source_turns:{id:number;user:string;assistant:string}[]}|null;
+      snapshotReader.unsummarized=async()=>summaryRequest?summaryRequest.source_turns.map(t=>({owner,command_id:t.id,user_text:t.user,assistant_text:t.assistant,created:0,expires:Number.MAX_SAFE_INTEGER})):[];
+      const reply=await journal.turn(lease,initial,snapshotReader,(changes,now)=>store.mutationStatements(owner,changes,now,true),async(contents,allowTools,step)=>{
         if(confirmation){
           if(step>0)throw Error('USE_COMMITTED_FALLBACK');
           const call={name:'resolve_pending' as const,args:{pending_id:confirmation[2],accept:confirmation[1]==='y'}};

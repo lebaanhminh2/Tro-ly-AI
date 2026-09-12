@@ -11,7 +11,8 @@ export async function buildContext(store:WorkReader,owner:string,text:string,now
   summarySource.push(turn);sourceSize+=size;
  }
  const [focused,mentioned]=await Promise.all([focus?store.task(owner,focus):Promise.resolve(null),store.conversationTasks?.(owner,text)??Promise.resolve([])]);
- const candidates=[...mentioned,...(focused?[focused]:[])];
+ const priority=await store.priorityTasks?.(owner)??[];
+ const candidates=[...mentioned,...priority,...(focused?[focused]:[])];
  const active=store.findTasks?await store.findTasks(owner,'','active',0):null;
  const extra=active?.nextCursor!==null&&active?.nextCursor!==undefined?await store.findTasks!(owner,'','active',active.nextCursor):null;
  const tasks=[...new Map([...candidates,...(active?.tasks??await store.tasks(owner,0)),...(extra?.tasks??[])].map(t=>[t.id,t])).values()];

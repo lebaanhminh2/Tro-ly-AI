@@ -93,7 +93,7 @@ export async function planCommand(input: Input, store: WorkReader, now: number, 
     const page=await store.findTasks(owner,'','active',0);
     const further=page.nextCursor!==null?await store.findTasks(owner,'','active',page.nextCursor):null;
     const active=[...page.tasks,...(further?.tasks??[])].sort((a,b)=>(a.deadline??'9999').localeCompare(b.deadline??'9999'));
-    const top=active.slice(0,3);
+    const top=store.priorityTasks?await store.priorityTasks(owner):active.slice(0,3);
     const lines=top.map((t,index)=>`${index+1}. ${t.title} — ${t.deadline?formatDeadline(t.deadline):'chưa đặt hạn'}`);
     return {...view(top.length?`Trước mắt cậu xem ${top.length} việc này nhé:\n${lines.join('\n')}`:'Chưa có việc đang làm. Cậu nhắn tên việc và hạn, tớ ghi cho nhé.',
       [...top.map(t=>[{text:t.title,callback_data:`task:${t.id}`}]),[{text:'Xem toàn bộ',callback_data:'page:0'}]]),changes:[{type:'cancel',owner}]};

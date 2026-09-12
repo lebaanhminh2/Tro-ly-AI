@@ -2,20 +2,21 @@
 Cập nhật 2026-09-13. Bản staging sẵn sàng cho user nghiệm thu luồng cốt lõi; không coi đánh giá persona/năng suất đã được user chấp nhận.
 
 ## Đang chạy
-- Worker version655db497-775d-44dd-8911-9feafdecdc8a; migration0001–0011 đã áp. Không sửa migration đã phát hành.
+- Worker version69d58588-3862-4dee-b854-76da1b1d5033; migration0001–0011 đã áp. Không sửa migration đã phát hành.
 - Gemini native tools duy nhất + respond(message), nhiều action + clarification trong một lượt; tối đa2 model request, không gọi model sau write.
 - Production gom mutations/receipt/pending/history/outbox cùng outer transaction; kiểm rollback và không replay nghiệp vụ.
 - Summary đọc từ đoạn cũ chưa bao phủ, recent12 cặp; snapshot20 active task + event/session/nhắc. today/tomorrow và now có +07:00 để tránh lệch ngày sau nửa đêm.
 - Task/reminder độc lập/event, lập và cập nhật buổi làm, reply đúng reminder, pause, complete/cancel hoạt động. Google runtime đã bỏ.
-- /tasks hiện3 việc trước + xem toàn bộ; /today rút gọn; chat thường không bị wizard chặn.
+- /tasks lấy3 việc ưu tiên từ toàn DB, không bỏ task gấp sau trang20; /today trộn event/session theo giờ và phân trang3 không bỏ sót. Chat thường không bị wizard chặn.
+- Snapshot summary chỉ cho thực thi với các source_turns thực sự đã gửi; respond đứng trước action không làm lệch @index.
 - Nhóm có duplicate chờ confirmation chung (chưa ghi nửa nhóm); clarification có thể nhiều mục độc lập. Không có nhiều nhóm confirmation đồng thời: đề xuất mới thay nhóm cũ.
 
 ## Kiểm chứng
-- Full suite + experiments đạt; typecheck/dry-run đạt. Test bổ sung: atomic outer rollback, batch confirmation, old history summary, migration/standalone/event và planning conflict.
+- Full suite88 test chính +25 experiments đạt; nhóm assistant-flow13/13 đạt (có3 regression mới), typecheck/dry-run đạt. Test bổ sung: atomic outer rollback, batch confirmation, old history summary, migration/standalone/event và planning conflict.
 - Live staging QA1309: phát hiện sai ngày mai, đã sửa today/tomorrow. QA1309B lưu hạn14/09 đúng; hỏi giờ → trả lời đổi giờ → reminder gửi → complete hủy follow-up.
 - 4 tin QA dùng4 request; Telegram replies67–69/71, reminder70 sent_at1789238114411. Message IDs là bằng chứng Telegram nhận, không chứng minh push trên iPhone.
 - Đã xóa đúng2 task QA,2 clarification,1 reminder, undo và4 history giả. Receipt/outbox giữ audit. Không sửa task thật; dữ liệu QA có thể dựng lại từ receipt.
-- Đợt trước tối đa16 request direct smoke (bao gồm1 probe bị dừng không rõ provider); đợt này4 runtime requests. Không gọi tiếp vô hạn.
+- Đợt trước tối đa16 request direct smoke (bao gồm1 probe bị dừng không rõ provider); sau nới quota4 runtime QA +2 direct planning probe. Lần đầu model tạo reminder trùng plan_work; đã sửa tool description, lần sau đúng1 plan_work + respond. Không coi prompt loại bỏ mọi khả năng trùng. Không gọi tiếp vô hạn.
 
 ## Quyền/quota
 - User duyệt nới hạn mức: trần APP từ20 lên40/rolling24h, giữ4/phút; không phải quota Google.

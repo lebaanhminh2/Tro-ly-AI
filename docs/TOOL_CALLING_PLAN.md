@@ -3,6 +3,8 @@ Cập nhật 2026-09-13. Sản phẩm đã chốt; user đã duyệt danh sách 
 
 Checkpoint triển khai và live QA xem HANDOFF; đã có bản để user nghiệm thu. Protocol JSON tổng hợp đã thử không đạt; triển khai native tools + respond(message), không duy trì hai protocol.
 
+Checkpoint rà soát2026-09-13: đã deploy sửa /today phân trang event+session, priority task ngoài20, bảo toàn @index khi respond đứng trước, giới hạn summary theo snapshot. 88+25 tests và assistant-flow13 đạt. Còn giới hạn một nhóm confirmation hiện hành, planner không tự chạy AI nền; nghiệm thu người dùng chưa có.
+
 ## 1. Đích và bằng chứng rà soát
 - Giữ Telegram/Workers/D1/Gemini free/cron/outbox. Bỏ Google; không đổi provider/framework.
 - Một lượt có thể đồng thời trò chuyện, làm nhiều việc rõ và hỏi phần còn thiếu: message + actions_now[] + pending[].

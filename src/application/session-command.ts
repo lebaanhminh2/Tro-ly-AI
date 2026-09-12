@@ -10,14 +10,22 @@ export async function sessionCommand(i:Input,store:WorkReader,now:number):Promis
   if(text==='/today'||cb.startsWith('today-page:')){
     const offset=cb.startsWith('today-page:')?Number(cb.slice(11)):0;
     if(!Number.isSafeInteger(offset)||offset<0||offset>1000)return view('Trang không hợp lệ.');
-    const all=await store.sessions(i.owner,dayStart(now),dayStart(now)+86400000),sessions=all.slice(offset,offset+3);
-    const events=offset===0?await store.events?.(i.owner,dayStart(now),dayStart(now)+86400000)??[]:[];
+    const [sessions,events]=await Promise.all([
+      store.sessions(i.owner,dayStart(now),dayStart(now)+86400000),
+      store.events?.(i.owner,dayStart(now),dayStart(now)+86400000)??[]
+    ]);
     const labels={draft:'Chưa chốt',planned:'Đã lên lịch',running:'Đang làm',paused:'Tạm dừng',completed:'Đã kết thúc buổi',skipped:'Đã bỏ buổi',unknown:'Chưa rõ kết quả'};
-    const lines=await Promise.all(sessions.map(async s=>`${new Date(s.start_at+7*3600000).toISOString().slice(11,16)} · ${(await store.task(i.owner,s.task_id))?.title??'Công việc'} · ${s.minutes} phút · ${labels[s.status]}`));
-    const result=view((sessions.length||events.length)?[...events.slice(0,3).map(e=>`${new Date(e.start_at+7*3600000).toISOString().slice(11,16)} · ${e.title}`),...lines].slice(0,3).join('\n'):'Hôm nay chưa có buổi nào. Cậu nói giờ rảnh để tớ giúp xếp việc nhé.',sessions.map((s,index)=>[{text:`${index+1}. ${new Date(s.start_at+7*3600000).toISOString().slice(11,16)} · Xem buổi`,callback_data:`session:${s.id}`} ]));
+    const items=await Promise.all([
+      ...sessions.map(async s=>({id:s.id,at:s.start_at,session:true,line:`${new Date(s.start_at+7*3600000).toISOString().slice(11,16)} · ${(await store.task(i.owner,s.task_id))?.title??'Công việc'} · ${s.minutes} phút · ${labels[s.status]}`})),
+      ...events.map(async e=>({id:e.id,at:e.start_at,session:false,line:`${new Date(e.start_at+7*3600000).toISOString().slice(11,16)} · ${e.title}`}))
+    ]);
+    items.sort((a,b)=>a.at-b.at||a.id.localeCompare(b.id));
+    const page=items.slice(offset,offset+3);
+    const result=view(page.length?page.map(item=>item.line).join('\n'):'Hôm nay chưa có buổi nào. Cậu nói giờ rảnh để tớ giúp xếp việc nhé.',
+      page.flatMap((item,index)=>item.session?[[{text:`${index+1}. Xem buổi`,callback_data:`session:${item.id}`}]]:[]));
     if(offset>0)result.view.buttons.push([{text:'Trang trước',callback_data:`today-page:${Math.max(0,offset-3)}`}]);
-    if(all.length>offset+3)result.view.buttons.push([{text:'Trang tiếp',callback_data:`today-page:${offset+8}`}]);
-    if(!sessions.length)result.view.buttons.push([{text:'Công việc',callback_data:'nav:tasks'}]);
+    if(items.length>offset+3)result.view.buttons.push([{text:'Trang tiếp',callback_data:`today-page:${offset+3}`}]);
+    if(!page.length)result.view.buttons.push([{text:'Công việc',callback_data:'nav:tasks'}]);
     result.changes.push({type:'cancel',owner:i.owner});
     return result;
   }

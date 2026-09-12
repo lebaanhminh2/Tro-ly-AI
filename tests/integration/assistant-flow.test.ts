@@ -260,3 +260,58 @@ test('duplicate task batch can be confirmed as a group without partial writes',a
   assert.equal(await journal.pending('123',now),null);
  }finally{await mf.dispose();}
 });
+
+test('today pagination mixes events and sessions without hiding or skipping entries',async()=>{
+ const {sessionCommand}=await import('../../src/application/session-command.ts');
+ const {dayStart}=await import('../../src/domain/session.ts');
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
+  const now=Date.parse('2026-09-13T08:00:00+07:00'),start=dayStart(now);
+  await db.exec("INSERT INTO tasks(id,owner,title,created) VALUES('t','123','study',0)");
+  for(let n=0;n<5;n++)await db.prepare('INSERT INTO local_events(id,owner,title,start_at) VALUES(?,?,?,?)').bind('e'+n,'123','event'+n,start+(9+n)*3600000).run();
+  await db.prepare("INSERT INTO sessions(id,owner,task_id,start_at,minutes,status,expires) VALUES('s','123','t',?,25,'planned',?)").bind(start+10.5*3600000,now+86400000).run();
+  const store=new D1WorkStore(db);
+  const first=(await sessionCommand({owner:'123',chat:123,updateId:1,text:'/today'},store,now))!;
+  assert.equal(first.view.text.split('\n').length,3);
+  assert.match(first.view.text,/event0/);assert.match(first.view.text,/study/);
+  assert.ok(first.view.buttons.flat().some(b=>b.callback_data==='today-page:3'));
+  const second=(await sessionCommand({owner:'123',chat:123,updateId:2,callback:'today-page:3'},store,now))!;
+  assert.match(second.view.text,/event2/);assert.match(second.view.text,/event4/);
+  assert.equal(second.view.buttons.flat().some(b=>b.text==='Trang tiếp'),false);
+ }finally{await mf.dispose();}
+});
+
+test('urgent task beyond first twenty is included in overview and model context',async()=>{
+ const {buildContext}=await import('../../src/application/context-builder.ts');
+ const {planCommand}=await import('../../src/application/plan-command.ts');
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
+  for(let n=0;n<25;n++)await db.prepare('INSERT INTO tasks(id,owner,title,created) VALUES(?,?,?,?)').bind('t'+n,'123','work'+n,n).run();
+  await db.prepare("UPDATE tasks SET deadline='2026-09-13T09:00:00+07:00' WHERE id='t24'").run();
+  const store=new D1WorkStore(db),now=Date.parse('2026-09-13T08:00:00+07:00');
+  const context=JSON.parse((await buildContext(store,'123','what next',now)).context);
+  assert.ok(context.tasks.some((t:{id:string})=>t.id==='t24'));
+  const view=await planCommand({owner:'123',chat:123,updateId:1,text:'/tasks'},store,now);
+  assert.match(view.view.text,/1\. work24/);
+ }finally{await mf.dispose();}
+});
+
+test('respond preceding mutations does not shift local task references',async()=>{
+ const {runToolTurn}=await import('../../src/application/conversation-command.ts');
+ const calls:import('../../src/ai/contracts.ts').ToolCall[]=[
+  {name:'respond',args:{message:'Saved; what time?'}},
+  {name:'create_task',args:{title:'report',deadline:null}},
+  {name:'save_clarification',args:{subject:'reminder',question:'What time?',task_id:'@1'}}
+ ];
+ let checked=false;
+ await runToolTurn([{role:'user',parts:[{text:'new task'}]}],{
+  model:async()=>({content:{role:'model',parts:[]},calls,text:''}),
+  execute:async()=>{throw Error('batch expected');},commit:async()=>{throw Error('batch expected');},
+  batch:async(group,message)=>{assert.equal(group[1]!.args.task_id,'@0');checked=true;return message;}
+ });
+ assert.equal(checked,true);
+});

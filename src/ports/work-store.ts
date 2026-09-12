@@ -10,6 +10,7 @@ export type Clock = { now(): number };
 export type Lease = { pendingWrites?:PreparedWrite[]; owner: string; token: string; input: Input; attempts: number;
   ui?:{card:import('../domain/ui.ts').Card;action:import('../domain/ui.ts').CardAction}; uiStale?:boolean; uiRecovered?:boolean };
 export interface WorkReader {
+  priorityTasks?(owner:string):Promise<import('../domain/work.ts').Task[]>;
   unsummarized?(owner:string,now:number,after:number):Promise<import('../domain/memory.ts').ConversationTurn[]>;
   event?(owner:string,id:string):Promise<import('../domain/event.ts').LocalEvent|null>;
   events?(owner:string,from:number,to:number):Promise<import('../domain/event.ts').LocalEvent[]>;
