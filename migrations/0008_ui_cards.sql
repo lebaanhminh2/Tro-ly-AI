@@ -33,3 +33,10 @@ CREATE TABLE ui_deliveries (
  UNIQUE(card_id,revision)
 );
 CREATE INDEX ui_deliveries_due ON ui_deliveries(state,available);
+CREATE TABLE ui_calendar_receipts (
+ owner TEXT NOT NULL,
+ update_id INTEGER NOT NULL,
+ state TEXT NOT NULL CHECK(state IN ('started','done')),
+ view_json TEXT,
+ PRIMARY KEY(owner,update_id)
+);

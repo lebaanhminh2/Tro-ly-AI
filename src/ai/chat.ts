@@ -31,7 +31,7 @@ export function contextualChat(client:Pick<GeminiTrial,'generate'>,reserve:(key:
     changes:[{type:'propose',proposal:{id,owner,task_id:`t${owner}_${input.updateId}`,operation:'capture',value:output.draft.value,expected_version:0,expires:now+300000,status:'pending'}}]};
   }
   const decision=decide(output,[{role:'user',text}],{userId:owner,entities:built.tasks.map(t=>({id:t.id,ownerId:owner,type:'task' as const}))});
-  if(output.draft?.operation==='update_task')return {view:{text:'Cậu chọn việc và thông tin muốn sửa bằng nút nhé; chưa có thay đổi nào được lưu.',buttons:built.tasks.map(t=>[{text:`Hạn: ${t.title.slice(0,25)}`,callback_data:`deadline:${t.id}`}])},changes:[]};
+  if(output.draft?.operation==='update_task')return {view:{text:'Cậu chọn việc và thông tin muốn sửa bằng nút nhé; chưa có thay đổi nào được lưu.',buttons:built.tasks.map(t=>[{text:`Hạn: ${t.title}`,callback_data:`deadline:${t.id}`}])},changes:[]};
   return decision.text;
  };
 }

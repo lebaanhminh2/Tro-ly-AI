@@ -68,9 +68,9 @@ export async function planCommand(input: Input, store: WorkReader, now: number, 
     const rawOffset = callback?.slice(5) ?? '0';
     if (!/^\d{1,7}$/.test(rawOffset)) return view('Trang không hợp lệ.');
     const offset = Number(rawOffset), tasks = await store.tasks(owner, offset);
-    const buttons = tasks.map((t,index) => [{ text: `${index+1}. ${t.title.slice(0,35)}`, callback_data: `task:${t.id}` }]);
+    const buttons = tasks.map((t,index) => [{ text: `${index+1}. ${t.title}`, callback_data: `task:${t.id}` }]);
     if (offset > 0) buttons.push([{ text: 'Trang trước', callback_data: `page:${Math.max(0, offset - 10)}` }]);
-    if (tasks.length === 10) buttons.push([{ text: 'Trang tiếp', callback_data: `page:${offset + 10}` }]);
+    if (tasks.length === 10 && (await store.tasks(owner,offset+10)).length) buttons.push([{ text: 'Trang tiếp', callback_data: `page:${offset + 10}` }]);
     return {...view(tasks.length ? tasks.map(t => `${t.title} — ${t.deadline ?? 'chưa có hạn'}`).join('\n') : offset===0?'Chưa có việc nào. Gửi /add tên việc để thêm nhé.':'Chưa có việc ở trang này.', buttons),changes:[{type:'cancel',owner}]};
   }
   if(callback?.startsWith('task:')){

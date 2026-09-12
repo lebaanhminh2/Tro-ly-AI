@@ -308,7 +308,7 @@ export class CalendarService {
         if(!Number.isSafeInteger(page)||page<0||page>1000)throw new CalendarError('INVALID_PAGE');
         const external=refs.filter(r=>!r.managed);
         return {text:`Google: ${c?.status??'chưa kết nối'}. ${jobs.map(j=>`${j.status}: ${j.n}`).join(', ')}\n/calendar connect · /calendar list · /calendar setup · /calendar sync · /calendar disconnect\nChọn lịch đọc bên dưới; slot cần sync mới, chỉ là đề xuất.`,buttons:[
-          ...external.slice(page,page+10).map(r=>[{text:`${r.selected?'✓':'○'} ${r.name.slice(0,40)}`,callback_data:`cal-select:${r.selected?0:1}:${r.id}`}]),
+          ...external.slice(page,page+10).map(r=>[{text:`${r.selected?'✓':'○'} ${r.name}`,callback_data:`cal-select:${r.selected?0:1}:${r.id}`}]),
           ...(page>0?[[{text:'Trang trước',callback_data:`cal-page:${Math.max(0,page-10)}`}]]:[]),
           ...(external.length>page+10?[[{text:'Trang tiếp',callback_data:`cal-page:${page+10}`}]]:[]),
           ...sessions.map(s=>[{text:`Tìm slot cho buổi ${s.id} · ${s.minutes} phút`,callback_data:`cal-plan:${s.id}`}])

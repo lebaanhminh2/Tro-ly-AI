@@ -13,6 +13,23 @@ export class D1WorkStore implements WorkStore {
   private db: Database;
   constructor(db: Database, privateCards = false) { this.db = db; this.cardsEnabled=privateCards; }
   private cardsEnabled:boolean;
+  async calendarResult(lease:Lease,run:()=>Promise<import('../../domain/work.ts').View|null>,clock:import('../../ports/work-store.ts').Clock){
+    if(!this.cardsEnabled||(!lease.input.text?.startsWith('/calendar')&&!lease.input.callback?.startsWith('cal-')))return run();
+    const receipt=await query(this.db,'SELECT state,view_json FROM ui_calendar_receipts WHERE owner=? AND update_id=?',lease.owner,lease.input.updateId).first<{state:string;view_json:string|null}>();
+    if(receipt?.state==='done')return receipt.view_json?JSON.parse(receipt.view_json):null;
+    if(receipt)return {text:'Lần xử lý Calendar trước bị gián đoạn; có thể thay đổi đã được lưu. Mở /calendar để kiểm tra. Tớ không tự thực hiện lại yêu cầu này.',buttons:[]};
+    const started=await query(this.db,`INSERT OR IGNORE INTO ui_calendar_receipts(owner,update_id,state)
+      SELECT ?,?,'started' WHERE EXISTS(SELECT 1 FROM owner_leases WHERE owner=? AND token=? AND expires>?)`,
+      lease.owner,lease.input.updateId,lease.owner,lease.token,clock.now()).run();
+    if(!started.meta.changes)throw Error('CALENDAR_RECEIPT_NOT_CLAIMED');
+    const view=await run();
+    const normalized=view?renderView(view):null;
+    const saved=await query(this.db,`UPDATE ui_calendar_receipts SET state='done',view_json=? WHERE owner=? AND update_id=? AND state='started'
+      AND EXISTS(SELECT 1 FROM owner_leases WHERE owner=? AND token=? AND expires>?)`,
+      normalized?JSON.stringify(normalized):null,lease.owner,lease.input.updateId,lease.owner,lease.token,clock.now()).run();
+    if(!saved.meta.changes)throw Error('CALENDAR_RECEIPT_LEASE_EXPIRED');
+    return normalized;
+  }
   async prepareUi(lease:Lease,now:number){
     if(!this.cardsEnabled||!lease.input.callback)return;
     const input=lease.input;

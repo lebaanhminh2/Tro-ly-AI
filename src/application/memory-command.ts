@@ -7,7 +7,7 @@ export async function memoryCommand(i:Input,store:WorkReader,now:number):Promise
  if(text==='/memory'||i.callback?.startsWith('memory-page:')){
   const raw=i.callback?.slice(12)??'0';if(!/^\d{1,7}$/.test(raw))return view('Trang không hợp lệ.');
   const offset=Number(raw),rows=await store.memories(i.owner,now,offset,9),memories=rows.slice(0,8);
-  const buttons=memories.map(m=>[{text:'Quên: '+m.content.slice(0,30),callback_data:`forget:${m.id}`}]);
+  const buttons=memories.map(m=>[{text:'Quên: '+m.content,callback_data:`forget:${m.id}`}]);
   if(offset>0)buttons.push([{text:'Trang trước',callback_data:`memory-page:${Math.max(0,offset-8)}`}]);
   if(rows.length>8)buttons.push([{text:'Trang tiếp',callback_data:`memory-page:${offset+8}`}]);
   return {view:{text:memories.length?memories.map(m=>`${m.kind==='temporary'?'Hôm nay':'Đã nhớ'}: ${m.content}`).join('\n'):'Chưa lưu điều gì ở trang này. /remember nội dung để ghi nhớ; /mood nội dung cho hôm nay.',buttons},changes:[]};

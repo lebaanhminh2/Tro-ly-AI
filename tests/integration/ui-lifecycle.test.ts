@@ -6,6 +6,31 @@ import type {Database} from '../../src/adapters/d1/database.ts';
 import {D1UiStore} from '../../src/adapters/d1/ui-store.ts';
 import {createWorker} from '../../src/entrypoints/worker.ts';
 import type {Env} from '../../src/config/env.ts';
+import {D1WorkStore} from '../../src/adapters/d1/work-store.ts';
+import {processInbox} from '../../src/application/process-inbox.ts';
+
+test('Calendar receipt replays saved view after UI commit failure, but never repeats an interrupted side effect',async()=>{
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const file of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync(`migrations/${file}`,'utf8').replace(/\r?\n/g,' '));
+  const store=new D1WorkStore(db,true),clock={now:()=>100000};let calls=0;
+  const calendar={command:async()=>{calls++;return {text:'Đã lưu lựa chọn',buttons:[]};}};
+  await store.accept({owner:'123',chat:123,updateId:1,text:'/calendar list'},clock.now(),true);
+  const commit=store.commit.bind(store);let fail=true;
+  store.commit=async(...args)=>{if(fail){fail=false;throw Error('synthetic UI commit failure');}return commit(...args);};
+  await processInbox(store,'123',clock,undefined,4,calendar);
+  assert.equal(calls,1);assert.equal(await store.result('123',1),null);
+  await processInbox(store,'123',clock,undefined,4,calendar);
+  assert.equal(calls,1);assert.equal((await store.result('123',1))!.text,'Đã lưu lựa chọn');
+  await store.accept({owner:'123',chat:123,updateId:2,text:'/calendar setup'},clock.now(),true);
+  const interrupted={command:async()=>{calls++;throw Error('lost after possible external change');}};
+  await processInbox(store,'123',clock,undefined,4,interrupted);
+  assert.equal(calls,2);
+  await processInbox(store,'123',clock,undefined,4,interrupted);
+  assert.equal(calls,2);assert.match((await store.result('123',2))!.text,/không tự thực hiện lại/);
+ }finally{await mf.dispose();}
+});
 
 test('sent reminder bridge rejects forged buttons and deleted cards get one replacement with fresh actions',async()=>{
  const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});

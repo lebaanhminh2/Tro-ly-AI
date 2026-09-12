@@ -20,6 +20,7 @@ export interface WorkReader {
   selection(owner: string): Promise<Selection | null>;
 }
 export interface WorkStore extends WorkReader {
+  calendarResult?(lease:Lease,run:()=>Promise<import('../domain/work.ts').View|null>,clock:Clock):Promise<import('../domain/work.ts').View|null>;
   prepareUi?(lease:Lease,now:number):Promise<void>;
   accept(input: Input, now: number, delivery: boolean): Promise<boolean>;
   claim(owner: string, now: number): Promise<Lease | null>;

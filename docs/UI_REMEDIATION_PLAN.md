@@ -87,6 +87,8 @@ Thực tế src/ai/chat.ts hiện chỉ tạo proposal capture trong trường h
 
 ## 6. Tiêu chí hoàn tất đợt
 
+Calendar receipt đã có ở mode UI mới: reserve started trước thực hiện, lưu done/View sau thành công; retry command sau lỗi UI không gọi Calendar lại. Started mất kết quả trả lời không tự thực hiện lại. Test fault injection UI commit và provider interrupt đạt. Không gọi cơ chế này là giao dịch atomic với Google; còn cần kiểm thử UI Calendar đầy đủ. Renderer giờ nhận tên nguyên bản ở task/memory/Calendar/AI thay vì slice rải rác; phân trang task không hiện trang tiếp rỗng.
+
 Cập nhật recovery: không tự retry edit uncertain trên cùng tin vì không chặn được request cũ ngoài Telegram ghi đè bản mới. Bấm lại trên tin có message ID đã xác minh sẽ mở trạng thái đã commit ở card mới, vô hiệu card cũ, không chạy lại nghiệp vụ. Send uncertain chưa biết message ID không tự gửi lại. Đây là đường phục hồi chủ động thay cho hứa reconcile tuyệt đối. Calendar chọn lịch đã chuyển sang explicit selected state + fence; chưa đóng gap kết quả nghiệp vụ Calendar với UI transaction.
 
 Mỗi dòng ma trận có test thành công và stale/cancel/error phù hợp; navigation/wizard không tích lũy tin, nút mutation cũ không còn tác dụng và có phản hồi rõ; không card edit cũ ghi đè trạng thái mới không được xử lý; tên đầy đủ dễ tìm, nhãn nút thống nhất; nghiệp vụ không phụ thuộc AI. Không đếm số test làm tiêu chí UX duy nhất.
