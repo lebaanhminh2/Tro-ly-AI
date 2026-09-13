@@ -5,7 +5,7 @@ import type { Session,Preferences } from '../domain/session.ts';
 import { deadlineValue } from '../domain/time.ts';
 
 export async function sessionCommand(i:Input,store:WorkReader,now:number):Promise<Plan|null>{
-  const view=(text:string,buttons:Plan['view']['buttons']=[]):Plan=>({view:{text,buttons},changes:[]});
+  const view=(text:string,buttons:Plan['view']['buttons']=[]):Plan=>({view:{text,buttons:buttons.map(row=>row.filter(b=>!/^s:(start|pause|finish|skip|snooze):/.test(b.callback_data))).filter(row=>row.length)},changes:[]});
   const cb=i.callback??'',text=cb==='rest'?'/rest':i.text??'';
   if(text==='/today'||cb.startsWith('today-page:')){
     const offset=cb.startsWith('today-page:')?Number(cb.slice(11)):0;

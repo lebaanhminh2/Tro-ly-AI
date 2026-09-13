@@ -1,4 +1,13 @@
 # Tiếp tục từ đây
+## Timeline kéo thả — 2026-09-14 (đã deploy)
+- Staging ac1ede5c-6baa-4bf6-9866-87bde8a02dcd; /app/views/timeline.js live200 có drag/clock. Không gọi Gemini thử, không sửa dữ liệu user trong kiểm thử.
+- Hôm nay dùng timeline trục giờ, vùng bận/ngoài free có sọc, now-line cập nhật15s, viewport tự cuộn gần now lần đầu. Task checkbox dùng mutation hoàn thành hiện có. Không còn start/pause/finish/skip trong app; nhắc session không inline keyboard, session-command lọc các nút thao tác cũ. Tin Telegram đã gửi trước deploy chưa tự sửa.
+- Nhấn giữ tay nắm350ms (mouse80ms), kéo snap5min, auto-scroll cạnh viewport, preview giờ không làm xê dịch canvas; chạm tên mở chỉnh giờ native input. Lưu pessimistic: chỉ nhận lịch mới sau API+refresh. Không đủ chỗ rollback toàn lần kéo. Undo10min chỉ khi snapshot sau move chưa đổi và giờ khôi phục chưa qua.
+- TimelineStore đọc giờ sinh hoạt hiện tại/free/busy/events/task sessions. /api/timeline owner-auth, strict input, receipt replay, atomic move downstream + cancel old reminder generation + new reminders. Guards settings/day/session/task/event version và count, chặn in-flight delivery; không đổi task deadline, không tự complete. Fixed/running/paused/past giữ nguyên. Không chia nhỏ block khi kéo; yêu cầu đủ khoảng liên tục.
+- Không có migration mới. Completion tự tick qua app; chat thường persona nhắc tick, không tự hoàn thành. Backend nhắc task vẫn text mẫu không gọi Gemini chủ động; không hứa lời nhắc mỗi lần do LLM sinh.
+- Full test:all đạt trước bổ sung API assertions; targeted timeline/API chạy lại đạt, typecheck+dry-run đạt. Edge headless414x896 dark visual no horizontal overflow; mouse và touch emulation kéo15min đúng. Screenshot ignored .wrangler/timeline-mobile.png; chưa nghiệm thu iPhone thật.
+- Giới hạn: buổi running/paused cũ hiển thị nhưng không kéo; có thể tick task hoặc /lich giữ theo cơ chế hiện có. Chưa có tự compact lịch sau tick; chưa tự thay đổi những tin nhắc Telegram cũ. Task chưa xếp vẫn có khu vực unplanned và danh sách việc.
+
 ## Quy tắc khung nghỉ chốt lại — 2026-09-14 (đã deploy)
 - Worker028410d4-da42-457e-b3ab-6ae4703de083, migration0017 đã áp. Typecheck đạt; 12 ca Mini App/rest/migration +15 planner/conversation +8 healthy đạt (ca Mini App cũ được đổi sang báo ngủ đúng khung nghỉ). Không Gemini call thật.
 - /ngu ghi nhận báo ngủ nhưng chỉ chặn nhắn khi now thuộc [giờ ngủ mục tiêu, giờ bắt đầu tiếp theo). Trong khung hoạt động luôn bỏ chặn do /ngu; báo ngủ phải thuộc operating day hiện tại, không dùng lại đêm cũ. Settings được xét trực tiếp; không giữ mốc kết thúc nghỉ cố định.

@@ -3,6 +3,7 @@ import {verifyMiniApp} from '../adapters/telegram/mini-app-auth.ts';
 import {HealthyStore} from '../adapters/d1/healthy-store.ts';
 import {RecurrenceStore} from '../adapters/d1/recurrence-store.ts';
 import {ScheduleStore} from '../adapters/d1/schedule-store.ts';
+import {TimelineStore} from '../adapters/d1/timeline-store.ts';
 import {D1WorkStore} from '../adapters/d1/work-store.ts';
 import {canAct} from '../domain/session.ts';
 import {sessionStatements} from '../adapters/d1/session-store.ts';
@@ -31,9 +32,9 @@ export async function miniAppApi(request:Request,env:Env,now=Date.now()):Promise
    const appointments=(await query(env.DB,"SELECT a.id,a.version,a.due,a.status,COALESCE(a.subject,t.title) AS title FROM task_appointments a LEFT JOIN tasks t ON t.id=a.task_id AND t.owner=a.owner WHERE a.owner=? AND a.status='active' AND (a.task_id IS NULL OR t.deleted_at IS NULL) ORDER BY a.due LIMIT 200",owner).all<{id:string;version:number;due:number;status:string;title:string}>()).results;
    const combined=[...reminders,...appointments.map(a=>{const local=new Date(a.due+25200000).toISOString();return {id:a.id,origin:'appointment',title:a.title,version:a.version,kind:'once',times:[local.slice(11,16)],weekdays:[],startDate:local.slice(0,10),endDate:null,enabled:true};})];
    const rest=await new ScheduleStore(env.DB).restStatus(owner,now);
-   return json({now,account,tasks,reminders:combined,settings,progress,sessions,events,day,rest,resting:rest.reason!=='active',realms:REALMS,loot:LOOT,charms:CHARMS,needsSetup:!settings});
+   return json({now,account,tasks,reminders:combined,settings,progress,sessions,events,day,timeline:await new TimelineStore(env.DB).read(owner,now),rest,resting:rest.reason!=='active',realms:REALMS,loot:LOOT,charms:CHARMS,needsSetup:!settings});
   }
-  if(request.method!=='POST'||!['/api/cultivation','/api/tasks','/api/settings','/api/reminders','/api/schedule','/api/reminder-instance','/api/tasks-delete','/api/session'].includes(url.pathname))return json({error:'NOT_FOUND'},404);
+  if(request.method!=='POST'||!['/api/cultivation','/api/tasks','/api/settings','/api/reminders','/api/schedule','/api/reminder-instance','/api/tasks-delete','/api/session','/api/timeline'].includes(url.pathname))return json({error:'NOT_FOUND'},404);
   // Read a bounded body, including chunked requests.
   const reader=request.body?.getReader();if(!reader)return json({error:'INVALID_REQUEST'},400);
   const decoder=new TextDecoder('utf-8',{fatal:true});let raw='',bytes=0;
@@ -62,6 +63,12 @@ export async function miniAppApi(request:Request,env:Env,now=Date.now()):Promise
   if(url.pathname==='/api/tasks-delete'){
    if(Object.keys(input).some(k=>!['id','items','confirm'].includes(k))||input.confirm!==true||!Array.isArray(input.items)||input.items.some(t=>!t||typeof t!=='object'||Object.keys(t).some(k=>!['id','version'].includes(k))||typeof t.id!=='string'||!Number.isInteger(t.version)))return json({error:'INVALID_REQUEST'},400);
    return json({result:await new D1WorkStore(env.DB).deleteHierarchyGroup(owner,input.id,input.items,now)});
+  }
+  if(url.pathname==='/api/timeline'){
+   if(Object.keys(input).some(k=>!['id','stamp','sessionId','at','undo'].includes(k))||typeof input.stamp!=='string'||input.stamp.length>3500||
+    (input.undo!==undefined?typeof input.undo!=='string'||!input.undo||input.undo.length>120||input.sessionId!==undefined||input.at!==undefined:typeof input.sessionId!=='string'||!Number.isFinite(input.at)))return json({error:'INVALID_REQUEST'},400);
+   const {id,...move}=input;
+   return json({result:await new TimelineStore(env.DB).change(owner,String(id),move as {stamp:string;sessionId?:string;at?:number;undo?:string},now)});
   }
   if(url.pathname==='/api/schedule'){
    if(Object.keys(input).some(k=>!['id','version','free','busy','estimates'].includes(k))||!Number.isInteger(input.version)||!Array.isArray(input.free)||!Array.isArray(input.busy)||!Array.isArray(input.estimates)||input.estimates.length>100)return json({error:'INVALID_REQUEST'},400);
@@ -147,6 +154,7 @@ export async function miniAppApi(request:Request,env:Env,now=Date.now()):Promise
   return json({result,account:await healthy.read(owner)});
  }catch(error){
   const code=error instanceof Error?error.message:'';
+  if(code.startsWith('TIMELINE_'))return json({error:code},409);
   if(['NO_ACTIVE_DAY','NO_TICKETS','ACCOUNT_SUSPENDED','DRAW_UNAVAILABLE','FUSION_UNAVAILABLE','ITEM_UNAVAILABLE','BREAKTHROUGH_UNAVAILABLE','ALREADY_PROTECTED','REQUEST_ID_REUSED','STALE_TASK','CONFIRM_CHILDREN','CONFIRM_REOPEN_PARENT','CONFIRM_DELETE','STEP_NOT_FOUND','NO_NEXT_REMINDER','SESSION_CHANGED'].includes(code))return json({error:code},409);
   if(code.startsWith('INVALID_'))return json({error:'INVALID_REQUEST'},400);
   if(error instanceof SyntaxError)return json({error:'INVALID_REQUEST'},400);

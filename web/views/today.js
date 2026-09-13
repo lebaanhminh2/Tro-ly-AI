@@ -1,3 +1,4 @@
+import {renderTimeline} from './timeline.js';
 export function renderToday(ui,state){
  const {el,button,heading,card,openTask,render}=ui;
  const root=el('section');
@@ -10,11 +11,11 @@ export function renderToday(ui,state){
   const rest=card();rest.append(el('h2',title),el('p',detail+(reason==='inactive'?' Cậu vẫn có thể chỉnh công việc.':' Cậu vẫn chỉnh lịch, công việc và nhận thưởng bình thường.'),'subtitle'),...(state.live?[]:[button('Hoạt động lại',()=>{state.resting=false;render();},'secondary')]));root.append(rest);
  }
  const next=state.tasks.find(t=>!t.done);
- if(next&&!state.resting){
+ if(next&&!state.resting&&state.mode==='tasks'){
   const hero=el('article',undefined,'hero');
   hero.append(el('p','LÀM TIẾP · #'+next.code,'eyebrow'),el('h2',next.title),el('p',(next.steps.find(s=>!s.done)?.title??'Bắt đầu từ phần nhỏ nhất')+(state.live?'':' · dự kiến 25 phút')));
   const actions=el('div',undefined,'actions');
-  actions.append(button('Bắt đầu cùng tớ →',()=>ui.startWork(next),'primary'),button('Chi tiết',()=>openTask(next),'secondary'));
+  actions.append(button('Xem công việc',()=>openTask(next),'secondary'));
   hero.append(actions);root.append(hero);
  }
  const capacity=el('div',undefined,'capacity');capacity.append(el('div','Kế hoạch mẫu · 2 giờ 30 phút / 3 giờ rảnh','capacity-row'));
@@ -24,12 +25,7 @@ export function renderToday(ui,state){
   const b=button(label,()=>{state.mode=value;render();});b.setAttribute('aria-pressed',String(state.mode===value));toggle.append(b);
  }root.append(toggle);
  if(state.mode==='timeline'){
-  const list=card();
-  const demoRows=[{time:'09:00',title:'Báo cáo môn học',detail:'25 phút · Có nhắc bắt đầu',type:''},{time:'14:00',title:'Học tiếng Anh',detail:'Lịch cố định · 60 phút',type:'fixed'},{time:state.sleep,title:'Thu dọn ngày, đi ngủ',detail:'Báo /ngu để ghi nhận giờ nghỉ',type:'sleep'}];
-  const liveRows=[...(state.sessions??[]).map(s=>({time:new Date(s.start_at).toLocaleTimeString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit'}),title:state.tasks.find(t=>t.id===s.task_id)?.title??'Buổi làm',detail:s.minutes+' phút · '+({planned:'Đã xếp',running:'Đang làm',paused:'Tạm dừng',completed:'Xong buổi',skipped:'Đã bỏ',unknown:'Chưa rõ kết quả'}[s.status]??s.status),type:'',session:s})),...(state.events??[]).map(e=>({time:new Date(e.start_at).toLocaleTimeString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit'}),title:e.title,detail:'Cuộc hẹn',type:'fixed'}))];
-  for(const row of state.live?liveRows:demoRows){
-   const item=el('div',undefined,'timeline-row'),info=el('div');info.append(el('h3',row.title),el('small',row.detail));if(row.session&&['planned','running','paused','unknown'].includes(row.session.status)){const actions=el('div',undefined,'actions');if(['planned','paused','unknown'].includes(row.session.status))actions.append(button('Bắt đầu',()=>ui.sessionAction(row.session,'start'),'text-button'));if(row.session.status==='running')actions.append(button('Tạm dừng',()=>ui.sessionAction(row.session,'pause'),'text-button'));if(['running','paused'].includes(row.session.status))actions.append(button('Kết thúc buổi',()=>ui.sessionAction(row.session,'finish'),'text-button'));actions.append(button('Bỏ buổi',()=>ui.sessionAction(row.session,'skip'),'text-button'));info.append(actions);}item.append(el('span',row.time,'time'),el('span',undefined,'dot '+row.type),info);list.append(item);
-  }if(state.live&&!liveRows.length)list.append(el('p','Chưa có buổi làm hôm nay.','hint'));root.append(list);
+  root.append(renderTimeline(ui,state));
   root.append(button('Điều chỉnh lịch →',()=>ui.openAvailability(),'text-button'));
   const unplanned=card();unplanned.append(el('h3','Còn 2 việc chưa xếp'),el('p','Chưa biết thời lượng. Cậu có thể trao đổi qua /lich để xếp phần còn lại.','subtitle'));if(!state.live)root.append(unplanned);else {let missing=[];try{missing=JSON.parse(state.day?.intervals_json??'{}').unplanned??[];}catch{}if(missing.length){const c=card();c.append(el('h3',missing.length+' việc chưa xếp đủ'));for(const m of missing)c.append(el('p',(state.tasks.find(t=>t.id===m.taskId)?.title??'Công việc')+' · '+(m.reason==='needs_estimate'?'Chưa có ước lượng':'Còn '+m.minutes+' phút chưa xếp'),'hint'));root.append(c);}}
  }else{

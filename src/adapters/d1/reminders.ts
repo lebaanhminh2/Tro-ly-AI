@@ -2,7 +2,6 @@ import { query } from './database.ts';
 import {ScheduleStore} from './schedule-store.ts';
 import type { Database } from './database.ts';
 import type { Session } from '../../domain/session.ts';
-import { sessionButtons } from '../../domain/session.ts';
 import {appointmentAllowed} from './conversation-store.ts';
 
 export async function reminderAllowed(db:Database,id:string,now:number):Promise<boolean>{
@@ -36,7 +35,7 @@ export async function queueReminders(db:Database,owner:string,now:number){
     }
     const s=await query(db,'SELECT s.*,t.title FROM sessions s JOIN tasks t ON t.id=s.task_id AND t.owner=s.owner WHERE s.id=? AND s.owner=?',r.session_id,owner).first<Session&{title:string}>();
     if(!s)continue;
-    const payload=JSON.stringify({method:'sendMessage',chat_id:Number(owner),text:r.ordinal===1?`Đến buổi “${s.title}” rồi cậu · ${s.minutes} phút.`:`Tớ nhắc thêm lần này thôi nhé: “${s.title}”.`,reply_markup:{inline_keyboard:[...sessionButtons(s),[{text:'Nghỉ hôm nay',callback_data:'rest'}]]}});
+    const payload=JSON.stringify({method:'sendMessage',chat_id:Number(owner),text:r.ordinal===1?`Đến giờ làm “${s.title}” rồi cậu · dự kiến ${s.minutes} phút. Mình bắt đầu từ một phần nhỏ nhé :>`:`Tớ nhắc nhẹ “${s.title}” nhé. Nếu xong rồi, cậu tick trong ứng dụng giúp tớ nha.`});
     await db.batch([
       query(db,`INSERT OR IGNORE INTO outbox(id,payload,available,reminder_id) SELECT ?,?,?,? FROM reminders r
         JOIN sessions s ON s.id=r.session_id WHERE r.id=? AND r.status='pending' AND s.status='planned' AND s.generation=r.generation`,

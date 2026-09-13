@@ -1,5 +1,6 @@
 import {applyTheme,setThemePreference,themePreference,connectLive,liveMutation,refreshLive,createDemo,realms,loot,talismans,demoDraw,demoFuse,demoBreakthrough,demoCompleteTask} from './api.js';
 import {renderToday} from './views/today.js';
+import {updateTimelineClock} from './views/timeline.js';
 import {renderReminders} from './views/reminders.js';
 import {renderAchievements} from './views/achievements.js';
 
@@ -187,8 +188,25 @@ function openBreakthrough(){
  },'primary');attempt.disabled=c.attemptDay===demoDay()||c.qi<target.qi||c.streak<target.days;
  sheetContent.append(info,attempt,result);
 }
-const ui={sessionAction:(session,action)=>performLive('session',{sessionId:session.id,version:session.version,action}),startWork:task=>{if(!state.live){toast('Demo: chưa tạo buổi làm trên bot.');return;}const session=(state.sessions??[]).find(s=>s.task_id===task.id&&['planned','paused','unknown'].includes(s.status));if(!session){openAvailability();return;}performLive('session',{sessionId:session.id,version:session.version,action:'start'});},state:()=>state,cultivation:()=>state.cultivation,demoDay,openDraw,openInventory,openBreakthrough,el,button,heading,card,toast,empty,render,openTask,toggleTask,confirmDelete,openReminder,openAvailability,openShare};
+async function moveTimeline(block,at){
+ if(!state.live){toast('Bản mẫu không lưu lên bot.');return;}
+ const result=await performLive('timeline',{stamp:state.timeline.stamp,sessionId:block.id,at});
+ if(result){state.timelineUndo=result.undoId;toast('Đã cập nhật lịch và giờ nhắc.');render();}
+}
+async function undoTimeline(){
+ const result=await performLive('timeline',{stamp:state.timeline.stamp,undo:state.timelineUndo});
+ if(result){state.timelineUndo=null;render();toast('Đã hoàn tác lịch và lời nhắc.');}
+}
+function editTimeline(block){
+ const task=state.tasks.find(t=>t.id===block.task_id);openSheet(task?'#'+task.code+' · Đổi giờ':'Đổi giờ');
+ const form=el('form'),time=field('Giờ bắt đầu','time',new Date(block.start_at+25200000).toISOString().slice(11,16));time.input.step='300';form.append(time.wrap,el('p','Thời lượng '+block.minutes+' phút. Các việc phía sau được dời nếu cần; không đổi deadline.','hint'));
+ const submit=el('button','Lưu giờ mới','primary');submit.type='submit';form.append(submit);
+ form.addEventListener('submit',e=>{e.preventDefault();const [h,m]=time.input.value.split(':').map(Number),day=new Date(state.timeline.window.start+25200000).toISOString().slice(0,10);let at=Date.parse(day+'T'+String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':00+07:00');if(at<state.timeline.window.start)at+=86400000;moveTimeline(block,at);});
+ sheetContent.append(form);if(task)sheetContent.append(button('Chi tiết công việc',()=>openTask(task),'text-button'));
+}
+const ui={moveTimeline,undoTimeline,editTimeline,state:()=>state,cultivation:()=>state.cultivation,demoDay,openDraw,openInventory,openBreakthrough,el,button,heading,card,toast,empty,render,openTask,toggleTask,confirmDelete,openReminder,openAvailability,openShare};
 function render(){
+ const previousScroll=document.querySelector('.time-scroll');if(previousScroll)state.timelineScroll=previousScroll.scrollTop;
  content.removeAttribute('aria-busy');
  for(const b of document.querySelectorAll('[data-tab]')){if(b.dataset.tab===state.tab)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');}
  content.replaceChildren();
@@ -204,11 +222,13 @@ function render(){
 }
 let refreshing=false,lastRefresh=0;
 async function refreshOnReturn(){
- if(!state.live||!state.loaded||saving||refreshing||sheet.open||Date.now()-lastRefresh<2000)return;
+ if(!state.live||!state.loaded||saving||refreshing||sheet.open||state.timelineDragging||Date.now()-lastRefresh<2000)return;
  refreshing=true;
  try{const latest=await refreshLive();Object.assign(state,latest);lastRefresh=Date.now();render();}catch(error){toast(error.message);}finally{refreshing=false;}
 }
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshOnReturn();});
+setInterval(()=>{if(document.visibilityState==='visible')updateTimelineClock(state);},15000);
+setInterval(()=>{if(document.visibilityState==='visible')refreshOnReturn();},60000);
 window.addEventListener('focus',refreshOnReturn);
 document.querySelector('#settings').replaceChildren(icon('settings'));
 document.querySelector('#settings').addEventListener('click',openSettings);
