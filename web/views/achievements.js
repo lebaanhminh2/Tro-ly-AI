@@ -12,7 +12,7 @@ export function renderAchievements(ui,state){
  }root.append(stats);
  const chart=card();chart.append(el('h2','Nhịp làm việc'));
  const bars=el('div',undefined,'chart');bars.setAttribute('role','img');bars.setAttribute('aria-label','Số việc hoàn thành từ cũ đến mới: '+amounts.join(', '));
- amounts.forEach((n,i)=>{const col=el('div',undefined,'chart-col'),bar=el('div',undefined,'chart-bar');bar.style.height=(n/Math.max(1,...amounts)*68+3)+'px';col.append(el('span',String(n)),bar,el('span',['T2','T3','T4','T5','T6','T7','CN'][i]));bars.append(col);});chart.append(bars);root.append(chart);
+ amounts.forEach((n,i)=>{const col=el('div',undefined,'chart-col'),bar=el('div',undefined,'chart-bar');bar.style.height=(n/Math.max(1,...amounts)*68+3)+'px';col.append(el('span',String(n)),bar,el('span',state?.live?new Date((today-6+i)*86400000).toLocaleDateString('vi-VN',{timeZone:'UTC',day:'2-digit',month:'2-digit'}):['T2','T3','T4','T5','T6','T7','CN'][i]));bars.append(col);});if(!state?.live||amounts.some(n=>n>0)){chart.append(bars);root.append(chart);}else root.append(ui.empty('Chưa có dữ liệu tuần này','Hoàn thành công việc để thấy nhịp tiến bộ của cậu.',()=>{state.tab='today';state.mode='tasks';ui.render();},'Xem công việc'));
  const c=ui.cultivation(),current=realms[c.rank],next=realms[c.rank+1];
  const title=el('div',undefined,'section-heading');title.append(el('h2','Tu luyện cùng Minh Anh'),el('span',state?.live?'TU LUYỆN':'DEMO','pill'));root.append(title);
  const rank=el('article',undefined,'rank-card');

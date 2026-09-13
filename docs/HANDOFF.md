@@ -1,6 +1,12 @@
 # Tiếp tục từ đây
 2026-09-13. User yêu cầu làm liên tục đến nghiệm thu Mini App + lịch + tu luyện. Đây là checkpoint đang làm, KHÔNG hoàn tất, không xin lại scope đã duyệt.
 
+## Rà soát chuyển ngày gần nhất
+- Sửa next-day settings: dùng start/sleep mới cho ngày sau, không overlap/rút ngắn rest của snapshot cũ; khoảng chuyển giờ chưa mở ngày mới được coi resting. Target healthy-runtime7 đạt.
+- Morning/bedtime outbox có cửa sổ hiệu lực: retry quá1h sáng/20phút nhắc ngủ không gửi bù; owner/day được kiểm.
+- Chart live dùng nhãn ngày thực và empty state thay ảnh rỗng; không thêm Gemini request/deploy/cloud writes.
+- Typecheck và staging dry-run đạt. Chưa bật ASSETS hoặc áp0013–15; không tuyên bố sản phẩm hoàn tất.
+
 ## Lượt tiếp tục sau gián đoạn
 - Đã hoàn tất edit_task_step qua chat: prepareStep dùng mutateHierarchy chung, HealthyStore defer statements vào outer transaction. Tick con không hoàn thành cha/không nhận vé; test local đạt.
 - schedule_dialogs thêm vào0014 CHƯA áp cloud: /lich bare mở phiên15phút gắn ngày; /huy thoát; morning reply hoặc phiên active cấp quyền replan. Kiểm foreign/expired/cancel đạt.

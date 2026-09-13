@@ -32,12 +32,21 @@ export class ScheduleStore{
   // Today's existing snapshot is immutable: changing bedtime cannot erase a penalty.
   return this.ensureDay(owner,now);
  }
+ private followingDay(previous:DayRow,settings:ScheduleSettings){
+  let day=previous.day+1;
+  let window=dayWindow(day,settings.start_minutes,settings.sleep_minutes!);
+  // Never shorten an existing rest period or overlap two operating days.
+  if(window.start<previous.end_at){day++;window=dayWindow(day,settings.start_minutes,settings.sleep_minutes!);}
+  return {day,window};
+ }
  async ensureDay(owner:string,now:number):Promise<DayRow|null>{
   const settings=await this.settings(owner);
   if(!settings||settings.sleep_minutes===null)return null;
   const existing=await query(this.db,'SELECT * FROM schedule_days WHERE owner=? AND start_at<=? AND end_at>? ORDER BY start_at DESC LIMIT 1',owner,now,now).first<DayRow>();
   if(existing)return existing;
+  const previous=await query(this.db,'SELECT * FROM schedule_days WHERE owner=? ORDER BY start_at DESC LIMIT 1',owner).first<DayRow>();
   const day=operatingDay(now,settings.start_minutes),window=dayWindow(day,settings.start_minutes,settings.sleep_minutes);
+  if(previous&&window.start<previous.end_at)return null;
   await query(this.db,'INSERT OR IGNORE INTO schedule_days(owner,day,start_at,target_sleep,end_at) VALUES(?,?,?,?,?)',owner,day,window.start,window.target,window.end).run();
   return query(this.db,'SELECT * FROM schedule_days WHERE owner=? AND day=?',owner,day).first<DayRow>();
  }
@@ -95,7 +104,24 @@ export class ScheduleStore{
   if((await new HealthyStore(this.db).read(owner)).state.suspended)return true;
   const pause=await query(this.db,'SELECT pause_until FROM reminder_preferences WHERE owner=?',owner).first<{pause_until:number}>();
   if((pause?.pause_until??0)>now)return true;
+  const settings=await this.settings(owner);
+  const previous=await query(this.db,'SELECT * FROM schedule_days WHERE owner=? ORDER BY start_at DESC LIMIT 1',owner).first<DayRow>();
+  if(settings?.sleep_minutes!==null&&settings&&previous&&previous.end_at<=now&&this.followingDay(previous,settings).window.start>now)return true;
   return !!await query(this.db,'SELECT day FROM schedule_days WHERE owner=? AND start_at<=? AND end_at>? AND asleep_at IS NOT NULL',owner,now,now).first();
+ }
+ async notificationAllowed(owner:string,id:string,now:number){
+  const prefix='healthy:';
+  if(!id.startsWith(prefix))return true;
+  const parts=id.split(':');
+  if(parts[2]!==owner)return false;
+  const day=Number(parts[3]);
+  if(!Number.isInteger(day))return false;
+  const row=await query(this.db,'SELECT * FROM schedule_days WHERE owner=? AND day=?',owner,day).first<DayRow>();
+  if(!row||row.asleep_at!==null||now>=row.end_at)return false;
+  if(parts[1]==='morning')return now>=row.start_at&&now<row.start_at+3600000;
+  const index=Number(parts[4]);if(parts[1]!=='bedtime'||!Number.isInteger(index)||index<0||index>2)return false;
+  const due=row.target_sleep+index*20*60000;
+  return now>=due&&now<due+20*60000;
  }
  async queueCheckIns(owner:string,now:number){
   if((await new HealthyStore(this.db).read(owner)).state.suspended)return;
@@ -134,7 +160,8 @@ export class ScheduleStore{
    }
    row=(await query(this.db,'SELECT * FROM schedule_days WHERE owner=? ORDER BY start_at DESC LIMIT 1',owner).first<DayRow>())!;
    if(row.end_at>now)return;
-   const nextDay=row.day+1,window={start:row.end_at,target:row.target_sleep+DAY_MS,end:row.end_at+DAY_MS};
+   const {day:nextDay,window}=this.followingDay(row,settings);
+   if(window.start>now)return;
    await query(this.db,'INSERT OR IGNORE INTO schedule_days(owner,day,start_at,target_sleep,end_at) VALUES(?,?,?,?,?)',owner,nextDay,window.start,window.target,window.end).run();
   }
  }

@@ -19,6 +19,9 @@ export async function flushOutbox(env: Env, transport: typeof fetch = fetch, now
     if(row.reminder_id&&!await reminderAllowed(env.DB,row.reminder_id,attemptAt)){
       await query(env.DB,"UPDATE outbox SET state='failed' WHERE id=? AND state='pending'",row.id).run();continue;
     }
+    if(env.ASSETS&&!await new ScheduleStore(env.DB).notificationAllowed(env.TELEGRAM_USER_ID,row.id,attemptAt)){
+      await query(env.DB,"UPDATE outbox SET state='failed' WHERE id=? AND state='pending'",row.id).run();continue;
+    }
     const token = crypto.randomUUID();
     const claimed = await query(env.DB, `UPDATE outbox SET state='sending',attempts=attempts+1,lease=?,claim_token=?
       WHERE id=? AND state='pending' AND attempts<3 AND available<=?`, attemptAt + 30000, token,row.id,attemptAt).run();

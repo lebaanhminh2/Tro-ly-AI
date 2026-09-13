@@ -97,3 +97,43 @@ test('chat completion sync awards exactly one ticket and no historical rewards',
   assert.equal((await store.read('123')).state.tickets,1);
  }finally{await mf.dispose();}
 });
+
+test('new settings apply to following days without overlapping or shortening existing rest',async()=>{
+ const {ScheduleStore}=await import('../../src/adapters/d1/schedule-store.ts');
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
+  const s=new ScheduleStore(db),now=Date.parse('2026-09-13T08:00:00+07:00');
+  const first=await s.configure('123','04:30','22:30',0,now);
+  await s.configure('123','05:30','23:30',1,now,'change-clock');
+  await s.reportSleep('123',Date.parse('2026-09-13T22:00:00+07:00'));
+  const gap=Date.parse('2026-09-14T05:00:00+07:00');
+  await s.settleClosedDays('123',gap);
+  assert.equal(await s.ensureDay('123',gap),null);
+  assert.equal(await s.isResting('123',gap),true);
+  const nextTime=Date.parse('2026-09-14T05:30:00+07:00');
+  await s.settleClosedDays('123',nextTime);
+  const next=(await s.ensureDay('123',nextTime))!;
+  assert.equal(new Date(next.target_sleep).toISOString(),'2026-09-14T16:30:00.000Z');
+  assert.ok(next.start_at>=first!.end_at);
+  assert.equal(await s.isResting('123',nextTime),false);
+ }finally{await mf.dispose();}
+});
+
+test('delayed morning and bedtime notifications expire instead of sending after their window',async()=>{
+ const {ScheduleStore}=await import('../../src/adapters/d1/schedule-store.ts');
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
+  const s=new ScheduleStore(db),now=Date.parse('2026-09-13T04:30:00+07:00');
+  const day=(await s.configure('123','04:30','22:30',0,now))!;
+  const morning='healthy:morning:123:'+day.day,bed='healthy:bedtime:123:'+day.day+':0';
+  assert.equal(await s.notificationAllowed('123',morning,now),true);
+  assert.equal(await s.notificationAllowed('123',morning,now+3600000),false);
+  assert.equal(await s.notificationAllowed('123',bed,day.target_sleep),true);
+  assert.equal(await s.notificationAllowed('123',bed,day.target_sleep+1200000),false);
+  assert.equal(await s.notificationAllowed('999',bed,day.target_sleep),false);
+ }finally{await mf.dispose();}
+});
