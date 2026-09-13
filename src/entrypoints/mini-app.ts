@@ -26,7 +26,7 @@ export async function miniAppApi(request:Request,env:Env,now=Date.now()):Promise
    const work=new D1WorkStore(env.DB),rules=new RecurrenceStore(env.DB);
    const [account,tasks,reminders,settings,progress,sessions,events,day]=await Promise.all([
     healthy.read(owner),work.hierarchy(owner),rules.rules(owner),
-    query(env.DB,'SELECT start_minutes,sleep_minutes,version FROM schedule_settings WHERE owner=?',owner).first(),work.progress(owner),work.sessions(owner,now-86400000,now+86400000),work.events(owner,now-86400000,now+7*86400000),new ScheduleStore(env.DB).ensureDay(owner,now)
+    query(env.DB,'SELECT start_minutes,sleep_minutes,version FROM schedule_settings WHERE owner=?',owner).first(),work.progress(owner),work.sessions(owner,Math.floor((now+25200000)/86400000)*86400000-25200000,Math.floor((now+25200000)/86400000)*86400000-25200000+86400000),work.events(owner,Math.floor((now+25200000)/86400000)*86400000-25200000,Math.floor((now+25200000)/86400000)*86400000-25200000+86400000),new ScheduleStore(env.DB).ensureDay(owner,now)
    ]);
    return json({now,account,tasks,reminders,settings,progress,sessions,events,day,resting:await new ScheduleStore(env.DB).isResting(owner,now),realms:REALMS,loot:LOOT,charms:CHARMS,needsSetup:!settings});
   }

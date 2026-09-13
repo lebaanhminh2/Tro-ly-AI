@@ -116,6 +116,7 @@ export async function executeTool(call:ToolCall,store:WorkReader,owner:string,up
  }
  if('status' in patch&&patch.status!==task.status){
   if(patch.status==='active'&&!await store.completionUndo?.(owner,task.id,task.version,now))return {result:{status:'rejected',reason:'undo_not_available'},changes:[],fallback:'Việc đã thay đổi hoặc hết thời hạn hoàn tác.'};
+  if(patch.status==='completed'&&store.hasOpenSteps&&await store.hasOpenSteps(owner,task.id)&&!confirmed)return {result:{status:'needs_confirmation',reason:'open_child_steps'},changes:[],fallback:'Task này còn bước chưa xong. Cậu xác nhận hoàn thành cả task và các bước còn lại nhé?'};
   if('deadline' in patch)return {result:{status:'needs_confirmation',reason:'split_status_and_deadline'},changes:[],fallback:'Mình đổi trạng thái hay hạn trước nhé?'};
   changes.push({type:'conversation-completion',owner,taskId:task.id,expectedVersion:task.version,operation:patch.status==='completed'?'complete':'reopen',updateId,now});
  }else if('deadline' in patch){

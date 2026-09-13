@@ -84,6 +84,8 @@ export async function connectLive(){
  }
  const app=globalThis.Telegram?.WebApp;
  if(!app?.initData)throw Error('Hãy mở ứng dụng từ nút trong Telegram, không mở đường dẫn trực tiếp.');
+ const theme=()=>{document.documentElement.dataset.theme=app.colorScheme==='dark'?'dark':'light';};
+ theme();app.onEvent?.('themeChanged',theme);
  app.ready();app.expand();
  return refreshLive();
 }
@@ -102,7 +104,6 @@ async function liveRequest(path,body){
   if(response.status<500&&key)pendingRequests.delete(key);
   throw Error(result.message??result.error??'Chưa xác nhận được kết quả.');
  }
- if(key)pendingRequests.delete(key);
  return result;
 }
 export async function refreshLive(){
@@ -118,4 +119,4 @@ export async function refreshLive(){
   day:data.day,progress:data.progress,sessions:data.sessions,events:data.events
  };
 }
-export async function liveMutation(path,input){const result=await liveRequest(path,input);return {result,...await refreshLive()};}
+export async function liveMutation(path,input){const result=await liveRequest(path,input);const refreshed=await refreshLive();pendingRequests.delete(path+JSON.stringify(input));return {result,...refreshed};}

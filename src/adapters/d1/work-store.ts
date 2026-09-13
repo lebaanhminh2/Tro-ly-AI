@@ -18,6 +18,7 @@ export class D1WorkStore implements WorkStore {
   private db: Database;
   constructor(db: Database, privateCards = false) { this.db = db; this.cardsEnabled=privateCards; }
   private cardsEnabled:boolean;
+  async hasOpenSteps(owner:string,taskId:string){return !!await query(this.db,"SELECT id FROM task_steps WHERE owner=? AND task_id=? AND status='active' AND deleted_at IS NULL LIMIT 1",owner,taskId).first();}
   async scheduleDialog(owner:string,now:number,open:boolean){const s=new ScheduleStore(this.db);if(open)await s.openDialog(owner,now);else await s.closeDialog(owner);}
   isMorningReply(owner:string,messageId:number|undefined,now:number){return new ScheduleStore(this.db).isMorningReply(owner,messageId,now);}
   async scheduleContext(owner:string,now:number){
@@ -284,6 +285,7 @@ export class D1WorkStore implements WorkStore {
         if(change.operation==='reopen')statements.push(q('INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM task_completion_undo WHERE owner=? AND task_id=? AND expected_version=? AND expires>?) THEN 1 ELSE 0 END',owner,change.taskId,change.expectedVersion,now));
         statements.push(q('UPDATE tasks SET status=?,version=version+1 WHERE owner=? AND id=?',change.operation==='complete'?'completed':'active',owner,change.taskId));
         if(change.operation==='complete'){
+          statements.push(q("UPDATE task_steps SET status='completed',completed_at=COALESCE(completed_at,?),version=version+1 WHERE owner=? AND task_id=? AND status='active' AND deleted_at IS NULL",now,owner,change.taskId));
           statements.push(q('UPDATE task_completions SET completed_at=? WHERE owner=? AND task_id=?',now,owner,change.taskId));
           statements.push(q('INSERT INTO task_completion_undo(owner,task_id,expected_version,expires) VALUES(?,?,?,?) ON CONFLICT(owner,task_id) DO UPDATE SET expected_version=excluded.expected_version,expires=excluded.expires',owner,change.taskId,change.expectedVersion+1,now+900000));
           statements.push(q("UPDATE task_appointments SET status='cancelled' WHERE owner=? AND task_id=? AND status='active'",owner,change.taskId));

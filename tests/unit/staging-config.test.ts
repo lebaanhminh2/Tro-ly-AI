@@ -10,6 +10,9 @@ const localId = '00000000-0000-0000-0000-000000000000';
 const placeholderId = '11111111-1111-1111-1111-111111111111';
 
 test('staging has a distinct worker and database, outbox and minute scheduler', () => {
+  assert.equal(config.assets.directory,'./web');
+  assert.equal(config.assets.binding,'ASSETS');
+  assert.equal(config.assets.run_worker_first,true);
   assert.equal(config.workers_dev, false);
   assert.equal(config.d1_databases[0].database_id, localId);
   assert.notEqual(staging.name, config.name);

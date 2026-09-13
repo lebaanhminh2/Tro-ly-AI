@@ -78,7 +78,7 @@ export class ConversationStore {
      }
      const original={name:pending.tool_name as ToolCall['name'],args:JSON.parse(pending.args_json)};
      if(original.name==='resolve_pending')throw Error('RECURSIVE_CONFIRMATION');
-     const outcome=await executeTool(original,reader,lease.owner,lease.input.updateId,clock(),pending.reason==='existing_title');
+     const outcome=await executeTool(original,reader,lease.owner,lease.input.updateId,clock(),['existing_title','open_child_steps'].includes(pending.reason));
      if(outcome.changes.length)resolvedPending=pending.id;
      return outcome;
     }

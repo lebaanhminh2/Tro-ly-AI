@@ -9,7 +9,9 @@ let saving=false;
 async function performLive(path,input){
  if(saving)return null;saving=true;
  const controls=[...document.querySelectorAll('button')];controls.forEach(b=>b.disabled=true);
- try{const data=await liveMutation(path,input);Object.assign(state,data);sheet.close();render();toast('Đã lưu.');return data.result?.result??data.result;}
+ try{const data=await liveMutation(path,input);Object.assign(state,data);sheet.close();render();const result=data.result?.result??data.result;
+  const labels={qi1:'+1 tu vi',qi2:'+2 tu vi',basic:'Phá Cảnh Phù sơ cấp',keepsake:'Tín vật Minh Anh',heart:'Hộ Tâm Phù',peace:'An Tâm Phù'};
+  toast(result?.reward?'Nhận '+(labels[result.reward]??result.reward):typeof result?.success==='boolean'?(result.success?'Thành công ✦':'Chưa thành công. Kết quả đã lưu, không thử lại trong cùng lượt.'):result?.protected?'Đã kích hoạt bảo vệ cho hôm nay.':'Đã lưu.');return result;}
  catch(error){toast(error.message||'Chưa lưu được, kiểm tra lại nhé.');return null;}
  finally{saving=false;controls.forEach(b=>b.disabled=false);render();}
 }
@@ -97,7 +99,7 @@ function openShare(){openSheet(state.live?'Thẻ thành tích':'Thẻ thành tí
 function demoDay(){if(state.live&&state.day)return state.day.day;return Math.floor((Date.now()+7*3600000-4.5*3600000)/86400000);}
 
 function openDraw(){
- if(state.live){openSheet('Quay thưởng');sheetContent.append(el('p','1 vé mỗi lượt. Kết quả được lưu ở server, không quay lại khi retry.','hint'),button('Dùng 1 vé',async()=>{const r=await performLive('cultivation',{operation:'draw'});if(r)toast('Nhận: '+(r.reward??'phần thưởng'));},'primary'));return;}
+ if(state.live){openSheet('Quay thưởng');sheetContent.append(el('p','1 vé mỗi lượt. Kết quả được lưu ở server, không quay lại khi retry.','hint'),button('Dùng 1 vé',async()=>{const r=await performLive('cultivation',{operation:'draw'});if(r)toast('Phần thưởng đã vào túi của cậu.');},'primary'));return;}
  openSheet('Linh bảo · Quay thưởng');
  sheetContent.append(el('p','1 vé / lần · Không mua bằng tiền · Kết quả demo','hint'));
  const result=el('div','Cậu có '+state.cultivation.tickets+' vé','loot-result');result.setAttribute('role','status');

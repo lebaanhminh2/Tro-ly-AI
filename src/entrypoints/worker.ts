@@ -43,6 +43,7 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
       const requestedCodes=new Set([...text.matchAll(/#(\d+)(?:\.(\d+))?/g)].map(m=>Number(m[1])));
       const relevantHierarchy=hierarchy.filter(t=>requestedCodes.has(t.public_code)||context.tasks.some(c=>c.id===t.id));
       const schedule=env.ASSETS?await reader.scheduleContext?.(owner,clock.now())??null:null;
+      const sleepPhase=schedule&&Number(schedule.target_sleep)<=clock.now()?'\nĐã đến giờ nghỉ mục tiêu. Hãy hướng cuộc trò chuyện về kết thúc ngày và đi ngủ, không rủ làm thêm task. Nhắc /ngu nhẹ nhàng, không gây tội lỗi.': '';
       const initial=[{role:'user' as const,parts:[{text:JSON.stringify({contextData:{...JSON.parse(context.context),schedule,task_codes:relevantHierarchy.map(t=>({id:t.id,code:'#'+t.public_code,title:t.title,version:t.version,status:t.status,steps:t.steps.map(s=>({id:s.id,code:'#'+t.public_code+'.'+s.step_code,title:s.title,status:s.status,version:s.version}))}))},pending,replyToMessageId:input?.replyToMessageId??null})}]},
         ...context.turns.map(turn=>({role:turn.role,parts:[{text:turn.text}]}))];
       const snapshotReader=Object.create(reader) as typeof reader;
@@ -58,7 +59,7 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
         if(env.AI_TRIAL_ENDS_AT&&(!Number.isFinite(Date.parse(env.AI_TRIAL_ENDS_AT))||clock.now()>=Date.parse(env.AI_TRIAL_ENDS_AT)))throw Error('AI_TRIAL_ENDED');
         if(!await reserveAi(env.DB,'runtime:gemini',`${owner}:${lease.input.updateId}:tool:${step}`,clock.now(),env.AI_DAILY_LIMIT===undefined?null:Number(env.AI_DAILY_LIMIT)))throw Error('AI_QUOTA');
         const client=new Gemini({apiKey:env.GEMINI_API_KEY!,model:env.GEMINI_MODEL!,transport:(url,options)=>transport(url,{...options,redirect:'manual'}),timeoutMs:5000});
-        return (await client.generateTools(contents,scheduling?SCHEDULE_PROMPT:TOOL_PERSONA,allowTools,scheduling?['replan_day','respond']:undefined)).output;
+        return (await client.generateTools(contents,scheduling?SCHEDULE_PROMPT:TOOL_PERSONA+sleepPhase,allowTools,scheduling?['replan_day','respond']:undefined)).output;
       },()=>clock.now());
       if(journal.requestedView){
         const args=journal.requestedView.args;

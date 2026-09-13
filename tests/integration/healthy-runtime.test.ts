@@ -137,3 +137,18 @@ test('delayed morning and bedtime notifications expire instead of sending after 
   assert.equal(await s.notificationAllowed('999',bed,day.target_sleep),false);
  }finally{await mf.dispose();}
 });
+
+test('first setup after bedtime does not create retroactive missed-sleep penalties',async()=>{
+ const {ScheduleStore}=await import('../../src/adapters/d1/schedule-store.ts');
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
+  const s=new ScheduleStore(db),now=Date.parse('2026-09-13T23:30:00+07:00');
+  assert.equal(await s.configure('123','04:30','22:30',0,now),null);
+  const report=await s.reportSleep('123',now);assert.equal(report.delta,0);
+  await s.settleClosedDays('123',now+3600000);
+  assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM sleep_assessments').first<{n:number}>())!.n,0);
+  assert.ok(await s.ensureDay('123',Date.parse('2026-09-14T05:00:00+07:00')));
+ }finally{await mf.dispose();}
+});

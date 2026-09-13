@@ -3,12 +3,12 @@ import {planDay,type PlanningTask} from '../../application/daily-planner.ts';
 import {query,type Database} from './database.ts';
 import {dayWindow,operatingDay,minutes,DAY_MS,resumeHealthy} from '../../domain/healthy.ts';
 import {HealthyStore} from './healthy-store.ts';
-export type ScheduleSettings={start_minutes:number;sleep_minutes:number|null;version:number};
+export type ScheduleSettings={start_minutes:number;sleep_minutes:number|null;version:number;updated:number};
 type DayRow={version:number;day:number;start_at:number;target_sleep:number;end_at:number;asleep_at:number|null;last_chat_at:number|null};
 export class ScheduleStore{
  private db:Database;
  constructor(db:Database){this.db=db;}
- settings(owner:string){return query(this.db,'SELECT start_minutes,sleep_minutes,version FROM schedule_settings WHERE owner=?',owner).first<ScheduleSettings>();}
+ settings(owner:string){return query(this.db,'SELECT start_minutes,sleep_minutes,version,updated FROM schedule_settings WHERE owner=?',owner).first<ScheduleSettings>();}
  async openDialog(owner:string,now:number){
   const day=await this.ensureDay(owner,now);if(!day)throw Error('SETUP_REQUIRED');
   await query(this.db,'INSERT INTO schedule_dialogs(owner,day,expires) VALUES(?,?,?) ON CONFLICT(owner) DO UPDATE SET day=excluded.day,expires=excluded.expires',owner,day.day,Math.min(now+900000,day.end_at)).run();
@@ -47,6 +47,7 @@ export class ScheduleStore{
   const previous=await query(this.db,'SELECT * FROM schedule_days WHERE owner=? ORDER BY start_at DESC LIMIT 1',owner).first<DayRow>();
   const day=operatingDay(now,settings.start_minutes),window=dayWindow(day,settings.start_minutes,settings.sleep_minutes);
   if(previous&&window.start<previous.end_at)return null;
+  if(!previous&&settings.updated>window.target)return null; // No retroactive first-day penalty.
   await query(this.db,'INSERT OR IGNORE INTO schedule_days(owner,day,start_at,target_sleep,end_at) VALUES(?,?,?,?,?)',owner,day,window.start,window.target,window.end).run();
   return query(this.db,'SELECT * FROM schedule_days WHERE owner=? AND day=?',owner,day).first<DayRow>();
  }

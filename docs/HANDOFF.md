@@ -1,6 +1,15 @@
 # Tiếp tục từ đây
 2026-09-13. User yêu cầu làm liên tục đến nghiệm thu Mini App + lịch + tu luyện. Đây là checkpoint đang làm, KHÔNG hoàn tất, không xin lại scope đã duyệt.
 
+## Cửa phát hành hiện tại
+- BLOCKER quyền: export DB staging vào .wrangler/staging-before-miniapp.sql bị môi trường từ chối vì cần user cho phép rõ payload công việc/hội thoại tải về local. Không retry/workaround cho tới user cấp lại quyền. Không deploy/migrate khi chưa backup/restore.
+- wrangler đã thêm assets web/ASSETS/run_worker_first; dry-run đọc assets đạt. Cloud vẫn bản cũ không ASSETS vì chưa deploy.
+- Worker local4174 dùng owner123/bot token giả/AI off + DB local migrations1–15; /app files200, API unauth401, signed bootstrap200; browser414px đã lưu settings và tạo Local UI QA report trong DB local. Không DB/user thật bị đổi.
+- Local Edge automation dùng injected Telegram initData tổng hợp (không credential thật). First injection fail đã sửa Page.enable; subsequent setup/save/create thật local đạt.
+- Sửa race frontend: giữ request id sau mutation success tới khi bootstrap refresh thành công; không roll lại nếu mất response reload. Parent completion có con mở qua chat yêu cầu confirmation như app.
+- Setup lần đầu sau target ngủ không tạo day cũ/phạt hồi tố; test đạt. Theme Telegram sync, Today lọc ngàyVN, header Trợ lý của cậu đã sửa.
+- Full129 tests chính +25 experiments đạt; typecheck và staging dry-run đạt. Không Gemini live trong lượt này.
+
 ## Rà soát chuyển ngày gần nhất
 - Sửa next-day settings: dùng start/sleep mới cho ngày sau, không overlap/rút ngắn rest của snapshot cũ; khoảng chuyển giờ chưa mở ngày mới được coi resting. Target healthy-runtime7 đạt.
 - Morning/bedtime outbox có cửa sổ hiệu lực: retry quá1h sáng/20phút nhắc ngủ không gửi bù; owner/day được kiểm.
@@ -46,7 +55,7 @@
 - Task hierarchy mutation hỗ trợ thêm/sửa/complete cha–con, soft delete; parent/child confirm và vé1 lần đã test.
 - RecurrenceStore sinh occurrence ổn định, queue/drop khi rest, rule revision; outbox đã có nhánh recurring và check rest. Chưa cutover legacy appointments.
 - ScheduleStore snapshot ngày, /ngu report, score closed days; queue morning/bedtime3 lần; có replan typed free/busy/estimates. Planner pure packing với nghỉ, không cap3 task.
-- Worker chỉ mở API/scheduler mới khi env.ASSETS tồn tại. wrangler CHƯA cấu hình ASSETS nên bot cloud vẫn bản cũ, không phạt user.
+- Worker chỉ mở API/scheduler mới khi env.ASSETS tồn tại. wrangler source đã cấu hình ASSETS nhưng CHƯA deploy nên bot cloud vẫn bản cũ, không phạt user.
 
 ## Kiểm thử đã làm
 - Full109+25 đạt trước thêm vài phần cuối; full sau đó đạt (xem tool output session18010). Typecheck cuối đạt.
