@@ -1,6 +1,7 @@
-export type ScheduleEntry={kind:'setup';message:string}|{kind:'help'}|{kind:'cancel'}|{kind:'open'};
+export type ScheduleEntry={kind:'action';message:string}|{kind:'setup';message:string}|{kind:'help'}|{kind:'cancel'}|{kind:'open'};
 export function scheduleEntry(text:string):ScheduleEntry|null{
  const input=text.trim();
+ if(/^\/\s+\S/.test(input))return {kind:'action',message:input.replace(/^\/\s+/,'')};
  const setup=/^\/lich(?:@[A-Za-z0-9_]+)?(?:\s+([\s\S]*))?$/i.exec(input);
  if(setup)return {kind:'setup',message:(setup[1]??'').trim()};
  if(/^\/huongdan(?:@[A-Za-z0-9_]+)?$/i.test(input))return {kind:'help'};
@@ -8,13 +9,10 @@ export function scheduleEntry(text:string):ScheduleEntry|null{
  if(/^\/kiemtra(?:@[A-Za-z0-9_]+)?$/i.test(input))return {kind:'open'};
  return null;
 }
-export const SCHEDULE_PROMPT = `Bạn là Minh Anh, trợ lý của cậu, tớ–cậu. Đây là phiên /lich chuyên xếp lịch.
-Đọc contextData.schedule và tasks cùng tin mới. Chỉ có hai công cụ replan_day và respond.
-Yêu cầu rõ thì replan_day, lời đáp ngắn qua respond. Chưa đủ giờ/ước lượng thì chỉ hỏi, không đoán phần thiếu.
+export const SCHEDULE_PROMPT = `Bạn là Minh Anh, trợ lý của cậu, tớ–cậu. Đây là phiên /lich chỉ cập nhật thời gian rảnh/bận.
+Đọc contextData.schedule và tasks cùng tin mới. Chỉ dùng set_availability để lưu giờ hoặc ask_user để hỏi phần thiếu.
+Yêu cầu rõ thì set_availability. Không cần thời lượng task để lưu giờ. Nếu “2–4h” chưa rõ sáng/chiều thì ask_user, không đoán.
 Ngày/giờ lấy contextData.now,today,tomorrow theo Việt Nam. Bảo toàn khoảng không liên quan trong intervals_json. Không sửa deadline.
-replan_day có đúng 4 tham số: expected_version, free, busy, estimates. free/busy là mảng {start,end} ISO +07:00.
+set_availability có đúng 3 tham số: expected_version, free, busy. free/busy là mảng {start,end} ISO +07:00.
 Không có khoảng bận thì busy=[]; không được bỏ trường busy hoặc thay bằng type.
-estimates là [{id: task ID thật, minutes: số phút còn lại}]. Không tự đổi task ID.
-Ví dụ hôm nay13/09/2026 rảnh9–10h, task t1 còn25ph:
-replan_day({expected_version:1,free:[{start:"2026-09-13T09:00:00+07:00",end:"2026-09-13T10:00:00+07:00"}],busy:[],estimates:[{id:"t1",minutes:25}]})
-respond là lời sau commit, không nói đã đổi deadline. Không tạo thêm lời nhắc ngoài kế hoạch.`;
+Ví dụ hôm nay rảnh cả ngày: free=[] và busy=[] (trong khung sinh hoạt, không phải 24h). Nếu chỉ thêm khoảng bận, giữ các khoảng bận cũ không liên quan.\nBackend xác nhận sau khi lưu. Không tạo thêm lời nhắc ngoài kế hoạch.`;

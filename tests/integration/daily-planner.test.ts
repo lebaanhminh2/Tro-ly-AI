@@ -116,3 +116,25 @@ test('bare schedule command opens a bounded dialogue; cancel closes its authorit
   assert.equal(await schedule.isMorningReply('123',undefined,now+1000),false);
  }finally{await mf.dispose();}
 });
+
+test('availability update accepts multiple busy intervals without task estimates',async()=>{
+ const {readFileSync,readdirSync}=await import('node:fs');
+ const {Miniflare}=await import('miniflare');
+ const {ScheduleStore}=await import('../../src/adapters/d1/schedule-store.ts');
+ const {D1WorkStore}=await import('../../src/adapters/d1/work-store.ts');
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as import('../../src/adapters/d1/database.ts').Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
+  const now=Date.parse('2026-09-14T08:00:00+07:00'),store=new D1WorkStore(db);
+  await new ScheduleStore(db).configure('123','04:30','22:30',0,now);
+  await db.exec("INSERT INTO tasks(id,owner,title,created) VALUES('t','123','report',0)");
+  const busy=[{start:Date.parse('2026-09-14T14:00:00+07:00'),end:Date.parse('2026-09-14T16:00:00+07:00')},{start:Date.parse('2026-09-14T17:00:00+07:00'),end:Date.parse('2026-09-14T18:00:00+07:00')}];
+  const prepared=await store.prepareSchedule('123',now,1,[],busy,[],'availability-test');
+  await db.batch(prepared.statements);
+  const row=await db.prepare('SELECT intervals_json FROM schedule_days WHERE owner=?').bind('123').first<{intervals_json:string}>();
+  const saved=JSON.parse(row!.intervals_json);
+  assert.deepEqual(saved.busy,busy);assert.equal(saved.unplanned[0].reason,'needs_estimate');
+  assert.equal((await store.sessions('123',now,now+86400000)).length,0);
+ }finally{await mf.dispose();}
+});

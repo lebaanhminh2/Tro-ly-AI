@@ -13,7 +13,8 @@ export class ConversationStore {
  private db:Database;
  private stagedPending:{id:string;tool_name:string;args_json:string;reason:string;expires:number}|null=null;
  private defer?: (statements:Statement[])=>void;
- constructor(db:Database,defer?:(statements:Statement[])=>void){this.db=db;this.defer=defer;}
+ private mode?:'chat'|'action'|'schedule';
+ constructor(db:Database,defer?:(statements:Statement[])=>void,mode?:'chat'|'action'|'schedule'){this.db=db;this.defer=defer;this.mode=mode;}
  async turn(lease:Lease,initial:ModelContent[],reader:WorkReader,mutations:(changes:Change[],now:number)=>Statement[],
    model:(contents:ModelContent[],allowTools:boolean,step:number)=>Promise<ModelStep>,clock:()=>number){
   const saved=await query(this.db,'SELECT tool_context,tool_reply FROM command_inbox WHERE owner=? AND update_id=?',lease.owner,lease.input.updateId)
@@ -26,6 +27,7 @@ export class ConversationStore {
   let resolvedPending:string|null=null;
   const request=(call:ToolCall)=>({name:call.name,args:call.args});
   const reply=await runToolTurn(context,{
+   mode:this.mode,
    view:call=>{validateTool(call,clock());this.requestedView=call;},
    batch:(calls,message)=>this.commitBatch(lease,calls,message,reader,mutations,clock()),
    model:(step,contents,allowTools)=>this.step(lease,`model:${step}`,'model',{contents,allowTools},clock,()=>model(contents,allowTools,step)),
@@ -50,15 +52,15 @@ export class ConversationStore {
      const result=await this.commitWrite(lease,request(call),{status:'applied',fallback,...prepared.result},prepared.statements,clock());
      return {result,changes:[],fallback};
     }
-    if(call.name==='replan_day'){
+    if(call.name==='replan_day'||call.name==='set_availability'){
       if(!/^\/lich(?:\s|$|@)/i.test(lease.input.text??'')&&!await reader.isMorningReply?.(lease.owner,lease.input.replyToMessageId,clock()))throw Error('EXPLICIT_SCHEDULE_REQUIRED');
       if(!reader.prepareSchedule)throw Error('SCHEDULE_UNAVAILABLE');
       const prior=await this.writeResult(lease,request(call));
       if(prior)return {result:prior,changes:[],fallback:String(prior.fallback)};
       const ranges=(raw:unknown)=>(raw as {start:string;end:string}[]).map(r=>({start:Date.parse(r.start),end:Date.parse(r.end)}));
-      const prepared=await reader.prepareSchedule(lease.owner,clock(),Number(call.args.expected_version),ranges(call.args.free),ranges(call.args.busy),call.args.estimates as {id:string;minutes:number}[],String(lease.input.updateId));
+      const prepared=await reader.prepareSchedule(lease.owner,clock(),Number(call.args.expected_version),ranges(call.args.free),ranges(call.args.busy),(call.args.estimates??[]) as {id:string;minutes:number}[],String(lease.input.updateId));
       const remaining=Array.isArray(prepared.plan.unplanned)?prepared.plan.unplanned.length:0;
-      const fallback='Tớ đã xếp '+String(prepared.plan.plannedMinutes??0)+' phút làm việc hôm nay.'+(remaining?' Còn '+remaining+' việc chưa xếp đủ; xem trong ứng dụng nhé.':'');
+      const fallback='Đã lưu thời gian rảnh/bận. Tớ đã xếp '+String(prepared.plan.plannedMinutes??0)+' phút làm việc hôm nay.'+(remaining?' Còn '+remaining+' việc chưa xếp đủ; xem trong ứng dụng nhé.':'');
       const result=await this.commitWrite(lease,request(call),{status:'applied',fallback,plan:prepared.plan},prepared.statements,clock());
       return {result,changes:[],fallback};
     }
@@ -179,7 +181,9 @@ export class ConversationStore {
    await query(this.db,`UPDATE tool_steps SET state='failed' WHERE owner=? AND update_id=? AND step_key=? AND state='started'
     AND EXISTS(SELECT 1 FROM owner_leases WHERE owner=? AND token=? AND expires>?)`,lease.owner,lease.input.updateId,key,lease.owner,lease.token,clock()).run();
    const code=error instanceof Error?error.message:'';
-   throw Error(['AI_QUOTA','AI_TRIAL_ENDED','PROVIDER_RATE_LIMIT'].includes(code)?code:'STEP_UNAVAILABLE');
+   const safe=['AI_QUOTA','AI_TRIAL_ENDED','PROVIDER_RATE_LIMIT','PROVIDER_TIMEOUT','PROVIDER_TRANSPORT_OR_RESPONSE_ERROR'].includes(code)?code:'STEP_UNAVAILABLE';
+   await query(this.db,"UPDATE tool_steps SET result_json=? WHERE owner=? AND update_id=? AND step_key=? AND state='failed'",JSON.stringify({error:safe}),lease.owner,lease.input.updateId,key).run();
+   throw Error(safe);
   }
  }
 

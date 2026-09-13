@@ -22,3 +22,5 @@
 .inventory-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .inventory-heading h3{min-width:0;line-height:1.5}
 .quantity-badge{font-size:24px;font-weight:750;line-height:1;min-width:54px;padding:12px;text-align:center;background:var(--soft);color:var(--accent);border-radius:14px;flex-shrink:0}
+.form-feedback{padding:12px;border-radius:12px;background:var(--soft);color:var(--text);font-size:13px;margin:0 0 16px;overflow-wrap:anywhere}.form-feedback[hidden]{display:none}
+.availability-row{display:grid;grid-template-columns:1fr 1fr auto;align-items:center;gap:8px}.availability-row .form-field{min-width:0}.availability-row .secondary{padding:8px}

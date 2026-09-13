@@ -58,3 +58,12 @@ test('social reply guard catches common uncommitted success claims without block
  for(const reply of ['Tớ ghi bài này rồi nhé.','Đã thêm việc cho cậu.','Tớ đã dời lịch sang mai rồi.'])assert.equal(unsupportedSuccessClaim(reply),true);
  for(const reply of ['ừ, kể tớ nghe tiếp đi','Cậu làm xong rồi à?','Tớ chưa lưu gì cả.'])assert.equal(unsupportedSuccessClaim(reply),false);
 });
+
+test('action reply without a mutation cannot report fake success; plain chat cannot write',async()=>{
+ const model=async()=>({content:{role:'model' as const,parts:[]},calls:[{name:'respond' as const,args:{message:'Đã thêm và đặt nhắc rồi.'}}],text:''});
+ const ports={model,execute:async()=>{throw Error('must not write');},commit:async()=>{throw Error('must not commit');}};
+ const result=await runToolTurn([{role:'user',parts:[{text:'/ add task'}]}],{...ports,mode:'action'});
+ assert.match(result,/chưa lưu/);assert.ok(!result.includes('Đã thêm'));
+ const blocked=await runToolTurn([{role:'user',parts:[{text:'hello'}]}],{...ports,mode:'chat',model:async()=>({content:{role:'model' as const,parts:[]},calls:[{name:'create_task' as const,args:{title:'unauthorized',deadline:null}}],text:''})});
+ assert.match(blocked,/gửi \//);
+});

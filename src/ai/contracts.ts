@@ -1,4 +1,4 @@
-export type ToolName='edit_task_step'|'replan_day'|'show_work'|'record_progress'|'update_event'|'reschedule_reminder'|'plan_work'|'session_action'|'acknowledge_reminder'|'cancel_reminder'|'create_event'|'create_reminder'|'respond'|'save_clarification'|'close_clarification'|'update_summary'|'find_tasks'|'get_agenda'|'create_task'|'update_task'|'set_reminder'|'set_reminder_pause'|'remember_preference'|'resolve_pending';
+export type ToolName='ask_user'|'set_availability'|'edit_task_step'|'replan_day'|'show_work'|'record_progress'|'update_event'|'reschedule_reminder'|'plan_work'|'session_action'|'acknowledge_reminder'|'cancel_reminder'|'create_event'|'create_reminder'|'respond'|'save_clarification'|'close_clarification'|'update_summary'|'find_tasks'|'get_agenda'|'create_task'|'update_task'|'set_reminder'|'set_reminder_pause'|'remember_preference'|'resolve_pending';
 export type ToolCall={name:ToolName;args:Record<string,unknown>;id?:string};
 export type ModelContent={role:'user'|'model';parts:Record<string,unknown>[]};
 export type ModelStep={content:ModelContent;calls:ToolCall[];text:string};
@@ -7,6 +7,13 @@ const integer={type:'INTEGER'};
 const deadline={type:'OBJECT',nullable:true,properties:{value:str,precision:{type:'STRING',enum:['date','datetime']}},required:['value','precision']};
 const declaration=(name:ToolName,description:string,properties:Record<string,unknown>,required=Object.keys(properties))=>({name,description,parameters:{type:'OBJECT',properties,required}});
 export const TOOL_DECLARATIONS=[
+ declaration('ask_user','Ask a specific missing detail; no changes are applied. Never claim successful writes in this question.',{question:str}),
+ declaration('set_availability','Save today free/busy intervals. Does not require task estimates. Backend recomputes unfinished work using known estimates. Preserve unrelated intervals from current schedule.',{
+ expected_version:integer,
+ free:{type:'ARRAY',items:{type:'OBJECT',properties:{start:str,end:str},required:['start','end']}},
+ busy:{type:'ARRAY',items:{type:'OBJECT',properties:{start:str,end:str},required:['start','end']}}
+ }),
+
  declaration('edit_task_step','Edit only a task child using task_codes mapping. Does not complete parent. Use add_step, edit_step or step_status. Supply parent version. If reopening completed parent requires confirmation, ask user to use the app. Do not combine with other writes in one response.',{
  operation:{type:'STRING',enum:['add_step','edit_step','step_status']},task_id:str,expected_version:integer,
  step_id:{type:'STRING',nullable:true},title:{type:'STRING',nullable:true},complete:{type:'BOOLEAN',nullable:true}

@@ -23,7 +23,8 @@ export async function buildContext(store:WorkReader,owner:string,text:string,now
  const turns:Turn[]=history.flatMap(h=>[{role:'user' as const,text:h.user_text},{role:'model' as const,text:h.assistant_text}]);
  turns.push({role:'user',text});
  const localNow=new Date(now+7*3600000).toISOString().slice(0,19)+'+07:00';
- const context=JSON.stringify({userId:owner,now:localNow,today:localNow.slice(0,10),tomorrow:new Date(now+7*3600000+86400000).toISOString().slice(0,10),timezone:'Asia/Ho_Chi_Minh',focus,summary,progress:progressContext,clarifications:pending,events,appointments,blocks,nextTaskCursor,
+ const dates=Array.from({length:14},(_,i)=>{const d=new Date(now+25200000+i*86400000);return {date:d.toISOString().slice(0,10),weekday:['Chủ nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'][d.getUTCDay()]};});
+ const context=JSON.stringify({dates,userId:owner,now:localNow,today:localNow.slice(0,10),tomorrow:new Date(now+7*3600000+86400000).toISOString().slice(0,10),timezone:'Asia/Ho_Chi_Minh',focus,summary,progress:progressContext,clarifications:pending,events,appointments,blocks,nextTaskCursor,
  summary_request:source.length>=8?{through:summarySource.at(-1)!.command_id,expected_version:summary?.version??0,source_turns:summarySource.map(h=>({id:h.command_id,user:h.user_text,assistant:h.assistant_text}))}:null,
  tasks:tasks.map(t=>({id:t.id,title:t.title,deadline:t.deadline,version:t.version,status:t.status??'active'})),
  memories:memories.map(m=>({content:m.content,kind:m.kind,source:m.source,expires:m.expires}))});

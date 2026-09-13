@@ -1,6 +1,17 @@
 # Tiếp tục từ đây
 2026-09-13. Mini App đã phát hành staging để user nghiệm thu trên Telegram. Không coi server tests là user đã chấp nhận UI/UX.
 
+## Sửa luồng lệnh2026-09-14
+- Deploy cd78ae6e-1fb6-4fa3-94c4-c283941890da: chat thường chỉ read/respond, / + space là action, /lich set_availability free/busy. Backend guard chat không write; response-only trong action không được dùng làm xác nhận. Task/reminder confirmations từ result/fallback backend (kèm ngày giờ).
+- /ngu kèm nội dung vẫn được xử lý action. /lich có ask_user cho thiếu giờ; set_availability không cần estimates. Lưu free/busy + replan theo estimates đã lưu, task thiếu estimate vào unplanned. Context cung cấp lịch thứ/ngày14 ngày.
+- Form thời gian nhiều free/busy; bỏ default25, label Ước tính cần làm thêm; form lỗi ngay modal+Đang lưu. Tín vật cùng item-row, settings có Hướng dẫn nhanh. Không tùy biến alias.
+- API bootstrap hợp nhất recurrence_rules và task_appointments origin=appointment. Editor chat reminder một lần tạo replacement +cancel cũ bằng transaction; UI hỗ trợ hủy. Không tạo lại task/lời nhắc thật bị thiếu.
+- Refresh MiniApp on focus/visibility/Telegram activated/tab (throttle2s, không khi edit). Không gọi Gemini cho view.
+- Lỗi model lưu safe code vào tool_steps failed.result_json; phân biệt timeout/Google429/transport, tăng timeout8s, không tự retry vô hạn.
+- Test full134+25 đạt trước ca availability cuối; targeted planner8/API8/action guard đạt; typecheck/dryrun đạt. Browser414 kiểm inline form error,help6examples,keepsake card. Không Gemini live trong lượt.
+- Bằng chứng lỗi trước: update889456721 chỉ create_task (#6 deadline15/09 08h), KHÔNG reminder dù respond nói có; update889456722 và723 chỉ respond, không write. 725/726 failed model không có mã nguyên nhân cũ. Chưa tự phục hồi dữ liệu user.
+- Nguyên tắc chốt: nếu muốn thêm/nhắc dùng / nội dung, /lich chỉ giờ rảnh/bận. Lời đáp chat vẫn LLM, không cam kết hết hallucination; backend không dùng nó xác nhận ghi.
+
 ## Sửa UX/vé2026-09-14
 - Đã deploy f8195a22-a9e5-420a-a232-bb0f0814b7d2: SVG settings/close, focus tiêu đề modal, ô time có diễn giải24h, nhiều giờ chọn riêng, kho chia3 nhóm badge số lượng, theme auto/light/dark localStorage, nút Đột phá.
 - Rest không hiện card giao việc. Draw0 vé disabled; API NO_TICKETS khác ACCOUNT_SUSPENDED. Test sau /ngu complete task mới vẫn cấp vé và draw/replay đúng.
@@ -11,7 +22,7 @@
 - Không Gemini call, không đổi balances hoặc game odds. Remote /app/app.js xác nhận assets mới200.
 
 ## Bản đang chạy
-- Worker f8195a22-a9e5-420a-a232-bb0f0814b7d2; migrations0001–0015 đã áp cloud. KHÔNG sửa lại migrations.
+- Worker cd78ae6e-1fb6-4fa3-94c4-c283941890da; migrations0001–0015 đã áp cloud. KHÔNG sửa lại migrations.
 - ASSETS web/ trên Worker hiện tại, /app/ live, /api authenticated initData HMAC + owner +15min TTL. Không giới hạn pilot ngày/phút.
 - /kiemtra thiết lập menu “Mở ứng dụng”; /start/tasks/today/progress/settings chuyển về entry này khi ASSETS bật.
 - Menu và reply cho update800003001 đều sent. Trang /app và JS200, API thiếu auth401, Telegram thiếu secret403.

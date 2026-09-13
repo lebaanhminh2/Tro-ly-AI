@@ -63,3 +63,7 @@ Thiết kế đích2026-09-13; trạng thái triển khai xem HANDOFF. Mini App/
 - ĐÃ CHỐT: tu vi floor0; sau trừ dưới ngưỡng cảnh giới hạ1 bậc (không đòi số âm), giữ số dư và highest rank. Bảo vệ72h ngăn hạ nhưng vẫn trừ; hết bảo vệ chỉ xét hạ lần phạt tiếp theo.
 - Không báo /ngu khi hết ngày cũng−20. Sau3 ngày liên tục không chat, tối đa3 lần phạt rồi dừng mọi cơ chế tới khi user nhắn; không backcharge ngày vắng khi quay lại.
 - Bảng mới qi/chuỗi:6/2,18/3,40/5,75/7,120/8,180/11,260/14,360/17,500/24,Chân Tiên1000/35,Kim Tiên2000/45. Thay bảng demo cũ.
+## Điều chỉnh luồng đã duyệt2026-09-14
+- Chat thường chỉ trò chuyện/đọc; `/ nội dung` yêu cầu ghi task/nhắc; `/lich` chỉ cập nhật free/busy, backend xếp lại task mở từ ước lượng đã lưu. Không thiếu estimate mà từ chối lưu lịch bận.
+- Action không có mutation thì không xác nhận đã thực hiện. Kết quả lưu là căn cứ cho xác nhận; LLM hỏi thiếu dữ liệu bằng ask_user.
+- MiniApp thống nhất nhắc từ chat và rules, refresh khi quay lại; hướng dẫn trong settings. Không alias lệnh tùy chỉnh ở bản này.

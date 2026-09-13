@@ -3,6 +3,7 @@ import {isReadTool} from '../ai/policy.ts';
 import type {ToolOutcome} from './tool-executor.ts';
 
 export type ToolTurnPorts={
+ mode?:'chat'|'action'|'schedule';
  // Caller journals each model step and tool outcome; this loop never retries implicitly.
  model:(step:number,contents:ModelContent[],allowTools:boolean)=>Promise<ModelStep>;
  execute:(step:number,call:ToolCall)=>Promise<ToolOutcome>;
@@ -16,11 +17,16 @@ export async function runToolTurn(initial:ModelContent[],ports:ToolTurnPorts):Pr
   let response:ModelStep;
   try{response=await ports.model(step,contents,!wrote);}catch(error){
    const code=error instanceof Error?error.message:'';
+   if(code==='PROVIDER_TIMEOUT')return 'Gemini phản hồi quá chậm nên tớ đã dừng lượt này; chưa lưu thay đổi. Cậu thử lại sau nhé.';
+   if(code==='PROVIDER_TRANSPORT_OR_RESPONSE_ERROR')return 'Kết nối hoặc phản hồi Gemini không hợp lệ; chưa lưu thay đổi. Cậu thử lại sau nhé.';
    if(code==='PROVIDER_RATE_LIMIT')return 'Gemini phía Google đang giới hạn lượt gọi hoặc tốc độ lúc này. Cậu thử lại sau nhé; các lời nhắc đã lưu vẫn chạy.';
    if(code==='AI_QUOTA')return 'Tớ đã chạm giới hạn gọi AI do bot đặt cho hôm nay. Lời nhắc đã lưu vẫn chạy; khi có lượt trở lại mình trò chuyện tiếp nhé.';
    if(code==='AI_TRIAL_ENDED')return 'Đợt dùng thử AI đã hết thời hạn cấu hình. Các lời nhắc đã lưu vẫn chạy; cần mở lại thời hạn trước khi chat tiếp.';
    return fallback;
   }
+  if(ports.mode==='chat'&&response.calls.some(c=>!['respond','find_tasks','get_agenda','show_work','ask_user'].includes(c.name)))return 'Muốn tớ thực hiện thay đổi, cậu gửi / rồi cách một dấu và nội dung nhé.';
+  const question=response.calls.find(c=>c.name==='ask_user');
+  if(question){if(response.calls.some(c=>!['ask_user','respond'].includes(c.name)))return 'Chưa thay đổi dữ liệu: cần làm rõ yêu cầu trước.';return typeof question.args.question==='string'?question.args.question:'Cậu nói rõ phần còn thiếu giúp tớ nhé?';}
   const unfilteredCalls=response.calls;
   const views=response.calls.filter(call=>call.name==='show_work');
   if(views.length>1)return fallback;
@@ -42,10 +48,10 @@ export async function runToolTurn(initial:ModelContent[],ports:ToolTurnPorts):Pr
    });
    response={...response,text:args.message,calls:mapped};
   }
-  if(!response.calls.length)return response.text||'Đây nhé cậu.';
+  if(!response.calls.length){if(ports.mode==='action'||ports.mode==='schedule')return 'Tớ chưa lưu thay đổi nào trong lượt này. Cậu bổ sung yêu cầu cụ thể nhé.';return response.text||'Đây nhé cậu.';}
   const writes=response.calls.filter(call=>!isReadTool(call.name));
   if(writes.length>1&&response.calls.length===writes.length&&ports.batch){
-   try{return await ports.batch(writes,response.text);}catch{return 'Tớ chưa lưu được nhóm thay đổi này. Chưa thực hiện thêm; mình kiểm tra lại nhé.';}
+   try{return await ports.batch(writes,ports.mode? '':response.text);}catch{return 'Tớ chưa lưu được nhóm thay đổi này. Chưa thực hiện thêm; mình kiểm tra lại nhé.';}
   }
   // Mixed reads/writes require the read result first; never execute a guessed half.
   if(writes.length>1||(writes.length&&response.calls.length>1)||wrote)return wrote?fallback:'Cậu đang yêu cầu nhiều thay đổi. Mình xử lý từng việc để tránh làm nhầm nhé.';
@@ -79,7 +85,7 @@ export async function runToolTurn(initial:ModelContent[],ports:ToolTurnPorts):Pr
     }
    }
   }
-  if(wrote)return response.text.trim()||fallback;
+  if(wrote)return ports.mode?fallback:response.text.trim()||fallback;
   contents.push({role:'user',parts:results});
  }
  return fallback;

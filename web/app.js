@@ -1,4 +1,4 @@
-import {applyTheme,setThemePreference,themePreference,connectLive,liveMutation,createDemo,realms,loot,talismans,demoDraw,demoFuse,demoBreakthrough,demoCompleteTask} from './api.js';
+import {applyTheme,setThemePreference,themePreference,connectLive,liveMutation,refreshLive,createDemo,realms,loot,talismans,demoDraw,demoFuse,demoBreakthrough,demoCompleteTask} from './api.js';
 import {renderToday} from './views/today.js';
 import {renderReminders} from './views/reminders.js';
 import {renderAchievements} from './views/achievements.js';
@@ -9,12 +9,13 @@ let saving=false;
 applyTheme();
 async function performLive(path,input){
  if(saving)return null;saving=true;
- const controls=[...document.querySelectorAll('button')].map(b=>({button:b,disabled:b.disabled}));controls.forEach(({button:b})=>b.disabled=true);
+ const controls=[...document.querySelectorAll('button')].map(b=>({button:b,disabled:b.disabled}));
+ const save=sheet.querySelector('button[type=submit]');const oldLabel=save?.textContent;if(save)save.textContent='Đang lưu…';controls.forEach(({button:b})=>b.disabled=true);
  try{const data=await liveMutation(path,input);Object.assign(state,data);sheet.close();render();const result=data.result?.result??data.result;
   const labels={qi1:'+1 tu vi',qi2:'+2 tu vi',basic:'Phá Cảnh Phù sơ cấp',keepsake:'Tín vật Minh Anh',heart:'Hộ Tâm Phù',peace:'An Tâm Phù'};
   toast(result?.reward?'Nhận '+(labels[result.reward]??result.reward):typeof result?.success==='boolean'?(result.success?'Thành công ✦':'Chưa thành công. Kết quả đã lưu, không thử lại trong cùng lượt.'):result?.protected?'Đã kích hoạt bảo vệ cho hôm nay.':'Đã lưu.');return result;}
  catch(error){toast(error.message||'Chưa lưu được, kiểm tra lại nhé.');return null;}
- finally{saving=false;controls.forEach(({button:b,disabled})=>{if(b.isConnected)b.disabled=disabled;});render();}
+ finally{if(save?.isConnected)save.textContent=oldLabel;saving=false;controls.forEach(({button:b,disabled})=>{if(b.isConnected)b.disabled=disabled;});render();}
 }
 state.live=location.pathname.startsWith('/app/');
 if(state.live){state.tasks=[];state.reminders=[];state.cultivation={...state.cultivation,qi:0,totalEarned:0,rank:0,highestRank:0,streak:0,tickets:0,inventory:{basic:0,middle:0,high:0,supreme:0,heart:0,peace:0,keepsake:0}};}
@@ -22,9 +23,9 @@ function el(tag,text,className){const node=document.createElement(tag);if(text!=
 function button(text,action,className='secondary'){const b=el('button',text,className);b.type='button';b.addEventListener('click',action);return b;}
 function card(extra=''){return el('div',undefined,'card '+extra);}
 function heading(title,description){const box=el('div',undefined,'heading'),group=el('div');group.append(el('h1',title),el('p',description,'subtitle'));box.append(group);return box;}
-function toast(message){const node=document.querySelector('#toast');clearTimeout(toastTimer);node.textContent=message;node.classList.add('visible');toastTimer=setTimeout(()=>node.classList.remove('visible'),3500);}
+function toast(message){const inline=document.querySelector('#sheet-feedback');if(sheet.open&&inline){inline.textContent=message;inline.hidden=false;}const node=document.querySelector('#toast');clearTimeout(toastTimer);node.textContent=message;node.classList.add('visible');toastTimer=setTimeout(()=>node.classList.remove('visible'),3500);}
 function icon(name){const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('aria-hidden','true');svg.setAttribute('fill','none');svg.setAttribute('stroke','currentColor');svg.setAttribute('stroke-width','1.8');svg.setAttribute('stroke-linecap','round');const path=document.createElementNS(svg.namespaceURI,'path');path.setAttribute('d',name==='close'?'M6 6l12 12M18 6L6 18':'M9 3h6l1 3 3 1 2 5-2 5-3 1-1 3H9l-1-3-3-1-2-5 2-5 3-1z M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0');svg.append(path);return svg;}
-function openSheet(title){sheetContent.replaceChildren();const row=el('div',undefined,'sheet-title-row'),h=el('h2',title);h.id='sheet-title';h.tabIndex=-1;const close=button('',()=>sheet.close(),'icon-button');close.setAttribute('aria-label','Đóng');close.append(icon('close'));row.append(h,close);sheetContent.append(row);if(!sheet.open)sheet.showModal();h.focus({preventScroll:true});}
+function openSheet(title){sheetContent.replaceChildren();const row=el('div',undefined,'sheet-title-row'),h=el('h2',title);h.id='sheet-title';h.tabIndex=-1;const close=button('',()=>sheet.close(),'icon-button');close.setAttribute('aria-label','Đóng');close.append(icon('close'));row.append(h,close);sheetContent.append(row);const feedback=el('p','','form-feedback');feedback.id='sheet-feedback';feedback.hidden=true;feedback.setAttribute('role','status');sheetContent.append(feedback);if(!sheet.open)sheet.showModal();h.focus({preventScroll:true});}
 function field(label,type,value='',required=true){const wrap=el('label',label,'form-field'),input=el('input');input.type=type;input.value=value;input.required=required;wrap.append(input);if(type==='time'){input.step='60';const hint=el('span','','clock-hint');const update=()=>{if(!input.value){hint.textContent='Chọn giờ · định dạng 24 giờ';return;}const [h,m]=input.value.split(':').map(Number);hint.textContent=input.value+' — '+(h%12||12)+' giờ'+(m?' '+m+' phút':'')+' '+(h<12?'sáng':h<18?'chiều':'tối');};input.addEventListener('input',update);update();wrap.append(hint);}return {wrap,input};}
 function empty(title,text,action,label){const c=card('empty');c.append(el('span','✧','empty-symbol'),el('h2',title),el('p',text),button(label,action,'primary'));return c;}
 function confirm(title,description,action){openSheet(title);sheetContent.append(el('p',description,'hint'));const actions=el('div',undefined,'actions');actions.append(button('Xác nhận',()=>{sheet.close();action();},'primary'),button('Quay lại',()=>sheet.close(),'secondary'));sheetContent.append(actions);}
@@ -71,7 +72,7 @@ function openReminder(reminder){
  const add=button('+ Thêm giờ',()=>addTime(''),'text-button');times.append(add);
  for(const value of (reminder?.times??'09:00').split(',').map(t=>t.trim()))addTime(value);
 
- const typeLabel=el('label','Lặp lại','form-field'),type=el('select');for(const [value,label] of [['once','Một lần'],['daily','Hằng ngày'],['weekdays','Các thứ trong tuần']]){const option=el('option',label);option.value=value;type.append(option);}type.value=reminder?.kind??'daily';typeLabel.append(type);
+ const typeLabel=el('label','Lặp lại','form-field'),type=el('select');for(const [value,label] of [['once','Một lần'],['daily','Hằng ngày'],['weekdays','Các thứ trong tuần']]){const option=el('option',label);option.value=value;type.append(option);}type.value=reminder?.kind??'daily';if(reminder?.origin==='appointment')type.disabled=true;typeLabel.append(type);
  const from=field('Bắt đầu từ','date',reminder?.start??new Date((state.serverNow??Date.now())+25200000).toISOString().slice(0,10)),end=field('Kết thúc · bỏ trống để tiếp tục','date',reminder?.end??'',false);
  const days=el('div',undefined,'weekday-list');for(let n=1;n<=7;n++){const label=el('label'),input=el('input');input.type='checkbox';input.value=String(n);input.checked=reminder?.weekdays.includes(n)??[1,3,5].includes(n);label.append(input,el('span',n===7?'CN':'T'+(n+1)));days.append(label);}
  const showDays=()=>{days.hidden=type.value!=='weekdays';end.wrap.hidden=type.value==='once';};type.addEventListener('change',showDays);showDays();
@@ -81,30 +82,47 @@ function openReminder(reminder){
   event.preventDefault();const slots=[...rows.querySelectorAll('input')].map(t=>t.value);if(slots.some(t=>!/^([01]\d|2[0-3]):[0-5]\d$/.test(t))){toast('Chọn giờ hợp lệ cho từng lần nhắc nhé.');return;}
   const weekdays=[...days.querySelectorAll('input:checked')].map(i=>Number(i.value));if(type.value==='weekdays'&&!weekdays.length){toast('Chọn ít nhất một thứ.');return;}if(end.input.value&&end.input.value<from.input.value){toast('Ngày kết thúc phải sau ngày bắt đầu.');return;}
   const value={title:name.input.value.trim(),kind:type.value,times:[...new Set(slots)].join(', '),weekdays,start:from.input.value,end:type.value==='once'?'':end.input.value,enabled:reminder?.enabled??true};
-  if(!value.title)return;if(state.live){performLive('reminders',{rule:{...(reminder?{id:reminder.id}:{}),title:value.title,kind:value.kind,times:[...new Set(slots)],weekdays,startDate:value.start,endDate:value.end||null,enabled:value.enabled,version:reminder?.version??0}});return;}if(reminder)Object.assign(reminder,value);else state.reminders.push({id:state.nextReminder++,...value});sheet.close();render();toast('Đã cập nhật lịch mẫu, chưa tạo thông báo thật.');
+  if(!value.title)return;if(state.live){performLive('reminders',{rule:{...(reminder?{id:reminder.id,...(reminder.origin?{origin:reminder.origin}:{})}:{}),title:value.title,kind:value.kind,times:[...new Set(slots)],weekdays,startDate:value.start,endDate:value.end||null,enabled:value.enabled,version:reminder?.version??0}});return;}if(reminder)Object.assign(reminder,value);else state.reminders.push({id:state.nextReminder++,...value});sheet.close();render();toast('Đã cập nhật lịch mẫu, chưa tạo thông báo thật.');
  });
  sheetContent.append(form);
- if(reminder){const actions=el('div',undefined,'actions');actions.style.marginTop='18px';actions.append(button('Dời lần kế tiếp',()=>{openSheet('Dời riêng lần kế tiếp');const f=el('form'),date=field('Ngày','date',new Date((state.serverNow??Date.now())+7*3600000).toISOString().slice(0,10)),time=field('Giờ Việt Nam','time','19:00');f.append(date.wrap,time.wrap,el('p','Những lần sau vẫn giữ quy tắc cũ.','hint'));const save=el('button','Lưu lần này','primary');save.type='submit';f.append(save);f.addEventListener('submit',e=>{e.preventDefault();const due=Date.parse(date.input.value+'T'+time.input.value+':00+07:00');if(due<=Date.now()){toast('Chọn giờ tương lai nhé.');return;}if(state.live)performLive('reminder-instance',{ruleId:reminder.id,operation:'move',due});else{toast('Demo: chỉ dời một lần, chưa lưu server.');sheet.close();}});sheetContent.append(f);},'secondary'),button('Bỏ lần kế tiếp',()=>{if(state.live){performLive('reminder-instance',{ruleId:reminder.id,operation:'skip'});return;}reminder.skipped=true;sheet.close();render();toast('Demo: bỏ một lần, không tắt lịch lặp.');},'secondary'),button(reminder.enabled?'Tắt cả lịch':'Bật cả lịch',()=>{if(state.live){performLive('reminders',{rule:{id:reminder.id,title:reminder.title,kind:reminder.kind,times:reminder.times.split(',').map(t=>t.trim()),weekdays:reminder.weekdays,startDate:reminder.start,endDate:reminder.end||null,enabled:!reminder.enabled,version:reminder.version}});return;}reminder.enabled=!reminder.enabled;sheet.close();render();},'secondary'));sheetContent.append(actions);}
+ if(reminder?.origin==='appointment')sheetContent.append(button('Hủy lời nhắc',()=>confirm('Hủy lời nhắc này?','Không xóa công việc liên quan.',()=>performLive('reminders',{rule:{id:reminder.id,origin:'appointment',title:reminder.title,kind:'once',times:reminder.times.split(',').map(t=>t.trim()),weekdays:[],startDate:reminder.start,endDate:null,enabled:false,version:reminder.version}})),'danger'));
+ if(reminder&&!reminder.origin){const actions=el('div',undefined,'actions');actions.style.marginTop='18px';actions.append(button('Dời lần kế tiếp',()=>{openSheet('Dời riêng lần kế tiếp');const f=el('form'),date=field('Ngày','date',new Date((state.serverNow??Date.now())+7*3600000).toISOString().slice(0,10)),time=field('Giờ Việt Nam','time','19:00');f.append(date.wrap,time.wrap,el('p','Những lần sau vẫn giữ quy tắc cũ.','hint'));const save=el('button','Lưu lần này','primary');save.type='submit';f.append(save);f.addEventListener('submit',e=>{e.preventDefault();const due=Date.parse(date.input.value+'T'+time.input.value+':00+07:00');if(due<=Date.now()){toast('Chọn giờ tương lai nhé.');return;}if(state.live)performLive('reminder-instance',{ruleId:reminder.id,operation:'move',due});else{toast('Demo: chỉ dời một lần, chưa lưu server.');sheet.close();}});sheetContent.append(f);},'secondary'),button('Bỏ lần kế tiếp',()=>{if(state.live){performLive('reminder-instance',{ruleId:reminder.id,operation:'skip'});return;}reminder.skipped=true;sheet.close();render();toast('Demo: bỏ một lần, không tắt lịch lặp.');},'secondary'),button(reminder.enabled?'Tắt cả lịch':'Bật cả lịch',()=>{if(state.live){performLive('reminders',{rule:{id:reminder.id,...(reminder.origin?{origin:reminder.origin}:{}),title:reminder.title,kind:reminder.kind,times:reminder.times.split(',').map(t=>t.trim()),weekdays:reminder.weekdays,startDate:reminder.start,endDate:reminder.end||null,enabled:!reminder.enabled,version:reminder.version}});return;}reminder.enabled=!reminder.enabled;sheet.close();render();},'secondary'));sheetContent.append(actions);}
 }
+function openHelp(){openSheet('Hướng dẫn nhanh');for(const [command,description] of [['Chat thường','Trò chuyện, không tự ghi công việc.'],['/ thêm bài toán hạn mai','Thực hiện yêu cầu. Thiếu thông tin thì tớ hỏi.'],['/ mai 7h nhắc tớ dậy','Đặt nhắc một lần; lời nhắc vẫn tuân theo chế độ nghỉ.'],['/lich hôm nay bận 14–16h, 17–18h','Lưu giờ bận; tự xếp lại task chưa xong nếu có ước lượng.'],['/ngu','Báo nghỉ, dừng nhắc chủ động; vẫn sửa dữ liệu được.'],['/huy','Thoát phiên /lich, không xóa việc đã lưu.']]){const box=el('section',undefined,'item-row');box.append(el('strong',command),el('p',description,'hint'));sheetContent.append(box);}}
 function openSettings(){
  openSheet('Cài đặt');const form=el('form'),start=field('Bắt đầu ngày','time',state.start),sleep=field('Giờ nghỉ mục tiêu','time',state.sleep);form.append(start.wrap,sleep.wrap,el('p','Giờ nghỉ là mục tiêu. /ngu mới xác nhận cậu bắt đầu nghỉ; chat và chỉnh dữ liệu vẫn hoạt động.','hint'));
- const save=el('button',state.live?'Lưu giờ sinh hoạt':'Lưu trong bản mẫu','primary');save.type='submit';form.append(save);form.addEventListener('submit',e=>{e.preventDefault();if(start.input.value===sleep.input.value){toast('Giờ bắt đầu và giờ nghỉ cần khác nhau.');return;}if(state.live){performLive('settings',{start:start.input.value,sleep:sleep.input.value,version:state.settingsVersion});return;}state.start=start.input.value;state.sleep=sleep.input.value;sheet.close();render();toast('Demo: chưa đổi giờ sinh hoạt trên bot.');});const themeLabel=el('label','Giao diện','form-field'),theme=el('select');for(const [value,label] of [['auto','Theo Telegram'],['light','Sáng'],['dark','Tối']]){const option=el('option',label);option.value=value;theme.append(option);}theme.value=themePreference();theme.addEventListener('change',()=>setThemePreference(theme.value));themeLabel.append(theme);sheetContent.append(form,themeLabel);
+ const save=el('button',state.live?'Lưu giờ sinh hoạt':'Lưu trong bản mẫu','primary');save.type='submit';form.append(save);form.addEventListener('submit',e=>{e.preventDefault();if(start.input.value===sleep.input.value){toast('Giờ bắt đầu và giờ nghỉ cần khác nhau.');return;}if(state.live){performLive('settings',{start:start.input.value,sleep:sleep.input.value,version:state.settingsVersion});return;}state.start=start.input.value;state.sleep=sleep.input.value;sheet.close();render();toast('Demo: chưa đổi giờ sinh hoạt trên bot.');});const themeLabel=el('label','Giao diện','form-field'),theme=el('select');for(const [value,label] of [['auto','Theo Telegram'],['light','Sáng'],['dark','Tối']]){const option=el('option',label);option.value=value;theme.append(option);}theme.value=themePreference();theme.addEventListener('change',()=>setThemePreference(theme.value));themeLabel.append(theme);sheetContent.append(form,themeLabel,button('Hướng dẫn nhanh',openHelp,'secondary'));
 }
 function openAvailability(){
  if(state.live){
   openSheet('Thời gian hôm nay');
   if(!state.day){sheetContent.append(el('p',state.needsSetup?'Chọn giờ sinh hoạt trước nhé.':'Giờ sinh hoạt đã lưu. Chưa bắt đầu ngày hoạt động tiếp theo; cậu không cần cài lại.','hint'),button('Cài đặt',openSettings,'primary'));return;}
-  const form=el('form'),from=field('Có thể bắt đầu lúc','time',state.start),to=field('Có thể làm đến','time',state.sleep);
-  form.append(from.wrap,to.wrap,el('p','Xếp lại các buổi chưa bắt đầu trong hôm nay, giữ nguyên deadline. Ước lượng dưới đây do cậu xác nhận.','hint'));
+  let saved={};try{saved=JSON.parse(state.day.intervals_json??'{}');}catch{}
+  const form=el('form');
+  const ranges=(title,initial)=>{
+   const box=el('fieldset',undefined,'time-slots');box.append(el('legend',title));const rows=el('div');box.append(rows);
+   const add=(r={})=>{
+    if(rows.children.length>=20)return;
+    const local=n=>n?new Date(n+25200000).toISOString().slice(11,16):'';
+    const row=el('div',undefined,'availability-row'),from=field('Từ','time',local(r.start)),to=field('Đến','time',local(r.end));
+    row.append(from.wrap,to.wrap,button('Bỏ',()=>row.remove(),'secondary'));rows.append(row);
+   };
+   box.append(button('+ Thêm khoảng',()=>add(),'text-button'));for(const r of initial??[])add(r);form.append(box);return rows;
+  };
+  form.append(el('p','Để trống giờ rảnh: tạm dùng khung sinh hoạt. Các khoảng bận được trừ ra. Không thay deadline hoặc việc đã hoàn thành.','hint'));
+  const freeRows=ranges('Có thể làm việc',saved.free),busyRows=ranges('Bận',saved.busy);
   const estimates=[];
-  for(const task of state.tasks.filter(t=>!t.done)){const f=field('#'+task.code+' · '+task.title+' (phút còn lại)','number','25');f.input.min='5';f.input.max='600';form.append(f.wrap);estimates.push({task,f});}
-  const submit=el('button','Xếp lại hôm nay','primary');submit.type='submit';form.append(submit);
+  for(const task of state.tasks.filter(t=>!t.done)){const old=saved.estimates?.find(e=>e.id===task.id);const f=field('#'+task.code+' · '+task.title+' — Ước tính cần làm thêm (phút)','number',old?String(old.minutes):'',false);f.input.min='5';f.input.max='600';f.input.placeholder='Chưa biết — có thể để trống';form.append(f.wrap);estimates.push({task,f});}
+  const submit=el('button','Lưu thời gian và cập nhật kế hoạch','primary');submit.type='submit';form.append(submit);
   form.addEventListener('submit',e=>{
    e.preventDefault();
-   const date=new Date(state.serverNow+7*3600000).toISOString().slice(0,10);
-   const start=Date.parse(date+'T'+from.input.value+':00+07:00'),end=Date.parse(date+'T'+to.input.value+':00+07:00');
-   if(end<=start){toast('Khoảng kết thúc cần sau lúc bắt đầu.');return;}
-   performLive('schedule',{version:state.day.version??1,free:[{start,end}],busy:[],estimates:estimates.map(({task,f})=>({id:task.id,minutes:Number(f.input.value)}))});
+   const date=new Date(state.day.start_at+25200000).toISOString().slice(0,10);
+   const convert=rows=>[...rows.children].map(row=>{
+    const inputs=row.querySelectorAll('input');let start=Date.parse(date+'T'+inputs[0].value+':00+07:00'),end=Date.parse(date+'T'+inputs[1].value+':00+07:00');
+    if(start<state.day.start_at)start+=86400000;if(end<=start)end+=86400000;
+    return {start,end};
+   });
+   performLive('schedule',{version:state.day.version,free:convert(freeRows),busy:convert(busyRows),estimates:estimates.filter(({f})=>f.input.value!=='').map(({task,f})=>({id:task.id,minutes:Number(f.input.value)}))});
   });sheetContent.append(form);return;
  }
  openSheet('Thời gian hôm nay');sheetContent.append(el('p','04:30–22:30 là khung mẫu, không có nghĩa cậu phải làm việc cả ngày.','hint'),el('h3','Điều chỉnh bằng trò chuyện'),el('p','/lich hôm nay 14–17h tớ có việc, xếp lại giúp tớ.','card'),el('p','Bản này chỉ minh họa. Editor giờ rảnh và planner sẽ được nối backend ở bước sau.','hint'));}
@@ -148,7 +166,7 @@ function openInventory(){
    }),'secondary');fuse.disabled=c.inventory[t.key]<3;item.append(fuse);}
   sheetContent.append(item);
  }
- sheetContent.append(el('p','TÍN VẬT','inventory-group'),itemHeading('Tín vật Minh Anh',c.inventory.keepsake),el('p','Vật phẩm sưu tầm, không phải tu vi.','hint'));
+ sheetContent.append(el('p','TÍN VẬT','inventory-group'),(()=>{const box=el('section',undefined,'item-row');box.append(itemHeading('Tín vật Minh Anh',c.inventory.keepsake),el('p','Vật phẩm sưu tầm, không phải tu vi.','hint'));return box;})());
 }
 function openBreakthrough(){
  const c=state.cultivation,target=realms[c.rank+1];if(!target)return;
@@ -184,13 +202,21 @@ function render(){
  controls.append(button('Sáng / tối',()=>{const dark=document.documentElement.dataset.theme==='dark';document.documentElement.dataset.theme=dark?'light':'dark';},'text-button'),button('Xem chế độ nghỉ',()=>{state.resting=!state.resting;state.tab='today';state.screenState='ready';render();},'text-button'));
  if(!state.live)content.append(controls);
 }
+let refreshing=false,lastRefresh=0;
+async function refreshOnReturn(){
+ if(!state.live||!state.loaded||saving||refreshing||sheet.open||Date.now()-lastRefresh<2000)return;
+ refreshing=true;
+ try{const latest=await refreshLive();Object.assign(state,latest);lastRefresh=Date.now();render();}catch(error){toast(error.message);}finally{refreshing=false;}
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshOnReturn();});
+window.addEventListener('focus',refreshOnReturn);
 document.querySelector('#settings').replaceChildren(icon('settings'));
 document.querySelector('#settings').addEventListener('click',openSettings);
-for(const b of document.querySelectorAll('[data-tab]'))b.addEventListener('click',()=>{if(state.live&&!state.loaded){toast('Mở lại từ Telegram để tải dữ liệu thật.');return;}state.tab=b.dataset.tab;state.screenState='ready';render();window.scrollTo(0,0);});
+for(const b of document.querySelectorAll('[data-tab]'))b.addEventListener('click',()=>{if(state.live&&!state.loaded){toast('Mở lại từ Telegram để tải dữ liệu thật.');return;}state.tab=b.dataset.tab;state.screenState='ready';render();refreshOnReturn();window.scrollTo(0,0);});
 sheet.addEventListener('click',event=>{if(event.target===sheet){const r=sheet.getBoundingClientRect();if(event.clientY<r.top)sheet.close();}});
 sheet.addEventListener('close',render);
 if(state.live){
  document.querySelector('.demo-strip').textContent='MINH ANH · Dữ liệu của cậu';
  state.tasks=[];state.reminders=[];state.screenState='loading';render();
- connectLive().then(data=>{Object.assign(state,data);state.screenState='ready';render();if(state.needsSetup)openSettings();}).catch(error=>{state.screenState='error';render();toast(error.message);});
+ connectLive().then(data=>{globalThis.Telegram?.WebApp?.onEvent?.('activated',refreshOnReturn);Object.assign(state,data);state.screenState='ready';render();if(state.needsSetup)openSettings();}).catch(error=>{state.screenState='error';render();toast(error.message);});
 }else render();

@@ -235,7 +235,7 @@ test('Worker conversation mode writes a grounded capture and consumes durable qu
  try{
   const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
   for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync(`migrations/${f}`,'utf8').replace(/\r?\n/g,' '));
-  let calls=0;const text='Tớ có bài tiếng Anh, dl ngày mai';
+  let calls=0;const text='/ Tớ có bài tiếng Anh, dl ngày mai';
   const transport:typeof fetch=async(_url,init)=>{
    calls++;assert.equal(init?.redirect,'manual');
    return Response.json({candidates:[{finishReason:'STOP',content:{role:'model',parts:[{functionCall:{name:'create_task',args:{title:'bài tiếng Anh',deadline:{value:'2026-09-13',precision:'date'}}}}]}}]});

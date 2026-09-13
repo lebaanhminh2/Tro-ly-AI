@@ -130,3 +130,19 @@ test('recurring reminder rejects text time on the server, not just in the form',
   assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM recurrence_rules').first<{n:number}>())!.n,0);
  }finally{await mf.dispose();}
 });
+
+test('bootstrap includes chat-created one-time reminders in the same management list',async()=>{
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
+  const token='123:fake',now=Date.parse('2026-09-14T12:00:00+07:00');
+  await db.prepare("INSERT INTO task_appointments(id,owner,task_id,due,subject) VALUES('chat-reminder','123',NULL,?,'collect paper')").bind(now+86400000).run();
+  const params=new URLSearchParams({auth_date:String(now/1000),user:JSON.stringify({id:123})});
+  params.set('hash',createHmac('sha256',createHmac('sha256','WebAppData').update(token).digest()).update([...params].sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>k+'='+v).join('\n')).digest('hex'));
+  const response=await miniAppApi(new Request('https://local/api/bootstrap',{headers:{'X-Telegram-Init-Data':params.toString()}}),{DB:db,TELEGRAM_USER_ID:'123',TELEGRAM_WEBHOOK_SECRET:'x'.repeat(32),TELEGRAM_BOT_TOKEN:token},now);
+  assert.equal(response.status,200);
+  const body=await response.json() as {reminders:{id:string;origin:string;kind:string;times:string[]}[]};
+  assert.deepEqual(body.reminders[0]?.times,['12:00']);assert.equal(body.reminders[0]?.origin,'appointment');assert.equal(body.reminders[0]?.kind,'once');
+ }finally{await mf.dispose();}
+});

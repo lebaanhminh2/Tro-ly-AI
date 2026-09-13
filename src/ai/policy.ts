@@ -25,6 +25,8 @@ function deadlineArg(value:unknown){
 export function validateTool(call:ToolCall,now:number):void{
  const a=call.args;
  switch(call.name){
+  case 'ask_user':fields(a,['question']);textArg(a.question,700);break;
+  case 'set_availability':fields(a,['expected_version','free','busy']);validateTool({name:'replan_day',args:{...a,estimates:[]}},now);break;
   case 'edit_task_step':fields(a,['operation','task_id','expected_version','step_id','title','complete']);textArg(a.task_id,100);
    if(!['add_step','edit_step','step_status'].includes(String(a.operation)))throw Error('INVALID_STEP_OPERATION');
    if(a.operation!=='add_step')textArg(a.step_id,100);else if(a.step_id!==null)throw Error('INVALID_STEP_ID');

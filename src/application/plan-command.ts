@@ -37,8 +37,14 @@ export async function planCommand(input: Input, store: WorkReader, now: number, 
   }
   const entry=scheduleEntry(input.text??'');
   if(entry?.kind==='open')return {view:{text:'Bấm nút “Mở ứng dụng” cạnh ô nhập tin nhắn để xem lịch, công việc và tu vi của cậu nhé.',buttons:[]},changes:[]};
-  if(entry?.kind==='help')return {view:{text:'/kiemtra · Mở ứng dụng\n/lich · Trao đổi lịch hôm nay\n/ngu · Báo nghỉ, dừng nhắc chủ động\n/huy · Thoát phiên đang nhập',buttons:[]},changes:[]};
+  if(entry?.kind==='help')return {view:{text:'/kiemtra · Mở ứng dụng\n/ nội dung · Thêm/sửa việc hoặc đặt nhắc\n/lich · Cập nhật giờ rảnh/bận\n/ngu · Báo nghỉ, dừng nhắc chủ động\n/huy · Thoát phiên đang nhập',buttons:[]},changes:[]};
   if(entry?.kind==='cancel'){if(store.scheduleDialog)await store.scheduleDialog(input.owner,now,false);return {view:{text:'Đã thoát phiên nhập lịch.',buttons:[]},changes:[{type:'cancel',owner:input.owner}]};}
+  if(entry?.kind==='action'){
+    if(store.scheduleDialog)await store.scheduleDialog(input.owner,now,false);
+    if(!chat)return {view:{text:'AI đang tắt; cậu vẫn quản lý trong ứng dụng được nhé.',buttons:[]},changes:[]};
+    const result=await chat(input.owner,entry.message,[],input,store,now);
+    return typeof result==='string'?{view:{text:result,buttons:[]},changes:[]}:result;
+  }
   if(entry?.kind==='setup'){
     if(!chat)return {view:{text:'Phần trao đổi lịch cần bật AI. Cậu vẫn sửa lịch trong ứng dụng được nhé.',buttons:[]},changes:[]};
     if(store.scheduleDialog)try{await store.scheduleDialog(input.owner,now,true);}catch(error){const code=error instanceof Error?error.message:'';return {view:{text:code==='NO_ACTIVE_DAY'?'Giờ sinh hoạt của cậu đã lưu rồi. Hiện chưa bắt đầu ngày hoạt động tiếp theo nên chưa xếp lại hôm nay được; cậu không cần cài lại.':'Chọn giờ bắt đầu và giờ nghỉ trong ứng dụng trước nhé.',buttons:[]},changes:[]};}

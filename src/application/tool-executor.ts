@@ -4,6 +4,11 @@ import type {WorkReader} from '../ports/work-store.ts';
 import type {Change} from '../domain/work.ts';
 import {canAct,dayStart} from '../domain/session.ts';
 
+function localTime(value:unknown){
+ if(typeof value!=='string')return '';
+ if(value.length===10)return value.split('-').reverse().join('/');
+ const n=Date.parse(value);return Number.isFinite(n)?new Date(n+25200000).toISOString().slice(0,16).replace('T',' ')+' (giờ Việt Nam)':'';
+}
 export type ToolOutcome={result:Record<string,unknown>;changes:Change[];fallback:string};
 export async function executeTool(call:ToolCall,store:WorkReader,owner:string,updateId:number,now:number,confirmed=false,actionIndex?:number):Promise<ToolOutcome>{
  validateTool(call,now);
@@ -58,7 +63,7 @@ export async function executeTool(call:ToolCall,store:WorkReader,owner:string,up
  if(call.name==='create_reminder'){
   const due=Date.parse(String(a.at)),prefs=await store.preferences(owner);
   if((prefs?.pause_until??0)>due)throw Error('REMINDERS_PAUSED');
-  return {result:{status:'planned',subject:a.subject,at:a.at},fallback:`Tớ đã đặt nhắc “${a.subject}”.`,changes:[{type:'standalone-reminder',owner,id:`toolap${owner}_${updateId}${suffix}`,subject:String(a.subject),message:String(a.message),due,created:now}]};
+  return {result:{status:'planned',subject:a.subject,at:a.at},fallback:`Tớ đã đặt nhắc “${a.subject}” lúc ${localTime(a.at)}.`,changes:[{type:'standalone-reminder',owner,id:`toolap${owner}_${updateId}${suffix}`,subject:String(a.subject),message:String(a.message),due,created:now}]};
  }
  if(call.name==='save_clarification'){
   if(a.task_id!==null&&!await store.task(owner,String(a.task_id)))throw Error('TASK_NOT_FOUND');
@@ -88,7 +93,7 @@ export async function executeTool(call:ToolCall,store:WorkReader,owner:string,up
   const same=await store.sameTitleTasks?.(owner,String(a.title))??[];
   if(same.length&&!confirmed)return {result:{status:'needs_confirmation',reason:'existing_title',matches:same.map(t=>({id:t.id,title:t.title,version:t.version}))},changes:[],fallback:`Đã có “${a.title}”. Cậu xác nhận thêm một việc mới cùng tên nhé?`};
   const id=`tool${owner}_${updateId}${suffix}`;
-  return {result:{status:'planned',task_id:id,title:a.title,deadline:a.deadline},fallback:`Tớ đã thêm “${a.title}”.`,changes:[{
+  return {result:{status:'planned',task_id:id,title:a.title,deadline:a.deadline},fallback:`Tớ đã thêm “${a.title}”${a.deadline?' · hạn '+localTime((a.deadline as {value:string}).value):''}. Chưa tự đặt lời nhắc.`,changes:[{
    type:'conversation-task',owner,updateId,taskId:id,title:String(a.title),created:now,deadline:a.deadline as import('../domain/conversation.ts').Deadline|null,expectedVersion:null
   }]};
  }
@@ -107,7 +112,7 @@ export async function executeTool(call:ToolCall,store:WorkReader,owner:string,up
   if(task.status==='completed')return {result:{status:'rejected',reason:'task_completed'},changes:[],fallback:'Việc đã hoàn thành rồi, chưa đặt thêm nhắc.'};
   const due=Date.parse(String(a.at)),prefs=await store.preferences(owner);
   if((prefs?.pause_until??0)>due)return {result:{status:'needs_confirmation',reason:'reminders_paused'},changes:[],fallback:'Giờ đó đang nằm trong khoảng cậu dừng nhắc.'};
-  return {result:{status:'planned',task_id:task.id,at:a.at,replacesPrevious:true},fallback:`Tớ đã hẹn nhắc “${task.title}” theo giờ cậu chọn.`,changes:[{type:'conversation-appointment',owner,id:`toolap${owner}_${updateId}${suffix}`,taskId:task.id,expectedVersion:task.version,due,updateId,created:now}]};
+  return {result:{status:'planned',task_id:task.id,at:a.at,replacesPrevious:true},fallback:`Tớ đã hẹn nhắc “${task.title}” lúc ${localTime(a.at)}; thay hẹn cũ nếu có.`,changes:[{type:'conversation-appointment',owner,id:`toolap${owner}_${updateId}${suffix}`,taskId:task.id,expectedVersion:task.version,due,updateId,created:now}]};
  }
  const patch=a.patch as Record<string,unknown>;
  const changes:Change[]=[];

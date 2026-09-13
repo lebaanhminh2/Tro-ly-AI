@@ -34,11 +34,14 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
     service.forLease=lease=>async(owner,text,_tasks,input,reader)=>{
       if(!reader||owner!==lease.owner)throw Error('INVALID_CHAT_SCOPE');
       lease.pendingWrites=[];
-      const journal=new ConversationStore(env.DB,statements=>lease.pendingWrites!.push(...statements)),store=new D1WorkStore(env.DB,cardsEnabled);
+      const store=new D1WorkStore(env.DB,cardsEnabled);
       const confirmation=input?.callback? /^tool-confirm:([yn]):(.+)$/.exec(input.callback):null;
-      const [context,pending]=await Promise.all([buildContext(reader,owner,text||'Xác nhận bằng nút',lease.input.receivedAt??clock.now()),journal.pending(owner,clock.now())]);
+      const [context,pending]=await Promise.all([buildContext(reader,owner,text||'Xác nhận bằng nút',lease.input.receivedAt??clock.now()),new ConversationStore(env.DB).pending(owner,clock.now())]);
       if(confirmation&&(!pending||pending.id!==confirmation[2]))return 'Đề xuất này đã cũ hoặc đã được xử lý.';
       const scheduling=/^\/lich(?:\s|$|@)/i.test(lease.input.text??'')||(env.ASSETS?await reader.isMorningReply?.(owner,input?.replyToMessageId,clock.now())??false:false);
+      const action=/^\/\s+\S/.test(lease.input.text??'')||/^\/ngu(?:@[A-Za-z0-9_]+)?\s+\S/i.test(lease.input.text??'')||!!confirmation;
+      const mode=scheduling?'schedule':action?'action':'chat';
+      const journal=new ConversationStore(env.DB,statements=>lease.pendingWrites!.push(...statements),mode);
       const hierarchy=env.ASSETS?await store.hierarchy(owner):[];
       const requestedCodes=new Set([...text.matchAll(/#(\d+)(?:\.(\d+))?/g)].map(m=>Number(m[1])));
       const relevantHierarchy=hierarchy.filter(t=>requestedCodes.has(t.public_code)||context.tasks.some(c=>c.id===t.id));
@@ -58,8 +61,8 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
         if(!await reader.aiEnabled(owner))throw Error('AI_DISABLED');
         if(env.AI_TRIAL_ENDS_AT&&(!Number.isFinite(Date.parse(env.AI_TRIAL_ENDS_AT))||clock.now()>=Date.parse(env.AI_TRIAL_ENDS_AT)))throw Error('AI_TRIAL_ENDED');
         if(!await reserveAi(env.DB,'runtime:gemini',`${owner}:${lease.input.updateId}:tool:${step}`,clock.now(),env.AI_DAILY_LIMIT===undefined?null:Number(env.AI_DAILY_LIMIT)))throw Error('AI_QUOTA');
-        const client=new Gemini({apiKey:env.GEMINI_API_KEY!,model:env.GEMINI_MODEL!,transport:(url,options)=>transport(url,{...options,redirect:'manual'}),timeoutMs:5000});
-        return (await client.generateTools(contents,scheduling?SCHEDULE_PROMPT:TOOL_PERSONA+sleepPhase,allowTools,scheduling?['replan_day','respond']:undefined)).output;
+        const client=new Gemini({apiKey:env.GEMINI_API_KEY!,model:env.GEMINI_MODEL!,transport:(url,options)=>transport(url,{...options,redirect:'manual'}),timeoutMs:8000});
+        return (await client.generateTools(contents,scheduling?SCHEDULE_PROMPT:TOOL_PERSONA+sleepPhase+(action?'\nYêu cầu hành động: gọi tool thật; thiếu thông tin dùng ask_user. Không respond báo đã làm khi chưa có action.':'\nChỉ trò chuyện hoặc đọc dữ liệu. Không ghi task/lịch. Muốn thay đổi thì nhắc user gửi / nội dung.'),allowTools,scheduling?['set_availability','ask_user']:action?undefined:['respond','find_tasks','get_agenda','show_work','ask_user'])).output;
       },()=>clock.now());
       if(journal.requestedView){
         if(env.ASSETS)return 'Cậu mở nút “Mở ứng dụng” cạnh ô nhập tin nhắn nhé — lịch, lời nhắc và tu vi đều ở đó, không cần đọc danh sách dài trong chat.';

@@ -28,8 +28,13 @@ export class D1WorkStore implements WorkStore {
   }
   async prepareSchedule(owner:string,now:number,version:number,free:import('../../domain/availability.ts').TimeRange[],busy:import('../../domain/availability.ts').TimeRange[],estimates:{id:string;minutes:number}[],requestId:string){
     const tasks=[];
+    if(!estimates.length){
+      const day=await new ScheduleStore(this.db).ensureDay(owner,now);
+      const saved=day?await query(this.db,'SELECT intervals_json FROM schedule_days WHERE owner=? AND day=?',owner,day.day).first<{intervals_json:string}>():null;
+      if(saved){const intervals=JSON.parse(saved.intervals_json);if(Array.isArray(intervals.estimates))estimates=intervals.estimates;}
+    }
     for(const e of estimates){
-      const t=await this.task(owner,e.id);if(!t||t.status==='completed')throw Error('TASK_NOT_AVAILABLE');
+      const t=await this.task(owner,e.id);if(!t||t.status==='completed')continue;
       tasks.push({id:t.id,status:'active' as const,deleted:false,deadline:t.deadline?Date.parse(t.deadline.length===10?t.deadline+'T23:59:59+07:00':t.deadline):null,remainingMinutes:e.minutes});
     }
     const remaining=(await query(this.db,"SELECT id,deadline FROM tasks WHERE owner=? AND status='active' AND deleted_at IS NULL",owner).all<{id:string;deadline:string|null}>()).results;
