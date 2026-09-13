@@ -12,8 +12,11 @@ export async function flushOutbox(env: Env, transport: typeof fetch = fetch, now
   const rows = (await query(env.DB, "SELECT id,payload,reminder_id FROM outbox WHERE state='pending' AND available<=? AND attempts<3 AND (? IS NULL OR id=?) ORDER BY available,id LIMIT 4", now,onlyId??null,onlyId??null)
     .all<{ id: string; payload: string;reminder_id:string|null }>()).results;
   for (const row of rows) {
+    const schedule=new ScheduleStore(env.DB);
+    const blocked=async(at:number)=>row.reminder_id&&!row.reminder_id.startsWith('recurring:')&&!row.reminder_id.startsWith('appointment:')
+      ?schedule.isResting(env.TELEGRAM_USER_ID,at):schedule.notificationsPaused(env.TELEGRAM_USER_ID,at);
     const attemptAt=currentTime();
-    if(env.ASSETS&&(row.reminder_id||row.id.startsWith('achievement:')||row.id.startsWith('healthy:'))&&await new ScheduleStore(env.DB).isResting(env.TELEGRAM_USER_ID,attemptAt)){
+    if(env.ASSETS&&(row.reminder_id||row.id.startsWith('achievement:')||row.id.startsWith('healthy:'))&&await blocked(attemptAt)){
       await query(env.DB,"UPDATE outbox SET state='failed' WHERE id=? AND state='pending'",row.id).run();continue;
     }
     if(row.reminder_id&&!await reminderAllowed(env.DB,row.reminder_id,attemptAt)){
@@ -26,7 +29,7 @@ export async function flushOutbox(env: Env, transport: typeof fetch = fetch, now
     const claimed = await query(env.DB, `UPDATE outbox SET state='sending',attempts=attempts+1,lease=?,claim_token=?
       WHERE id=? AND state='pending' AND attempts<3 AND available<=?`, attemptAt + 30000, token,row.id,attemptAt).run();
     if (!claimed.meta.changes) continue;
-    if(env.ASSETS&&(row.reminder_id||row.id.startsWith('healthy:'))&&await new ScheduleStore(env.DB).isResting(env.TELEGRAM_USER_ID,currentTime())){
+    if(env.ASSETS&&(row.reminder_id||row.id.startsWith('healthy:'))&&await blocked(currentTime())){
       await query(env.DB,"UPDATE outbox SET state='failed' WHERE id=? AND claim_token=?",row.id,token).run();continue;
     }
     if(row.reminder_id&&!await reminderAllowed(env.DB,row.reminder_id,currentTime())){

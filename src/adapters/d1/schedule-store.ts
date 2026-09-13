@@ -27,6 +27,16 @@ export class ScheduleStore{
    query(this.db,'INSERT INTO schedule_settings(owner,start_minutes,sleep_minutes,updated) VALUES(?,?,?,?) ON CONFLICT(owner) DO UPDATE SET start_minutes=excluded.start_minutes,sleep_minutes=excluded.sleep_minutes,version=version+1,updated=excluded.updated',owner,a,b,now),
    query(this.db,'DELETE FROM transaction_guard')
   ];
+  // Preserve finished/running work, but never leave future blocks outside the
+  // newly selected working window. Their tasks remain unfinished for replanning.
+  const future=(await query(this.db,"SELECT id,start_at,minutes FROM sessions WHERE owner=? AND status='planned' AND start_at>=?",owner,now).all<{id:string;start_at:number;minutes:number}>()).results;
+  for(const session of future){
+   const window=dayWindow(operatingDay(session.start_at,a),a,b);
+   if(session.start_at>=window.target||session.start_at+session.minutes*60000>window.target){
+    statements.push(query(this.db,"UPDATE reminders SET status='cancelled' WHERE owner=? AND session_id=? AND status IN('pending','queued')",owner,session.id));
+    statements.push(query(this.db,"UPDATE sessions SET status='skipped',version=version+1 WHERE owner=? AND id=? AND status='planned'",owner,session.id));
+   }
+  }
   if(requestId)await new HealthyStore(this.db).mutate(owner,requestId,'settings',{start,sleep,version},now,state=>({state,result:{saved:true},statements}));
   else await this.db.batch(statements);
   // Today's existing snapshot is immutable: changing bedtime cannot erase a penalty.
@@ -61,10 +71,8 @@ export class ScheduleStore{
   return day;
  }
  async reportSleep(owner:string,now:number){
+  await query(this.db,'INSERT INTO sleep_reports(owner,reported_at) VALUES(?,?) ON CONFLICT(owner) DO UPDATE SET reported_at=excluded.reported_at',owner,now).run();
   const day=await this.ensureDay(owner,now);if(!day){
-   const settings=await this.settings(owner),start=settings?.start_minutes??270;
-   const end=(operatingDay(now,start)+1)*DAY_MS-7*3600000+start*60000;
-   await query(this.db,"INSERT INTO reminder_preferences(owner,quiet_start,quiet_end,pause_until) VALUES(?,0,0,?) ON CONFLICT(owner) DO UPDATE SET pause_until=excluded.pause_until",owner,end).run();
    return {applied:true,delta:0,demoted:false};
   }
   await query(this.db,'UPDATE schedule_days SET asleep_at=COALESCE(asleep_at,?),last_chat_at=? WHERE owner=? AND day=?',now,now,owner,day.day).run();
@@ -101,14 +109,26 @@ export class ScheduleStore{
   const prepared=await this.prepareReplan(owner,now,expectedVersion,free,busy,tasks,requestId);
   return new HealthyStore(this.db).mutate(owner,requestId,'replan',{day:prepared.day,expectedVersion,free,busy,tasks},now,state=>({state,result:prepared.plan,statements:prepared.statements}));
  }
- async isResting(owner:string,now:number){
-  if((await new HealthyStore(this.db).read(owner)).state.suspended)return true;
+ async restStatus(owner:string,now:number){
+  if((await new HealthyStore(this.db).read(owner)).state.suspended)return {reason:'inactive',until:null};
   const pause=await query(this.db,'SELECT pause_until FROM reminder_preferences WHERE owner=?',owner).first<{pause_until:number}>();
-  if((pause?.pause_until??0)>now)return true;
+  if((pause?.pause_until??0)>now)return {reason:'paused',until:pause!.pause_until};
   const settings=await this.settings(owner);
-  const previous=await query(this.db,'SELECT * FROM schedule_days WHERE owner=? ORDER BY start_at DESC LIMIT 1',owner).first<DayRow>();
-  if(settings?.sleep_minutes!==null&&settings&&previous&&previous.end_at<=now&&this.followingDay(previous,settings).window.start>now)return true;
-  return !!await query(this.db,'SELECT day FROM schedule_days WHERE owner=? AND start_at<=? AND end_at>? AND asleep_at IS NOT NULL',owner,now,now).first();
+  const start=settings?.start_minutes??270;
+  const sleep=await query(this.db,'SELECT reported_at FROM sleep_reports WHERE owner=?',owner).first<{reported_at:number}>();
+  if(sleep){
+   const until=(operatingDay(sleep.reported_at,start)+1)*DAY_MS-25200000+start*60000;
+   if(now>=sleep.reported_at&&now<until)return {reason:'asleep',until};
+  }
+  if(settings&&settings.sleep_minutes!==null){
+   const window=dayWindow(operatingDay(now,start),start,settings.sleep_minutes);
+   if(now>=window.target)return {reason:'bedtime',until:window.end};
+  }
+  return {reason:'active',until:null};
+ }
+ async isResting(owner:string,now:number){return (await this.restStatus(owner,now)).reason!=='active';}
+ async notificationsPaused(owner:string,now:number){
+  return !['active','bedtime'].includes((await this.restStatus(owner,now)).reason);
  }
  async notificationAllowed(owner:string,id:string,now:number){
   const prefix='healthy:';
@@ -117,16 +137,20 @@ export class ScheduleStore{
   if(parts[2]!==owner)return false;
   const day=Number(parts[3]);
   if(!Number.isInteger(day))return false;
-  const row=await query(this.db,'SELECT * FROM schedule_days WHERE owner=? AND day=?',owner,day).first<DayRow>();
-  if(!row||row.asleep_at!==null||now>=row.end_at)return false;
-  if(parts[1]==='morning')return now>=row.start_at&&now<row.start_at+3600000;
+  const settings=await this.settings(owner);
+  if(!settings||settings.sleep_minutes===null||day!==operatingDay(now,settings.start_minutes)||await this.notificationsPaused(owner,now))return false;
+  const window=dayWindow(day,settings.start_minutes,settings.sleep_minutes);
+  if(parts[1]==='morning')return now>=window.start&&now<window.start+3600000;
   const index=Number(parts[4]);if(parts[1]!=='bedtime'||!Number.isInteger(index)||index<0||index>2)return false;
-  const due=row.target_sleep+index*20*60000;
-  return now>=due&&now<due+20*60000;
+  const due=window.target+index*20*60000;
+  return now>=due&&now<due+20*60000&&now<window.end;
  }
  async queueCheckIns(owner:string,now:number){
   if((await new HealthyStore(this.db).read(owner)).state.suspended)return;
-  const day=await this.ensureDay(owner,now);if(!day||day.asleep_at!==null)return;
+  const settings=await this.settings(owner);
+  if(!settings||settings.sleep_minutes===null||await this.notificationsPaused(owner,now))return;
+  const currentDay=operatingDay(now,settings.start_minutes),window=dayWindow(currentDay,settings.start_minutes,settings.sleep_minutes);
+  const day={day:currentDay,start_at:window.start,target_sleep:window.target,end_at:window.end};
   const messages:{id:string;text:string;due:number}[]=[];
   if(now>=day.start_at&&now<day.start_at+3600000)messages.push({
    id:'healthy:morning:'+owner+':'+day.day,due:day.start_at,

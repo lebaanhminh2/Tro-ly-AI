@@ -1,4 +1,5 @@
 import { query } from './database.ts';
+import {ScheduleStore} from './schedule-store.ts';
 import type { Database } from './database.ts';
 import type { Session } from '../../domain/session.ts';
 import { sessionButtons } from '../../domain/session.ts';
@@ -21,6 +22,7 @@ export async function reminderAllowed(db:Database,id:string,now:number):Promise<
 export async function queueReminders(db:Database,owner:string,now:number){
   // Expired slots become unknown, not failed; a day of outage never produces a reminder flood.
   await query(db,"UPDATE sessions SET status='unknown',version=version+1 WHERE owner=? AND status='planned' AND start_at+(MAX(minutes,15)+1)*60000<=?",owner,now).run();
+  if(await new ScheduleStore(db).isResting(owner,now))return;
   const due=(await query(db,"SELECT * FROM reminders WHERE owner=? AND status='pending' AND due<=? ORDER BY due,ordinal LIMIT 20",owner,now)
     .all<{id:string;session_id:string;generation:number;ordinal:number;due:number}>()).results;
   for(const r of due){

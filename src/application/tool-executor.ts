@@ -13,6 +13,14 @@ export type ToolOutcome={result:Record<string,unknown>;changes:Change[];fallback
 export async function executeTool(call:ToolCall,store:WorkReader,owner:string,updateId:number,now:number,confirmed=false,actionIndex?:number):Promise<ToolOutcome>{
  validateTool(call,now);
  const a=call.args;
+ const notificationTime=call.name==='create_event'?a.remind_at:
+  ['create_reminder','set_reminder','reschedule_reminder','plan_work'].includes(call.name)?a.at:null;
+ if(notificationTime){
+  const state=await store.notificationState?.(owner,Date.parse(String(notificationTime)));
+  if(state&&(!['active','bedtime'].includes(state.reason)||['plan_work','set_reminder'].includes(call.name)&&state.reason==='bedtime')){
+   return {result:{status:'needs_confirmation',reason:'notification_blocked',rest:state},changes:[],fallback:'Giờ đó đang nằm trong thời gian dừng nhắc. Cậu muốn đổi sang giờ nào? Tớ chưa lưu thay đổi này.'};
+  }
+ }
  if(call.name==='show_work')throw Error('VIEW_IS_NOT_A_MUTATION');
  if(call.name==='record_progress'){
   const task=await store.task(owner,String(a.task_id));if(!task||task.status==='completed'||task.version!==a.expected_version)throw Error('TASK_NOT_AVAILABLE');
@@ -29,6 +37,7 @@ export async function executeTool(call:ToolCall,store:WorkReader,owner:string,up
   const reminder=(await store.appointmentContext?.(owner,now)??[]).find(r=>r.id===a.reminder_id);
   if(!reminder||reminder.version!==a.expected_version)throw Error('REMINDER_NOT_FOUND_OR_CHANGED');
   const due=Date.parse(String(a.at));if(((await store.preferences(owner))?.pause_until??0)>due)throw Error('REMINDERS_PAUSED');
+  if(reminder.task_id&&(await store.notificationState?.(owner,due))?.reason==='bedtime')return {result:{status:'needs_confirmation',reason:'outside_work_hours'},changes:[],fallback:'Giờ đó đã đến giờ nghỉ. Cậu chọn giờ làm khác nhé; tớ chưa đổi lời nhắc.'};
   const cancel:Change={type:'reminder-action',owner,id:String(a.reminder_id),expectedVersion:Number(a.expected_version),action:'cancel'};
   if(reminder.task_id){
    const task=await store.task(owner,String(reminder.task_id));if(!task||task.status==='completed')throw Error('TASK_NOT_AVAILABLE');
@@ -50,6 +59,8 @@ export async function executeTool(call:ToolCall,store:WorkReader,owner:string,up
   const task=await store.task(owner,String(a.task_id));
   if(!task||task.version!==a.expected_version||task.status==='completed')throw Error('TASK_NOT_AVAILABLE');
   const start=Date.parse(String(a.at)),minutes=Number(a.minutes),end=start+minutes*60000;
+  const endState=await store.notificationState?.(owner,end-1);
+  if(endState&&endState.reason!=='active')return {result:{status:'needs_confirmation',reason:'outside_work_hours'},changes:[],fallback:'Buổi này kéo sang giờ nghỉ. Mình rút ngắn hoặc chọn giờ khác nhé; tớ chưa xếp buổi này.'};
   const prefs=await store.preferences(owner);if((prefs?.pause_until??0)>start)throw Error('REMINDERS_PAUSED');
   const [events,blocks,reminders]=await Promise.all([store.events?.(owner,start-86400000,end)??[],store.sessions(owner,start-86400000,end),store.appointmentContext?.(owner,now)??[]]);
   if(events.some(e=>e.start_at<end&&(e.end_at??e.start_at+3600000)>start)||blocks.some(b=>['planned','running','paused'].includes(b.status)&&b.start_at<end&&b.start_at+b.minutes*60000>start))throw Error('WORK_BLOCK_CONFLICT');

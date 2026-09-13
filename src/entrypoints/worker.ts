@@ -89,7 +89,7 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
         await schedule.settleClosedDays(env.TELEGRAM_USER_ID,clock.now());
         await new HealthyStore(env.DB).syncTaskTickets(env.TELEGRAM_USER_ID,clock.now());
         await schedule.queueCheckIns(env.TELEGRAM_USER_ID,clock.now());
-        await new RecurrenceStore(env.DB).queueDue(env.TELEGRAM_USER_ID,clock.now(),await schedule.isResting(env.TELEGRAM_USER_ID,clock.now()));
+        await new RecurrenceStore(env.DB).queueDue(env.TELEGRAM_USER_ID,clock.now(),await schedule.notificationsPaused(env.TELEGRAM_USER_ID,clock.now()));
       }
       await expireMemory(env.DB,clock.now());
       await unlockAchievements(env.DB,env.TELEGRAM_USER_ID,clock.now());

@@ -1,6 +1,7 @@
 import type {WorkReader} from '../ports/work-store.ts';
 type Turn={role:'user'|'model';text:string};
 export async function buildContext(store:WorkReader,owner:string,text:string,now:number){
+ const notificationState=await store.notificationState?.(owner,now)??null;
  const [focus,memories,history,summary,pending,progress,priority,active,events,appointments,blocks]=await Promise.all([
   store.focus(owner,now),store.memories(owner,now),store.history(owner,now),store.summary?.(owner)??null,store.clarifications?.(owner,now)??[],store.progress?.(owner),
   store.priorityTasks?.(owner)??[],store.findTasks?.(owner,'','active',0)??null,
@@ -24,7 +25,7 @@ export async function buildContext(store:WorkReader,owner:string,text:string,now
  turns.push({role:'user',text});
  const localNow=new Date(now+7*3600000).toISOString().slice(0,19)+'+07:00';
  const dates=Array.from({length:14},(_,i)=>{const d=new Date(now+25200000+i*86400000);return {date:d.toISOString().slice(0,10),weekday:['Chủ nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'][d.getUTCDay()]};});
- const context=JSON.stringify({dates,userId:owner,now:localNow,today:localNow.slice(0,10),tomorrow:new Date(now+7*3600000+86400000).toISOString().slice(0,10),timezone:'Asia/Ho_Chi_Minh',focus,summary,progress:progressContext,clarifications:pending,events,appointments,blocks,nextTaskCursor,
+ const context=JSON.stringify({notificationState,dates,userId:owner,now:localNow,today:localNow.slice(0,10),tomorrow:new Date(now+7*3600000+86400000).toISOString().slice(0,10),timezone:'Asia/Ho_Chi_Minh',focus,summary,progress:progressContext,clarifications:pending,events,appointments,blocks,nextTaskCursor,
  summary_request:source.length>=8?{through:summarySource.at(-1)!.command_id,expected_version:summary?.version??0,source_turns:summarySource.map(h=>({id:h.command_id,user:h.user_text,assistant:h.assistant_text}))}:null,
  tasks:tasks.map(t=>({id:t.id,title:t.title,deadline:t.deadline,version:t.version,status:t.status??'active'})),
  memories:memories.map(m=>({content:m.content,kind:m.kind,source:m.source,expires:m.expires}))});

@@ -18,6 +18,7 @@ export class D1WorkStore implements WorkStore {
   private db: Database;
   constructor(db: Database, privateCards = false) { this.db = db; this.cardsEnabled=privateCards; }
   private cardsEnabled:boolean;
+  notificationState(owner:string,now:number){return new ScheduleStore(this.db).restStatus(owner,now);}
   async hasOpenSteps(owner:string,taskId:string){return !!await query(this.db,"SELECT id FROM task_steps WHERE owner=? AND task_id=? AND status='active' AND deleted_at IS NULL LIMIT 1",owner,taskId).first();}
   async scheduleDialog(owner:string,now:number,open:boolean){const s=new ScheduleStore(this.db);if(open)await s.openDialog(owner,now);else await s.closeDialog(owner);}
   isMorningReply(owner:string,messageId:number|undefined,now:number){return new ScheduleStore(this.db).isMorningReply(owner,messageId,now);}

@@ -30,7 +30,8 @@ export async function miniAppApi(request:Request,env:Env,now=Date.now()):Promise
    ]);
    const appointments=(await query(env.DB,"SELECT a.id,a.version,a.due,a.status,COALESCE(a.subject,t.title) AS title FROM task_appointments a LEFT JOIN tasks t ON t.id=a.task_id AND t.owner=a.owner WHERE a.owner=? AND a.status='active' AND (a.task_id IS NULL OR t.deleted_at IS NULL) ORDER BY a.due LIMIT 200",owner).all<{id:string;version:number;due:number;status:string;title:string}>()).results;
    const combined=[...reminders,...appointments.map(a=>{const local=new Date(a.due+25200000).toISOString();return {id:a.id,origin:'appointment',title:a.title,version:a.version,kind:'once',times:[local.slice(11,16)],weekdays:[],startDate:local.slice(0,10),endDate:null,enabled:true};})];
-   return json({now,account,tasks,reminders:combined,settings,progress,sessions,events,day,resting:await new ScheduleStore(env.DB).isResting(owner,now),realms:REALMS,loot:LOOT,charms:CHARMS,needsSetup:!settings});
+   const rest=await new ScheduleStore(env.DB).restStatus(owner,now);
+   return json({now,account,tasks,reminders:combined,settings,progress,sessions,events,day,rest,resting:rest.reason!=='active',realms:REALMS,loot:LOOT,charms:CHARMS,needsSetup:!settings});
   }
   if(request.method!=='POST'||!['/api/cultivation','/api/tasks','/api/settings','/api/reminders','/api/schedule','/api/reminder-instance','/api/tasks-delete','/api/session'].includes(url.pathname))return json({error:'NOT_FOUND'},404);
   // Read a bounded body, including chunked requests.

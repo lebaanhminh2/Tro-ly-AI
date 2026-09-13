@@ -1,4 +1,14 @@
 # Tiếp tục từ đây
+## Sửa trạng thái nghỉ — 2026-09-14 (đã deploy staging)
+- Worker `f419717c-1219-4573-9594-248cee24346f`, migration0016 đã áp. D1 lần đầu7403, retry thành công. Asset today.js live200 có rest reason. Chưa nghiệm thu Telegram thật.
+- Kiểm thử137/137 +25/25 offline đạt; guard bổ sung chặn buổi kéo qua giờ ngủ và test transport2/2 chạy lại đạt; typecheck/dry-run/JS syntax đạt. Không gọi Gemini thật.
+- Migration0016 tách `sleep_reports.reported_at` khỏi `reminder_preferences.pause_until`. /ngu kể cả chưa có ngày tính điểm không còn ghi mốc pause04:30; giờ mở nhắc tính từ báo ngủ và giờ bắt đầu hiện tại.
+- Trạng thái active / bedtime / asleep / paused / inactive trả riêng cho app và context Gemini. Bedtime ngừng nhắc task nhưng cho nhắc ngủ và lời nhắc riêng; /ngu chặn chủ động, không chặn chỉnh task/rewards. Explicit pause vẫn độc lập.
+- Giờ nhắc sáng/ngủ dùng settings mới; snapshot tính tu vi giữ nguyên. Configure bỏ buổi planned ngoài khung mới (không hoàn thành/xóa task, không đụng buổi running). Chưa tự xếp lại các buổi bị bỏ; dùng /lich để replan.
+- Guard trước tạo reminder/event có nhắc; kiểm nghỉ ở queue và final send. Appointment gặp nghỉ không bị đổi thành user-cancelled; hết cửa sổ1h thì expired, không gửi bù vô hạn. Tạm dừng thủ công vẫn có semantics cũ của DB trigger.
+- Mốc pause cũ không có provenance nên KHÔNG tự xóa hay suy đoán là /ngu. Reminder đã cancelled trước sửa không tự phục hồi. Nhắc ngủ vẫn là mẫu backend, chưa phải câu mới do Gemini sinh.
+- Không thêm lệnh, không gọi Gemini thật. Kiểm thử Telegram transport giả lập bao gồm bedtime gửi trước /ngu, dừng sau /ngu, mở lại theo giờ mới; cần migration trước deploy code.
+
 2026-09-13. Mini App đã phát hành staging để user nghiệm thu trên Telegram. Không coi server tests là user đã chấp nhận UI/UX.
 
 ## Sửa luồng lệnh2026-09-14

@@ -122,7 +122,7 @@ export async function refreshLive(){
  const c=data.account.state;
  const clock=n=>String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0');
  return {
-  live:true,loaded:true,resting:data.resting,needsSetup:data.needsSetup,serverNow:data.now,settingsVersion:data.settings?.version??0,
+  live:true,loaded:true,resting:data.resting,rest:data.rest,needsSetup:data.needsSetup,serverNow:data.now,settingsVersion:data.settings?.version??0,
   start:clock(data.settings?.start_minutes??270),sleep:data.settings?.sleep_minutes===null||!data.settings?'':clock(data.settings.sleep_minutes),
   tasks:data.tasks.map(t=>({id:t.id,code:t.public_code,title:t.title,version:t.version,deadline:t.deadline??'',done:t.status==='completed',steps:t.steps.map(s=>({id:s.id,code:t.public_code+'.'+s.step_code,title:s.title,done:s.status==='completed',version:s.version}))})),
   reminders:data.reminders.map(r=>({...r,times:r.times.join(', '),start:r.startDate,end:r.endDate??''})),

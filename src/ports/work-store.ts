@@ -10,6 +10,7 @@ export type Clock = { now(): number };
 export type Lease = { pendingWrites?:PreparedWrite[]; owner: string; token: string; input: Input; attempts: number;
   ui?:{card:import('../domain/ui.ts').Card;action:import('../domain/ui.ts').CardAction}; uiStale?:boolean; uiRecovered?:boolean };
 export interface WorkReader {
+ notificationState?(owner:string,now:number):Promise<{reason:string;until:number|null}>;
  hasOpenSteps?(owner:string,taskId:string):Promise<boolean>;
  scheduleDialog?(owner:string,now:number,open:boolean):Promise<void>;
  prepareStep?(owner:string,requestId:string,args:{operation:string;taskId:string;stepId?:string;version:number;title?:string;complete?:boolean},now:number):Promise<{result:Record<string,unknown>;statements:PreparedWrite[]}>;

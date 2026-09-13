@@ -1,4 +1,5 @@
 import {query,type Database} from './database.ts';
+import {ScheduleStore} from './schedule-store.ts';
 import {occurrences,type RecurrenceRule,validateRule} from '../../domain/recurrence.ts';
 type RuleRow={id:string;owner:string;title:string;kind:RecurrenceRule['kind'];times_json:string;weekdays_json:string;start_date:string;end_date:string|null;enabled:number;version:number};
 export class RecurrenceStore{
@@ -32,6 +33,8 @@ export class RecurrenceStore{
   }
  }
  async queueDue(owner:string,now:number,resting:boolean){
+  // Bedtime stops work prompts, not explicitly requested personal reminders.
+  resting=resting||await new ScheduleStore(this.db).notificationsPaused(owner,now);
   // A short look-back tolerates cron jitter; old occurrences become missed,
   // never an accumulated notification debt after downtime.
   await this.materialize(owner,now-3600000,now+86400000);

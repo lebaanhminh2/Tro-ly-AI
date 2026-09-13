@@ -1,6 +1,7 @@
 export function renderReminders(ui,state){
  const {el,button,heading}=ui,root=el('section');
  root.append(heading('Nhớ việc, nhẹ đầu.','Chỉ những lời nhắc cậu chủ động đặt.'));
+ if(['asleep','paused','inactive'].includes(state.rest?.reason))root.append(el('p','Đang ngừng gửi nhắc chủ động. Cậu vẫn sửa được các lịch bên dưới; “đang bật” không có nghĩa sẽ gửi trong lúc nghỉ.','footer-note'));
  const toggle=el('div',undefined,'segment');
  for(const [value,label] of [['recurring','Định kỳ'],['once','Một lần']]){const b=button(label,()=>{state.reminderFilter=value;ui.render();});b.setAttribute('aria-pressed',String(value===state.reminderFilter));toggle.append(b);}root.append(toggle);
  const rows=state.reminders.filter(r=>(r.kind==='once')===(state.reminderFilter==='once'));
