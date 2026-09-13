@@ -25,6 +25,10 @@ function deadlineArg(value:unknown){
 export function validateTool(call:ToolCall,now:number):void{
  const a=call.args;
  switch(call.name){
+  case 'replan_day':fields(a,['expected_version','free','busy','estimates']);
+   for(const key of ['free','busy']){if(!Array.isArray(a[key])||(a[key] as unknown[]).length>20)throw Error('INVALID_RANGES');for(const raw of a[key] as Record<string,unknown>[]){if(!raw||typeof raw!=='object')throw Error('INVALID_RANGE');fields(raw,['start','end']);if(timestamp(raw.end)<=timestamp(raw.start))throw Error('INVALID_RANGE');}}
+   if(!Array.isArray(a.estimates)||a.estimates.length>100)throw Error('INVALID_ESTIMATES');
+   for(const raw of a.estimates){if(!raw||typeof raw!=='object')throw Error('INVALID_ESTIMATE');fields(raw,['id','minutes']);textArg(raw.id,100);if(!Number.isInteger(raw.minutes)||raw.minutes<5||raw.minutes>600)throw Error('INVALID_ESTIMATE');}break;
   case 'show_work':fields(a,['screen','filter']);if(!['tasks','progress','achievements'].includes(String(a.screen))||!['active','all','overdue','today','upcoming','undated','completed'].includes(String(a.filter)))throw Error('INVALID_VIEW');break;
   case 'record_progress':fields(a,['task_id','expected_version','content']);textArg(a.task_id,100);textArg(a.content,300);break;
   case 'update_event':fields(a,['event_id','expected_version','cancelled','start','end']);textArg(a.event_id,100);if(typeof a.cancelled!=='boolean')throw Error('INVALID_EVENT_ACTION');{const start=timestamp(a.start);if(!a.cancelled&&start<=now)throw Error('EVENT_IN_PAST');if(a.end!==null&&timestamp(a.end)<=start)throw Error('INVALID_EVENT_END');}break;

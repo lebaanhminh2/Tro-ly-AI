@@ -47,12 +47,12 @@ function openTask(task){
   }
   form.append(button('+ Thêm bước',()=>{openSheet('Thêm bước cho #'+task.code);const f=el('form'),title=field('Tên bước','text');f.append(title.wrap);const save=el('button','Thêm bước','primary');save.type='submit';f.append(save);f.addEventListener('submit',e=>{e.preventDefault();const value=title.input.value.trim();if(!value)return;if(state.live){performLive('tasks',{operation:'add_step',taskId:task.id,version:task.version,title:value,confirm:false});return;}task.steps.push({code:task.code+'.'+task.nextStep++,title:value,done:false});task.done=false;render();openTask(task);});sheetContent.append(f);},'text-button'));
  }
- const actions=el('div',undefined,'actions'),save=el('button','Lưu thay đổi mẫu','primary');save.type='submit';actions.append(save);
+ const actions=el('div',undefined,'actions'),save=el('button',state.live?'Lưu thay đổi':'Lưu thay đổi mẫu','primary');save.type='submit';actions.append(save);
  if(task)actions.append(button(task.done?'Mở lại':'Hoàn thành',()=>toggleTask(task),'secondary'));
  form.append(actions);form.addEventListener('submit',event=>{event.preventDefault();const title=name.input.value.trim();if(!title)return;if(state.live){performLive('tasks',{operation:task?'edit':'create',...(task?{taskId:task.id,version:task.version}:{}),title,...(!task||deadline.input.value!==task.deadline?.slice(0,10)?{deadline:deadline.input.value||null}:{})});return;}if(task){task.title=title;task.deadline=deadline.input.value;}else state.tasks.push({code:state.nextTask++,title,deadline:deadline.input.value,done:false,steps:[],nextStep:1});sheet.close();render();toast('Đã đổi bản mẫu · Không lưu lên bot');});
  sheetContent.append(form,el('p','Mã không đổi khi sắp xếp. Trong bản thật cậu có thể nói “sửa task #24”.','hint'));
 }
-function confirmDelete(){if(state.live){toast('Xóa nhóm sẽ được nối bằng giao dịch nhóm; hiện chưa bật.');return;}const selected=state.tasks.filter(t=>state.selected.has(t.code));confirm('Xóa '+selected.length+' công việc?',selected.map(t=>'#'+t.code+' '+t.title).join(' · ')+' — thao tác này chỉ tác động dữ liệu demo.',()=>{state.tasks=state.tasks.filter(t=>!state.selected.has(t.code));state.selected.clear();state.selecting=false;render();toast('Đã xóa trong bản mẫu. Tải lại trang để khôi phục.');});}
+function confirmDelete(){if(state.live){const items=state.tasks.filter(t=>state.selected.has(t.code));confirm('Xóa '+items.length+' công việc?',items.map(t=>'#'+t.code+' '+t.title).join(' · ')+' — lời nhắc liên quan sẽ được hủy.',async()=>{const result=await performLive('tasks-delete',{items:items.map(t=>({id:t.id,version:t.version})),confirm:true});if(result){state.selected.clear();state.selecting=false;render();}});return;}const selected=state.tasks.filter(t=>state.selected.has(t.code));confirm('Xóa '+selected.length+' công việc?',selected.map(t=>'#'+t.code+' '+t.title).join(' · ')+' — thao tác này chỉ tác động dữ liệu demo.',()=>{state.tasks=state.tasks.filter(t=>!state.selected.has(t.code));state.selected.clear();state.selecting=false;render();toast('Đã xóa trong bản mẫu. Tải lại trang để khôi phục.');});}
 function openReminder(reminder){
  openSheet(reminder?'Chỉnh lời nhắc':'Thêm lời nhắc');
  const form=el('form'),name=field('Nhắc việc gì?','text',reminder?.title??''),times=field('Giờ nhắc · ví dụ 09:00, 15:00','text',reminder?.times??'09:00');
@@ -61,7 +61,7 @@ function openReminder(reminder){
  const days=el('div',undefined,'weekday-list');for(let n=1;n<=7;n++){const label=el('label'),input=el('input');input.type='checkbox';input.value=String(n);input.checked=reminder?.weekdays.includes(n)??[1,3,5].includes(n);label.append(input,el('span',n===7?'CN':'T'+(n+1)));days.append(label);}
  const showDays=()=>{days.hidden=type.value!=='weekdays';end.wrap.hidden=type.value==='once';};type.addEventListener('change',showDays);showDays();
  form.append(name.wrap,typeLabel,days,times.wrap,from.wrap,end.wrap,el('p','Lịch lặp tiếp tục đến khi tắt hoặc đến ngày kết thúc. Không phải thiết lập lại mỗi sáng.','hint'));
- const submit=el('button',reminder?'Lưu cả lịch mẫu':'Tạo lịch mẫu','primary');submit.type='submit';form.append(submit);
+ const submit=el('button',state.live?(reminder?'Lưu cả lịch':'Tạo lịch'):(reminder?'Lưu cả lịch mẫu':'Tạo lịch mẫu'),'primary');submit.type='submit';form.append(submit);
  form.addEventListener('submit',event=>{
   event.preventDefault();const slots=times.input.value.split(',').map(t=>t.trim());if(slots.some(t=>!/^([01]\d|2[0-3]):[0-5]\d$/.test(t))){toast('Nhập giờ dạng HH:mm, cách nhau bằng dấu phẩy.');return;}
   const weekdays=[...days.querySelectorAll('input:checked')].map(i=>Number(i.value));if(type.value==='weekdays'&&!weekdays.length){toast('Chọn ít nhất một thứ.');return;}if(end.input.value&&end.input.value<from.input.value){toast('Ngày kết thúc phải sau ngày bắt đầu.');return;}
@@ -69,11 +69,11 @@ function openReminder(reminder){
   if(!value.title)return;if(state.live){performLive('reminders',{rule:{...(reminder?{id:reminder.id}:{}),title:value.title,kind:value.kind,times:[...new Set(slots)],weekdays,startDate:value.start,endDate:value.end||null,enabled:value.enabled,version:reminder?.version??0}});return;}if(reminder)Object.assign(reminder,value);else state.reminders.push({id:state.nextReminder++,...value});sheet.close();render();toast('Đã cập nhật lịch mẫu, chưa tạo thông báo thật.');
  });
  sheetContent.append(form);
- if(reminder){const actions=el('div',undefined,'actions');actions.style.marginTop='18px';actions.append(button('Bỏ lần kế tiếp',()=>{if(state.live){toast('Bỏ riêng lần kế tiếp đang được nối backend.');return;}reminder.skipped=true;sheet.close();render();toast('Demo: bỏ một lần, không tắt lịch lặp.');},'secondary'),button(reminder.enabled?'Tắt cả lịch':'Bật cả lịch',()=>{if(state.live){performLive('reminders',{rule:{id:reminder.id,title:reminder.title,kind:reminder.kind,times:reminder.times.split(',').map(t=>t.trim()),weekdays:reminder.weekdays,startDate:reminder.start,endDate:reminder.end||null,enabled:!reminder.enabled,version:reminder.version}});return;}reminder.enabled=!reminder.enabled;sheet.close();render();},'secondary'));sheetContent.append(actions);}
+ if(reminder){const actions=el('div',undefined,'actions');actions.style.marginTop='18px';actions.append(button('Bỏ lần kế tiếp',()=>{if(state.live){performLive('reminder-instance',{ruleId:reminder.id,operation:'skip'});return;}reminder.skipped=true;sheet.close();render();toast('Demo: bỏ một lần, không tắt lịch lặp.');},'secondary'),button(reminder.enabled?'Tắt cả lịch':'Bật cả lịch',()=>{if(state.live){performLive('reminders',{rule:{id:reminder.id,title:reminder.title,kind:reminder.kind,times:reminder.times.split(',').map(t=>t.trim()),weekdays:reminder.weekdays,startDate:reminder.start,endDate:reminder.end||null,enabled:!reminder.enabled,version:reminder.version}});return;}reminder.enabled=!reminder.enabled;sheet.close();render();},'secondary'));sheetContent.append(actions);}
 }
 function openSettings(){
  openSheet('Nhịp sinh hoạt');const form=el('form'),start=field('Bắt đầu ngày','time',state.start),sleep=field('Giờ nghỉ mục tiêu','time',state.sleep);form.append(start.wrap,sleep.wrap,el('p','Giờ nghỉ là mục tiêu. /ngu mới xác nhận cậu bắt đầu nghỉ; chat và chỉnh dữ liệu vẫn hoạt động.','hint'));
- const save=el('button','Lưu trong bản mẫu','primary');save.type='submit';form.append(save);form.addEventListener('submit',e=>{e.preventDefault();if(start.input.value===sleep.input.value){toast('Giờ bắt đầu và giờ nghỉ cần khác nhau.');return;}if(state.live){performLive('settings',{start:start.input.value,sleep:sleep.input.value,version:state.settingsVersion});return;}state.start=start.input.value;state.sleep=sleep.input.value;sheet.close();render();toast('Demo: chưa đổi giờ sinh hoạt trên bot.');});sheetContent.append(form);
+ const save=el('button',state.live?'Lưu giờ sinh hoạt':'Lưu trong bản mẫu','primary');save.type='submit';form.append(save);form.addEventListener('submit',e=>{e.preventDefault();if(start.input.value===sleep.input.value){toast('Giờ bắt đầu và giờ nghỉ cần khác nhau.');return;}if(state.live){performLive('settings',{start:start.input.value,sleep:sleep.input.value,version:state.settingsVersion});return;}state.start=start.input.value;state.sleep=sleep.input.value;sheet.close();render();toast('Demo: chưa đổi giờ sinh hoạt trên bot.');});sheetContent.append(form);
 }
 function openAvailability(){
  if(state.live){
@@ -94,7 +94,7 @@ function openAvailability(){
  }
  openSheet('Thời gian hôm nay');sheetContent.append(el('p','04:30–22:30 là khung mẫu, không có nghĩa cậu phải làm việc cả ngày.','hint'),el('h3','Điều chỉnh bằng trò chuyện'),el('p','/lich hôm nay 14–17h tớ có việc, xếp lại giúp tớ.','card'),el('p','Bản này chỉ minh họa. Editor giờ rảnh và planner sẽ được nối backend ở bước sau.','hint'));}
 function openShare(){openSheet('Thẻ thành tích mẫu');const c=el('div',undefined,'rank-card');c.append(el('div','✧','rank-seal'),el('p','TU LUYỆN KỶ LUẬT','eyebrow'),el('h2',realms[state.cultivation.rank].name),el('p','Tổng tích lũy: '+state.cultivation.totalEarned+' tu vi'),el('p','MINH ANH · DEMO','eyebrow'));sheetContent.append(c,el('p','Không chứa tên task hoặc lịch cá nhân. Bản mẫu chưa có thao tác chia sẻ/lưu ảnh.','hint'));}
-function demoDay(){return Math.floor((Date.now()+7*3600000-4.5*3600000)/86400000);}
+function demoDay(){if(state.live&&state.day)return state.day.day;return Math.floor((Date.now()+7*3600000-4.5*3600000)/86400000);}
 
 function openDraw(){
  if(state.live){openSheet('Quay thưởng');sheetContent.append(el('p','1 vé mỗi lượt. Kết quả được lưu ở server, không quay lại khi retry.','hint'),button('Dùng 1 vé',async()=>{const r=await performLive('cultivation',{operation:'draw'});if(r)toast('Nhận: '+(r.reward??'phần thưởng'));},'primary'));return;}
@@ -118,7 +118,7 @@ function openInventory(){
   ['peace','An Tâm Phù','Chặn một lần −20 tu vi trong ngày đã dùng; không giữ chuỗi.']
  ]){
   const item=el('section',undefined,'item-row');item.append(el('h3',name+' · '+c.inventory[key]),el('p',description,'hint'));
-  const use=button(c.active[key]?'Đã kích hoạt trong demo':'Dùng hôm nay',()=>confirm('Dùng '+name+'?',description+' Chỉ áp dụng ngày sinh hoạt này trong demo.',()=>{
+  const use=button(c.active[key]?(state.live?'Đã kích hoạt hôm nay':'Đã kích hoạt trong demo'):'Dùng hôm nay',()=>confirm('Dùng '+name+'?',description+' Chỉ áp dụng ngày sinh hoạt này trong demo.',()=>{
    if(c.active[key]||c.inventory[key]<1)return;if(state.live){performLive('cultivation',{operation:'protect',item:key});return;}c.inventory[key]--;c.active[key]=true;c.log.unshift('Dùng '+name+' (demo)');openInventory();render();
   }),'secondary');use.disabled=c.active[key]||c.inventory[key]<1;item.append(use);sheetContent.append(item);
  }

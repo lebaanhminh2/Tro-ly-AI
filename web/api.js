@@ -114,7 +114,7 @@ export async function refreshLive(){
   start:clock(data.settings?.start_minutes??270),sleep:data.settings?.sleep_minutes===null||!data.settings?'':clock(data.settings.sleep_minutes),
   tasks:data.tasks.map(t=>({id:t.id,code:t.public_code,title:t.title,version:t.version,deadline:t.deadline??'',done:t.status==='completed',steps:t.steps.map(s=>({id:s.id,code:t.public_code+'.'+s.step_code,title:s.title,done:s.status==='completed',version:s.version}))})),
   reminders:data.reminders.map(r=>({...r,times:r.times.join(', '),start:r.startDate,end:r.endDate??''})),
-  cultivation:{...c,totalEarned:c.earned,active:{heart:c.heartDay!==null,peace:c.peaceDay!==null},log:[],rewardedTasks:[]},
+  cultivation:{...c,totalEarned:c.earned,active:{heart:c.heartDay===data.day?.day,peace:c.peaceDay===data.day?.day},log:[],rewardedTasks:[]},
   day:data.day,progress:data.progress,sessions:data.sessions,events:data.events
  };
 }

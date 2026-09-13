@@ -8,7 +8,7 @@ export class Gemini {
   if(options.timeoutMs!==undefined&&(!Number.isFinite(options.timeoutMs)||options.timeoutMs<1||options.timeoutMs>25000))throw new ModelError('INVALID_TIMEOUT');
   this.options=options;
  }
- async generateTools(contents:ModelContent[],systemInstruction=TOOL_PERSONA,allowTools=true){
+ async generateTools(contents:ModelContent[],systemInstruction=TOOL_PERSONA,allowTools=true,allowedNames?:string[]){
   if(!contents.length||contents.length>32||contents.at(-1)?.role!=='user'||contents.some(c=>!['user','model'].includes(c.role)||!Array.isArray(c.parts)||!c.parts.length)
     ||JSON.stringify(contents).length+systemInstruction.length>48000)throw new ModelError('INVALID_INPUT');
   const controller=new AbortController(),started=Date.now(),timer=setTimeout(()=>controller.abort(),this.options.timeoutMs??5000);
@@ -16,7 +16,7 @@ export class Gemini {
    const transport=this.options.transport??fetch;
    const response=await transport(`https://generativelanguage.googleapis.com/v1beta/models/${this.options.model}:generateContent`,{
     method:'POST',redirect:'manual',signal:controller.signal,headers:{'Content-Type':'application/json','x-goog-api-key':this.options.apiKey},
-    body:JSON.stringify({systemInstruction:{parts:[{text:systemInstruction}]},contents,tools:[{functionDeclarations:TOOL_DECLARATIONS}],
+    body:JSON.stringify({systemInstruction:{parts:[{text:systemInstruction}]},contents,tools:[{functionDeclarations:allowedNames?TOOL_DECLARATIONS.filter(t=>allowedNames.includes(t.name)):TOOL_DECLARATIONS}],
       toolConfig:{functionCallingConfig:{mode:allowTools?'AUTO':'NONE'}},generationConfig:{maxOutputTokens:2048}})
    });
    if(!response.ok){await response.body?.cancel();throw new ModelError(response.status===429?'PROVIDER_RATE_LIMIT':`PROVIDER_HTTP_${response.status}`);}

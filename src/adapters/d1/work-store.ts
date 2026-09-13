@@ -18,11 +18,45 @@ export class D1WorkStore implements WorkStore {
   private db: Database;
   constructor(db: Database, privateCards = false) { this.db = db; this.cardsEnabled=privateCards; }
   private cardsEnabled:boolean;
+  async scheduleContext(owner:string,now:number){
+    const store=new ScheduleStore(this.db);
+    const day=await store.ensureDay(owner,now);
+    return day?{...day,settings:await store.settings(owner)}:null;
+  }
+  async prepareSchedule(owner:string,now:number,version:number,free:import('../../domain/availability.ts').TimeRange[],busy:import('../../domain/availability.ts').TimeRange[],estimates:{id:string;minutes:number}[],requestId:string){
+    const tasks=[];
+    for(const e of estimates){
+      const t=await this.task(owner,e.id);if(!t||t.status==='completed')throw Error('TASK_NOT_AVAILABLE');
+      tasks.push({id:t.id,status:'active' as const,deleted:false,deadline:t.deadline?Date.parse(t.deadline.length===10?t.deadline+'T23:59:59+07:00':t.deadline):null,remainingMinutes:e.minutes});
+    }
+    const remaining=(await query(this.db,"SELECT id,deadline FROM tasks WHERE owner=? AND status='active' AND deleted_at IS NULL",owner).all<{id:string;deadline:string|null}>()).results;
+    const supplied=new Set(tasks.map(t=>t.id));
+    const all:import('../../application/daily-planner.ts').PlanningTask[]=[...tasks];
+    for(const t of remaining)if(!supplied.has(t.id))all.push({id:t.id,status:'active',deleted:false,deadline:t.deadline?Date.parse(t.deadline.length===10?t.deadline+'T23:59:59+07:00':t.deadline):null,remainingMinutes:null});
+    return new ScheduleStore(this.db).prepareReplan(owner,now,version,free,busy,all,requestId);
+  }
   reportSleep(owner:string,now:number){return new ScheduleStore(this.db).reportSleep(owner,now);}
   async hierarchy(owner:string){
     const tasks=(await query(this.db,"SELECT * FROM tasks WHERE owner=? AND deleted_at IS NULL ORDER BY status,deadline IS NULL,deadline,public_code LIMIT 200",owner).all<Task&{public_code:number}>()).results;
     const steps=(await query(this.db,"SELECT s.* FROM task_steps s JOIN tasks t ON t.id=s.task_id AND t.owner=s.owner WHERE s.owner=? AND s.deleted_at IS NULL AND t.deleted_at IS NULL ORDER BY s.step_code",owner).all<{id:string;task_id:string;step_code:number;title:string;status:string;version:number}>()).results;
     return tasks.map(task=>({...task,steps:steps.filter(step=>step.task_id===task.id)}));
+  }
+  async deleteHierarchyGroup(owner:string,requestId:string,items:{id:string;version:number}[],now:number){
+    if(!items.length||items.length>50||new Set(items.map(t=>t.id)).size!==items.length||items.some(t=>!t.id||!Number.isInteger(t.version)||t.version<1))throw Error('INVALID_DELETE_GROUP');
+    return new HealthyStore(this.db).mutate(owner,requestId,'delete-task-group',{items},now,state=>{
+      const statements:Statement[]=[];
+      for(const item of items){
+        statements.push(
+          query(this.db,'INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM tasks WHERE owner=? AND id=? AND version=? AND deleted_at IS NULL) THEN 1 ELSE 0 END',owner,item.id,item.version),
+          query(this.db,'UPDATE tasks SET deleted_at=?,version=version+1 WHERE owner=? AND id=?',now,owner,item.id),
+          query(this.db,"UPDATE task_appointments SET status='cancelled',version=version+1 WHERE owner=? AND task_id=? AND status='active'",owner,item.id),
+          query(this.db,"UPDATE reminders SET status='cancelled' WHERE owner=? AND session_id IN(SELECT id FROM sessions WHERE owner=? AND task_id=?) AND status IN('pending','queued')",owner,owner,item.id),
+          query(this.db,"UPDATE sessions SET status='skipped',active_since=NULL,version=version+1 WHERE owner=? AND task_id=? AND status NOT IN('completed','skipped')",owner,item.id),
+          query(this.db,"UPDATE conversation_clarifications SET status='cancelled' WHERE owner=? AND task_id=? AND status='waiting'",owner,item.id)
+        );
+      }
+      return {state,result:{deleted:items.length},statements};
+    });
   }
   async mutateHierarchy(owner:string,requestId:string,input:{operation:string;taskId?:string;stepId?:string;version?:number;title?:string;deadline?:string|null;complete?:boolean;confirm?:boolean},now:number){
     const operation=input.operation;

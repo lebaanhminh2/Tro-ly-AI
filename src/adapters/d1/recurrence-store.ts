@@ -46,6 +46,11 @@ export class RecurrenceStore{
    ]);
   }
  }
+ async next(owner:string,ruleId:string,now:number){
+  const rule=(await this.rules(owner)).find(r=>r.id===ruleId);if(!rule)return null;
+  await this.materialize(owner,now,now+8*86400000);
+  return query(this.db,"SELECT id,rule_version,due,slot FROM recurrence_occurrences WHERE owner=? AND rule_id=? AND rule_version=? AND status IN ('scheduled','queued') AND due>=? AND NOT EXISTS(SELECT 1 FROM outbox b WHERE b.id='recurring:'||recurrence_occurrences.id AND b.state IN ('sending','sent','uncertain')) ORDER BY due LIMIT 1",owner,ruleId,rule.version,now).first<{id:string;rule_version:number;due:number;slot:string}>();
+ }
  async skip(owner:string,id:string,version:number){
   const result=await query(this.db,"UPDATE recurrence_occurrences SET status='cancelled' WHERE owner=? AND id=? AND rule_version=? AND status IN ('scheduled','queued')",owner,id,version).run();
   return result.meta.changes>0;

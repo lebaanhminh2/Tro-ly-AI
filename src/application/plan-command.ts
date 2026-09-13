@@ -38,6 +38,12 @@ export async function planCommand(input: Input, store: WorkReader, now: number, 
   const entry=scheduleEntry(input.text??'');
   if(entry?.kind==='help')return {view:{text:'/kiemtra · Mở ứng dụng\n/lich · Trao đổi lịch hôm nay\n/ngu · Báo nghỉ, dừng nhắc chủ động\n/huy · Thoát phiên đang nhập',buttons:[]},changes:[]};
   if(entry?.kind==='cancel')return {view:{text:'Đã thoát phiên nhập lịch.',buttons:[]},changes:[{type:'cancel',owner:input.owner}]};
+  if(entry?.kind==='setup'){
+    if(!chat)return {view:{text:'Phần trao đổi lịch cần bật AI. Cậu vẫn sửa lịch trong ứng dụng được nhé.',buttons:[]},changes:[]};
+    if(!entry.message)return {view:{text:'Hôm nay cậu bận những khoảng nào? Nhắn /lich kèm các khoảng giờ để tớ đối chiếu lịch đã lưu nhé.',buttons:[]},changes:[]};
+    const result=await chat(input.owner,entry.message,[],input,store,now);
+    return typeof result==='string'?{view:{text:result,buttons:[]},changes:[]}:result;
+  }
   const board=await boardCommand(input,store,now);if(board){board.changes.push({type:'cancel',owner:input.owner});return board;}
   if(input.callback?.startsWith('tool-confirm:')&&chat){
     const result=await chat(input.owner,'',[],input,store,now);

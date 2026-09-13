@@ -9,14 +9,16 @@ export class ScheduleStore{
  private db:Database;
  constructor(db:Database){this.db=db;}
  settings(owner:string){return query(this.db,'SELECT start_minutes,sleep_minutes,version FROM schedule_settings WHERE owner=?',owner).first<ScheduleSettings>();}
- async configure(owner:string,start:string,sleep:string,version:number,now:number){
+ async configure(owner:string,start:string,sleep:string,version:number,now:number,requestId?:string){
   const a=minutes(start),b=minutes(sleep);
   if(a===b||!Number.isInteger(version)||version<0)throw Error('INVALID_SETTINGS');
-  await this.db.batch([
+  const statements=[
    query(this.db,'INSERT INTO transaction_guard SELECT CASE WHEN COALESCE((SELECT version FROM schedule_settings WHERE owner=?),0)=? THEN 1 ELSE 0 END',owner,version),
    query(this.db,'INSERT INTO schedule_settings(owner,start_minutes,sleep_minutes,updated) VALUES(?,?,?,?) ON CONFLICT(owner) DO UPDATE SET start_minutes=excluded.start_minutes,sleep_minutes=excluded.sleep_minutes,version=version+1,updated=excluded.updated',owner,a,b,now),
    query(this.db,'DELETE FROM transaction_guard')
-  ]);
+  ];
+  if(requestId)await new HealthyStore(this.db).mutate(owner,requestId,'settings',{start,sleep,version},now,state=>({state,result:{saved:true},statements}));
+  else await this.db.batch(statements);
   // Today's existing snapshot is immutable: changing bedtime cannot erase a penalty.
   return this.ensureDay(owner,now);
  }
@@ -49,13 +51,13 @@ export class ScheduleStore{
   const saved=await query(this.db,'SELECT * FROM schedule_days WHERE owner=? AND day=?',owner,day.day).first<DayRow>();
   return new HealthyStore(this.db).score(owner,{day:day.day,target:day.target_sleep,end:day.end_at,reportedAt:saved!.asleep_at,chatActive:true,assessedAt:now});
  }
- async replan(owner:string,now:number,expectedVersion:number,free:TimeRange[],busy:TimeRange[],tasks:PlanningTask[],requestId:string){
+ async prepareReplan(owner:string,now:number,expectedVersion:number,free:TimeRange[],busy:TimeRange[],tasks:PlanningTask[],requestId:string){
   const day=await this.ensureDay(owner,now);if(!day)throw Error('SETUP_REQUIRED');
   const ranges=availableRanges(free.length?free:[{start:day.start_at,end:day.target_sleep}],busy,now);
   if(ranges.some(r=>r.start<day.start_at||r.end>day.target_sleep))throw Error('OUTSIDE_ACTIVE_DAY');
   const fixed=(await query(this.db,"SELECT start_at,end_at FROM local_events WHERE owner=? AND status='scheduled' AND start_at<? AND COALESCE(end_at,start_at+3600000)>?",owner,day.target_sleep,now).all<{start_at:number;end_at:number|null}>()).results.map(e=>({start:e.start_at,end:e.end_at??e.start_at+3600000}));
-  const plan=planDay(tasks,ranges,fixed,now);
-  return new HealthyStore(this.db).mutate(owner,requestId,'replan',{day:day.day,expectedVersion,free,busy,tasks},now,state=>{
+  const running=(await query(this.db,"SELECT start_at,minutes FROM sessions WHERE owner=? AND status IN ('running','paused')",owner).all<{start_at:number;minutes:number}>()).results;
+  const plan=planDay(tasks,ranges,[...fixed,...running.map(s=>({start:s.start_at,end:Math.max(s.start_at+s.minutes*60000,now+5*60000)}))],now);
    const statements=[
     query(this.db,'INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM schedule_days WHERE owner=? AND day=? AND version=?) THEN 1 ELSE 0 END',owner,day.day,expectedVersion),
     query(this.db,'UPDATE schedule_days SET intervals_json=?,version=version+1 WHERE owner=? AND day=?',JSON.stringify({free,busy,unplanned:plan.unplanned}),owner,day.day),
@@ -66,14 +68,17 @@ export class ScheduleStore{
     const task=tasks.find(t=>t.id===block.taskId)!;
     const id='plan_'+requestId+'_'+index;
     statements.push(
-     query(this.db,"INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM tasks WHERE owner=? AND id=? AND status='active' AND deleted_at IS NULL AND (deadline IS NULL OR (julianday(CASE WHEN deadline_precision='date' THEN deadline||'T23:59:59+07:00' ELSE deadline END)-2440587.5)*86400000>=?)) THEN 1 ELSE 0 END",owner,task.id,block.end),
+     query(this.db,"INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM tasks WHERE owner=? AND id=? AND status='active' AND deleted_at IS NULL AND (deadline IS NULL OR (julianday(CASE WHEN deadline_precision='date' THEN deadline||'T23:59:59+07:00' ELSE deadline END)-2440587.5)*86400000>=? OR (julianday(CASE WHEN deadline_precision='date' THEN deadline||'T23:59:59+07:00' ELSE deadline END)-2440587.5)*86400000<=?)) THEN 1 ELSE 0 END",owner,task.id,block.end,now),
      query(this.db,"INSERT INTO sessions(id,owner,task_id,start_at,minutes,status,expires) VALUES(?,?,?,?,?,'planned',?)",id,owner,block.taskId,block.start,(block.end-block.start)/60000,day.end_at),
      query(this.db,"INSERT INTO reminders(id,owner,session_id,generation,ordinal,due) VALUES(?,?,?,1,1,?),(?,?,?,1,2,?)",id+':1:1',owner,id,block.start,id+':1:2',owner,id,block.start+900000)
     );
    }
    statements.push(query(this.db,'INSERT OR IGNORE INTO reminder_preferences(owner,quiet_start,quiet_end) VALUES(?,0,0)',owner));
-   return {state,result:plan,statements};
-  });
+   return {plan,statements,day:day.day};
+ }
+ async replan(owner:string,now:number,expectedVersion:number,free:TimeRange[],busy:TimeRange[],tasks:PlanningTask[],requestId:string){
+  const prepared=await this.prepareReplan(owner,now,expectedVersion,free,busy,tasks,requestId);
+  return new HealthyStore(this.db).mutate(owner,requestId,'replan',{day:prepared.day,expectedVersion,free,busy,tasks},now,state=>({state,result:prepared.plan,statements:prepared.statements}));
  }
  async isResting(owner:string,now:number){
   if((await new HealthyStore(this.db).read(owner)).state.suspended)return true;

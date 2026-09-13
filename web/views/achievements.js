@@ -14,7 +14,7 @@ export function renderAchievements(ui,state){
  const bars=el('div',undefined,'chart');bars.setAttribute('role','img');bars.setAttribute('aria-label','Số việc hoàn thành từ cũ đến mới: '+amounts.join(', '));
  amounts.forEach((n,i)=>{const col=el('div',undefined,'chart-col'),bar=el('div',undefined,'chart-bar');bar.style.height=(n/Math.max(1,...amounts)*68+3)+'px';col.append(el('span',String(n)),bar,el('span',['T2','T3','T4','T5','T6','T7','CN'][i]));bars.append(col);});chart.append(bars);root.append(chart);
  const c=ui.cultivation(),current=realms[c.rank],next=realms[c.rank+1];
- const title=el('div',undefined,'section-heading');title.append(el('h2','Tu luyện cùng Minh Anh'),el('span','DEMO','pill'));root.append(title);
+ const title=el('div',undefined,'section-heading');title.append(el('h2','Tu luyện cùng Minh Anh'),el('span',state?.live?'TU LUYỆN':'DEMO','pill'));root.append(title);
  const rank=el('article',undefined,'rank-card');
  rank.append(el('div','✧','rank-seal'),el('p','CẢNH GIỚI HIỆN TẠI','eyebrow'),el('h2',current.name),el('p','Đỉnh cao từng đạt: '+realms[c.highestRank].name));
  if(c.protectedUntil>Date.now())rank.append(el('p','🛡 Miễn hạ bậc đến '+new Date(c.protectedUntil).toLocaleString('vi-VN'),'protection'));

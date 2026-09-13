@@ -22,6 +22,54 @@ test('completed/deleted work excluded; missing estimate or missed deadline not g
   {id:'unknown',status:'active',deleted:false,deadline:null,remainingMinutes:null},
   {id:'late',status:'active',deleted:false,deadline:7*hour,remainingMinutes:25}
  ],[{start:9*hour,end:12*hour}],[],8*hour);
- assert.equal(result.blocks.length,0);
- assert.deepEqual(new Set(result.unplanned.map(t=>t.reason)),new Set(['needs_estimate','deadline_passed']));
+ assert.equal(result.blocks.length,1);
+ assert.equal(result.blocks[0]!.taskId,'late');
+ assert.deepEqual(new Set(result.unplanned.map(t=>t.reason)),new Set(['needs_estimate']));
+});
+
+test('replan persists blocks and keeps omitted tasks visible as unplanned',async()=>{
+ const {readFileSync,readdirSync}=await import('node:fs');
+ const {Miniflare}=await import('miniflare');
+ const {ScheduleStore}=await import('../../src/adapters/d1/schedule-store.ts');
+ const {D1WorkStore}=await import('../../src/adapters/d1/work-store.ts');
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as import('../../src/adapters/d1/database.ts').Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
+  const now=Date.parse('2026-09-13T08:00:00+07:00');
+  await new ScheduleStore(db).configure('123','04:30','22:30',0,now);
+  await db.exec("INSERT INTO tasks(id,owner,title,deadline,created) VALUES('late','123','late','2026-09-12',0),('other','123','other',NULL,0)");
+  const store=new D1WorkStore(db),prepared=await store.prepareSchedule('123',now,1,[{start:now+3600000,end:now+7200000}],[],[{id:'late',minutes:25}],'test-schedule');
+  await db.batch(prepared.statements);
+  assert.equal((await store.sessions('123',now,now+86400000)).length,1);
+  assert.equal((await store.task('123','late'))!.deadline,'2026-09-12');
+  assert.ok(JSON.stringify(prepared.plan.unplanned).includes('other'));
+ }finally{await mf.dispose();}
+});
+
+test('/lich tool commits through outer transaction, plain chat cannot silently replan',async()=>{
+ const {readFileSync,readdirSync}=await import('node:fs');
+ const {Miniflare}=await import('miniflare');
+ const {ScheduleStore}=await import('../../src/adapters/d1/schedule-store.ts');
+ const {D1WorkStore}=await import('../../src/adapters/d1/work-store.ts');
+ const {ConversationStore}=await import('../../src/adapters/d1/conversation-store.ts');
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as import('../../src/adapters/d1/database.ts').Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
+  const now=Date.parse('2026-09-13T08:00:00+07:00');
+  await new ScheduleStore(db).configure('123','04:30','22:30',0,now);
+  await db.exec("INSERT INTO tasks(id,owner,title,created) VALUES('t','123','report',0)");
+  const store=new D1WorkStore(db);
+  const tool:import('../../src/ai/contracts.ts').ToolCall={name:'replan_day',args:{expected_version:1,free:[{start:'2026-09-13T09:00:00+07:00',end:'2026-09-13T10:00:00+07:00'}],busy:[],estimates:[{id:'t',minutes:25}]}};
+  for(const [updateId,text,allowed] of [[1,'tớ bận',false],[2,'/lich rảnh 9–10h',true]] as const){
+   await store.accept({owner:'123',chat:123,updateId,text},now,false);
+   const lease=(await store.claim('123',now))!;lease.pendingWrites=[];
+   const journal=new ConversationStore(db,s=>lease.pendingWrites!.push(...s));
+   const reply=await journal.turn(lease,[{role:'user',parts:[{text}]}],store,(c,t)=>store.mutationStatements('123',c,t,true),async()=>({content:{role:'model',parts:[{functionCall:tool}]},calls:[tool],text:''}),()=>now);
+   assert.equal((await store.sessions('123',now,now+86400000)).length,0);
+   await store.commit(lease,{view:{text:reply,buttons:[]},changes:[]},now);
+   assert.equal((await store.sessions('123',now,now+86400000)).length,allowed?1:0);
+  }
+ }finally{await mf.dispose();}
 });

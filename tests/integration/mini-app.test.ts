@@ -29,3 +29,18 @@ test('Mini App rejects unauthenticated/cross-origin writes and retries one draw 
   assert.equal((await store.read('123')).state.tickets,0);
  }finally{await mf.dispose();}
 });
+
+test('settings retry is idempotent and keeps the current day snapshot unchanged',async()=>{
+ const {ScheduleStore}=await import('../../src/adapters/d1/schedule-store.ts');
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
+  const store=new ScheduleStore(db),now=Date.parse('2026-09-13T08:00:00+07:00');
+  const first=await store.configure('123','04:30','22:30',0,now,'setup_001');
+  await store.configure('123','04:30','22:30',0,now,'setup_001');
+  assert.equal((await store.settings('123'))!.version,1);
+  const changed=await store.configure('123','05:00','23:00',1,now,'setup_002');
+  assert.equal(changed!.target_sleep,first!.target_sleep);
+ }finally{await mf.dispose();}
+});

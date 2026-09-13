@@ -28,7 +28,7 @@ export async function miniAppApi(request:Request,env:Env,now=Date.now()):Promise
    ]);
    return json({now,account,tasks,reminders,settings,progress,sessions,events,day,realms:REALMS,loot:LOOT,charms:CHARMS,needsSetup:!settings});
   }
-  if(request.method!=='POST'||!['/api/cultivation','/api/tasks','/api/settings','/api/reminders','/api/schedule'].includes(url.pathname))return json({error:'NOT_FOUND'},404);
+  if(request.method!=='POST'||!['/api/cultivation','/api/tasks','/api/settings','/api/reminders','/api/schedule','/api/reminder-instance','/api/tasks-delete'].includes(url.pathname))return json({error:'NOT_FOUND'},404);
   // Read a bounded body, including chunked requests.
   const reader=request.body?.getReader();if(!reader)return json({error:'INVALID_REQUEST'},400);
   const decoder=new TextDecoder('utf-8',{fatal:true});let raw='',bytes=0;
@@ -36,6 +36,28 @@ export async function miniAppApi(request:Request,env:Env,now=Date.now()):Promise
   raw+=decoder.decode();
   const input=JSON.parse(raw) as Record<string,unknown>;
   if(!input||Array.isArray(input)||typeof input.id!=='string'||!/^[a-zA-Z0-9_-]{8,100}$/.test(input.id))return json({error:'INVALID_REQUEST'},400);
+  if(url.pathname==='/api/reminder-instance'){
+   if(Object.keys(input).some(k=>!['id','ruleId','operation','due'].includes(k))||typeof input.ruleId!=='string'||!['skip','move'].includes(String(input.operation)))return json({error:'INVALID_REQUEST'},400);
+   if(input.operation==='move'&&(!Number.isFinite(input.due)||Number(input.due)<=now||Number(input.due)>now+32*86400000))return json({error:'INVALID_REQUEST'},400);
+   const next=await new RecurrenceStore(env.DB).next(owner,input.ruleId,now);
+   const result=await healthy.mutate(owner,input.id,'reminder-instance',input,now,state=>{
+    if(!next)throw Error('NO_NEXT_REMINDER');
+    const statements=[
+     query(env.DB,"INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM recurrence_occurrences o JOIN recurrence_rules r ON r.id=o.rule_id WHERE o.id=? AND o.owner=? AND o.rule_version=? AND o.status IN ('scheduled','queued') AND r.version=o.rule_version AND r.enabled=1 AND NOT EXISTS(SELECT 1 FROM outbox b WHERE b.id='recurring:'||o.id AND b.state IN('sending','sent','uncertain'))) THEN 1 ELSE 0 END",next.id,owner,next.rule_version),
+     query(env.DB,"UPDATE outbox SET state='failed' WHERE id=? AND state='pending'",'recurring:'+next.id),
+     query(env.DB,input.operation==='skip'?"UPDATE recurrence_occurrences SET status='cancelled' WHERE id=? AND owner=?":"UPDATE recurrence_occurrences SET status='scheduled',due=? WHERE id=? AND owner=?",...(input.operation==='skip'?[next.id,owner]:[Number(input.due),next.id,owner]))
+    ];
+    // A moved occurrence keeps its logical ID and rule slot; remove its unsent
+    // cancelled delivery so the dispatcher may queue the new due time.
+    if(input.operation==='move')statements.push(query(env.DB,"DELETE FROM outbox WHERE id=? AND state='failed' ",'recurring:'+next.id));
+    return {state,result:{changed:true,slot:next.slot},statements};
+   });
+   return json({result});
+  }
+  if(url.pathname==='/api/tasks-delete'){
+   if(Object.keys(input).some(k=>!['id','items','confirm'].includes(k))||input.confirm!==true||!Array.isArray(input.items)||input.items.some(t=>!t||typeof t!=='object'||Object.keys(t).some(k=>!['id','version'].includes(k))||typeof t.id!=='string'||!Number.isInteger(t.version)))return json({error:'INVALID_REQUEST'},400);
+   return json({result:await new D1WorkStore(env.DB).deleteHierarchyGroup(owner,input.id,input.items,now)});
+  }
   if(url.pathname==='/api/schedule'){
    if(Object.keys(input).some(k=>!['id','version','free','busy','estimates'].includes(k))||!Number.isInteger(input.version)||!Array.isArray(input.free)||!Array.isArray(input.busy)||!Array.isArray(input.estimates)||input.estimates.length>100)return json({error:'INVALID_REQUEST'},400);
    for(const r of [...input.free,...input.busy])if(!r||typeof r!=='object'||Object.keys(r).some(k=>!['start','end'].includes(k))||!Number.isFinite(r.start)||!Number.isFinite(r.end))return json({error:'INVALID_REQUEST'},400);
@@ -52,7 +74,7 @@ export async function miniAppApi(request:Request,env:Env,now=Date.now()):Promise
   }
   if(url.pathname==='/api/settings'){
    if(Object.keys(input).some(k=>!['id','start','sleep','version'].includes(k))||typeof input.start!=='string'||typeof input.sleep!=='string'||!Number.isInteger(input.version))return json({error:'INVALID_REQUEST'},400);
-   await new ScheduleStore(env.DB).configure(owner,input.start,input.sleep,Number(input.version),now);
+   await new ScheduleStore(env.DB).configure(owner,input.start,input.sleep,Number(input.version),now,input.id);
    return json({saved:true});
   }
   if(url.pathname==='/api/reminders'){
@@ -96,7 +118,7 @@ export async function miniAppApi(request:Request,env:Env,now=Date.now()):Promise
   return json({result,account:await healthy.read(owner)});
  }catch(error){
   const code=error instanceof Error?error.message:'';
-  if(['DRAW_UNAVAILABLE','FUSION_UNAVAILABLE','ITEM_UNAVAILABLE','BREAKTHROUGH_UNAVAILABLE','ALREADY_PROTECTED','REQUEST_ID_REUSED','STALE_TASK','CONFIRM_CHILDREN','CONFIRM_REOPEN_PARENT','CONFIRM_DELETE','STEP_NOT_FOUND'].includes(code))return json({error:code},409);
+  if(['DRAW_UNAVAILABLE','FUSION_UNAVAILABLE','ITEM_UNAVAILABLE','BREAKTHROUGH_UNAVAILABLE','ALREADY_PROTECTED','REQUEST_ID_REUSED','STALE_TASK','CONFIRM_CHILDREN','CONFIRM_REOPEN_PARENT','CONFIRM_DELETE','STEP_NOT_FOUND','NO_NEXT_REMINDER'].includes(code))return json({error:code},409);
   if(code.startsWith('INVALID_'))return json({error:'INVALID_REQUEST'},400);
   if(error instanceof SyntaxError)return json({error:'INVALID_REQUEST'},400);
   return json({error:'OPERATION_NOT_CONFIRMED',message:'Chưa xác nhận được kết quả. Kiểm tra lại trước khi thử hành động mới.'},503);

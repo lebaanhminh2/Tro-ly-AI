@@ -1,6 +1,14 @@
 # Tiếp tục từ đây
 2026-09-13. User yêu cầu làm liên tục đến nghiệm thu Mini App + lịch + tu luyện. Đây là checkpoint đang làm, KHÔNG hoàn tất, không xin lại scope đã duyệt.
 
+## Tiến độ lượt tiếp tục
+- /lich route/prompt riêng + allowlist2 tools replan_day/respond; nhận schedule snapshot. Plain chat không được replan. Replan statements deferred vào outer transaction, giữ deadlines, hủy future blocks cũ, omitted tasks vào unplanned.
+- Planner xếp task quá hạn tiếp thay vì bỏ hẳn; không đổi deadline. Block đang chạy/cố định được trừ trước packing.
+- Settings API dùng request receipt idempotent; bulk delete Mini App có all-or-nothing/version, confirm trong UI; skip/move occurrence API đã có, skip button đã nối.
+- Một lần reminder đang sending/sent/uncertain không được đổi; thao tác move giữ slot ID và hủy pending outbox cũ.
+- 2 Gemini requests thật cho /lich: prompt chung sai trường type thay busy (bị validate chặn), prompt riêng lần2 đúng free/busy/estimates/version+respond. Không cloud writes/deploy.
+- Targeted planner5 tests và hierarchy/API/settings9 tests đạt; full120 tests chính +25 experiments đạt. Typecheck cuối đạt; web syntax đạt.
+
 ## Source mới đã có local
 - web demo cập nhật cảnh giới đến1000/2000, giảm chuỗi≥10 như PRODUCT_BRIEF. /app/ có nhánh gọi API thật; root vẫn demo.
 - src/domain/healthy.ts: +5 đúng giờ/−20 muộn hoặc không báo; floor0; dưới ngưỡng rank hạ1 bậc khi có phạt, trừ khi được bảo vệ72h; không trừ lifetime earned. Hết bảo vệ không tự hạ.
@@ -17,14 +25,14 @@
 ## Kiểm thử đã làm
 - Full109+25 đạt trước thêm vài phần cuối; full sau đó đạt (xem tool output session18010). Typecheck cuối đạt.
 - Target healthy/auth/rules/ledger/hierarchy/api/planner đạt. SQLite fresh + upgrade giữ ID/mã, không lỗi FK.
-- Chưa gọi Gemini live trong lượt này, chưa cloud mutation/deploy. Không dùng ngân sách user chat thay ngân sách agent.
+- Đã dùng2 Gemini requests trong lượt tiếp tục; chưa cloud mutation/deploy. Không dùng ngân sách user chat thay ngân sách agent.
 - Frontend cú pháp JS đạt; nhánh live chưa end-to-end trong Telegram.
 
 ## BẮT BUỘC tiếp tục trước deploy
-1. Rà phát sinh mới: schedule configure chưa idempotency receipt; replan nhận task estimates thiếu items có thể bỏ khỏi planned (phải hiện unplanned); xử lý deadline quá hạn theo mục tiêu xếp tiếp không bỏ; current end/start setting transition và không chấm trước ngày setup cần test.
+1. Rà phát sinh mới: schedule configure đã receipt; replan giữ omitted unplanned và xếp overdue; current end/start setting transition và không chấm trước ngày setup cần test.
 2. Unify task changes chat/API: chat complete chưa award ticket mới, chat chưa hierarchy #id/steps; không để hai luật khác nhau. Parent complete API đã dừng running/planned sessions; cần integration chat/API cùng luật.
-3. Frontend live còn placeholder: bulk delete, skip/reschedule occurrence, start session, share; achievements demoDay dùng client settings/hardcoded270 chưa server day; ensure không fake success/đọc mock khi live. Bỏ demo labels/timeline giả trong live, không deploy placeholder.
-4. /lich parser có nhưng chưa route vào specialized prompt/tool/read lịch DB; morning reply chưa cùng phiên. /ngu chưa setup đã pause tới next start và không phạt; lỗi model phần kèm vẫn đáp báo nghỉ. Cần test end-to-end sau nối assets.
+3. Frontend live còn placeholder: bulk delete và skip đã nối; move UI, start session, share còn thiếu; achievements day đã dùng server day; ensure không fake success/đọc mock khi live. Bỏ demo labels/timeline giả trong live, không deploy placeholder.
+4. /lich đã specialized prompt và replan tool, chỉ explicit command; morning reply chưa cùng phiên. /ngu chưa setup đã pause tới next start và không phạt; lỗi model phần kèm vẫn đáp báo nghỉ. Cần test end-to-end sau nối assets.
 5. Scheduler rest final guard, queueCheckIns expiry/outage, suspension stop mọi cơ chế background, preserve recurring exceptions và tránh nhắc trùng old/new. Không backcharge missed days do restart/settings.
 6. MiniApp input auth chuẩn nhưng session TTL15min cần UI reopen; API JSON types validate/rate payload. /api/settings GET bootstrap currently ensureDay mutates setup day; review scope.
 7. Hoàn thiện UI prototype approved → live mappings, wire static assets /app + Telegram menu/web_app qua cùng Worker; chưa thêm tài nguyên.

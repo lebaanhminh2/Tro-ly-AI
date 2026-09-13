@@ -17,7 +17,7 @@ export function planDay(tasks:PlanningTask[],availability:TimeRange[],fixed:Time
   let remaining=task.remainingMinutes;
   for(const range of ranges){
    if(!remaining)break;
-   const end=Math.min(range.end,task.deadline??Infinity);
+   const end=Math.min(range.end,task.deadline!==null&&task.deadline>now?task.deadline:Infinity);
    while(remaining>0&&range.start+Math.min(remaining,5)*60000<=end){
     const minutes=Math.min(remaining,blockMinutes,Math.floor((end-range.start)/60000));
     blocks.push({taskId:task.id,start:range.start,end:range.start+minutes*60000});

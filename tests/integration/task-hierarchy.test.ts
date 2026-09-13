@@ -31,3 +31,19 @@ test('task steps use permanent codes, parent completion needs consent and awards
   await assert.rejects(store.mutateHierarchy('999','foreign1',{operation:'edit',taskId:id,version:5,title:'Hacked'},now),/STALE_TASK/);
  }finally{await mf.dispose();}
 });
+
+test('bulk delete is all-or-nothing and retries cannot affect newly changed tasks',async()=>{
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
+  await db.exec("INSERT INTO tasks(id,owner,title,created) VALUES('a','123','A',0),('b','123','B',0)");
+  const store=new D1WorkStore(db);
+  await assert.rejects(store.deleteHierarchyGroup('123','bad-group',[{id:'a',version:1},{id:'b',version:9}],1000));
+  assert.ok(await store.task('123','a'));
+  const items=[{id:'a',version:1},{id:'b',version:1}];
+  await store.deleteHierarchyGroup('123','good-group',items,1000);
+  await store.deleteHierarchyGroup('123','good-group',items,1000);
+  assert.equal(await store.task('123','a'),null);assert.equal(await store.task('123','b'),null);
+ }finally{await mf.dispose();}
+});

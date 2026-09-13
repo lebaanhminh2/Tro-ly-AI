@@ -35,6 +35,18 @@ export class ConversationStore {
      const index=readIndexes.get(step)??0;readIndexes.set(step,index+1);
      return this.step(lease,`read:${step}:${index}`,'read',request(call),clock,()=>executeTool(call,reader,lease.owner,lease.input.updateId,clock()));
     }
+    if(call.name==='replan_day'){
+      if(!/^\/lich(?:\s|$|@)/i.test(lease.input.text??''))throw Error('EXPLICIT_SCHEDULE_REQUIRED');
+      if(!reader.prepareSchedule)throw Error('SCHEDULE_UNAVAILABLE');
+      const prior=await this.writeResult(lease,request(call));
+      if(prior)return {result:prior,changes:[],fallback:String(prior.fallback)};
+      const ranges=(raw:unknown)=>(raw as {start:string;end:string}[]).map(r=>({start:Date.parse(r.start),end:Date.parse(r.end)}));
+      const prepared=await reader.prepareSchedule(lease.owner,clock(),Number(call.args.expected_version),ranges(call.args.free),ranges(call.args.busy),call.args.estimates as {id:string;minutes:number}[],String(lease.input.updateId));
+      const remaining=Array.isArray(prepared.plan.unplanned)?prepared.plan.unplanned.length:0;
+      const fallback='Tớ đã xếp '+String(prepared.plan.plannedMinutes??0)+' phút làm việc hôm nay.'+(remaining?' Còn '+remaining+' việc chưa xếp đủ; xem trong ứng dụng nhé.':'');
+      const result=await this.commitWrite(lease,request(call),{status:'applied',fallback,plan:prepared.plan},prepared.statements,clock());
+      return {result,changes:[],fallback};
+    }
     const existing=await this.writeResult(lease,request(call));
     if(existing)return {result:existing,changes:[],fallback:String(existing.fallback??'Thao tác đã được ghi nhận.')};
     if(call.name==='resolve_pending'){
