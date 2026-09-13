@@ -1,95 +1,79 @@
-# Kế hoạch thay luồng trợ lý — phạm vi đã duyệt
+# Mini App + planner + healthy — phạm vi xin duyệt
+2026-09-13. Hướng sản phẩm đã chốt; chưa duyệt danh sách source mới bên dưới. Không triển khai hoặc gọi API thật trong lượt thiết kế này.
 
-Quyết định mới nhất: user duyệt bỏ trần ứng dụng và expiry pilot khỏi production. Các số40/24h và ngày hết hạn ở ghi chú cũ bên dưới là lịch sử, không còn cấu hình chạy. Giữ dedupe, tối đa2 model steps/turn; lỗi Google429 báo đúng nguồn.
-Cập nhật 2026-09-13. Sản phẩm đã chốt; user đã duyệt danh sách thay source và ngân sách tối đa20 request trong lượt tiếp theo. Không coi tài liệu là code đã chạy.
+## 1. Công nghệ và ranh giới
+- Giữ TypeScript/Workers/D1/cron/Telegram/Gemini direct REST; frontend HTML/CSS/JS modules nhỏ, chưa thêm React/build framework/dependency.
+- Static Assets trên Worker hiện có, API cùng origin; không tạo host/DB thứ hai.
+- Telegram initData được xác minh HMAC phía server + auth_date/owner; không tin initDataUnsafe. Phiên API ngắn, request mutation có key chống lặp/version; không secret trong JS/URL.
+- Frontend: danh sách DOM an toàn (textContent), CSP phù hợp SDK, CORS same-origin, kiểm origin mutation, không nhúng HTML từ task/LLM.
+- Chat và API dùng chung application executor; không bê nguyên payload Telegram/inbox làm public API. Scheduler chỉ backend, không phụ thuộc Mini App đang mở.
+- Nguồn chính thức: https://core.telegram.org/bots/webapps ; https://developers.cloudflare.com/workers/static-assets/
 
-Checkpoint triển khai và live QA xem HANDOFF; đã có bản để user nghiệm thu. Protocol JSON tổng hợp đã thử không đạt; triển khai native tools + respond(message), không duy trì hai protocol.
+## 2. Bố cục mẫu để duyệt trước triển khai
+- Khung: header ngắn + nút cài đặt; nội dung cuộn; bottom tabs Hôm nay/Lời nhắc/Thành tích luôn thấy, có safe-area.
+- Hôm nay: card “Làm tiếp” nổi bật → toggle Lịch/Danh sách → timeline hoặc hàng task có mã/checkbox → nhóm Chưa xếp. Không hai bản task.
+- Task detail dạng bottom sheet: #24/tên/deadline → checkbox con #24.1… → thêm bước/sửa/xóa. Confirmation cha–con nêu rõ số mục ảnh hưởng.
+- Lời nhắc: segmented Một lần/Định kỳ → mỗi hàng tên/giờ/quy tắc/lần tiếp theo; editor giờ + ngày lặp + từ/đến. Tắt/sửa chuỗi phải khác “bỏ lần này”.
+- Thành tích: số hoàn thành/đúng hạn → chart theo kỳ → chuỗi ngủ → huy hiệu. Mốc sau cùng đã mở không có số lần; chỉ mốc kế tiếp có progress.
+- Empty state có CTA thật, không số0/0 hoặc hình rỗng. Nhắc: “Chưa có lịch lặp — Thêm lời nhắc”; thành tích: “Báo /ngu để bắt đầu ghi nhận”.
+- Settings chỉ start giờ/target nghỉ. Onboarding chưa chọn giờ nghỉ thì chưa kích hoạt healthy/planner, không tự đoán giờ nghỉ.
+- Review viewport414×896 và chữ lớn; target≥44px, no hover-only, focus/label đầy đủ; animation≤200ms, reduced-motion. Lưu thành công sau receipt, lỗi có retry không ghi trùng.
+- Chart SVG/canvas tại client có nhãn; thẻ chia sẻ render từ số liệu server, không dùng AI ảnh. Không thêm game/tiền ảo.
 
-Checkpoint rà soát2026-09-13: đã deploy sửa /today phân trang event+session, priority task ngoài20, bảo toàn @index khi respond đứng trước, giới hạn summary theo snapshot. 88+25 tests và assistant-flow13 đạt. Còn giới hạn một nhóm confirmation hiện hành, planner không tự chạy AI nền; nghiệm thu người dùng chưa có.
-
-Bổ sung đã duyệt và triển khai: board5 mục, filter/select/review/soft-delete, PNG7/28 ngày, streak/achievement, completion/milestone DB, Sửa bằng chat. Checkpoint/ngân sách mới nhất trong HANDOFF, không dùng kế hoạch cũ để sửa migration đã áp.
-
-## 1. Đích và bằng chứng rà soát
-- Giữ Telegram/Workers/D1/Gemini free/cron/outbox. Bỏ Google; không đổi provider/framework.
-- Một lượt có thể đồng thời trò chuyện, làm nhiều việc rõ và hỏi phần còn thiếu: message + actions_now[] + pending[].
-- Source hiện chặn nhiều write trong application/conversation-command.ts. Migration0010 còn unique một write/turn và một pending/owner.
-- context-builder.ts chỉ lấy tối đa4 cặp history từ work-store; không summary. Snapshot thiếu nhắc đã gửi và đang chờ phản hồi.
-- telegram/api.ts chưa lấy reply_to_message; acknowledgeAppointments hiện đánh dấu mọi hẹn đã gửi là responded khi có tin mới.
-- Google còn nối worker/config/ports/router/store/test, không thể chỉ xóa thư mục adapter.
-- Dữ liệu task/reminder bị gắn sai trong lần user thử chưa được truy vết cloud trong lượt này. Chưa chứng minh nguyên nhân cụ thể bằng receipt thật.
-
-## 2. Luồng một lượt và quyền
-Telegram → xác thực/dedupe + lưu tin → lấy snapshot → Gemini → kiểm dữ liệu → commit actions/pending/receipt/lịch sử/outbox → gửi Telegram.
-- Gemini hiểu ngôn ngữ và chọn hành động; backend kiểm owner, schema, ID, ngày giờ, version, giới hạn và transaction. Không thêm model duyệt hoặc regex whitelist câu nói.
-- Chọn một protocol production. Ứng viên: JSON có cấu trúc với message, actions_now, pending, read_requests và summary_update; không trộn thêm handler legacy.
-- Thông thường một model request. Nếu cần đọc ngoài snapshot: lượt đầu chỉ đọc, không ghi; đưa kết quả vào đúng một request bổ sung. Hết ngân sách thì trả thiếu dữ liệu rõ, không đoán hoặc loop.
-- Nhiều action độc lập chạy trong cùng transaction local; action có quan hệ dùng composite hoặc local_ref để backend cấp ID thật. Không để model đoán ID vừa tạo.
-- Phần đủ thông tin được ghi cùng pending của phần chưa rõ. Ví dụ tạo task và lưu câu hỏi giờ nhắc; reminder chưa được tạo cho đến khi có giờ.
-- Message là bản nháp chờ commit; action lỗi thì không gửi lời thành công. Lỗi gửi sau commit không lặp lại action; outbox giữ sent/failed/uncertain riêng.
-- Câu đáp trước kết quả DB có thể lệch action dù JSON hợp lệ. Dùng kết quả thực thi cho chi tiết xác nhận thiết yếu và fallback; không tuyên bố backend hiểu đúng mọi ý định.
-- Không tự hoàn thành task từ im lặng, không tự đổi deadline, không ép hỏi/confirm chỉ vì có nhiều action.
-
-## 3. Dữ liệu: nguồn → dùng → kết thúc
-| Dữ liệu | Nguồn và consumer | Vòng đời/chống mất mạch |
+## 3. Nguồn dữ liệu và vòng đời
+| Nhóm | Nguồn → consumer | Quy tắc |
 | --- | --- | --- |
-| Tin nhận | Telegram update/message/reply IDs → context, receipt | Lưu trước xử lý; retry cùng ID không làm lại |
-| Hội thoại + thông báo | User text, reply draft và trạng thái outbox → recent context | Phân biệt bot đã gửi/chưa gửi; gồm nhắc chủ động, không chỉ câu chat |
-| Summary | History cũ + summary trước → context builder | Version + covered_through; chỉ nén đoạn nguồn đã đọc, không sự kiện tương lai |
-| Pending | Model nêu phần thiếu/đề xuất → lượt sau hoặc nút | Nhiều pending có ID và liên kết; waiting → applied/cancelled/expired; sửa thay thế bản cũ |
-| Memory | Lời user, nguồn turn và thời điểm → context | Tạm thời hết hạn; sở thích ổn định sửa/xóa được; suy đoán không thành sự thật |
-| Task/event | Action rõ → context, planner | Task có deadline; event có giờ cố định/end tùy chọn; hoàn thành/hủy cập nhật version |
-| Work block | Model đề xuất từ task + lịch biết được → scheduler | Ước lượng ghi rõ là ước lượng; đổi/hủy block hủy job cũ, không đổi deadline |
-| Reminder/nudge | Yêu cầu user hoặc work plan → scheduler/outbox | scheduled → queued → sent → responded/closed; generation chặn nhắc lỗi thời |
-| Receipt | Backend commit → retry/recovery | Kết quả thực thi là sự thật; giữ batch receipt cho nhiều action, không cần nhiều journal song song |
+| Task code/con | Backend cấp mã → chat + Mini App | Một tầng, unique counter/parent; không tái sử dụng; giữ UUID cũ |
+| Phiên /lich | Lệnh hoặc reply vào morning message → model chuyên lịch | Gắn ngày/version/expiry; phần rõ commit, phần thiếu pending |
+| Giờ hoạt động | Settings mặc định + overrides ngày từ /lich/form → planner | Phân biệt confirmed/assumed; chưa biết tạm rảnh trong khung, trừ busy/fixed |
+| Plan | Model chọn ưu tiên/bước + backend kiểm sức chứa → work blocks | Chỉ task mở; DB event là cố định; dời plan hủy job cũ, không sửa deadline |
+| Recurrence rule | User chat/form → scheduler | local timezone, days/times/start/end, enabled/revision; không reset hằng ngày |
+| Occurrence | Rule + ngày/giờ → outbox | unique(rule,slot); skip/move riêng; sửa rule cancel occurrence cũ; restart không phát lại |
+| Ngày sinh hoạt | Settings snapshot đầu ngày → healthy/planner | start,target_sleep,wake_next, trạng thái; qua00h vẫn cùng ngày sinh hoạt |
+| Sleep log | /ngu timestamp server → streak | một bản/ngày, repeated command không tăng; lịch sử giữ target snapshot |
+| Achievements | Sleep log chuẩn → dashboard/share/outbox | namespace sleep mới, không convert achievement công việc; unlock một lần |
+- Task xong qua ngày ẩn view, không erase dữ liệu; task dở cùng ID xếp tiếp. Deadline quá hạn giữ nguyên và cảnh báo.
+- Nghỉ suppress occurrence đến hạn, không xóa rule; đánh dấu skipped_rest để không gửi bù. Kiểm nghỉ lần cuối trước send.
+- Khi /ngu đến đồng thời send đã rời server, không thể thu hồi tin đang bay; ghi trạng thái trung thực, chặn các tin tiếp theo.
+- Daily start chỉ reset nghỉ/hỏi một lần/ngày; outage không spam câu hỏi lịch cũ.
+- Không dùng cả bộ nhắc cũ và mới cho cùng occurrence: migration mapping sent/uncertain/response cần kiểm trước cutover.
 
-Thông số kỹ thuật đề xuất (không phải quota đã cấp): history thô30 ngày; pending clarification24h, confirmation15 phút; trạng thái tạm hết ngày. Receipt chống trùng giữ qua cửa sổ retry; không xóa khóa dedupe cùng nội dung chat.
-Summary ưu tiên theo ngân sách context và số lượt chưa bao phủ, không tóm tắt mọi lần đổi chủ đề. Giữ đoạn gần nguyên văn và phần chưa summary; lỗi summary không chặn chat, không ghi đè bản tốt, không gọi lại tự động.
-Summary ghép vào request khi cần vẫn tốn output token. Chỉ tóm tắt history đã chốt trước turn hiện tại; kết quả actions của turn hiện tại được backend lưu riêng sau commit.
-Job dọn dữ liệu phải bao phủ cache tool_context/tool_reply/tool_steps, không chỉ conversation_turns. Không âm thầm kéo dài retention bằng bản sao ở bảng khác.
+## 4. AI và kế hoạch thực tế
+- /lich nhận toàn lịch hiện tại + yêu cầu; thực hiện patch, không replace toàn DB. Parser thời gian là model; schema/time/version là backend.
+- Khi user chỉ báo bận trong chat: không auto replan. /ngu và yêu cầu dừng rõ được backend ưu tiên; không bắt user thương lượng với persona.
+- Morning prompt gửi template0 call; trả lời /lich dùng model có context hiện tại, tối đa2 calls. Không model cron mỗi phút.
+- Healthy context: ngày sinh hoạt, giờ mục tiêu, độ trễ, nhắc đã gửi, /ngu, recent replies. Có thể soạn lời nhắc trong lượt /lich; mốc đến giờ dùng nội dung đã lưu/fallback. Không bịa đã đọc user đang ngủ.
+- Tạm rảnh không đồng nghĩa cường độ100%; công việc xếp theo estimate với nghỉ/đệm, hiển thị lượng chưa xếp; không hard-cap3 task.
+- Tick tay đáng tin về intent hơn suy đoán; bot hỗ trợ #24/#24.2, không coi số vị trí trang là định danh.
+- Khi hết Gemini quota: giao diện, /ngu, occurrence, nhắc đã lưu vẫn chạy; chưa lập được plan mới phải báo rõ.
 
-## 4. Context và chủ động vừa đủ
-- Luôn có thời gian VN, câu hiện tại, persona, pending, summary, history gần, nhắc đã gửi và work snapshot.
-- Với10–20 task: tải compact toàn bộ active task + event/block/reminder gần. Nếu cắt trang/ngân sách phải ghi rõ còn dữ liệu chưa tải; không giả tổng quan đầy đủ.
-- Khoảng8–12 cặp chat là cấu hình khởi đầu theo ngân sách, không lời hứa nhớ vô hạn. Nguồn DB ưu tiên hơn summary khi mâu thuẫn.
-- Thiếu lịch cố định sau bỏ Google: bot chỉ biết điều user nhập. Khoảng trống không đồng nghĩa user rảnh. Onboarding hỏi gọn giờ có thể làm việc; chỉ hỏi estimate khi nó ảnh hưởng kế hoạch.
-- Lập/replan chủ yếu ghép vào lượt chat. Mỗi plan tạo next action + giờ trigger + nội dung nhắc dự kiến; không chỉ là văn bản trôi trong hội thoại.
-- Cron gửi thông báo đã chuẩn bị, kiểm lại trạng thái trước gửi; không gọi model mỗi phút.
-- Khi user im lặng: thực thi plan đã lưu, dừng đúng giới hạn. Nếu chưa có plan/giờ làm việc, không giả Gemini đang tự suy nghĩ nền; check-in nền riêng chỉ mở khi có ngân sách được duyệt.
-- Tối đa nhắc chính + một follow-up sau15 phút từ sent thành công cho cùng vòng task; không tái tạo vòng để lách giới hạn. Không trần theo ngày, không giờ yên lặng tự động; giữ pause chủ động.
-- Reply/button liên kết trực tiếp; chat thường Gemini dựa active reminders để gắn phản hồi. Không liên quan thì không acknowledge. Xong một bước không xong toàn task.
-- Overview mặc định1–3 việc và bước tiếp theo; vẫn xem được toàn bộ khi user yêu cầu. Persona tự nhiên nhưng không đoán chắc mệt/lười hoặc tạo áp lực tình cảm.
+## 5. Source mới dự kiến — cần duyệt
+- Frontend: web/index.html, web/styles.css, web/app.js, web/api.js, web/views/{today,reminders,achievements}.js; vẽ SVG/canvas bằng code, không assets AI.
+- API/auth: src/entrypoints/mini-app.ts, src/adapters/telegram/mini-app-auth.ts.
+- Domain/application: src/domain/{availability,recurrence,healthy}.ts, src/application/{schedule-command,daily-planner,healthy-command}.ts.
+- D1: src/adapters/d1/{schedule-store,recurrence-store,healthy-store}.ts.
+- Migration tiếp theo:0013_task_hierarchy.sql,0014_schedule_recurrence.sql,0015_healthy.sql. Không sửa0001–0012 đã áp.
+- Tests mới: tests/unit/{recurrence,healthy,mini-app-auth}.test.ts; tests/integration/{mini-app,task-hierarchy,daily-planner,healthy-runtime}.test.ts; web UI fixture trong tests/fixtures/mini-app.json nếu cần.
+- Không module chỉ bọc một hàm; có thể không tạo file dự kiến nếu phần đó tái dùng tốt. Thêm file ngoài danh sách phải trình lại.
 
-## 5. Phạm vi file xin duyệt
-Các nhóm dưới là phạm vi cho cả đợt; chỉ sửa phần liên quan, không format lại toàn repo.
-- Xóa sau gỡ consumer: src/adapters/google-calendar/{client,service,vault}.ts, src/ports/calendar.ts, src/domain/calendar.ts, tests/integration/calendar.test.ts. Chuyển helper ngày giờ còn dùng sang domain/time.ts trước xóa.
-- Sửa giao tiếp/protocol: src/ai/{contracts,gemini,persona,policy}.ts; src/application/{context-builder,conversation-command,tool-executor,plan-command,process-inbox,memory-command,session-command,ui-renderer}.ts.
-- Sửa domain/ports: src/domain/{work,conversation,memory,session,time,ui}.ts, src/ports/work-store.ts.
-- Sửa lưu trữ/gửi: src/adapters/d1/{conversation-store,work-store,memory,session-store,reminders,outbox,ui-store,database}.ts, src/adapters/telegram/api.ts, src/entrypoints/worker.ts, src/config/env.ts.
-- File mới dự kiến: src/domain/event.ts, src/adapters/d1/event-store.ts, migrations/0011_assistant_flow.sql. Chỉ tạo module khi có trách nhiệm riêng; summary/pending giữ trong kho hiện hữu.
-- Cấu hình/vận hành: wrangler.jsonc, .env.example (không .env thật), package.json nếu bỏ script cũ, scripts/telegram-setup.ps1.
-- Tests: sửa tests/unit/{ai-adapter,policy,architecture,staging-config,time,conversation,migration-compat,ui-renderer}.test.ts và tests/integration/{conversation,memory,ai-runtime,command-transactions,sessions,telegram,ui-lifecycle,ux-flow,workers-fetch,review-fixes}.test.ts; thêm tests/integration/assistant-flow.test.ts cho chuỗi người dùng thật.
-- experiments/ai-trial: chỉ sửa import/type bị ảnh hưởng trong file đang có; không mở rộng prompt/harness cũ, không thêm runtime fallback. Helper proposals/tasks chỉ xóa sau chứng minh không caller.
-- Docs chỉ cập nhật file hiện hữu: PRODUCT_BRIEF, TOOL_CALLING_PLAN, HANDOFF, OPERATIONS, README khi routing cần đổi. Không thêm kho Markdown/archive.
-- Không sửa migration0001–0010, không xóa task/cloud DB, không thay secret, không thêm dependency/provider nếu không trình lại.
+## 6. Source hiện hữu sửa/loại bỏ — cần duyệt
+- src/entrypoints/worker.ts,src/config/env.ts,wrangler.jsonc,tsconfig.json: serve frontend/API và bind assets; package.json chỉ script test nếu cần, không cài dependency chưa duyệt.
+- src/ai/{contracts,policy,persona}.ts,src/application/{context-builder,conversation-command,tool-executor,plan-command,process-inbox,memory-command,session-command}.ts: routing phiên và executor chung.
+- src/domain/{work,conversation,session,progress,time,ui}.ts,src/ports/work-store.ts: mã/task con/sleep/stat contracts.
+- src/adapters/d1/{work-store,conversation-store,session-store,progress-store,memory,reminders,outbox,ui-store}.ts,src/adapters/telegram/api.ts: transitions/counters/recurrence/rest và menu web_app.
+- src/application/{progress-renderer,ui-renderer}.ts: bỏ bảng/ảnh chính khỏi chat khi Mini App đã thay thế; chỉ giữ callback cũ báo mở ứng dụng, không hai CRUD UI chạy song song.
+- tests/integration/{assistant-flow,ai-runtime,conversation,command-transactions,sessions,telegram,ui-lifecycle,ux-flow,work-progress,workers-fetch}.test.ts và tests/unit/{architecture,ai-adapter,policy,progress,time,staging-config,ui-renderer,conversation,migration-compat}.test.ts: cập nhật hồi quy, không xóa test vì fail.
+- scripts/telegram-setup.ps1: đăng ký nút menu nếu thực sự dùng; docs hiện có cập nhật trạng thái/vận hành. Không chỉnh secrets thật.
+- UI preview local không ghi data thật. Không xóa tài nguyên Google/cloud hoặc dữ liệu user dưới danh nghĩa dọn source.
 
-## 6. Thứ tự và cửa kiểm tra nội bộ
-1. Baseline local + xác định fixture hồi quy. Kiểm schema response gọn với đúng Gemini đang cấu hình trước khi chuyển runtime; tối đa8 provider request thật đề xuất, không tự lấy quota cũ để chạy.
-2. Gỡ Google source/config/test liên quan; giữ chức năng nhắc/task cũ chạy trong local. Chưa deploy bản chuyển dở.
-3. Migration data/pending/event/reminder: giữ ID task cũ; backfill reminder, giữ sent/responded/generation, không phát lại lời nhắc đã gửi. Kiểm nâng DB cũ lẫn DB mới.
-4. Context + envelope + executor batch + pending; một path production. Ghi mutation/receipt/pending/delivery intent cùng transaction rồi mới gửi.
-5. Planning/nudge/overview/persona nối cùng luồng, bỏ wizard chặn chat. Nút cũ hết hạn có đường mở lại, không phát lại nghiệp vụ.
-6. Test lỗi/chuỗi hội thoại, typecheck và dry-run. Kiểm import/job/table hết consumer; không giữ hai scheduler cùng gửi reminder sau cutover.
-7. Chuẩn bị cutover staging: backup và thử restore local, kiểm đúng DB/flags/quota, áp migration rồi deploy tương thích. Không tự downgrade code cũ lên dữ liệu mới; có rollback cụ thể trước phát hành.
-8. Smoke thật và theo dõi đến hạn nhắc; chỉ bàn giao cuối khi có bằng chứng Telegram nhận, số request và không ghi nhầm/trùng. User nghiệm thu độ tự nhiên trên iPhone; test server không chứng minh push hiển thị trên điện thoại.
-
-## 7. Nghiệm thu và quyền cloud
-- Chuỗi bắt buộc: chat → thêm task + hỏi giờ → trả lời giờ → reminder → reply đúng item → xong bước → xong task.
-- Thêm ca: nhiều action, hai pending, sửa ý, tên trùng, reminder độc lập, event, summary qua nhiều lượt, task ngoài snapshot,20 task overview, pause và bỏ lỡ.
-- Lỗi bắt buộc: invalid JSON/ID, phủ định/giả định, quota429, timeout, DB rollback, crash sau commit, duplicate update, stale button, send uncertain, summary lỗi.
-- Đo request/turn, latency từng chặng, token đầu vào/ra, reminder delivery và chất lượng hội thoại; không dùng số test pass thay chất lượng.
-- Một-call là đường mục tiêu, không cam kết tất cả câu. Structured output đúng schema không bảo đảm đúng ý; nếu smoke không đạt thì báo đúng lỗi trước mở rộng, không prompt vô hạn.
-- Config sau duyệt bổ sung đặt40 request/24h và trial end2026-09-13T11:42:18Z; chưa kiểm cloud/quota còn lại. Đây là trần app, không phải hạn mức Gemini free.
-- Phạm vi đã được duyệt: tối đa8 request smoke protocol +12 request nghiệm thu tự động, gửi tin thử vào bot riêng, migration/deploy assistant-staging. Không tăng tổng ngân sách pilot, gia hạn runtime hay bật nền AI nếu chưa có đồng ý rõ; hết ngân sách báo blocker.
-- Git local checkpoint; push vẫn đang bị môi trường chặn cần quyền xuất bản riêng. Không để Git push chặn rà soát/code local.
-
-Tham khảo giao thức/quota: [Google structured output](https://ai.google.dev/gemini-api/docs/structured-output), [Google rate limits](https://ai.google.dev/gemini-api/docs/rate-limits). Chưa gọi API Gemini thật trong lượt lập kế hoạch này.
+## 7. Trình tự và nghiệm thu
+1. UI prototype ba tab + empty/populated/loading/error + task sheet/rule editor; xem trên viewport iPhone trước nối DB.
+2. Auth/API typed + migration local/backfill task codes; kiểm owner giả, initData sai/hết hạn, CSRF, duplicate write.
+3. Task hierarchy/checkbox/bulk delete + stats và archived task ngày mới; kiểm cha–con/undo giữ số liệu đúng.
+4. Recurrence + date overrides + pause/rest + delete/snooze; advance clock nhiều ngày, restart và partial failure; không phải chờ nhiều ngày thật.
+5. /lich/morning/day planner/healthy + /ngu ưu tiên; đặt giờ sau00h, trước04:30, sau mục tiêu, đổi setting giữa ngày, lịch mâu thuẫn, hết provider quota.
+6. Sleep streak + cultivation achievements/share; không convert old task streak. Chỉ data có bằng chứng, không nhãn “ngủ thực tế”.
+7. Full test/typecheck/workerd/dry-run, review UI 414px/text lớn/reduced-motion; backup/restore kiểm schema cũ→mới giữ task/history và không nhắc lặp.
+8. Cutover staging/menu: nguồn cũ ngừng dispatch item đã migrate; kiểm tuần tự chat→Mini App→tick→/lich→nhắc→/ngu. User nghiệm thu toàn luồng.
+- Luôn ghi vấn đề test và giới hạn thật, không dùng deploy thành công thay nghiệm thu trải nghiệm.
+- Quyền live smoke/deploy/menu chưa suy từ duyệt ý tưởng: đề xuất tối đa8 Gemini requests cho đợt mới, không paid fallback, không tái áp trần user chat.
