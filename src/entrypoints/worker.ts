@@ -1,6 +1,7 @@
 import {boardCommand} from '../application/progress-renderer.ts';
 import {SCHEDULE_PROMPT} from '../application/schedule-command.ts';
 import {ScheduleStore} from '../adapters/d1/schedule-store.ts';
+import {HealthyStore} from '../adapters/d1/healthy-store.ts';
 import {RecurrenceStore} from '../adapters/d1/recurrence-store.ts';
 import {miniAppApi} from './mini-app.ts';
 import {unlockAchievements} from '../adapters/d1/progress-store.ts';
@@ -37,6 +38,7 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
       const confirmation=input?.callback? /^tool-confirm:([yn]):(.+)$/.exec(input.callback):null;
       const [context,pending]=await Promise.all([buildContext(reader,owner,text||'Xác nhận bằng nút',lease.input.receivedAt??clock.now()),journal.pending(owner,clock.now())]);
       if(confirmation&&(!pending||pending.id!==confirmation[2]))return 'Đề xuất này đã cũ hoặc đã được xử lý.';
+      const scheduling=/^\/lich(?:\s|$|@)/i.test(lease.input.text??'')||(env.ASSETS?await reader.isMorningReply?.(owner,input?.replyToMessageId,clock.now())??false:false);
       const schedule=env.ASSETS?await reader.scheduleContext?.(owner,clock.now())??null:null;
       const initial=[{role:'user' as const,parts:[{text:JSON.stringify({contextData:{...JSON.parse(context.context),schedule},pending,replyToMessageId:input?.replyToMessageId??null})}]},
         ...context.turns.map(turn=>({role:turn.role,parts:[{text:turn.text}]}))];
@@ -53,7 +55,6 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
         if(env.AI_TRIAL_ENDS_AT&&(!Number.isFinite(Date.parse(env.AI_TRIAL_ENDS_AT))||clock.now()>=Date.parse(env.AI_TRIAL_ENDS_AT)))throw Error('AI_TRIAL_ENDED');
         if(!await reserveAi(env.DB,'runtime:gemini',`${owner}:${lease.input.updateId}:tool:${step}`,clock.now(),env.AI_DAILY_LIMIT===undefined?null:Number(env.AI_DAILY_LIMIT)))throw Error('AI_QUOTA');
         const client=new Gemini({apiKey:env.GEMINI_API_KEY!,model:env.GEMINI_MODEL!,transport:(url,options)=>transport(url,{...options,redirect:'manual'}),timeoutMs:5000});
-        const scheduling=/^\/lich(?:\s|$|@)/i.test(lease.input.text??'');
         return (await client.generateTools(contents,scheduling?SCHEDULE_PROMPT:TOOL_PERSONA,allowTools,scheduling?['replan_day','respond']:undefined)).output;
       },()=>clock.now());
       if(journal.requestedView){
@@ -78,6 +79,7 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
       if(env.ASSETS){
         const schedule=new ScheduleStore(env.DB);
         await schedule.settleClosedDays(env.TELEGRAM_USER_ID,clock.now());
+        await new HealthyStore(env.DB).syncTaskTickets(env.TELEGRAM_USER_ID,clock.now());
         await schedule.queueCheckIns(env.TELEGRAM_USER_ID,clock.now());
         await new RecurrenceStore(env.DB).queueDue(env.TELEGRAM_USER_ID,clock.now(),await schedule.isResting(env.TELEGRAM_USER_ID,clock.now()));
       }
@@ -143,10 +145,10 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
         if (!cardsEnabled && env.DELIVERY_MODE === 'outbox' && input.callbackId) {
           await query(env.DB, 'INSERT OR IGNORE INTO outbox(id,payload,available) VALUES(?,?,?)', `ack:${input.owner}:${input.updateId}`,
             JSON.stringify({ method: 'answerCallbackQuery', callback_query_id: input.callbackId }),clock.now()).run();
-          await unlockAchievements(env.DB,input.owner,clock.now());
-        await flushOutbox(env, transport, clock.now());
+          await flushOutbox(env, transport, clock.now());
         }
         await processInbox(store, input.owner, clock, runtimeChat(env),4);
+        if(env.ASSETS)await new HealthyStore(env.DB).syncTaskTickets(input.owner,clock.now());
         await flushOutbox(env, transport, clock.now());
         await flushCards(env);
         if (env.DELIVERY_MODE === 'outbox' || !isNew) return new Response('OK');

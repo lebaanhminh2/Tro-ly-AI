@@ -76,3 +76,24 @@ test('missed sleep scoring persists only three inactive penalties and resumption
   assert.equal(account.state.suspended,false);assert.equal(account.state.qi,140);
  }finally{await mf.dispose();}
 });
+
+test('chat completion sync awards exactly one ticket and no historical rewards',async()=>{
+ const {ScheduleStore}=await import('../../src/adapters/d1/schedule-store.ts');
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')&&f<'0015').sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
+  await db.exec("INSERT INTO tasks(id,owner,title,status,created) VALUES('old','123','old','completed',0),('new','123','new','active',0)");
+  await db.exec(readFileSync('migrations/0015_healthy.sql','utf8').replace(/\r?\n/g,' '));
+  const now=Date.parse('2026-09-13T08:00:00+07:00'),store=new HealthyStore(db);
+  await new ScheduleStore(db).configure('123','04:30','22:30',0,now);
+  await store.syncTaskTickets('123',now);
+  assert.equal((await store.read('123')).state.tickets,0);
+  await db.exec("UPDATE tasks SET status='completed' WHERE id='new'");
+  await store.syncTaskTickets('123',now);await store.syncTaskTickets('123',now);
+  assert.equal((await store.read('123')).state.tickets,1);
+  await db.exec("UPDATE tasks SET status='active' WHERE id='new'; UPDATE tasks SET status='completed' WHERE id='new'");
+  await store.syncTaskTickets('123',now);
+  assert.equal((await store.read('123')).state.tickets,1);
+ }finally{await mf.dispose();}
+});

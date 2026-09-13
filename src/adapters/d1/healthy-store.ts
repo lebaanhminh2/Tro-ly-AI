@@ -52,4 +52,11 @@ export class HealthyStore {
    ]};
   });
  }
+ async syncTaskTickets(owner:string,now:number){
+  if((await this.read(owner)).state.suspended)return;
+  const setup=await query(this.db,'SELECT owner FROM schedule_settings WHERE owner=? AND sleep_minutes IS NOT NULL',owner).first();
+  if(!setup)return;
+  const tasks=(await query(this.db,"SELECT t.id FROM tasks t WHERE t.owner=? AND t.status='completed' AND t.deleted_at IS NULL AND NOT EXISTS(SELECT 1 FROM task_ticket_awards a WHERE a.owner=t.owner AND a.task_id=t.id) ORDER BY t.created LIMIT 25",owner).all<{id:string}>()).results;
+  for(const task of tasks)await this.awardTask(owner,task.id,now);
+ }
 }

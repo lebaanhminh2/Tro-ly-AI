@@ -73,3 +73,24 @@ test('/lich tool commits through outer transaction, plain chat cannot silently r
   }
  }finally{await mf.dispose();}
 });
+
+test('morning reply permission is bound to owner, sent message and current operating day',async()=>{
+ const {readFileSync,readdirSync}=await import('node:fs');
+ const {Miniflare}=await import('miniflare');
+ const {ScheduleStore}=await import('../../src/adapters/d1/schedule-store.ts');
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as import('../../src/adapters/d1/database.ts').Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
+  const store=new ScheduleStore(db),now=Date.parse('2026-09-13T04:30:00+07:00');
+  await store.configure('123','04:30','22:30',0,now);
+  await store.queueCheckIns('123',now);
+  await db.prepare("UPDATE outbox SET state='sent',message_id=77 WHERE id LIKE 'healthy:morning:123:%'").run();
+  assert.equal(await store.isMorningReply('123',77,now+3600000),true);
+  assert.equal(await store.isMorningReply('999',77,now+3600000),false);
+  assert.equal(await store.isMorningReply('123',78,now+3600000),false);
+  assert.equal(await store.isMorningReply('123',77,now+86400000),false);
+  await store.reportSleep('123',now+20*3600000);
+  assert.equal(await store.isMorningReply('123',77,now+20*3600000),false);
+ }finally{await mf.dispose();}
+});

@@ -1,6 +1,12 @@
 # Tiếp tục từ đây
 2026-09-13. User yêu cầu làm liên tục đến nghiệm thu Mini App + lịch + tu luyện. Đây là checkpoint đang làm, KHÔNG hoàn tất, không xin lại scope đã duyệt.
 
+## Tiến độ lượt mới nhất
+- Morning reply kiểm owner + outbox sent message ID + ngày sinh hoạt hiện tại/asleep; worker và executor nhận cùng quyền phiên lịch. Tin hôm qua/foreign không được replan.
+- Vé task hoàn thành qua chat: syncTaskTickets sau processInbox và cron khi ASSETS bật; migration0015 backfill awards cho task completed cũ để không phát vé hồi tố. Test chat/reopen không award2 lần đạt.
+- API /session dùng sessionStatements chung, UI start đã nối; dời occurrence UI đã nối /api/reminder-instance. Chưa deploy/migrate cloud.
+- Full122 tests chính đạt, experiments đang/kết quả tool; typecheck đạt. Không gọi Gemini/cloud trong lượt này.
+
 ## Tiến độ lượt tiếp tục
 - /lich route/prompt riêng + allowlist2 tools replan_day/respond; nhận schedule snapshot. Plain chat không được replan. Replan statements deferred vào outer transaction, giữ deadlines, hủy future blocks cũ, omitted tasks vào unplanned.
 - Planner xếp task quá hạn tiếp thay vì bỏ hẳn; không đổi deadline. Block đang chạy/cố định được trừ trước packing.
@@ -30,9 +36,9 @@
 
 ## BẮT BUỘC tiếp tục trước deploy
 1. Rà phát sinh mới: schedule configure đã receipt; replan giữ omitted unplanned và xếp overdue; current end/start setting transition và không chấm trước ngày setup cần test.
-2. Unify task changes chat/API: chat complete chưa award ticket mới, chat chưa hierarchy #id/steps; không để hai luật khác nhau. Parent complete API đã dừng running/planned sessions; cần integration chat/API cùng luật.
-3. Frontend live còn placeholder: bulk delete và skip đã nối; move UI, start session, share còn thiếu; achievements day đã dùng server day; ensure không fake success/đọc mock khi live. Bỏ demo labels/timeline giả trong live, không deploy placeholder.
-4. /lich đã specialized prompt và replan tool, chỉ explicit command; morning reply chưa cùng phiên. /ngu chưa setup đã pause tới next start và không phạt; lỗi model phần kèm vẫn đáp báo nghỉ. Cần test end-to-end sau nối assets.
+2. Unify task changes chat/API: chat complete đã sync ticket khi ASSETS; chat chưa hierarchy #id/steps; không để hai luật khác nhau. Parent complete API đã dừng running/planned sessions; cần integration chat/API cùng luật.
+3. Frontend live còn placeholder: bulk delete và skip đã nối; move UI/start session đã nối; share và session controls UI khác còn thiếu; achievements day đã dùng server day; ensure không fake success/đọc mock khi live. Bỏ demo labels/timeline giả trong live, không deploy placeholder.
+4. /lich đã specialized prompt và replan tool, chỉ explicit command; morning reply cùng quyền phiên đã nối; /lich bare không giữ multi-turn session ngoài reply context. /ngu chưa setup đã pause tới next start và không phạt; lỗi model phần kèm vẫn đáp báo nghỉ. Cần test end-to-end sau nối assets.
 5. Scheduler rest final guard, queueCheckIns expiry/outage, suspension stop mọi cơ chế background, preserve recurring exceptions và tránh nhắc trùng old/new. Không backcharge missed days do restart/settings.
 6. MiniApp input auth chuẩn nhưng session TTL15min cần UI reopen; API JSON types validate/rate payload. /api/settings GET bootstrap currently ensureDay mutates setup day; review scope.
 7. Hoàn thiện UI prototype approved → live mappings, wire static assets /app + Telegram menu/web_app qua cùng Worker; chưa thêm tài nguyên.

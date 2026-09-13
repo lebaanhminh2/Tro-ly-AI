@@ -9,6 +9,10 @@ export class ScheduleStore{
  private db:Database;
  constructor(db:Database){this.db=db;}
  settings(owner:string){return query(this.db,'SELECT start_minutes,sleep_minutes,version FROM schedule_settings WHERE owner=?',owner).first<ScheduleSettings>();}
+ async isMorningReply(owner:string,messageId:number|undefined,now:number){
+  if(!Number.isSafeInteger(messageId)||Number(messageId)<=0)return false;
+  return !!await query(this.db,"SELECT d.day FROM schedule_days d JOIN outbox o ON o.id='healthy:morning:'||d.owner||':'||d.day WHERE d.owner=? AND d.start_at<=? AND d.end_at>? AND d.asleep_at IS NULL AND o.state='sent' AND o.message_id=?",owner,now,now,messageId!).first();
+ }
  async configure(owner:string,start:string,sleep:string,version:number,now:number,requestId?:string){
   const a=minutes(start),b=minutes(sleep);
   if(a===b||!Number.isInteger(version)||version<0)throw Error('INVALID_SETTINGS');
@@ -92,7 +96,7 @@ export class ScheduleStore{
   const messages:{id:string;text:string;due:number}[]=[];
   if(now>=day.start_at&&now<day.start_at+3600000)messages.push({
    id:'healthy:morning:'+owner+':'+day.day,due:day.start_at,
-   text:'Chào buổi sáng cậu :> hôm nay cậu bận những khoảng nào? Trả lời bằng /lich kèm lịch của cậu nhé.'
+   text:'Chào buổi sáng cậu :> hôm nay cậu bận những khoảng nào? Trả lời trực tiếp tin này hoặc dùng /lich kèm lịch của cậu nhé.'
   });
   for(let n=0;n<3;n++){
    const due=day.target_sleep+n*20*60000;

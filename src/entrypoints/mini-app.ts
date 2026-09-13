@@ -4,6 +4,8 @@ import {HealthyStore} from '../adapters/d1/healthy-store.ts';
 import {RecurrenceStore} from '../adapters/d1/recurrence-store.ts';
 import {ScheduleStore} from '../adapters/d1/schedule-store.ts';
 import {D1WorkStore} from '../adapters/d1/work-store.ts';
+import {canAct} from '../domain/session.ts';
+import {sessionStatements} from '../adapters/d1/session-store.ts';
 import {query} from '../adapters/d1/database.ts';
 import {breakthrough,drawReward,fuseCharm,useProtection,operatingDay,REALMS,LOOT,CHARMS,type Charm} from '../domain/healthy.ts';
 
@@ -28,7 +30,7 @@ export async function miniAppApi(request:Request,env:Env,now=Date.now()):Promise
    ]);
    return json({now,account,tasks,reminders,settings,progress,sessions,events,day,realms:REALMS,loot:LOOT,charms:CHARMS,needsSetup:!settings});
   }
-  if(request.method!=='POST'||!['/api/cultivation','/api/tasks','/api/settings','/api/reminders','/api/schedule','/api/reminder-instance','/api/tasks-delete'].includes(url.pathname))return json({error:'NOT_FOUND'},404);
+  if(request.method!=='POST'||!['/api/cultivation','/api/tasks','/api/settings','/api/reminders','/api/schedule','/api/reminder-instance','/api/tasks-delete','/api/session'].includes(url.pathname))return json({error:'NOT_FOUND'},404);
   // Read a bounded body, including chunked requests.
   const reader=request.body?.getReader();if(!reader)return json({error:'INVALID_REQUEST'},400);
   const decoder=new TextDecoder('utf-8',{fatal:true});let raw='',bytes=0;
@@ -70,6 +72,15 @@ export async function miniAppApi(request:Request,env:Env,now=Date.now()):Promise
     tasks.push({id:task.id,status:'active' as const,deleted:false,deadline:task.deadline?Date.parse(task.deadline.length===10?task.deadline+'T23:59:59+07:00':task.deadline):null,remainingMinutes:estimate.minutes as number});
    }
    const result=await new ScheduleStore(env.DB).replan(owner,now,Number(input.version),input.free,input.busy,tasks,input.id);
+   return json({result});
+  }
+  if(url.pathname==='/api/session'){
+   if(Object.keys(input).some(k=>!['id','sessionId','version','action'].includes(k))||typeof input.sessionId!=='string'||!Number.isInteger(input.version)||!['start','pause','finish','skip','snooze'].includes(String(input.action)))return json({error:'INVALID_REQUEST'},400);
+   const session=await new D1WorkStore(env.DB).session(owner,input.sessionId);
+   const result=await healthy.mutate(owner,input.id,'session-action',input,now,state=>{
+    if(!session||session.version!==input.version||!canAct(session,String(input.action),now))throw Error('SESSION_CHANGED');
+    return {state,result:{updated:true},statements:sessionStatements(env.DB,owner,{type:'session-action',session,action:input.action as 'start'|'pause'|'finish'|'skip'|'snooze',now})};
+   });
    return json({result});
   }
   if(url.pathname==='/api/settings'){
@@ -118,7 +129,7 @@ export async function miniAppApi(request:Request,env:Env,now=Date.now()):Promise
   return json({result,account:await healthy.read(owner)});
  }catch(error){
   const code=error instanceof Error?error.message:'';
-  if(['DRAW_UNAVAILABLE','FUSION_UNAVAILABLE','ITEM_UNAVAILABLE','BREAKTHROUGH_UNAVAILABLE','ALREADY_PROTECTED','REQUEST_ID_REUSED','STALE_TASK','CONFIRM_CHILDREN','CONFIRM_REOPEN_PARENT','CONFIRM_DELETE','STEP_NOT_FOUND','NO_NEXT_REMINDER'].includes(code))return json({error:code},409);
+  if(['DRAW_UNAVAILABLE','FUSION_UNAVAILABLE','ITEM_UNAVAILABLE','BREAKTHROUGH_UNAVAILABLE','ALREADY_PROTECTED','REQUEST_ID_REUSED','STALE_TASK','CONFIRM_CHILDREN','CONFIRM_REOPEN_PARENT','CONFIRM_DELETE','STEP_NOT_FOUND','NO_NEXT_REMINDER','SESSION_CHANGED'].includes(code))return json({error:code},409);
   if(code.startsWith('INVALID_'))return json({error:'INVALID_REQUEST'},400);
   if(error instanceof SyntaxError)return json({error:'INVALID_REQUEST'},400);
   return json({error:'OPERATION_NOT_CONFIRMED',message:'Chưa xác nhận được kết quả. Kiểm tra lại trước khi thử hành động mới.'},503);

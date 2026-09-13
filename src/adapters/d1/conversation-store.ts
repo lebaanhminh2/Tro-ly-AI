@@ -36,7 +36,7 @@ export class ConversationStore {
      return this.step(lease,`read:${step}:${index}`,'read',request(call),clock,()=>executeTool(call,reader,lease.owner,lease.input.updateId,clock()));
     }
     if(call.name==='replan_day'){
-      if(!/^\/lich(?:\s|$|@)/i.test(lease.input.text??''))throw Error('EXPLICIT_SCHEDULE_REQUIRED');
+      if(!/^\/lich(?:\s|$|@)/i.test(lease.input.text??'')&&!await reader.isMorningReply?.(lease.owner,lease.input.replyToMessageId,clock()))throw Error('EXPLICIT_SCHEDULE_REQUIRED');
       if(!reader.prepareSchedule)throw Error('SCHEDULE_UNAVAILABLE');
       const prior=await this.writeResult(lease,request(call));
       if(prior)return {result:prior,changes:[],fallback:String(prior.fallback)};

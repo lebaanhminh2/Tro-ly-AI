@@ -18,6 +18,7 @@ export class D1WorkStore implements WorkStore {
   private db: Database;
   constructor(db: Database, privateCards = false) { this.db = db; this.cardsEnabled=privateCards; }
   private cardsEnabled:boolean;
+  isMorningReply(owner:string,messageId:number|undefined,now:number){return new ScheduleStore(this.db).isMorningReply(owner,messageId,now);}
   async scheduleContext(owner:string,now:number){
     const store=new ScheduleStore(this.db);
     const day=await store.ensureDay(owner,now);

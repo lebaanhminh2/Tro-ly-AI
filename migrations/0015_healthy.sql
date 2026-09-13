@@ -13,3 +13,6 @@ CREATE TABLE sleep_assessments(
 CREATE TABLE task_ticket_awards(
  owner TEXT NOT NULL,task_id TEXT NOT NULL REFERENCES tasks(id),created INTEGER NOT NULL,PRIMARY KEY(owner,task_id)
 );
+/* Completed tasks predating the feature must not mint retroactive tickets. */
+INSERT INTO task_ticket_awards(owner,task_id,created)
+ SELECT owner,id,unixepoch()*1000 FROM tasks WHERE status='completed';
