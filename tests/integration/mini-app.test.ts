@@ -78,7 +78,7 @@ test('sleep suppresses reminders but allows task tickets and draws; errors disti
  try{
   const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
   for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
-  const now=Date.parse('2026-09-14T22:00:00+07:00'),token='123:fake';
+  const now=Date.parse('2026-09-14T22:30:00+07:00'),token='123:fake';
   const p=new URLSearchParams({auth_date:String(now/1000),user:JSON.stringify({id:123})});
   p.set('hash',createHmac('sha256',createHmac('sha256','WebAppData').update(token).digest()).update([...p].sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>k+'='+v).join('\n')).digest('hex'));
   const env={DB:db,TELEGRAM_USER_ID:'123',TELEGRAM_WEBHOOK_SECRET:'x'.repeat(32),TELEGRAM_BOT_TOKEN:token};

@@ -1,7 +1,7 @@
 import {availableRanges,type TimeRange} from '../../domain/availability.ts';
 import {planDay,type PlanningTask} from '../../application/daily-planner.ts';
 import {query,type Database} from './database.ts';
-import {dayWindow,operatingDay,minutes,DAY_MS,resumeHealthy} from '../../domain/healthy.ts';
+import {dayWindow,operatingDay,minutes,resumeHealthy} from '../../domain/healthy.ts';
 import {HealthyStore} from './healthy-store.ts';
 export type ScheduleSettings={start_minutes:number;sleep_minutes:number|null;version:number;updated:number};
 type DayRow={version:number;day:number;start_at:number;target_sleep:number;end_at:number;asleep_at:number|null;last_chat_at:number|null};
@@ -115,16 +115,13 @@ export class ScheduleStore{
   if((pause?.pause_until??0)>now)return {reason:'paused',until:pause!.pause_until};
   const settings=await this.settings(owner);
   const start=settings?.start_minutes??270;
+  const window=dayWindow(operatingDay(now,start),start,settings?.sleep_minutes??1350);
+  // A sleep report belongs to this operating day, but silences notifications
+  // only inside its rest interval. Settings, not a frozen timestamp, define it.
+  if(now<window.target)return {reason:'active',until:null};
   const sleep=await query(this.db,'SELECT reported_at FROM sleep_reports WHERE owner=?',owner).first<{reported_at:number}>();
-  if(sleep){
-   const until=(operatingDay(sleep.reported_at,start)+1)*DAY_MS-25200000+start*60000;
-   if(now>=sleep.reported_at&&now<until)return {reason:'asleep',until};
-  }
-  if(settings&&settings.sleep_minutes!==null){
-   const window=dayWindow(operatingDay(now,start),start,settings.sleep_minutes);
-   if(now>=window.target)return {reason:'bedtime',until:window.end};
-  }
-  return {reason:'active',until:null};
+  if(sleep&&sleep.reported_at>=window.start&&sleep.reported_at<=now)return {reason:'asleep',until:window.end};
+  return {reason:'bedtime',until:window.end};
  }
  async isResting(owner:string,now:number){return (await this.restStatus(owner,now)).reason!=='active';}
  async notificationsPaused(owner:string,now:number){

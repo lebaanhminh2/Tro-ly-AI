@@ -8,6 +8,45 @@ import {D1WorkStore} from '../../src/adapters/d1/work-store.ts';
 import {executeTool} from '../../src/application/tool-executor.ts';
 import {queueAppointments,appointmentAllowed} from '../../src/adapters/d1/conversation-store.ts';
 import {flushOutbox} from '../../src/adapters/d1/outbox.ts';
+import {DatabaseSync} from 'node:sqlite';
+
+test('verified legacy sleep migration restores report and only clears its matching pause',()=>{
+ const db=new DatabaseSync(':memory:');
+ try{
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')&&f<'0017').sort())db.exec(readFileSync('migrations/'+f,'utf8'));
+  db.exec(`INSERT INTO command_inbox(owner,update_id,payload,state,created,delivery) VALUES('7526832102',889456715,'{"text":"/ngu"}','done',1789321461968,0);
+   INSERT INTO reminder_preferences(owner,quiet_start,quiet_end,pause_until) VALUES('7526832102',0,0,1789335000000),('other',0,0,1789335000000);`);
+  const sql=readFileSync('migrations/0017_restore_verified_sleep.sql','utf8');
+  db.exec(sql);db.exec(sql);
+  assert.equal(db.prepare("SELECT reported_at FROM sleep_reports WHERE owner='7526832102'").get()!.reported_at,1789321461968);
+  assert.equal(db.prepare("SELECT pause_until FROM reminder_preferences WHERE owner='7526832102'").get()!.pause_until,0);
+  assert.equal(db.prepare("SELECT pause_until FROM reminder_preferences WHERE owner='other'").get()!.pause_until,1789335000000);
+  assert.equal(db.prepare('SELECT COUNT(*) AS n FROM sleep_assessments').get()!.n,0);
+ }finally{db.close();}
+});
+
+test('sleep only silences during current rest interval and never leaks into the next night',async()=>{
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
+  const s=new ScheduleStore(db),at=(v:string)=>Date.parse(v+'+07:00');
+  const early=at('2026-09-13T20:00:00');
+  await s.configure('123','04:30','22:30',0,early);
+  await s.reportSleep('123',early);
+  assert.equal((await s.restStatus('123',early)).reason,'active');
+  assert.equal(await s.notificationsPaused('123',early),false);
+  assert.equal((await s.restStatus('123',at('2026-09-13T22:29:59'))).reason,'active');
+  assert.equal((await s.restStatus('123',at('2026-09-13T22:30:00'))).reason,'asleep');
+  await s.configure('123','04:05','23:00',1,at('2026-09-13T22:40:00'));
+  assert.equal((await s.restStatus('123',at('2026-09-13T22:40:00'))).reason,'active');
+  assert.equal((await s.restStatus('123',at('2026-09-13T23:00:00'))).reason,'asleep');
+  assert.equal((await s.restStatus('123',at('2026-09-14T04:04:59'))).reason,'asleep');
+  assert.equal((await s.restStatus('123',at('2026-09-14T04:05:00'))).reason,'active');
+  assert.equal((await s.restStatus('123',at('2026-09-14T23:00:00'))).reason,'bedtime');
+  assert.equal(await s.notificationsPaused('123',at('2026-09-14T23:00:00')),false);
+ }finally{await mf.dispose();}
+});
 
 test('sleep state follows current wake setting, explicit pause is separate, and blocked writes never claim success',async()=>{
  const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});

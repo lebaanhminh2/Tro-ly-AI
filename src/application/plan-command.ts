@@ -22,7 +22,8 @@ export async function planCommand(input: Input, store: WorkReader, now: number, 
   if(sleep&&store.reportSleep){
     try{
       const result=await store.reportSleep(input.owner,now);
-      let text=result.applied?'Tớ đã bật nghỉ rồi nhé. '+(result.delta>0?`+${result.delta} tu vi. `:result.delta<0?`${result.delta} tu vi. `:'')+'Ngủ ngon cậu 🌙':'Cậu đã báo nghỉ hôm nay rồi, tớ vẫn giữ chế độ nghỉ nhé.';
+      const state=await store.notificationState?.(input.owner,now);
+      let text=(result.applied?'Tớ đã ghi nhận giờ ngủ của cậu. ':'Cậu đã báo ngủ hôm nay rồi nhé. ')+(result.applied&&result.delta!==0?`${result.delta>0?'+':''}${result.delta} tu vi. `:'')+(state?.reason==='active'?'Hiện vẫn trong giờ hoạt động; tớ chỉ ngừng nhắn chủ động khi vào khung nghỉ.':'Ngủ ngon cậu 🌙');
       if(sleep.message&&chat){
         let reply:Awaited<ReturnType<ChatService>>;
         try{reply=await chat(input.owner,sleep.message,[],input,store,now);}catch{return {view:{text:text+' Phần nhắn kèm chưa xử lý được; chế độ nghỉ đã bật.',buttons:[]},changes:[]};}

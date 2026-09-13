@@ -1,4 +1,10 @@
 # Tiếp tục từ đây
+## Quy tắc khung nghỉ chốt lại — 2026-09-14 (đã deploy)
+- Worker028410d4-da42-457e-b3ab-6ae4703de083, migration0017 đã áp. Typecheck đạt; 12 ca Mini App/rest/migration +15 planner/conversation +8 healthy đạt (ca Mini App cũ được đổi sang báo ngủ đúng khung nghỉ). Không Gemini call thật.
+- /ngu ghi nhận báo ngủ nhưng chỉ chặn nhắn khi now thuộc [giờ ngủ mục tiêu, giờ bắt đầu tiếp theo). Trong khung hoạt động luôn bỏ chặn do /ngu; báo ngủ phải thuộc operating day hiện tại, không dùng lại đêm cũ. Settings được xét trực tiếp; không giữ mốc kết thúc nghỉ cố định.
+- Migration0017 sửa đúng incident đã xác minh: owner7526832102, update889456715, /ngu00:44:21, pause1789335000000. Khôi phục sleep_reports từ inbox và bỏ đúng mốc04:30; không thay đổi tu vi/task hay hồi sinh nhắc cancelled. Các yêu cầu pause thủ công khác không bị xóa.
+- /ngu phản hồi theo trạng thái hiện tại, không nói đã bật nghỉ trong giờ hoạt động.
+
 ## Sửa trạng thái nghỉ — 2026-09-14 (đã deploy staging)
 - Worker `f419717c-1219-4573-9594-248cee24346f`, migration0016 đã áp. D1 lần đầu7403, retry thành công. Asset today.js live200 có rest reason. Chưa nghiệm thu Telegram thật.
 - Kiểm thử137/137 +25/25 offline đạt; guard bổ sung chặn buổi kéo qua giờ ngủ và test transport2/2 chạy lại đạt; typecheck/dry-run/JS syntax đạt. Không gọi Gemini thật.
