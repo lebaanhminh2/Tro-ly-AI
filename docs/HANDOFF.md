@@ -15,6 +15,14 @@
 - Đã chụp Edge headless giả lập414×896,320px không overflow ngang; ảnh .wrangler/miniapp-{today,reminders,achievements,dark}.png ignored. Mở task sheet3 checkbox và recurring form được xác minh DevTools.
 - Chưa là UI chức năng thật: lịch timeline/số liệu demo cố định, form chỉ memory, chưa editor availability, API auth, recurrence/sleep backend hoặc chia sẻ ảnh. Không dùng mock như số liệu thật.
 
+## Prototype tu luyện bổ sung
+- Đã sửa web/index.html,api.js,app.js,styles.css,views/achievements.js theo duyệt: thương hiệu Trợ lý của cậu; số dư/lifetime qi, vé, kho, quay, ghép, breakthrough và bảo vệ72h.
+- Pure demo functions trong web/api.js; xác suất40/15/35/6/2/2. Test inline deterministic đạt boundaries,total100,ticket-once,fusion-fail return2,daily attempt/protection/lifetime.
+- Edge headless chụp .wrangler/cultivation-preview.png; click quay giảm vé và kho6 loại mở đúng. Không live Gemini/deploy/cloud writes.
+- Toàn bộ chỉ state in-memory reload reset. Ngủ đúng+5/muộn−20 hiển thị luật; KHÔNG chấm giấc ngủ demo do chưa chốt no-report và xử lý số âm. Không backend inventory/rewards.
+- Chi tiết luật/mốc demo trong PRODUCT_BRIEF. Mốc demo chưa cân lại với+5/day; đừng coi luật chưa chốt là authorization.
+- Tiếp theo user xem prototype; cần chốt2 edge cases trước triển khai ledger thưởng/phạt thật.
+
 ## Code/cloud đang có
 - Worktree sạch trước lượt; lượt này thêm prototype web và cập nhật docs, không đổi cloud.
 - Worker version59549382-0a33-4a47-b0ed-d2f113ffdcf6; migration0001–0012 đã áp. Không sửa migration lịch sử.

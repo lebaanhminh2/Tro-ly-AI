@@ -1,4 +1,4 @@
-import {createDemo} from './api.js';
+import {createDemo,realms,loot,talismans,demoDraw,demoFuse,demoBreakthrough,demoCompleteTask} from './api.js';
 import {renderToday} from './views/today.js';
 import {renderReminders} from './views/reminders.js';
 import {renderAchievements} from './views/achievements.js';
@@ -17,7 +17,7 @@ function confirm(title,description,action){openSheet(title);sheetContent.append(
 function toggleTask(task){
  if(task.done){confirm('Mở lại #'+task.code,'Task sẽ trở lại danh sách đang làm. Các bước đã xong vẫn giữ.',()=>{task.done=false;render();toast('Demo: đã mở lại task.');});return;}
  const open=task.steps.filter(s=>!s.done).length;
- confirm('Hoàn thành #'+task.code,open?'Còn '+open+' bước chưa xong. Đánh dấu hoàn thành cả task và các bước còn lại?':'Xác nhận đã xong toàn bộ công việc này?',()=>{task.done=true;task.steps.forEach(s=>s.done=true);render();toast('Ui xong rồi này :> · Chỉ là thao tác demo');});
+ confirm('Hoàn thành #'+task.code,open?'Còn '+open+' bước chưa xong. Đánh dấu hoàn thành cả task và các bước còn lại?':'Xác nhận đã xong toàn bộ công việc này?',()=>{task.done=true;demoCompleteTask(state.cultivation,task.code);task.steps.forEach(s=>s.done=true);render();toast('Ui xong rồi này :> · Chỉ là thao tác demo');});
 }
 function openTask(task){
  openSheet(task?'#'+task.code+' · Chi tiết':'Thêm công việc');
@@ -28,7 +28,7 @@ function openTask(task){
    check.addEventListener('change',()=>{
     if(task.done&&!check.checked){confirm('Mở lại bước và task?','Mở lại #'+step.code+' cũng mở lại #'+task.code+'.',()=>{task.done=false;step.done=false;render();openTask(task);});return;}
     step.done=check.checked;
-    if(task.steps.every(s=>s.done)&&!task.done){confirm('Các bước đều xong rồi','Cậu muốn đánh dấu hoàn thành cả #'+task.code+' không?',()=>{task.done=true;render();});}
+    if(task.steps.every(s=>s.done)&&!task.done){confirm('Các bước đều xong rồi','Cậu muốn đánh dấu hoàn thành cả #'+task.code+' không?',()=>{task.done=true;demoCompleteTask(state.cultivation,task.code);render();});}
    });row.append(check,label);form.append(row);
   }
   form.append(button('+ Thêm bước',()=>{openSheet('Thêm bước cho #'+task.code);const f=el('form'),title=field('Tên bước','text');f.append(title.wrap);const save=el('button','Thêm bước','primary');save.type='submit';f.append(save);f.addEventListener('submit',e=>{e.preventDefault();const value=title.input.value.trim();if(!value)return;task.steps.push({code:task.code+'.'+task.nextStep++,title:value,done:false});task.done=false;render();openTask(task);});sheetContent.append(f);},'text-button'));
@@ -62,15 +62,70 @@ function openSettings(){
  const save=el('button','Lưu trong bản mẫu','primary');save.type='submit';form.append(save);form.addEventListener('submit',e=>{e.preventDefault();if(start.input.value===sleep.input.value){toast('Giờ bắt đầu và giờ nghỉ cần khác nhau.');return;}state.start=start.input.value;state.sleep=sleep.input.value;sheet.close();render();toast('Demo: chưa đổi giờ sinh hoạt trên bot.');});sheetContent.append(form);
 }
 function openAvailability(){openSheet('Thời gian hôm nay');sheetContent.append(el('p','04:30–22:30 là khung mẫu, không có nghĩa cậu phải làm việc cả ngày.','hint'),el('h3','Điều chỉnh bằng trò chuyện'),el('p','/lich hôm nay 14–17h tớ có việc, xếp lại giúp tớ.','card'),el('p','Bản này chỉ minh họa. Editor giờ rảnh và planner sẽ được nối backend ở bước sau.','hint'));}
-function openShare(){openSheet('Thẻ thành tích mẫu');const c=el('div',undefined,'rank-card');c.append(el('div','✧','rank-seal'),el('p','TU LUYỆN KỶ LUẬT','eyebrow'),el('h2','Luyện Khí'),el('p','3 ngày báo ngủ đúng giờ'),el('p','MINH ANH · DEMO','eyebrow'));sheetContent.append(c,el('p','Không chứa tên task hoặc lịch cá nhân. Bản mẫu chưa có thao tác chia sẻ/lưu ảnh.','hint'));}
-const ui={el,button,heading,card,toast,empty,render,openTask,toggleTask,confirmDelete,openReminder,openAvailability,openShare};
+function openShare(){openSheet('Thẻ thành tích mẫu');const c=el('div',undefined,'rank-card');c.append(el('div','✧','rank-seal'),el('p','TU LUYỆN KỶ LUẬT','eyebrow'),el('h2',realms[state.cultivation.rank].name),el('p','Tổng tích lũy: '+state.cultivation.totalEarned+' tu vi'),el('p','MINH ANH · DEMO','eyebrow'));sheetContent.append(c,el('p','Không chứa tên task hoặc lịch cá nhân. Bản mẫu chưa có thao tác chia sẻ/lưu ảnh.','hint'));}
+function demoDay(){return Math.floor((Date.now()+7*3600000-4.5*3600000)/86400000);}
+
+function openDraw(){
+ openSheet('Linh bảo · Quay thưởng');
+ sheetContent.append(el('p','1 vé / lần · Không mua bằng tiền · Kết quả demo','hint'));
+ const result=el('div','Cậu có '+state.cultivation.tickets+' vé','loot-result');result.setAttribute('role','status');
+ const draw=button('Dùng 1 vé quay',()=>{
+  const reward=demoDraw(state.cultivation);
+  if(!reward)return;
+  result.textContent='✦ '+reward.label+' · Còn '+state.cultivation.tickets+' vé';
+  draw.disabled=state.cultivation.tickets===0;render();
+ },'primary');draw.disabled=state.cultivation.tickets===0;sheetContent.append(result,draw);
+ const odds=el('details',undefined,'realm-path');odds.append(el('summary','Xác suất công khai'));
+ for(const item of loot)odds.append(el('p',item.label+' — '+item.weight+'%','hint'));sheetContent.append(odds);
+}
+function openInventory(){
+ openSheet('Túi vật phẩm');
+ const c=state.cultivation;
+ for(const [key,name,description] of [
+  ['heart','Hộ Tâm Phù','Giữ chuỗi cho một ngày lỡ, không cộng ngày đúng giờ. Không chặn trừ tu vi.'],
+  ['peace','An Tâm Phù','Chặn một lần −20 tu vi trong ngày đã dùng; không giữ chuỗi.']
+ ]){
+  const item=el('section',undefined,'item-row');item.append(el('h3',name+' · '+c.inventory[key]),el('p',description,'hint'));
+  const use=button(c.active[key]?'Đã kích hoạt trong demo':'Dùng hôm nay',()=>confirm('Dùng '+name+'?',description+' Chỉ áp dụng ngày sinh hoạt này trong demo.',()=>{
+   if(c.active[key]||c.inventory[key]<1)return;c.inventory[key]--;c.active[key]=true;c.log.unshift('Dùng '+name+' (demo)');openInventory();render();
+  }),'secondary');use.disabled=c.active[key]||c.inventory[key]<1;item.append(use);sheetContent.append(item);
+ }
+ for(const t of talismans){
+  const item=el('section',undefined,'item-row');item.append(el('h3','Phá Cảnh Phù · '+t.name+' ×'+c.inventory[t.key]),el('p','+'+t.boost+' điểm % cho một lần đột phá.','hint'));
+  if(t.next){const fuse=button('Ghép 3 lá · '+t.chance+'%',()=>confirm('Ghép lên '+talismans.find(n=>n.key===t.next).name+'?',
+   'Thành công: tiêu hao 3 lá. Thất bại: mất 1, trả lại 2. Tỷ lệ '+t.chance+'%.',()=>{
+    const success=demoFuse(c,t.key);if(success===null)return;toast(success?'Ghép thành công ✦':'Chưa thành, đã trả lại 2 lá.');openInventory();render();
+   }),'secondary');fuse.disabled=c.inventory[t.key]<3;item.append(fuse);}
+  sheetContent.append(item);
+ }
+ sheetContent.append(el('h3','Tín vật Minh Anh · '+c.inventory.keepsake),el('p','Vật phẩm sưu tầm demo, không phải tu vi. Nội dung bộ sưu tập sẽ thiết kế riêng.','hint'));
+}
+function openBreakthrough(){
+ const c=state.cultivation,target=realms[c.rank+1];if(!target)return;
+ openSheet('Đột phá · '+target.name);
+ sheetContent.append(el('p','Cần '+target.qi+' tu vi và '+target.days+' ngày ngủ đúng giờ. Không tiêu hao tu vi.','hint'));
+ const select=el('select'),label=el('label','Dùng Phá Cảnh Phù','form-field'),none=el('option','Không dùng phù');none.value='';select.append(none);
+ for(const t of talismans){if(c.inventory[t.key]>0){const option=el('option',t.name+' · +'+t.boost+' điểm %');option.value=t.key;select.append(option);}}
+ label.append(select);sheetContent.append(label);
+ const info=el('p',undefined,'hint'),result=el('div',undefined,'loot-result');result.hidden=true;result.setAttribute('role','status');
+ const chance=()=>Math.min(100,[70,85,100][Math.min(c.failures,2)]+(talismans.find(t=>t.key===select.value)?.boost??0));
+ const explain=()=>{info.textContent='Thành công '+chance()+'% · Thất bại giữ tu vi/chuỗi, phù đã chọn vẫn tiêu hao. Mỗi ngày chỉ thử 1 lần.';};select.addEventListener('change',explain);explain();
+ const attempt=button('Thử đột phá',()=>{
+  const r=demoBreakthrough(c,demoDay(),select.value||null);
+  if(!r)return;attempt.disabled=true;select.disabled=true;result.hidden=false;
+  result.textContent=r.success?'Đột phá thành công ✦ '+realms[c.rank].name+' · Được bảo vệ hạ bậc 72 giờ.':'Chưa thành công. Tu vi và chuỗi vẫn giữ, mai thử tiếp nhé.';
+  render();
+ },'primary');attempt.disabled=c.attemptDay===demoDay()||c.qi<target.qi||c.streak<target.days;
+ sheetContent.append(info,attempt,result);
+}
+const ui={cultivation:()=>state.cultivation,demoDay,openDraw,openInventory,openBreakthrough,el,button,heading,card,toast,empty,render,openTask,toggleTask,confirmDelete,openReminder,openAvailability,openShare};
 function render(){
  content.removeAttribute('aria-busy');
  for(const b of document.querySelectorAll('[data-tab]')){if(b.dataset.tab===state.tab)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');}
  content.replaceChildren();
  if(state.screenState==='empty')content.append(heading('Bắt đầu nhẹ thôi.','Mọi thứ sẽ hiện ở đây khi cậu thêm dữ liệu.'),empty('Một khoảng mới cho cậu','Không có biểu đồ rỗng hay thành tích được bịa ra.',()=>{state.screenState='ready';render();},'Xem dữ liệu mẫu'));
  else if(state.screenState==='error')content.append(heading('Chưa tải được dữ liệu','Đây là trạng thái lỗi giả lập.'),empty('Không có thay đổi nào được lưu','Trong bản thật, thử lại sẽ giữ nguyên thao tác đang làm.',()=>{state.screenState='ready';render();},'Thử lại'));
- else if(state.screenState==='loading'){content.append(heading('Đang mở không gian…','Trạng thái tải giả lập'),el('div',undefined,'loading'));content.setAttribute('aria-busy','true');}
+ else if(state.screenState==='loading'){content.append(heading('Minh Anh đang chuẩn bị…','Trạng thái tải giả lập'),el('div',undefined,'loading'));content.setAttribute('aria-busy','true');}
  else{content.removeAttribute('aria-busy');content.append(state.tab==='today'?renderToday(ui,state):state.tab==='reminders'?renderReminders(ui,state):renderAchievements(ui));}
  const controls=el('div',undefined,'demo-controls');
  for(const [mode,label] of [['ready','Có dữ liệu'],['empty','Trống'],['loading','Đang tải'],['error','Lỗi']])controls.append(button(label,()=>{state.screenState=mode;render();},'text-button'));

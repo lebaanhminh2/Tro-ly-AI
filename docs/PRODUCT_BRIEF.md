@@ -49,3 +49,15 @@ Thiết kế đích2026-09-13; trạng thái triển khai xem HANDOFF. Mini App/
 - /kiemtra mở Mini App; /lich thiết lập lịch; /ngu báo nghỉ; /huongdan hướng dẫn ngắn; /huy thoát phiên nhập.
 - Context là snapshot từ DB, summary + history gần + phiên đang dở + dữ liệu liên quan; facts nghiệp vụ không lấy từ summary.
 - Ngân sách agent thử API tách khỏi quyền user chat. Không tái áp trần pilot đã bị user yêu cầu bỏ.
+
+## Cập nhật tu luyện đã thống nhất (prototype, chưa backend)
+- Minh Anh là “Trợ lý của cậu”, không phải “không gian làm việc”.
+- Báo ngủ đúng giờ +5 tu vi; muộn −20. Ngoài bảo vệ, số dư sau trừ âm hạ ngay1 bậc; đúng0 không hạ. Đột phá thành công miễn hạ72 giờ (3 ngày), không miễn trừ tu vi.
+- Tu vi hiện tại tách tổng tu vi từng kiếm (chỉ tăng khi nhận thưởng hợp lệ); cảnh giới cao nhất giữ làm kỷ lục.
+- Hoàn thành task cha lần đầu nhận1 vé; task con/mở lại–hoàn thành lại không phát thêm vé. Không tiền thật.
+- Quay: +1 tu vi40%, +2 tu vi15%, Phá Cảnh Phù sơ cấp35%, tín vật6%, Hộ Tâm Phù2%, An Tâm Phù2%. Tổng100%, không lượt trắng.
+- Túi đồ: dùng phù chủ động. Hộ Tâm giữ chuỗi một ngày lỡ nhưng không cộng ngày đúng giờ/không miễn phạt; An Tâm miễn một lần−20 nhưng không giữ chuỗi. Không tự dùng.
+- Phá Cảnh sơ/trung/cao/cực phẩm: +5/10/15/20 điểm % cho1 đột phá, tối đa1 lá/lần. Ghép3 cùng cấp:80%/60%/40%; thất bại mất1 trả2, thành công tiêu3 nhận1 cấp cao.
+- Đột phá đủ tu vi và chuỗi, một lần/ngày sinh hoạt; tỷ lệ70%,85%,100% sau thất bại liên tiếp cùng bậc; thất bại không mất tu vi/chuỗi, phù chọn vẫn tiêu hao. Thành công không tiêu/reset tu vi/chuỗi.
+- Mốc demo qi/ngày: Luyện Khí6/2,Trúc Cơ18/3,Kết Đan40/5,Nguyên Anh75/7,Hóa Thần120/10,Luyện Hư180/14,Hợp Thể260/18,Đại Thừa360/21,Độ Kiếp500/30. Cần cân lại trước release do thưởng ngủ đã đổi+5.
+- CHƯA CHỐT: giữ âm hay về0 sau hạ/bảo vệ; không gửi /ngu có phạt không. Không tự áp dụng hình phạt thật khi hai điểm này chưa rõ.
