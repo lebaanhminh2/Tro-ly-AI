@@ -25,6 +25,11 @@ function deadlineArg(value:unknown){
 export function validateTool(call:ToolCall,now:number):void{
  const a=call.args;
  switch(call.name){
+  case 'edit_task_step':fields(a,['operation','task_id','expected_version','step_id','title','complete']);textArg(a.task_id,100);
+   if(!['add_step','edit_step','step_status'].includes(String(a.operation)))throw Error('INVALID_STEP_OPERATION');
+   if(a.operation!=='add_step')textArg(a.step_id,100);else if(a.step_id!==null)throw Error('INVALID_STEP_ID');
+   if(a.operation==='step_status'){if(typeof a.complete!=='boolean'||a.title!==null)throw Error('INVALID_STEP_STATUS');}
+   else {textArg(a.title,160);if(a.complete!==null)throw Error('INVALID_STEP_FIELDS');}break;
   case 'replan_day':fields(a,['expected_version','free','busy','estimates']);
    for(const key of ['free','busy']){if(!Array.isArray(a[key])||(a[key] as unknown[]).length>20)throw Error('INVALID_RANGES');for(const raw of a[key] as Record<string,unknown>[]){if(!raw||typeof raw!=='object')throw Error('INVALID_RANGE');fields(raw,['start','end']);if(timestamp(raw.end)<=timestamp(raw.start))throw Error('INVALID_RANGE');}}
    if(!Array.isArray(a.estimates)||a.estimates.length>100)throw Error('INVALID_ESTIMATES');

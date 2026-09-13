@@ -35,6 +35,21 @@ export class ConversationStore {
      const index=readIndexes.get(step)??0;readIndexes.set(step,index+1);
      return this.step(lease,`read:${step}:${index}`,'read',request(call),clock,()=>executeTool(call,reader,lease.owner,lease.input.updateId,clock()));
     }
+    if(call.name==='edit_task_step'){
+     if(!reader.prepareStep)throw Error('STEP_UNAVAILABLE');
+     const existing=await this.writeResult(lease,request(call));
+     if(existing)return {result:existing,changes:[],fallback:String(existing.fallback)};
+     const a=call.args;
+     const prepared=await reader.prepareStep(lease.owner,'step_'+lease.input.updateId,{
+      operation:String(a.operation),taskId:String(a.task_id),version:Number(a.expected_version),
+      ...(a.step_id!==null?{stepId:String(a.step_id)}:{}),
+      ...(a.title!==null?{title:String(a.title)}:{}),
+      ...(a.complete!==null?{complete:Boolean(a.complete)}:{})
+     },clock());
+     const fallback='Tớ đã cập nhật bước nhỏ; task chính chưa được đánh dấu hoàn thành.';
+     const result=await this.commitWrite(lease,request(call),{status:'applied',fallback,...prepared.result},prepared.statements,clock());
+     return {result,changes:[],fallback};
+    }
     if(call.name==='replan_day'){
       if(!/^\/lich(?:\s|$|@)/i.test(lease.input.text??'')&&!await reader.isMorningReply?.(lease.owner,lease.input.replyToMessageId,clock()))throw Error('EXPLICIT_SCHEDULE_REQUIRED');
       if(!reader.prepareSchedule)throw Error('SCHEDULE_UNAVAILABLE');

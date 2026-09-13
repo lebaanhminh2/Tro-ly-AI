@@ -10,6 +10,8 @@ export type Clock = { now(): number };
 export type Lease = { pendingWrites?:PreparedWrite[]; owner: string; token: string; input: Input; attempts: number;
   ui?:{card:import('../domain/ui.ts').Card;action:import('../domain/ui.ts').CardAction}; uiStale?:boolean; uiRecovered?:boolean };
 export interface WorkReader {
+ scheduleDialog?(owner:string,now:number,open:boolean):Promise<void>;
+ prepareStep?(owner:string,requestId:string,args:{operation:string;taskId:string;stepId?:string;version:number;title?:string;complete?:boolean},now:number):Promise<{result:Record<string,unknown>;statements:PreparedWrite[]}>;
   isMorningReply?(owner:string,messageId:number|undefined,now:number):Promise<boolean>;
  scheduleContext?(owner:string,now:number):Promise<Record<string,unknown>|null>;
  prepareSchedule?(owner:string,now:number,version:number,free:import('../domain/availability.ts').TimeRange[],busy:import('../domain/availability.ts').TimeRange[],estimates:{id:string;minutes:number}[],requestId:string):Promise<{plan:Record<string,unknown>;statements:PreparedWrite[]}>;

@@ -24,3 +24,7 @@ CREATE TABLE recurrence_occurrences(
  message_id INTEGER,UNIQUE(rule_id,rule_version,slot)
 );
 CREATE INDEX occurrences_due ON recurrence_occurrences(owner,status,due);
+CREATE TABLE schedule_dialogs(
+ owner TEXT PRIMARY KEY,day INTEGER NOT NULL,expires INTEGER NOT NULL,
+ FOREIGN KEY(owner,day) REFERENCES schedule_days(owner,day)
+);

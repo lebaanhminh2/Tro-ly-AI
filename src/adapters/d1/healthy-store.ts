@@ -6,7 +6,8 @@ type Account={state_json:string;version:number};
 // by the server; retries return the existing result instead of rolling again.
 export class HealthyStore {
  private db:Database;
- constructor(db:Database){this.db=db;}
+ private defer?: (statements:Statement[])=>void;
+ constructor(db:Database,defer?:(statements:Statement[])=>void){this.db=db;this.defer=defer;}
  async read(owner:string){
   const row=await query(this.db,'SELECT state_json,version FROM cultivation_accounts WHERE owner=?',owner).first<Account>();
   return row?{state:JSON.parse(row.state_json) as HealthyState,version:row.version}:{state:initialHealthy(),version:0};
@@ -24,13 +25,14 @@ export class HealthyStore {
   const current=await this.read(owner),outcome=apply(current.state);
   const json=JSON.stringify(outcome.state),result=JSON.stringify(outcome.result);
   if(json.length>12000||!result||result.length>12000)throw Error('INVALID_LEDGER_RESULT');
-  await this.db.batch([
+  const statements=[
    query(this.db,'INSERT INTO transaction_guard SELECT CASE WHEN COALESCE((SELECT version FROM cultivation_accounts WHERE owner=?),0)=? THEN 1 ELSE 0 END',owner,current.version),
    query(this.db,'INSERT INTO cultivation_accounts(owner,state_json,updated) VALUES(?,?,?) ON CONFLICT(owner) DO UPDATE SET state_json=excluded.state_json,version=version+1,updated=excluded.updated',owner,json,now),
    query(this.db,'INSERT INTO cultivation_receipts(owner,request_id,operation,request_json,result_json,created) VALUES(?,?,?,?,?,?)',owner,id,operation,request,result,now),
    ...(outcome.statements??[]),
    query(this.db,'DELETE FROM transaction_guard')
-  ]);
+  ];
+  if(this.defer)this.defer(statements);else await this.db.batch(statements);
   return outcome.result;
  }
  async score(owner:string,input:SleepAssessment){

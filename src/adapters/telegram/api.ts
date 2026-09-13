@@ -26,7 +26,7 @@ export function incoming(raw: unknown): Incoming | null {
 
 export type Delivery = { state: 'sent' | 'pending' | 'failed' | 'uncertain'; retryAfter?: number; messageId?: number; reason?:'EDIT_UNAVAILABLE' };
 export async function deliver(token: string, payload: Record<string, unknown>, transport: typeof fetch = fetch, timeout = 8000): Promise<Delivery> {
-  if (!['sendMessage','answerCallbackQuery','editMessageReplyMarkup','editMessageText','sendPhoto','editMessageMedia','editMessageCaption'].includes(String(payload.method))) return { state: 'failed' };
+  if (!['setChatMenuButton','sendMessage','answerCallbackQuery','editMessageReplyMarkup','editMessageText','sendPhoto','editMessageMedia','editMessageCaption'].includes(String(payload.method))) return { state: 'failed' };
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeout);
   let phase: 'request' | 'response' = 'request';
@@ -79,7 +79,7 @@ export async function deliver(token: string, payload: Record<string, unknown>, t
     if(editing&&response.status===400&&data.ok===false&&data.error_code===400
       && typeof data.description==='string'&&/^Bad Request: (message to edit not found|message can't be edited)$/.test(data.description))
       return {state:'failed',reason:'EDIT_UNAVAILABLE'};
-    if (response.ok && data.ok === true && (method === 'answerCallbackQuery' ? data.result === true : typeof messageId === 'number' && Number.isSafeInteger(messageId)))
+    if (response.ok && data.ok === true && ((method === 'answerCallbackQuery'||method==='setChatMenuButton') ? data.result === true : typeof messageId === 'number' && Number.isSafeInteger(messageId)))
       return { state: 'sent', ...(typeof messageId === 'number' ? { messageId } : {}) };
     const retry = record(data.parameters).retry_after;
     const apiStatus = typeof data.error_code === 'number' && Number.isInteger(data.error_code)

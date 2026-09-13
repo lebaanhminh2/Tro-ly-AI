@@ -18,6 +18,7 @@ export class D1WorkStore implements WorkStore {
   private db: Database;
   constructor(db: Database, privateCards = false) { this.db = db; this.cardsEnabled=privateCards; }
   private cardsEnabled:boolean;
+  async scheduleDialog(owner:string,now:number,open:boolean){const s=new ScheduleStore(this.db);if(open)await s.openDialog(owner,now);else await s.closeDialog(owner);}
   isMorningReply(owner:string,messageId:number|undefined,now:number){return new ScheduleStore(this.db).isMorningReply(owner,messageId,now);}
   async scheduleContext(owner:string,now:number){
     const store=new ScheduleStore(this.db);
@@ -59,7 +60,12 @@ export class D1WorkStore implements WorkStore {
       return {state,result:{deleted:items.length},statements};
     });
   }
-  async mutateHierarchy(owner:string,requestId:string,input:{operation:string;taskId?:string;stepId?:string;version?:number;title?:string;deadline?:string|null;complete?:boolean;confirm?:boolean},now:number){
+  async prepareStep(owner:string,requestId:string,args:{operation:string;taskId:string;stepId?:string;version:number;title?:string;complete?:boolean},now:number){
+    const statements:Statement[]=[];
+    const result=await this.mutateHierarchy(owner,requestId,args,now,s=>statements.push(...s));
+    return {result,statements};
+  }
+  async mutateHierarchy(owner:string,requestId:string,input:{operation:string;taskId?:string;stepId?:string;version?:number;title?:string;deadline?:string|null;complete?:boolean;confirm?:boolean},now:number,defer?:(statements:Statement[])=>void){
     const operation=input.operation;
     if(!['create','edit','complete','delete','add_step','step_status','edit_step','delete_step'].includes(operation))throw Error('INVALID_OPERATION');
     if(['create','edit','add_step','edit_step'].includes(operation)&&(!input.title?.trim()||input.title.length>160))throw Error('INVALID_TITLE');
@@ -72,7 +78,7 @@ export class D1WorkStore implements WorkStore {
     const existingAward=task?await q('SELECT task_id FROM task_ticket_awards WHERE owner=? AND task_id=?',owner,task.id).first():null;
     const children=task?(await q('SELECT * FROM task_steps WHERE owner=? AND task_id=? AND deleted_at IS NULL',owner,task.id).all<{id:string;status:string;version:number}>()).results:[];
     const id=crypto.randomUUID();
-    return new HealthyStore(this.db).mutate<Record<string,unknown>>(owner,requestId,'task:'+operation,input,now,state=>{
+    return new HealthyStore(this.db,defer).mutate<Record<string,unknown>>(owner,requestId,'task:'+operation,input,now,state=>{
       const statements:Statement[]=[];
       if(operation==='create'){
         statements.push(q('INSERT INTO tasks(id,owner,title,deadline,deadline_precision,created) VALUES(?,?,?,?,?,?)',id,owner,input.title!.trim(),input.deadline??null,input.deadline?'date':null,now));

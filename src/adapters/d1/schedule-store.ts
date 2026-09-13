@@ -9,7 +9,13 @@ export class ScheduleStore{
  private db:Database;
  constructor(db:Database){this.db=db;}
  settings(owner:string){return query(this.db,'SELECT start_minutes,sleep_minutes,version FROM schedule_settings WHERE owner=?',owner).first<ScheduleSettings>();}
+ async openDialog(owner:string,now:number){
+  const day=await this.ensureDay(owner,now);if(!day)throw Error('SETUP_REQUIRED');
+  await query(this.db,'INSERT INTO schedule_dialogs(owner,day,expires) VALUES(?,?,?) ON CONFLICT(owner) DO UPDATE SET day=excluded.day,expires=excluded.expires',owner,day.day,Math.min(now+900000,day.end_at)).run();
+ }
+ async closeDialog(owner:string){await query(this.db,'DELETE FROM schedule_dialogs WHERE owner=?',owner).run();}
  async isMorningReply(owner:string,messageId:number|undefined,now:number){
+  if(await query(this.db,'SELECT s.owner FROM schedule_dialogs s JOIN schedule_days d ON d.owner=s.owner AND d.day=s.day WHERE s.owner=? AND s.expires>? AND d.start_at<=? AND d.end_at>? AND d.asleep_at IS NULL',owner,now,now,now).first())return true;
   if(!Number.isSafeInteger(messageId)||Number(messageId)<=0)return false;
   return !!await query(this.db,"SELECT d.day FROM schedule_days d JOIN outbox o ON o.id='healthy:morning:'||d.owner||':'||d.day WHERE d.owner=? AND d.start_at<=? AND d.end_at>? AND d.asleep_at IS NULL AND o.state='sent' AND o.message_id=?",owner,now,now,messageId!).first();
  }
@@ -65,6 +71,7 @@ export class ScheduleStore{
    const statements=[
     query(this.db,'INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM schedule_days WHERE owner=? AND day=? AND version=?) THEN 1 ELSE 0 END',owner,day.day,expectedVersion),
     query(this.db,'UPDATE schedule_days SET intervals_json=?,version=version+1 WHERE owner=? AND day=?',JSON.stringify({free,busy,unplanned:plan.unplanned}),owner,day.day),
+    query(this.db,'DELETE FROM schedule_dialogs WHERE owner=?',owner),
     query(this.db,"UPDATE reminders SET status='cancelled' WHERE owner=? AND status IN('pending','queued') AND session_id IN(SELECT id FROM sessions WHERE owner=? AND status='planned' AND start_at>=? AND start_at<?)",owner,owner,now,day.end_at),
     query(this.db,"UPDATE sessions SET status='skipped',version=version+1 WHERE owner=? AND status='planned' AND start_at>=? AND start_at<?",owner,now,day.end_at)
    ];

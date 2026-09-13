@@ -132,8 +132,12 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
       if (!input || input.owner !== env.TELEGRAM_USER_ID) return new Response('OK');
       try {
         const store = new D1WorkStore(env.DB,cardsEnabled);
-        if(env.ASSETS&&input.text)await new ScheduleStore(env.DB).chatActivity(input.owner,clock.now(),String(input.updateId));
         const isNew = await store.accept(input, clock.now(), env.DELIVERY_MODE === 'outbox');
+        if(isNew&&env.ASSETS&&input.text)await new ScheduleStore(env.DB).chatActivity(input.owner,clock.now(),String(input.updateId));
+        if(isNew&&env.ASSETS&&/^\/kiemtra(?:\s|$|@)/i.test(input.text??'')){
+          const appUrl=new URL('/app/',request.url).toString();
+          await query(env.DB,'INSERT OR IGNORE INTO outbox(id,payload,available) VALUES(?,?,?)','menu:'+input.owner+':'+input.updateId,JSON.stringify({method:'setChatMenuButton',chat_id:input.chat,menu_button:{type:'web_app',text:'Mở ứng dụng',web_app:{url:appUrl}}}),clock.now()).run();
+        }
         if(isNew&&cardsEnabled)await acknowledgeAppointments(env.DB,input.owner,input.replyToMessageId);
         if(cardsEnabled&&env.DELIVERY_MODE==='outbox'&&input.callbackId&&isNew){
           const action=input.messageId&&input.callback?.startsWith('ui:')

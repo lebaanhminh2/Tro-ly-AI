@@ -94,3 +94,25 @@ test('morning reply permission is bound to owner, sent message and current opera
   assert.equal(await store.isMorningReply('123',77,now+20*3600000),false);
  }finally{await mf.dispose();}
 });
+
+test('bare schedule command opens a bounded dialogue; cancel closes its authority',async()=>{
+ const {readFileSync,readdirSync}=await import('node:fs');
+ const {Miniflare}=await import('miniflare');
+ const {ScheduleStore}=await import('../../src/adapters/d1/schedule-store.ts');
+ const {D1WorkStore}=await import('../../src/adapters/d1/work-store.ts');
+ const {planCommand}=await import('../../src/application/plan-command.ts');
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as import('../../src/adapters/d1/database.ts').Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
+  const now=Date.parse('2026-09-13T08:00:00+07:00'),schedule=new ScheduleStore(db),store=new D1WorkStore(db);
+  await schedule.configure('123','04:30','22:30',0,now);
+  const noModel=async()=>{throw Error('bare command must not call model');};
+  await planCommand({owner:'123',chat:123,updateId:1,text:'/lich'},store,now,noModel);
+  assert.equal(await schedule.isMorningReply('123',undefined,now+1000),true);
+  assert.equal(await schedule.isMorningReply('999',undefined,now+1000),false);
+  assert.equal(await schedule.isMorningReply('123',undefined,now+900001),false);
+  await planCommand({owner:'123',chat:123,updateId:2,text:'/huy'},store,now,noModel);
+  assert.equal(await schedule.isMorningReply('123',undefined,now+1000),false);
+ }finally{await mf.dispose();}
+});

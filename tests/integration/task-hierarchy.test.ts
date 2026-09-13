@@ -47,3 +47,26 @@ test('bulk delete is all-or-nothing and retries cannot affect newly changed task
   assert.equal(await store.task('123','a'),null);assert.equal(await store.task('123','b'),null);
  }finally{await mf.dispose();}
 });
+
+test('chat child completion shares app mutation and outer commit without parent completion or tickets',async()=>{
+ const {ConversationStore}=await import('../../src/adapters/d1/conversation-store.ts');
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
+  const store=new D1WorkStore(db),now=Date.now();
+  const parent=await store.mutateHierarchy('123','parent001',{operation:'create',title:'Report'},now);
+  await store.mutateHierarchy('123','child001',{operation:'add_step',taskId:String(parent.id),version:1,title:'Outline'},now);
+  const task=(await store.hierarchy('123'))[0]!;
+  await store.accept({owner:'123',chat:123,updateId:1,text:'xong #1.1'},now,false);
+  const lease=(await store.claim('123',now))!;lease.pendingWrites=[];
+  const journal=new ConversationStore(db,s=>lease.pendingWrites!.push(...s));
+  const call:import('../../src/ai/contracts.ts').ToolCall={name:'edit_task_step',args:{operation:'step_status',task_id:task.id,expected_version:task.version,step_id:task.steps[0]!.id,title:null,complete:true}};
+  const reply=await journal.turn(lease,[{role:'user',parts:[{text:'xong #1.1'}]}],store,(c,t)=>store.mutationStatements('123',c,t,true),async()=>({content:{role:'model',parts:[{functionCall:call}]},calls:[call],text:''}),()=>now);
+  assert.equal((await store.hierarchy('123'))[0]!.steps[0]!.status,'active');
+  await store.commit(lease,{view:{text:reply,buttons:[]},changes:[]},now);
+  const updated=(await store.hierarchy('123'))[0]!;
+  assert.equal(updated.steps[0]!.status,'completed');assert.equal(updated.status,'active');
+  assert.equal((await new HealthyStore(db).read('123')).state.tickets,0);
+ }finally{await mf.dispose();}
+});

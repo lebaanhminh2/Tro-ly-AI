@@ -1,9 +1,16 @@
 # Tiếp tục từ đây
 2026-09-13. User yêu cầu làm liên tục đến nghiệm thu Mini App + lịch + tu luyện. Đây là checkpoint đang làm, KHÔNG hoàn tất, không xin lại scope đã duyệt.
 
+## Lượt tiếp tục sau gián đoạn
+- Đã hoàn tất edit_task_step qua chat: prepareStep dùng mutateHierarchy chung, HealthyStore defer statements vào outer transaction. Tick con không hoàn thành cha/không nhận vé; test local đạt.
+- schedule_dialogs thêm vào0014 CHƯA áp cloud: /lich bare mở phiên15phút gắn ngày; /huy thoát; morning reply hoặc phiên active cấp quyền replan. Kiểm foreign/expired/cancel đạt.
+- Duplicate Telegram update không tính chat activity mới. Lệnh /kiemtra khi ASSETS bật queue setChatMenuButton (boolean receipt, không AI); asset/API routing đã test headers/auth.
+- UI live: pause/finish/skip buổi đã nối; unplanned thật hiển thị; giờ địa phương không ISO; lưu thẻ PNG tại client, user chủ động tải. Chưa kiểm share/download trên iPhone thật.
+- Chưa deploy hoặc áp0013–0015; không gọi Gemini trong lượt này. Full125 tests chính +25 experiments đạt; API/assets targeted4 đạt, typecheck đạt.
+
 ## Tối ưu lượt gần nhất
 - Context tải song song các truy vấn độc lập (không đổi schema/không gọi thêm model); 13 assistant-flow tests +8 planner/API tests và typecheck đạt.
-- ASSETS mode cung cấp task_codes gồm mã cha/con + UUID; model được nhắc không hoàn thành cha thay bước con. Chưa có tool mutate step qua chat, UI API đã có.
+- ASSETS mode cung cấp task_codes gồm mã cha/con + UUID; model được nhắc không hoàn thành cha thay bước con. Đã có edit_task_step dùng cùng mutation UI (lượt mới nhất).
 - Bootstrap trả resting thật; live UI không còn nút chỉ đổi resting ở browser. Không bật ASSETS/deploy/cloud trong lượt này.
 - Preview http://127.0.0.1:4173 còn trả200 trên máy local, user có thể review UI; không phải sản phẩm live.
 - Token user sắp hết: ưu tiên gates phát hành và lưu checkpoint, không mở thêm feature hoặc ngụy trang mock thành live.
@@ -42,10 +49,12 @@
 - Frontend cú pháp JS đạt; nhánh live chưa end-to-end trong Telegram.
 
 ## BẮT BUỘC tiếp tục trước deploy
+- User vẫn yêu cầu tới nghiệm thu, không hỏi lại scope. Ưu tiên kiểm UI live + migration/settings day rollover/rest trước bật ASSETS; không phát hành nửa vời.
+- Các thay đổi lượt gián đoạn đã tiếp nối và kiểm thử; cần commit checkpoint ngay, không đọc lại cả lịch sử.
 1. Rà phát sinh mới: schedule configure đã receipt; replan giữ omitted unplanned và xếp overdue; current end/start setting transition và không chấm trước ngày setup cần test.
-2. Unify task changes chat/API: chat complete đã sync ticket khi ASSETS; chat chưa hierarchy #id/steps; không để hai luật khác nhau. Parent complete API đã dừng running/planned sessions; cần integration chat/API cùng luật.
-3. Frontend live còn placeholder: bulk delete và skip đã nối; move UI/start session đã nối; share và session controls UI khác còn thiếu; achievements day đã dùng server day; ensure không fake success/đọc mock khi live. Bỏ demo labels/timeline giả trong live, không deploy placeholder.
-4. /lich đã specialized prompt và replan tool, chỉ explicit command; morning reply cùng quyền phiên đã nối; /lich bare không giữ multi-turn session ngoài reply context. /ngu chưa setup đã pause tới next start và không phạt; lỗi model phần kèm vẫn đáp báo nghỉ. Cần test end-to-end sau nối assets.
+2. Unify task changes chat/API: chat complete đã sync ticket khi ASSETS; chat hierarchy #id/steps đã có tool; cần test ngôn ngữ thật có ngân sách; không để hai luật khác nhau. Parent complete API đã dừng running/planned sessions; cần integration chat/API cùng luật.
+3. Frontend live còn placeholder: bulk delete và skip đã nối; move UI/start session đã nối; share PNG và session controls đã nối, chưa iPhone live; achievements day đã dùng server day; ensure không fake success/đọc mock khi live. Bỏ demo labels/timeline giả trong live, không deploy placeholder.
+4. /lich đã specialized prompt và replan tool, chỉ explicit command; morning reply cùng quyền phiên đã nối; /lich bare đã giữ phiên15phút tới /huy/commit/hết ngày. /ngu chưa setup đã pause tới next start và không phạt; lỗi model phần kèm vẫn đáp báo nghỉ. Cần test end-to-end sau nối assets.
 5. Scheduler rest final guard, queueCheckIns expiry/outage, suspension stop mọi cơ chế background, preserve recurring exceptions và tránh nhắc trùng old/new. Không backcharge missed days do restart/settings.
 6. MiniApp input auth chuẩn nhưng session TTL15min cần UI reopen; API JSON types validate/rate payload. /api/settings GET bootstrap currently ensureDay mutates setup day; review scope.
 7. Hoàn thiện UI prototype approved → live mappings, wire static assets /app + Telegram menu/web_app qua cùng Worker; chưa thêm tài nguyên.
