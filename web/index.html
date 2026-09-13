@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <title>Minh Anh · Không gian của cậu</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="demo-strip">BẢN MẪU · Dữ liệu minh họa, không lưu lên bot</aside>
+    <header class="app-header">
+      <div class="identity"><div class="avatar" aria-hidden="true">m<span>✦</span></div><div><p class="eyebrow">MINH ANH</p><p class="brand-caption">Không gian của cậu</p></div></div>
+      <button class="icon-button" id="settings" aria-label="Cài đặt giờ sinh hoạt">⚙</button>
+    </header>
+    <main id="content" tabindex="-1"></main>
+    <nav class="bottom-nav" aria-label="Điều hướng chính">
+      <button data-tab="today" aria-current="page"><span aria-hidden="true">◷</span>Hôm nay</button>
+      <button data-tab="reminders"><span aria-hidden="true">♧</span>Lời nhắc</button>
+      <button data-tab="achievements"><span aria-hidden="true">✦</span>Thành tích</button>
+    </nav>
+  </div>
+  <dialog id="sheet" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div id="sheet-content"></div></dialog>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <noscript>Cần bật JavaScript để xem bản mẫu.</noscript>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
