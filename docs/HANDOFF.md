@@ -1,38 +1,36 @@
 # Tiếp tục từ đây
-2026-09-13. User đã duyệt phạm vi Mini App + lịch lặp + task con + healthy. Đã tạo prototype local, chưa nối backend hoặc deploy.
+2026-09-13. User yêu cầu làm liên tục đến nghiệm thu Mini App + lịch + tu luyện. Đây là checkpoint đang làm, KHÔNG hoàn tất, không xin lại scope đã duyệt.
 
-## Đã chốt / chưa chạy
-- Mini App3 tab: Hôm nay (Lịch/Danh sách), Lời nhắc user đặt, Thành tích. Settings start mặc định04:30 và giờ nghỉ user chọn.
-- /kiemtra,/lich,/ngu,/huongdan,/huy; /lich đọc lịch DB để patch; chat báo bận không tự đổi lịch.
-- Healthy đến giờ nghỉ nhắc ngủ, /ngu mới bật nghỉ, chat vẫn hoạt động; tự hết nghỉ ngày bắt đầu mới. Khi im lặng tối đa3 tin cách20 phút.
-- Streak chỉ báo /ngu đúng giờ: Luyện Khí3,Trúc Cơ7,Kết Đan14,Nguyên Anh30; không chuyển chuỗi công việc thành giấc ngủ.
-- Task #24 và con #24.1 cố định, checkbox cha–con có confirm. Task dở giữ ID/deadline; xong qua ngày ẩn nhưng giữ history.
-- Recurrence rule lâu dài + occurrences riêng, không setup lại hằng ngày. Đây đều là thiết kế đích, chưa có đủ trong code.
-- PRODUCT_BRIEF là nguồn mục tiêu. TOOL_CALLING_PLAN chứa wireframe, lifecycle, danh sách file mới/sửa mục5–6 và gates mục7.
-- User đã duyệt danh sách file mục5–6 và bắt đầu prototype. Không xin lại phạm vi này; cần phản hồi bố cục trước nối DB như kế hoạch.
-- Prototype: web/index.html,styles.css,app.js,api.js,views/{today,reminders,achievements}.js. HTML/CSS/JS native, không dependency/network/storage. Có banner DEMO rõ, reload khôi phục dữ liệu mẫu.
-- Chạy xem: python -m http.server 4173 --bind 127.0.0.1 --directory web. Server local session9206 đã mở; kiểm còn sống trước chạy lại.
-- Đã chụp Edge headless giả lập414×896,320px không overflow ngang; ảnh .wrangler/miniapp-{today,reminders,achievements,dark}.png ignored. Mở task sheet3 checkbox và recurring form được xác minh DevTools.
-- Chưa là UI chức năng thật: lịch timeline/số liệu demo cố định, form chỉ memory, chưa editor availability, API auth, recurrence/sleep backend hoặc chia sẻ ảnh. Không dùng mock như số liệu thật.
+## Source mới đã có local
+- web demo cập nhật cảnh giới đến1000/2000, giảm chuỗi≥10 như PRODUCT_BRIEF. /app/ có nhánh gọi API thật; root vẫn demo.
+- src/domain/healthy.ts: +5 đúng giờ/−20 muộn hoặc không báo; floor0; dưới ngưỡng rank hạ1 bậc khi có phạt, trừ khi được bảo vệ72h; không trừ lifetime earned. Hết bảo vệ không tự hạ.
+- 3 ngày không chat tối đa3 phạt rồi suspended; resume bỏ qua các ngày vắng, reset chuỗi; không truy thu.
+- Random tables40/15/35/6/2/2, fuse80/60/40 mất1 trả2 khi fail; breakthrough70/85/100 có1 phù,1 lần/day; server crypto random.
+- HealthyStore sổ state/version/receipt atomic; sleep assessment và task ticket ghi cùng batch, retry không roll/phạt lại.
+- Migrations0013–0015 tạo mã task/steps, schedule settings/days, recurrence rules/occurrences, cultivation accounts/receipts/sleep assessments/ticket awards. CHƯA cloud.
+- HMAC initData/auth_date/owner trên server, cross-origin rejected; API bootstrap/tasks/settings/reminders/schedule/cultivation local, không thêm SDK/dependency.
+- Task hierarchy mutation hỗ trợ thêm/sửa/complete cha–con, soft delete; parent/child confirm và vé1 lần đã test.
+- RecurrenceStore sinh occurrence ổn định, queue/drop khi rest, rule revision; outbox đã có nhánh recurring và check rest. Chưa cutover legacy appointments.
+- ScheduleStore snapshot ngày, /ngu report, score closed days; queue morning/bedtime3 lần; có replan typed free/busy/estimates. Planner pure packing với nghỉ, không cap3 task.
+- Worker chỉ mở API/scheduler mới khi env.ASSETS tồn tại. wrangler CHƯA cấu hình ASSETS nên bot cloud vẫn bản cũ, không phạt user.
 
-## Prototype tu luyện bổ sung
-- Đã sửa web/index.html,api.js,app.js,styles.css,views/achievements.js theo duyệt: thương hiệu Trợ lý của cậu; số dư/lifetime qi, vé, kho, quay, ghép, breakthrough và bảo vệ72h.
-- Pure demo functions trong web/api.js; xác suất40/15/35/6/2/2. Test inline deterministic đạt boundaries,total100,ticket-once,fusion-fail return2,daily attempt/protection/lifetime.
-- Edge headless chụp .wrangler/cultivation-preview.png; click quay giảm vé và kho6 loại mở đúng. Không live Gemini/deploy/cloud writes.
-- Toàn bộ chỉ state in-memory reload reset. Ngủ đúng+5/muộn−20 hiển thị luật; KHÔNG chấm giấc ngủ demo do chưa chốt no-report và xử lý số âm. Không backend inventory/rewards.
-- Chi tiết luật/mốc demo trong PRODUCT_BRIEF. Mốc demo chưa cân lại với+5/day; đừng coi luật chưa chốt là authorization.
-- Tiếp theo user xem prototype; cần chốt2 edge cases trước triển khai ledger thưởng/phạt thật.
+## Kiểm thử đã làm
+- Full109+25 đạt trước thêm vài phần cuối; full sau đó đạt (xem tool output session18010). Typecheck cuối đạt.
+- Target healthy/auth/rules/ledger/hierarchy/api/planner đạt. SQLite fresh + upgrade giữ ID/mã, không lỗi FK.
+- Chưa gọi Gemini live trong lượt này, chưa cloud mutation/deploy. Không dùng ngân sách user chat thay ngân sách agent.
+- Frontend cú pháp JS đạt; nhánh live chưa end-to-end trong Telegram.
 
-## Code/cloud đang có
-- Worktree sạch trước lượt; lượt này thêm prototype web và cập nhật docs, không đổi cloud.
-- Worker version59549382-0a33-4a47-b0ed-d2f113ffdcf6; migration0001–0012 đã áp. Không sửa migration lịch sử.
-- Telegram board/progress PNG, task đơn, session, nhắc một lần, milestone/task achievements; Google source đã bỏ.
-- Gemini native tools + respond, tối đa2 calls/turn, owner/dedupe/atomic writes. Không trần40/ngày,4/phút hay pilot expiry production.
-- Mini App/auth/recurrence/day planner/sleep log/task hierarchy CHƯA triển khai.
-- Các test cũ đạt không chứng minh phiên bản Mini App hoặc healthy mới.
+## BẮT BUỘC tiếp tục trước deploy
+1. Rà phát sinh mới: schedule configure chưa idempotency receipt; replan nhận task estimates thiếu items có thể bỏ khỏi planned (phải hiện unplanned); xử lý deadline quá hạn theo mục tiêu xếp tiếp không bỏ; current end/start setting transition và không chấm trước ngày setup cần test.
+2. Unify task changes chat/API: chat complete chưa award ticket mới, chat chưa hierarchy #id/steps; không để hai luật khác nhau. Parent complete API đã dừng running/planned sessions; cần integration chat/API cùng luật.
+3. Frontend live còn placeholder: bulk delete, skip/reschedule occurrence, start session, share; achievements demoDay dùng client settings/hardcoded270 chưa server day; ensure không fake success/đọc mock khi live. Bỏ demo labels/timeline giả trong live, không deploy placeholder.
+4. /lich parser có nhưng chưa route vào specialized prompt/tool/read lịch DB; morning reply chưa cùng phiên. /ngu chưa setup đã pause tới next start và không phạt; lỗi model phần kèm vẫn đáp báo nghỉ. Cần test end-to-end sau nối assets.
+5. Scheduler rest final guard, queueCheckIns expiry/outage, suspension stop mọi cơ chế background, preserve recurring exceptions và tránh nhắc trùng old/new. Không backcharge missed days do restart/settings.
+6. MiniApp input auth chuẩn nhưng session TTL15min cần UI reopen; API JSON types validate/rate payload. /api/settings GET bootstrap currently ensureDay mutates setup day; review scope.
+7. Hoàn thiện UI prototype approved → live mappings, wire static assets /app + Telegram menu/web_app qua cùng Worker; chưa thêm tài nguyên.
+8. Full test/workerd PNG/assets/live API on414px, backup/restore0013–15 rồi mới cutover. Không áp migration đang viết lên cloud.
+- Đừng nói “chỉ chờ user nghiệm thu”: còn các việc trên cần làm, không blocker user choice.
 
-## Quyền và dữ liệu
-- Không live Gemini/cloud writes trong lượt prototype. Budget agent tách khỏi quyền user chat, không tự mở API calls vô hạn.
-- Chưa xóa bảng/source UI cũ cho tới cutover có replacement. Backup trước0012: .wrangler/staging-before-0012.sql ignored, không in/commit.
-- Chỉ commit docs chọn lọc; không push khi môi trường từng từ chối xuất bản. Không merge/force-push hoặc sửa secret.
-- Việc tiếp theo: user xem prototype → nối auth/API và migration local theo plan; không deploy mock lên bot hoặc giả auth.
+## Cloud/git
+- Cloud59549382-0a33-4a47-b0ed-d2f113ffdcf6, migrations0001–0012; không sửa lịch sử. Không quota/expiry pilot production.
+- Giữ backup ignored và quyền secret. Git checkpoint local, không push vì môi trường trước từ chối xuất bản.

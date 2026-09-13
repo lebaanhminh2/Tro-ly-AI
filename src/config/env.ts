@@ -1,5 +1,6 @@
 import type { Database } from '../adapters/d1/database.ts';
 export type Env = { DB: Database; TELEGRAM_USER_ID: string; TELEGRAM_WEBHOOK_SECRET: string; AI_MODE?: string;
+  ASSETS?:{fetch(request:Request):Promise<Response>};
   GEMINI_API_KEY?: string; GEMINI_MODEL?: string; AI_DAILY_LIMIT?: string;
   AI_TRIAL_ENDS_AT?:string;
   TELEGRAM_BOT_TOKEN?: string; DELIVERY_MODE?: 'outbox' | 'preview';

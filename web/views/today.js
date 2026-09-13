@@ -1,7 +1,7 @@
 export function renderToday(ui,state){
  const {el,button,heading,card,openTask,render}=ui;
  const root=el('section');
- root.append(heading('Một ngày, từng bước.','Chủ nhật, 13 tháng 9 · Dữ liệu mẫu'));
+ root.append(heading('Một ngày, từng bước.',state.live?new Date(state.serverNow).toLocaleDateString('vi-VN',{weekday:'long',day:'numeric',month:'long'}):'Chủ nhật, 13 tháng 9 · Dữ liệu mẫu'));
  if(state.resting){
   const rest=card();rest.append(el('h2','Nghỉ ngơi thôi, cậu 🌙'),el('p','Không gửi nhắc chủ động. Cậu vẫn chỉnh lịch và công việc bình thường.','subtitle'),button('Hoạt động lại',()=>{state.resting=false;render();},'secondary'));root.append(rest);
  }
@@ -14,18 +14,20 @@ export function renderToday(ui,state){
   hero.append(actions);root.append(hero);
  }
  const capacity=el('div',undefined,'capacity');capacity.append(el('div','Kế hoạch mẫu · 2 giờ 30 phút / 3 giờ rảnh','capacity-row'));
- const track=el('div',undefined,'track'),fill=el('span');fill.style.width='83%';track.append(fill);capacity.append(track);root.append(capacity);
+ const track=el('div',undefined,'track'),fill=el('span');fill.style.width='83%';track.append(fill);capacity.append(track);if(!state.live)root.append(capacity);
  const toggle=el('div',undefined,'segment');
  for(const [value,label] of [['timeline','Lịch hôm nay'],['tasks','Danh sách việc']]){
   const b=button(label,()=>{state.mode=value;render();});b.setAttribute('aria-pressed',String(state.mode===value));toggle.append(b);
  }root.append(toggle);
  if(state.mode==='timeline'){
   const list=card();
-  for(const row of [{time:'09:00',title:'Báo cáo môn học',detail:'25 phút · Có nhắc bắt đầu',type:''},{time:'14:00',title:'Học tiếng Anh',detail:'Lịch cố định · 60 phút',type:'fixed'},{time:state.sleep,title:'Thu dọn ngày, đi ngủ',detail:'Báo /ngu để ghi nhận giờ nghỉ',type:'sleep'}]){
+  const demoRows=[{time:'09:00',title:'Báo cáo môn học',detail:'25 phút · Có nhắc bắt đầu',type:''},{time:'14:00',title:'Học tiếng Anh',detail:'Lịch cố định · 60 phút',type:'fixed'},{time:state.sleep,title:'Thu dọn ngày, đi ngủ',detail:'Báo /ngu để ghi nhận giờ nghỉ',type:'sleep'}];
+  const liveRows=[...(state.sessions??[]).map(s=>({time:new Date(s.start_at).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}),title:state.tasks.find(t=>t.id===s.task_id)?.title??'Buổi làm',detail:s.minutes+' phút',type:''})),...(state.events??[]).map(e=>({time:new Date(e.start_at).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}),title:e.title,detail:'Cuộc hẹn',type:'fixed'}))];
+  for(const row of state.live?liveRows:demoRows){
    const item=el('div',undefined,'timeline-row'),info=el('div');info.append(el('h3',row.title),el('small',row.detail));item.append(el('span',row.time,'time'),el('span',undefined,'dot '+row.type),info);list.append(item);
-  }root.append(list);
+  }if(state.live&&!liveRows.length)list.append(el('p','Chưa có buổi làm hôm nay.','hint'));root.append(list);
   root.append(button('Điều chỉnh lịch →',()=>ui.openAvailability(),'text-button'));
-  const unplanned=card();unplanned.append(el('h3','Còn 2 việc chưa xếp'),el('p','Chưa biết thời lượng. Cậu có thể trao đổi qua /lich để xếp phần còn lại.','subtitle'));root.append(unplanned);
+  const unplanned=card();unplanned.append(el('h3','Còn 2 việc chưa xếp'),el('p','Chưa biết thời lượng. Cậu có thể trao đổi qua /lich để xếp phần còn lại.','subtitle'));if(!state.live)root.append(unplanned);
  }else{
   const tools=el('div',undefined,'section-heading');tools.append(el('h2',state.tasks.length+' công việc'),button(state.selecting?'Thoát chọn':'Chọn nhiều',()=>{state.selecting=!state.selecting;state.selected.clear();render();},'text-button'));root.append(tools);
   const list=card();

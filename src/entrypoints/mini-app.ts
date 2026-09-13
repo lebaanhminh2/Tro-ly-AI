@@ -1,0 +1,104 @@
+import type {Env} from '../config/env.ts';
+import {verifyMiniApp} from '../adapters/telegram/mini-app-auth.ts';
+import {HealthyStore} from '../adapters/d1/healthy-store.ts';
+import {RecurrenceStore} from '../adapters/d1/recurrence-store.ts';
+import {ScheduleStore} from '../adapters/d1/schedule-store.ts';
+import {D1WorkStore} from '../adapters/d1/work-store.ts';
+import {query} from '../adapters/d1/database.ts';
+import {breakthrough,drawReward,fuseCharm,useProtection,operatingDay,REALMS,LOOT,CHARMS,type Charm} from '../domain/healthy.ts';
+
+const headers={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'};
+const json=(value:unknown,status=200)=>new Response(JSON.stringify(value),{status,headers});
+export async function miniAppApi(request:Request,env:Env,now=Date.now()):Promise<Response>{
+ const url=new URL(request.url);
+ if(!url.pathname.startsWith('/api/'))return json({error:'NOT_FOUND'},404);
+ if(!['GET','POST'].includes(request.method))return json({error:'METHOD_NOT_ALLOWED'},405);
+ const origin=request.headers.get('Origin');
+ if(origin&&origin!==url.origin||request.headers.get('Sec-Fetch-Site')==='cross-site')return json({error:'FORBIDDEN'},403);
+ let owner:string;
+ try{owner=(await verifyMiniApp(request.headers.get('X-Telegram-Init-Data')??'',env.TELEGRAM_BOT_TOKEN??'',env.TELEGRAM_USER_ID,now)).owner;}
+ catch{return json({error:'AUTH_REQUIRED',message:'Mở lại từ Telegram để tiếp tục.'},401);}
+ try{
+  const healthy=new HealthyStore(env.DB);
+  if(request.method==='GET'&&url.pathname==='/api/bootstrap'){
+   const work=new D1WorkStore(env.DB),rules=new RecurrenceStore(env.DB);
+   const [account,tasks,reminders,settings,progress,sessions,events,day]=await Promise.all([
+    healthy.read(owner),work.hierarchy(owner),rules.rules(owner),
+    query(env.DB,'SELECT start_minutes,sleep_minutes,version FROM schedule_settings WHERE owner=?',owner).first(),work.progress(owner),work.sessions(owner,now-86400000,now+86400000),work.events(owner,now-86400000,now+7*86400000),new ScheduleStore(env.DB).ensureDay(owner,now)
+   ]);
+   return json({now,account,tasks,reminders,settings,progress,sessions,events,day,realms:REALMS,loot:LOOT,charms:CHARMS,needsSetup:!settings});
+  }
+  if(request.method!=='POST'||!['/api/cultivation','/api/tasks','/api/settings','/api/reminders','/api/schedule'].includes(url.pathname))return json({error:'NOT_FOUND'},404);
+  // Read a bounded body, including chunked requests.
+  const reader=request.body?.getReader();if(!reader)return json({error:'INVALID_REQUEST'},400);
+  const decoder=new TextDecoder('utf-8',{fatal:true});let raw='',bytes=0;
+  while(true){const part=await reader.read();if(part.done)break;bytes+=part.value.byteLength;if(bytes>4096){await reader.cancel();return json({error:'TOO_LARGE'},413);}raw+=decoder.decode(part.value,{stream:true});}
+  raw+=decoder.decode();
+  const input=JSON.parse(raw) as Record<string,unknown>;
+  if(!input||Array.isArray(input)||typeof input.id!=='string'||!/^[a-zA-Z0-9_-]{8,100}$/.test(input.id))return json({error:'INVALID_REQUEST'},400);
+  if(url.pathname==='/api/schedule'){
+   if(Object.keys(input).some(k=>!['id','version','free','busy','estimates'].includes(k))||!Number.isInteger(input.version)||!Array.isArray(input.free)||!Array.isArray(input.busy)||!Array.isArray(input.estimates)||input.estimates.length>100)return json({error:'INVALID_REQUEST'},400);
+   for(const r of [...input.free,...input.busy])if(!r||typeof r!=='object'||Object.keys(r).some(k=>!['start','end'].includes(k))||!Number.isFinite(r.start)||!Number.isFinite(r.end))return json({error:'INVALID_REQUEST'},400);
+   const work=new D1WorkStore(env.DB);
+   const tasks=[];
+   for(const estimate of input.estimates){
+    if(!estimate||typeof estimate!=='object'||Object.keys(estimate).some(k=>!['id','minutes'].includes(k))||typeof estimate.id!=='string'||!Number.isInteger(estimate.minutes))return json({error:'INVALID_REQUEST'},400);
+    const task=await work.task(owner,estimate.id);
+    if(!task||task.status==='completed')return json({error:'STALE_TASK'},409);
+    tasks.push({id:task.id,status:'active' as const,deleted:false,deadline:task.deadline?Date.parse(task.deadline.length===10?task.deadline+'T23:59:59+07:00':task.deadline):null,remainingMinutes:estimate.minutes as number});
+   }
+   const result=await new ScheduleStore(env.DB).replan(owner,now,Number(input.version),input.free,input.busy,tasks,input.id);
+   return json({result});
+  }
+  if(url.pathname==='/api/settings'){
+   if(Object.keys(input).some(k=>!['id','start','sleep','version'].includes(k))||typeof input.start!=='string'||typeof input.sleep!=='string'||!Number.isInteger(input.version))return json({error:'INVALID_REQUEST'},400);
+   await new ScheduleStore(env.DB).configure(owner,input.start,input.sleep,Number(input.version),now);
+   return json({saved:true});
+  }
+  if(url.pathname==='/api/reminders'){
+   if(Object.keys(input).some(k=>!['id','rule'].includes(k))||!input.rule||typeof input.rule!=='object'||Array.isArray(input.rule))return json({error:'INVALID_REQUEST'},400);
+   const rule=input.rule as Record<string,unknown>;
+   if(Object.keys(rule).some(k=>!['id','title','kind','times','weekdays','startDate','endDate','enabled','version'].includes(k))
+    ||typeof rule.title!=='string'||typeof rule.kind!=='string'||typeof rule.startDate!=='string'
+    ||!Array.isArray(rule.times)||rule.times.some(t=>typeof t!=='string')||!Array.isArray(rule.weekdays)||rule.weekdays.some(n=>!Number.isInteger(n))
+    ||typeof rule.enabled!=='boolean'||!Number.isInteger(rule.version)||Number(rule.version)<0
+    ||rule.endDate!==null&&typeof rule.endDate!=='string'||rule.id!==undefined&&typeof rule.id!=='string')return json({error:'INVALID_REQUEST'},400);
+   const id=typeof rule.id==='string'?rule.id:crypto.randomUUID();
+   const normalized={id,owner,title:rule.title,kind:rule.kind as 'once'|'daily'|'weekdays',times:rule.times as string[],weekdays:rule.weekdays as number[],startDate:rule.startDate,endDate:rule.endDate as string|null,enabled:rule.enabled,version:Number(rule.version)+1};
+   const result=await healthy.mutate(owner,input.id,'save-rule',input,now,state=>({state,result:{id},statements:new RecurrenceStore(env.DB).saveStatements(normalized,Number(rule.version),now)}));
+   return json({result});
+  }
+  if(url.pathname==='/api/tasks'){
+   if(Object.keys(input).some(k=>!['id','operation','taskId','stepId','version','title','deadline','complete','confirm'].includes(k)))return json({error:'INVALID_REQUEST'},400);
+   for(const key of ['operation','taskId','stepId','title'])if(key in input&&typeof input[key]!=='string')return json({error:'INVALID_REQUEST'},400);
+   if('deadline' in input&&input.deadline!==null&&typeof input.deadline!=='string'||'version' in input&&!Number.isInteger(input.version)||'confirm' in input&&typeof input.confirm!=='boolean')return json({error:'INVALID_REQUEST'},400);
+   const {id,...args}=input;
+   const result=await new D1WorkStore(env.DB).mutateHierarchy(owner,String(id),args as Parameters<D1WorkStore['mutateHierarchy']>[2],now);
+   return json({result});
+  }
+  if(Object.keys(input).some(k=>!['id','operation','item'].includes(k)))return json({error:'INVALID_REQUEST'},400);
+  const operation=input.operation;
+  if(!['draw','fuse','protect','breakthrough'].includes(String(operation)))return json({error:'INVALID_OPERATION'},400);
+  const settings=await query(env.DB,'SELECT start_minutes,sleep_minutes FROM schedule_settings WHERE owner=?',owner).first<{start_minutes:number;sleep_minutes:number|null}>();
+  if(!settings||settings.sleep_minutes===null)return json({error:'SETUP_REQUIRED'},409);
+  const activeDay=await new ScheduleStore(env.DB).ensureDay(owner,now);
+  const day=activeDay?.day??operatingDay(now,settings.start_minutes),random=()=>crypto.getRandomValues(new Uint32Array(1))[0]!/4294967296;
+  const item=input.item;
+  if(operation==='protect'&&!['heart','peace'].includes(String(item)))return json({error:'INVALID_ITEM'},400);
+  if(operation==='fuse'&&(!Object.hasOwn(CHARMS,String(item))||item==='supreme'))return json({error:'INVALID_ITEM'},400);
+  if(operation==='breakthrough'&&item!==undefined&&item!==null&&!Object.hasOwn(CHARMS,String(item)))return json({error:'INVALID_ITEM'},400);
+  const result=await healthy.mutate<Record<string,unknown>>(owner,input.id,String(operation),input,now,state=>{
+   if(operation==='draw'){const r=drawReward(state,random());return {state:r.state,result:{reward:r.reward}};}
+   if(operation==='fuse'){const r=fuseCharm(state,item as Charm,random());return {state:r.state,result:{success:r.success}};}
+   if(operation==='protect')return {state:useProtection(state,item as 'heart'|'peace',day),result:{protected:true}};
+   const r=breakthrough(state,day,now,item as Charm|null??null,random());return {state:r.state,result:{success:r.success,chance:r.chance}};
+  });
+  return json({result,account:await healthy.read(owner)});
+ }catch(error){
+  const code=error instanceof Error?error.message:'';
+  if(['DRAW_UNAVAILABLE','FUSION_UNAVAILABLE','ITEM_UNAVAILABLE','BREAKTHROUGH_UNAVAILABLE','ALREADY_PROTECTED','REQUEST_ID_REUSED','STALE_TASK','CONFIRM_CHILDREN','CONFIRM_REOPEN_PARENT','CONFIRM_DELETE','STEP_NOT_FOUND'].includes(code))return json({error:code},409);
+  if(code.startsWith('INVALID_'))return json({error:'INVALID_REQUEST'},400);
+  if(error instanceof SyntaxError)return json({error:'INVALID_REQUEST'},400);
+  return json({error:'OPERATION_NOT_CONFIRMED',message:'Chưa xác nhận được kết quả. Kiểm tra lại trước khi thử hành động mới.'},503);
+ }
+}

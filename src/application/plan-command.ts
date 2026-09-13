@@ -1,3 +1,5 @@
+import {healthyCommand} from './healthy-command.ts';
+import {scheduleEntry} from './schedule-command.ts';
 import {boardCommand} from './progress-renderer.ts';
 import { deadlineValue } from '../domain/time.ts';
 import { confirmationAvailable } from '../domain/work.ts';
@@ -16,6 +18,26 @@ function formatDeadline(value:string){
  return Number.isFinite(time)?new Date(time+7*3600000).toISOString().slice(0,16).replace('T',' '):value;
 }
 export async function planCommand(input: Input, store: WorkReader, now: number, chat?: ChatService): Promise<Plan> {
+  const sleep=healthyCommand(input.text??'');
+  if(sleep&&store.reportSleep){
+    try{
+      const result=await store.reportSleep(input.owner,now);
+      let text=result.applied?'Tớ đã bật nghỉ rồi nhé. '+(result.delta>0?`+${result.delta} tu vi. `:result.delta<0?`${result.delta} tu vi. `:'')+'Ngủ ngon cậu 🌙':'Cậu đã báo nghỉ hôm nay rồi, tớ vẫn giữ chế độ nghỉ nhé.';
+      if(sleep.message&&chat){
+        let reply:Awaited<ReturnType<ChatService>>;
+        try{reply=await chat(input.owner,sleep.message,[],input,store,now);}catch{return {view:{text:text+' Phần nhắn kèm chưa xử lý được; chế độ nghỉ đã bật.',buttons:[]},changes:[]};}
+        if(typeof reply==='string')text+='\n'+reply;
+        else return {...reply,view:{...reply.view,text:text+'\n'+reply.view.text}};
+      }
+      return {view:{text,buttons:[]},changes:[]};
+    }catch(error){
+      if(error instanceof Error&&error.message==='SETUP_REQUIRED')return {view:{text:'Cậu chọn giờ bắt đầu và giờ nghỉ trong ứng dụng trước nhé. Chưa ghi thưởng/phạt.',buttons:[]},changes:[]};
+      throw error;
+    }
+  }
+  const entry=scheduleEntry(input.text??'');
+  if(entry?.kind==='help')return {view:{text:'/kiemtra · Mở ứng dụng\n/lich · Trao đổi lịch hôm nay\n/ngu · Báo nghỉ, dừng nhắc chủ động\n/huy · Thoát phiên đang nhập',buttons:[]},changes:[]};
+  if(entry?.kind==='cancel')return {view:{text:'Đã thoát phiên nhập lịch.',buttons:[]},changes:[{type:'cancel',owner:input.owner}]};
   const board=await boardCommand(input,store,now);if(board){board.changes.push({type:'cancel',owner:input.owner});return board;}
   if(input.callback?.startsWith('tool-confirm:')&&chat){
     const result=await chat(input.owner,'',[],input,store,now);

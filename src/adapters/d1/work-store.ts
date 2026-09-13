@@ -9,6 +9,8 @@ import type {Memory,ConversationTurn} from '../../domain/memory.ts';
 import {renderView} from '../../application/ui-renderer.ts';
 import {D1UiStore} from './ui-store.ts';
 import {progressData,workPage,boardSelection,progressStatements} from './progress-store.ts';
+import {ScheduleStore} from './schedule-store.ts';
+import {HealthyStore} from './healthy-store.ts';
 import {localEvents,eventStatements} from './event-store.ts';
 import {conversationStatements} from './conversation-store.ts';
 
@@ -16,6 +18,77 @@ export class D1WorkStore implements WorkStore {
   private db: Database;
   constructor(db: Database, privateCards = false) { this.db = db; this.cardsEnabled=privateCards; }
   private cardsEnabled:boolean;
+  reportSleep(owner:string,now:number){return new ScheduleStore(this.db).reportSleep(owner,now);}
+  async hierarchy(owner:string){
+    const tasks=(await query(this.db,"SELECT * FROM tasks WHERE owner=? AND deleted_at IS NULL ORDER BY status,deadline IS NULL,deadline,public_code LIMIT 200",owner).all<Task&{public_code:number}>()).results;
+    const steps=(await query(this.db,"SELECT s.* FROM task_steps s JOIN tasks t ON t.id=s.task_id AND t.owner=s.owner WHERE s.owner=? AND s.deleted_at IS NULL AND t.deleted_at IS NULL ORDER BY s.step_code",owner).all<{id:string;task_id:string;step_code:number;title:string;status:string;version:number}>()).results;
+    return tasks.map(task=>({...task,steps:steps.filter(step=>step.task_id===task.id)}));
+  }
+  async mutateHierarchy(owner:string,requestId:string,input:{operation:string;taskId?:string;stepId?:string;version?:number;title?:string;deadline?:string|null;complete?:boolean;confirm?:boolean},now:number){
+    const operation=input.operation;
+    if(!['create','edit','complete','delete','add_step','step_status','edit_step','delete_step'].includes(operation))throw Error('INVALID_OPERATION');
+    if(['create','edit','add_step','edit_step'].includes(operation)&&(!input.title?.trim()||input.title.length>160))throw Error('INVALID_TITLE');
+    if(input.deadline!==undefined&&input.deadline!==null&&!/^\d{4}-\d{2}-\d{2}$/.test(input.deadline))throw Error('INVALID_DEADLINE');
+    if(input.deadline){const parsed=Date.parse(input.deadline+'T00:00:00Z');if(!Number.isFinite(parsed)||new Date(parsed).toISOString().slice(0,10)!==input.deadline)throw Error('INVALID_DEADLINE');}
+    if(operation==='complete'||operation==='step_status'){if(typeof input.complete!=='boolean')throw Error('INVALID_STATUS');}
+    const q=(sql:string,...args:(string|number|null)[])=>query(this.db,sql,...args);
+    const task=operation==='create'?null:await this.task(owner,input.taskId??'');
+    // Receipt replay is checked by HealthyStore before invoking this closure.
+    const existingAward=task?await q('SELECT task_id FROM task_ticket_awards WHERE owner=? AND task_id=?',owner,task.id).first():null;
+    const children=task?(await q('SELECT * FROM task_steps WHERE owner=? AND task_id=? AND deleted_at IS NULL',owner,task.id).all<{id:string;status:string;version:number}>()).results:[];
+    const id=crypto.randomUUID();
+    return new HealthyStore(this.db).mutate<Record<string,unknown>>(owner,requestId,'task:'+operation,input,now,state=>{
+      const statements:Statement[]=[];
+      if(operation==='create'){
+        statements.push(q('INSERT INTO tasks(id,owner,title,deadline,deadline_precision,created) VALUES(?,?,?,?,?,?)',id,owner,input.title!.trim(),input.deadline??null,input.deadline?'date':null,now));
+        return {state,result:{id},statements};
+      }
+      if(!task||task.version!==input.version)throw Error('STALE_TASK');
+      statements.push(q('INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM tasks WHERE owner=? AND id=? AND version=? AND deleted_at IS NULL) THEN 1 ELSE 0 END',owner,task.id,input.version!));
+      if(operation==='edit'){
+        statements.push(q('UPDATE tasks SET title=?,deadline=?,version=version+1 WHERE owner=? AND id=?',input.title!.trim(),input.deadline===undefined?task.deadline:input.deadline,owner,task.id));
+      }else if(operation==='complete'){
+        if(input.complete&&children.some(s=>s.status!=='completed')&&!input.confirm)throw Error('CONFIRM_CHILDREN');
+        statements.push(q('UPDATE tasks SET status=?,version=version+1 WHERE owner=? AND id=?',input.complete?'completed':'active',owner,task.id));
+        if(input.complete){
+          statements.push(q("UPDATE task_steps SET status='completed',completed_at=COALESCE(completed_at,?),version=version+1 WHERE owner=? AND task_id=? AND deleted_at IS NULL AND status='active'",now,owner,task.id));
+          statements.push(q('UPDATE task_completions SET completed_at=? WHERE owner=? AND task_id=?',now,owner,task.id));
+          statements.push(q("UPDATE task_appointments SET status='cancelled',version=version+1 WHERE owner=? AND task_id=? AND status='active'",owner,task.id));
+          statements.push(q("UPDATE reminders SET status='cancelled' WHERE owner=? AND session_id IN(SELECT id FROM sessions WHERE owner=? AND task_id=?) AND status IN('pending','queued')",owner,owner,task.id));
+          statements.push(q("UPDATE sessions SET status=CASE WHEN status IN('running','paused') THEN 'completed' ELSE 'skipped' END,spent_ms=spent_ms+CASE WHEN active_since IS NULL THEN 0 ELSE MAX(0,?-active_since) END,active_since=NULL,version=version+1 WHERE owner=? AND task_id=? AND status NOT IN('completed','skipped')",now,owner,task.id));
+          if(!existingAward&&!state.suspended){
+            statements.push(q('INSERT INTO task_ticket_awards(owner,task_id,created) VALUES(?,?,?)',owner,task.id,now));
+            return {state:{...state,tickets:state.tickets+1},result:{id:task.id,ticket:1},statements};
+          }
+        }
+      }else if(operation==='delete'){
+        if(!input.confirm)throw Error('CONFIRM_DELETE');
+        statements.push(q('UPDATE tasks SET deleted_at=?,version=version+1 WHERE owner=? AND id=?',now,owner,task.id));
+        statements.push(q("UPDATE task_appointments SET status='cancelled',version=version+1 WHERE owner=? AND task_id=? AND status='active'",owner,task.id));
+        statements.push(q("UPDATE reminders SET status='cancelled' WHERE owner=? AND session_id IN(SELECT id FROM sessions WHERE owner=? AND task_id=?) AND status IN('pending','queued')",owner,owner,task.id));
+        statements.push(q("UPDATE sessions SET status='skipped',version=version+1,active_since=NULL WHERE owner=? AND task_id=? AND status NOT IN('completed','skipped')",owner,task.id));
+      }else if(operation==='add_step'){
+        if(task.status==='completed'&&!input.confirm)throw Error('CONFIRM_REOPEN_PARENT');
+        statements.push(q('INSERT INTO task_steps(id,owner,task_id,step_code,title,created) SELECT ?,?,?,COALESCE(MAX(step_code),0)+1,?,? FROM task_steps WHERE task_id=?',id,owner,task.id,input.title!.trim(),now,task.id));
+        statements.push(q("UPDATE tasks SET status='active',version=version+1 WHERE owner=? AND id=?",owner,task.id));
+      }else{
+        const step=children.find(s=>s.id===input.stepId);if(!step)throw Error('STEP_NOT_FOUND');
+        if(operation==='step_status'){
+          if(!input.complete&&task.status==='completed'&&!input.confirm)throw Error('CONFIRM_REOPEN_PARENT');
+          statements.push(q('UPDATE task_steps SET status=?,completed_at=?,version=version+1 WHERE owner=? AND id=?',input.complete?'completed':'active',input.complete?now:null,owner,step.id));
+          statements.push(q('UPDATE tasks SET status=?,version=version+1 WHERE owner=? AND id=?',input.complete?task.status??'active':'active',owner,task.id));
+        }else if(operation==='edit_step'){
+          statements.push(q('UPDATE task_steps SET title=?,version=version+1 WHERE owner=? AND id=?',input.title!.trim(),owner,step.id));
+          statements.push(q('UPDATE tasks SET version=version+1 WHERE owner=? AND id=?',owner,task.id));
+        }else{
+          if(!input.confirm)throw Error('CONFIRM_DELETE');
+          statements.push(q('UPDATE task_steps SET deleted_at=?,version=version+1 WHERE owner=? AND id=?',now,owner,step.id));
+          statements.push(q('UPDATE tasks SET version=version+1 WHERE owner=? AND id=?',owner,task.id));
+        }
+      }
+      return {state,result:{id:task.id},statements};
+    });
+  }
   progress(owner:string){return progressData(this.db,owner);}
   workPage(owner:string,filter:import('../../domain/progress.ts').WorkFilter,offset:number,now:number){return workPage(this.db,owner,filter,offset,now);}
   boardSelection(owner:string){return boardSelection(this.db,owner);}

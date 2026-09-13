@@ -60,4 +60,6 @@ Thiết kế đích2026-09-13; trạng thái triển khai xem HANDOFF. Mini App/
 - Phá Cảnh sơ/trung/cao/cực phẩm: +5/10/15/20 điểm % cho1 đột phá, tối đa1 lá/lần. Ghép3 cùng cấp:80%/60%/40%; thất bại mất1 trả2, thành công tiêu3 nhận1 cấp cao.
 - Đột phá đủ tu vi và chuỗi, một lần/ngày sinh hoạt; tỷ lệ70%,85%,100% sau thất bại liên tiếp cùng bậc; thất bại không mất tu vi/chuỗi, phù chọn vẫn tiêu hao. Thành công không tiêu/reset tu vi/chuỗi.
 - Mốc demo qi/ngày: Luyện Khí6/2,Trúc Cơ18/3,Kết Đan40/5,Nguyên Anh75/7,Hóa Thần120/10,Luyện Hư180/14,Hợp Thể260/18,Đại Thừa360/21,Độ Kiếp500/30. Cần cân lại trước release do thưởng ngủ đã đổi+5.
-- CHƯA CHỐT: giữ âm hay về0 sau hạ/bảo vệ; không gửi /ngu có phạt không. Không tự áp dụng hình phạt thật khi hai điểm này chưa rõ.
+- ĐÃ CHỐT: tu vi floor0; sau trừ dưới ngưỡng cảnh giới hạ1 bậc (không đòi số âm), giữ số dư và highest rank. Bảo vệ72h ngăn hạ nhưng vẫn trừ; hết bảo vệ chỉ xét hạ lần phạt tiếp theo.
+- Không báo /ngu khi hết ngày cũng−20. Sau3 ngày liên tục không chat, tối đa3 lần phạt rồi dừng mọi cơ chế tới khi user nhắn; không backcharge ngày vắng khi quay lại.
+- Bảng mới qi/chuỗi:6/2,18/3,40/5,75/7,120/8,180/11,260/14,360/17,500/24,Chân Tiên1000/35,Kim Tiên2000/45. Thay bảng demo cũ.

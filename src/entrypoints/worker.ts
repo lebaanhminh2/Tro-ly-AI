@@ -1,4 +1,7 @@
 import {boardCommand} from '../application/progress-renderer.ts';
+import {ScheduleStore} from '../adapters/d1/schedule-store.ts';
+import {RecurrenceStore} from '../adapters/d1/recurrence-store.ts';
+import {miniAppApi} from './mini-app.ts';
 import {unlockAchievements} from '../adapters/d1/progress-store.ts';
 import { configured } from '../config/env.ts';
 import type { Env } from '../config/env.ts';
@@ -69,6 +72,12 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
     async scheduled(_event: unknown, env: Env) {
       if (!configured(env)) return;
       const store = new D1WorkStore(env.DB,cardsEnabled);
+      if(env.ASSETS){
+        const schedule=new ScheduleStore(env.DB);
+        await schedule.settleClosedDays(env.TELEGRAM_USER_ID,clock.now());
+        await schedule.queueCheckIns(env.TELEGRAM_USER_ID,clock.now());
+        await new RecurrenceStore(env.DB).queueDue(env.TELEGRAM_USER_ID,clock.now(),await schedule.isResting(env.TELEGRAM_USER_ID,clock.now()));
+      }
       await expireMemory(env.DB,clock.now());
       await unlockAchievements(env.DB,env.TELEGRAM_USER_ID,clock.now());
       await recoverInterrupted(env.DB, clock.now()); // Handles only legacy prototype updates and delivery leases.
@@ -81,6 +90,18 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
       await flushCards(env);
     },
     async fetch(request: Request, env: Env): Promise<Response> {
+      const path=new URL(request.url).pathname;
+      if(env.ASSETS&&path.startsWith('/api/'))return miniAppApi(request,env,clock.now());
+      if(env.ASSETS&&(path==='/app'||path.startsWith('/app/'))){
+        if(path==='/app')return Response.redirect(new URL('/app/',request.url),302);
+        const assetUrl=new URL(request.url);assetUrl.pathname=path.slice(4);
+        const response=await env.ASSETS.fetch(new Request(assetUrl,request));
+        const headers=new Headers(response.headers);
+        headers.set('X-Content-Type-Options','nosniff');
+        headers.set('Referrer-Policy','no-referrer');
+        headers.set('Content-Security-Policy',"default-src 'self'; script-src 'self' https://telegram.org; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; base-uri 'none'");
+        return new Response(response.body,{status:response.status,headers});
+      }
       if (new URL(request.url).pathname !== '/telegram') return new Response('Not found', { status: 404 });
       if (request.method !== 'POST') return new Response('Method not allowed', { status: 405 });
       if (!configured(env)) return new Response('Unavailable', { status: 503 });
@@ -103,6 +124,7 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
       if (!input || input.owner !== env.TELEGRAM_USER_ID) return new Response('OK');
       try {
         const store = new D1WorkStore(env.DB,cardsEnabled);
+        if(env.ASSETS&&input.text)await new ScheduleStore(env.DB).chatActivity(input.owner,clock.now(),String(input.updateId));
         const isNew = await store.accept(input, clock.now(), env.DELIVERY_MODE === 'outbox');
         if(isNew&&cardsEnabled)await acknowledgeAppointments(env.DB,input.owner,input.replyToMessageId);
         if(cardsEnabled&&env.DELIVERY_MODE==='outbox'&&input.callbackId&&isNew){

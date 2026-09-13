@@ -23,9 +23,9 @@ export function createDemo(){
 export const realms=[
  {name:'Phàm Nhân',qi:0,days:0},{name:'Luyện Khí',qi:6,days:2},
  {name:'Trúc Cơ',qi:18,days:3},{name:'Kết Đan',qi:40,days:5},
- {name:'Nguyên Anh',qi:75,days:7},{name:'Hóa Thần',qi:120,days:10},
- {name:'Luyện Hư',qi:180,days:14},{name:'Hợp Thể',qi:260,days:18},
- {name:'Đại Thừa',qi:360,days:21},{name:'Độ Kiếp',qi:500,days:30}
+ {name:'Nguyên Anh',qi:75,days:7},{name:'Hóa Thần',qi:120,days:8},
+ {name:'Luyện Hư',qi:180,days:11},{name:'Hợp Thể',qi:260,days:14},
+ {name:'Đại Thừa',qi:360,days:17},{name:'Độ Kiếp',qi:500,days:24},{name:'Chân Tiên',qi:1000,days:35},{name:'Kim Tiên',qi:2000,days:45}
 ];
 export const loot=[
  {key:'qi1',label:'+1 tu vi',weight:40},{key:'qi2',label:'+2 tu vi',weight:15},
@@ -73,3 +73,49 @@ export function demoBreakthrough(c,day,key=null,now=Date.now(),random=Math.rando
  c.log.unshift(success?'Đột phá '+target.name+' · bảo vệ 72 giờ':'Đột phá chưa thành · giữ nguyên tu vi');
  return {success,chance};
 }
+
+const pendingRequests=new Map();
+export async function connectLive(){
+ if(!globalThis.Telegram?.WebApp){
+  await new Promise((resolve,reject)=>{
+   const script=document.createElement('script');script.src='https://telegram.org/js/telegram-web-app.js';
+   script.onload=resolve;script.onerror=()=>reject(Error('Không tải được Telegram SDK.'));document.head.append(script);
+  });
+ }
+ const app=globalThis.Telegram?.WebApp;
+ if(!app?.initData)throw Error('Hãy mở ứng dụng từ nút trong Telegram, không mở đường dẫn trực tiếp.');
+ app.ready();app.expand();
+ return refreshLive();
+}
+async function liveRequest(path,body){
+ const initData=globalThis.Telegram?.WebApp?.initData;
+ if(!initData)throw Error('Mở lại từ Telegram để tiếp tục.');
+ const key=body?path+JSON.stringify(body):null;
+ let request=body;
+ if(key){
+  if(!pendingRequests.has(key))pendingRequests.set(key,{...body,id:crypto.randomUUID()});
+  request=pendingRequests.get(key);
+ }
+ const response=await fetch('/api/'+path,{method:body?'POST':'GET',headers:{'X-Telegram-Init-Data':initData,'Content-Type':'application/json'},body:body?JSON.stringify(request):undefined,signal:AbortSignal.timeout(15000)});
+ const result=await response.json();
+ if(!response.ok){
+  if(response.status<500&&key)pendingRequests.delete(key);
+  throw Error(result.message??result.error??'Chưa xác nhận được kết quả.');
+ }
+ if(key)pendingRequests.delete(key);
+ return result;
+}
+export async function refreshLive(){
+ const data=await liveRequest('bootstrap');
+ const c=data.account.state;
+ const clock=n=>String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0');
+ return {
+  live:true,loaded:true,needsSetup:data.needsSetup,serverNow:data.now,settingsVersion:data.settings?.version??0,
+  start:clock(data.settings?.start_minutes??270),sleep:data.settings?.sleep_minutes===null||!data.settings?'':clock(data.settings.sleep_minutes),
+  tasks:data.tasks.map(t=>({id:t.id,code:t.public_code,title:t.title,version:t.version,deadline:t.deadline??'',done:t.status==='completed',steps:t.steps.map(s=>({id:s.id,code:t.public_code+'.'+s.step_code,title:s.title,done:s.status==='completed',version:s.version}))})),
+  reminders:data.reminders.map(r=>({...r,times:r.times.join(', '),start:r.startDate,end:r.endDate??''})),
+  cultivation:{...c,totalEarned:c.earned,active:{heart:c.heartDay!==null,peace:c.peaceDay!==null},log:[],rewardedTasks:[]},
+  day:data.day,progress:data.progress,sessions:data.sessions,events:data.events
+ };
+}
+export async function liveMutation(path,input){const result=await liveRequest(path,input);return {result,...await refreshLive()};}

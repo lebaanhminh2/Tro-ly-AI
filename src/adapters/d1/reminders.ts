@@ -5,6 +5,9 @@ import { sessionButtons } from '../../domain/session.ts';
 import {appointmentAllowed} from './conversation-store.ts';
 
 export async function reminderAllowed(db:Database,id:string,now:number):Promise<boolean>{
+  if(id.startsWith('recurring:')){
+    return !!await query(db,"SELECT o.id FROM recurrence_occurrences o JOIN recurrence_rules r ON r.id=o.rule_id AND r.owner=o.owner WHERE o.id=? AND o.status='queued' AND o.due<=? AND o.due>? AND r.enabled=1 AND r.version=o.rule_version",id.slice(10),now,now-3600000).first();
+  }
   if(id.startsWith('appointment:'))return appointmentAllowed(db,id,now);
   const r=await query(db,`SELECT r.*,s.status AS session_status,s.generation AS current_generation,s.start_at,s.minutes,
     p.quiet_start,p.quiet_end,p.pause_until FROM reminders r JOIN sessions s ON s.id=r.session_id AND s.owner=r.owner
