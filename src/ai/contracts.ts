@@ -1,4 +1,4 @@
-export type ToolName='update_event'|'reschedule_reminder'|'plan_work'|'session_action'|'acknowledge_reminder'|'cancel_reminder'|'create_event'|'create_reminder'|'respond'|'save_clarification'|'close_clarification'|'update_summary'|'find_tasks'|'get_agenda'|'create_task'|'update_task'|'set_reminder'|'set_reminder_pause'|'remember_preference'|'resolve_pending';
+export type ToolName='show_work'|'record_progress'|'update_event'|'reschedule_reminder'|'plan_work'|'session_action'|'acknowledge_reminder'|'cancel_reminder'|'create_event'|'create_reminder'|'respond'|'save_clarification'|'close_clarification'|'update_summary'|'find_tasks'|'get_agenda'|'create_task'|'update_task'|'set_reminder'|'set_reminder_pause'|'remember_preference'|'resolve_pending';
 export type ToolCall={name:ToolName;args:Record<string,unknown>;id?:string};
 export type ModelContent={role:'user'|'model';parts:Record<string,unknown>[]};
 export type ModelStep={content:ModelContent;calls:ToolCall[];text:string};
@@ -7,6 +7,9 @@ const integer={type:'INTEGER'};
 const deadline={type:'OBJECT',nullable:true,properties:{value:str,precision:{type:'STRING',enum:['date','datetime']}},required:['value','precision']};
 const declaration=(name:ToolName,description:string,properties:Record<string,unknown>,required=Object.keys(properties))=>({name,description,parameters:{type:'OBJECT',properties,required}});
 export const TOOL_DECLARATIONS=[
+ declaration('show_work','Open the interactive DB-backed work board or progress chart/achievements. Always use this when user asks for all tasks or statistics; never dump a long list in text.',{screen:{type:'STRING',enum:['tasks','progress','achievements']},filter:{type:'STRING',enum:['active','all','overdue','today','upcoming','undated','completed']}}),
+ declaration('record_progress','Record a concrete small step user explicitly reports having finished on this task. Not a plan, feeling, timer, or entire-task completion.',{task_id:str,expected_version:integer,content:str}),
+
  declaration('update_event','Move or cancel one known local event. Cancel leaves start unchanged. Existing linked reminders are cancelled; create the replacement only when user wants it.',{event_id:str,expected_version:integer,cancelled:{type:'BOOLEAN'},start:str,end:{type:'STRING',nullable:true}}),
  declaration('reschedule_reminder','Move one active reminder. Old delivery is cancelled and a new reminder cycle created with a new ID only on user request.',{reminder_id:str,expected_version:integer,at:str,message:str}),
 
@@ -26,7 +29,7 @@ export const TOOL_DECLARATIONS=[
  declaration('find_tasks','Find tasks owned by the user. Query by title, or pass an empty query to list. Use returned IDs/versions, never invent them.',{query:str,status:{type:'STRING',enum:['active','completed','all']},cursor:integer}),
  declaration('get_agenda','Read local task deadlines, appointments and work sessions for a time interval.',{from:str,to:str,cursor:integer}),
  declaration('create_task','Create a task the user directly asked to record. Deadline is optional, date-only must not acquire an invented hour. No reminder is created automatically.',{title:str,deadline}),
- declaration('update_task','Update one known task after the user directly requests the change. Include only fields to change in patch. Completion is for the whole task, not a work session.',{task_id:str,expected_version:integer,patch:{type:'OBJECT',properties:{deadline,status:{type:'STRING',enum:['active','completed']}}}}),
+ declaration('update_task','Update one known task after the user directly requests the change. Include only fields to change in patch. Completion is for the whole task, not a work session.',{task_id:str,expected_version:integer,patch:{type:'OBJECT',properties:{title:str,deadline,status:{type:'STRING',enum:['active','completed']}}}}),
  declaration('set_reminder','Set a reminder time for one task. This is not a work session and has no duration. Replaces the active standalone reminder for this task.',{task_id:str,expected_version:integer,at:str}),
  declaration('set_reminder_pause','Pause reminders until a timestamp, or resume. Feeling tired alone is not a request to pause.',{until:{type:'STRING',nullable:true}}),
  declaration('remember_preference','Store only a preference or temporary fact the user directly asked you to remember.',{content:str,lifetime:{type:'STRING',enum:['today','persistent']}})

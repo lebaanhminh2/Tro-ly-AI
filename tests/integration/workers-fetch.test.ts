@@ -29,12 +29,14 @@ test('real workerd fetch supports production adapters and never follows credenti
   const script = `
     import worker from './src/entrypoints/worker.ts';
     import {deliver} from './src/adapters/telegram/api.ts';
+    import {progressPng} from './src/application/progress-renderer.ts';
     export default {async fetch(request, env) {
       if (new URL(request.url).pathname === '/card-probe') return worker.fetch(new Request('https://test.invalid/telegram',{
         method:'POST',headers:{'X-Telegram-Bot-Api-Secret-Token':'x'.repeat(32)},body:JSON.stringify({update_id:99,message:{from:{id:123},chat:{id:123,type:'private'},text:'/tasks'}})
       }),{...env,DELIVERY_MODE:'outbox',TELEGRAM_BOT_TOKEN:'123:fake'});
       if (new URL(request.url).pathname === '/telegram') return worker.fetch(request, env);
       const result = {};
+      result.png=await progressPng({completions:[],milestones:[],achievements:[]},Date.now());
       result.telegram = await deliver('123:fake', {method:'sendMessage',chat_id:123,text:'test'});
       result.telegramRedirect = await deliver('123:fake', {method:'sendMessage',chat_id:123,text:'test'});
       result.clearKeyboard = await deliver('123:fake', {method:'editMessageReplyMarkup',chat_id:123,message_id:7,reply_markup:{inline_keyboard:[]}});
@@ -55,6 +57,7 @@ test('real workerd fetch supports production adapters and never follows credenti
     const probeText = await probe.text();
     assert.equal(probe.status, 200, probeText);
     const result = JSON.parse(probeText) as Record<string, any>;
+    assert.ok(result.png.startsWith('iVBOR'));assert.ok(result.png.length<100000);
     assert.equal(result.telegram.state, 'sent');
     assert.equal(result.telegramRedirect.state, 'uncertain');
     assert.equal(result.clearKeyboard.state, 'sent');

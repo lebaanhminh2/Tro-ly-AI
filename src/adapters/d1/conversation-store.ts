@@ -9,6 +9,7 @@ import type {Change} from '../../domain/work.ts';
 import type {ConversationMutation} from '../../domain/conversation.ts';
 
 export class ConversationStore {
+ public requestedView:ToolCall|null=null;
  private db:Database;
  private stagedPending:{id:string;tool_name:string;args_json:string;reason:string;expires:number}|null=null;
  private defer?: (statements:Statement[])=>void;
@@ -25,6 +26,7 @@ export class ConversationStore {
   let resolvedPending:string|null=null;
   const request=(call:ToolCall)=>({name:call.name,args:call.args});
   const reply=await runToolTurn(context,{
+   view:call=>{validateTool(call,clock());this.requestedView=call;},
    batch:(calls,message)=>this.commitBatch(lease,calls,message,reader,mutations,clock()),
    model:(step,contents,allowTools)=>this.step(lease,`model:${step}`,'model',{contents,allowTools},clock,()=>model(contents,allowTools,step)),
    execute:async(step,call)=>{

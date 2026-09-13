@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { Miniflare } from 'miniflare';
@@ -17,7 +17,7 @@ function createRuntime(path?: string) {
     d1Databases:{DB:'test-db'}, ...(path ? {d1Persist:path} : {}) });
 }
 async function migrate(db: Database & {exec(s:string):Promise<unknown>}) {
-  for (const name of ['0001_initial.sql','0002_delivery.sql','0003_command_transactions.sql','0004_sessions_reminders.sql','0005_memory_conversation.sql','0006_review_fixes.sql'])
+  for (const name of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())
     await db.exec(readFileSync(`migrations/${name}`,'utf8').replace(/\r?\n/g,' '));
 }
 

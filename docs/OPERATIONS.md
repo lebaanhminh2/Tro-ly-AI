@@ -5,8 +5,8 @@
 - TypeScript strict, Cloudflare Workers/D1/Cron; Telegram là giao diện. Gemini dùng adapter trực tiếp; Google runtime đã gỡ ở source mới.
 - entrypoints nối application/domain/ports/adapters. Không domain SQL/fetch, không runtime import experiments/tests.
 - Schema thực tế: migrations; interface: src/ports; không chép lại toàn schema trong docs.
-- D1 lưu tasks, sessions, appointments, memory, pending, receipts, inbox/outbox và UI revisions.
-- Source production hiện dùng Gemini native tools, AI_MODE off/on; legacy harness chỉ experiments. Cloud giữ bản cũ cho tới checkpoint deploy ghi trong HANDOFF. Native batch source cần0011; cloud hiện đã áp, xem HANDOFF cho version/ngân sách. Production staged mutations được outer commit lưu cùng receipt/history/outbox.
+- D1 lưu tasks, sessions, appointments, memory, pending, receipts, inbox/outbox, UI revisions;0012 thêm completion/progress/achievement/board selection và deleted_at.
+- Source production hiện dùng Gemini native tools, AI_MODE off/on; legacy harness chỉ experiments. Cloud giữ bản cũ cho tới checkpoint deploy ghi trong HANDOFF. Bản board/progress cần0012; cloud hiện đã áp, xem HANDOFF cho version/ngân sách. Production staged mutations được outer commit lưu cùng receipt/history/outbox.
 
 ## Kiểm tra local
 
@@ -24,7 +24,7 @@ Kiểm kết quả theo hành vi, không lấy số test/audit=0 làm chứng nh
 - Worker personal-assistant-staging; DB assistant-staging. UUID/flags trong wrangler.jsonc.
 - Origin: https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev
 - Bot @Minh_Anh_cua_Minh_bot; private owner allowlist. Telegram webhook đã đăng ký.
-- Migration0001–0011 đã áp; migration tiếp theo phải mới, không sửa lịch sử.
+- Migration0001–0012 đã áp; migration tiếp theo phải mới, không sửa lịch sử.
 - Cloud có Telegram secrets và Gemini key. Không tải/in giá trị cloud secret.
 - Local .dev.vars.webhook-secret.dpapi là bản webhook secret mã hóa cho user Windows hiện tại, ignored Git; không phải token bot.
 - `scripts/telegram-setup.ps1`: -SelfTest offline; -RegisterWebhook thay kết nối thật, chỉ dùng khi có quyền, không chạy để “kiểm tra cho chắc”.
@@ -49,6 +49,9 @@ Source mới không có Google/OAuth. Migration lịch sử vẫn giữ để n�
 - Quota bền vững theo request, retries giới hạn; không paid fallback. ACK nhanh không bỏ xác thực lúc commit.
 - Không coi prompt là bảo mật. Test injection, owner sai, stale, crash, 429, timeout và kết quả gửi không rõ.
 - Trước release: kiểm dependency/secrets, backup-restore vào DB riêng, TTL/export/forget, iPhone và nhắc khi tắt máy.
+
+Thống kê /progress dùng PNG native; sendPhoto/editMessageMedia multipart chỉ gọi Telegram host cố định. Chuyển ảnh/chữ tạo card mới, không sửa kiểu message không tương thích.
+Soft-delete không erase task: không tự phục hồi bằng cách bật lại reminder cũ; chỉ restore có chủ đích sau xác nhận user.
 
 ## Khi có lỗi
 

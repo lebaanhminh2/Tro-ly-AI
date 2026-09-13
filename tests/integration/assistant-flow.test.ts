@@ -144,6 +144,7 @@ test('standalone reminder and event survive migration and use the existing dispa
   for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')&&f<'0011').sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
   await db.exec("INSERT INTO tasks(id,owner,title,created) VALUES('old','123','old task',0); INSERT INTO task_appointments(id,owner,task_id,due,responded) VALUES('old-appointment','123','old',1,1)");
   await db.exec(readFileSync('migrations/0011_assistant_flow.sql','utf8').replace(/\r?\n/g,' '));
+  await db.exec(readFileSync('migrations/0012_work_progress.sql','utf8').replace(/\r?\n/g,' '));
   assert.equal((await db.prepare("SELECT responded FROM task_appointments WHERE id='old-appointment'").first<{responded:number}>())!.responded,1);
   const store=new D1WorkStore(db),journal=new ConversationStore(db),now=Date.parse('2026-09-13T08:00:00+07:00');
   await store.accept({owner:'123',chat:123,updateId:1,text:'synthetic'},now,false);

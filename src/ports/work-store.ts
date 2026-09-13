@@ -10,6 +10,10 @@ export type Clock = { now(): number };
 export type Lease = { pendingWrites?:PreparedWrite[]; owner: string; token: string; input: Input; attempts: number;
   ui?:{card:import('../domain/ui.ts').Card;action:import('../domain/ui.ts').CardAction}; uiStale?:boolean; uiRecovered?:boolean };
 export interface WorkReader {
+ progress?(owner:string):Promise<import('../domain/progress.ts').ProgressData>;
+ workPage?(owner:string,filter:import('../domain/progress.ts').WorkFilter,offset:number,now:number):Promise<import('../domain/progress.ts').WorkPage>;
+ boardSelection?(owner:string):Promise<import('../domain/progress.ts').BoardSelection>;
+
   priorityTasks?(owner:string):Promise<import('../domain/work.ts').Task[]>;
   unsummarized?(owner:string,now:number,after:number):Promise<import('../domain/memory.ts').ConversationTurn[]>;
   event?(owner:string,id:string):Promise<import('../domain/event.ts').LocalEvent|null>;

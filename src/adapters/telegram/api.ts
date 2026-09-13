@@ -26,7 +26,7 @@ export function incoming(raw: unknown): Incoming | null {
 
 export type Delivery = { state: 'sent' | 'pending' | 'failed' | 'uncertain'; retryAfter?: number; messageId?: number; reason?:'EDIT_UNAVAILABLE' };
 export async function deliver(token: string, payload: Record<string, unknown>, transport: typeof fetch = fetch, timeout = 8000): Promise<Delivery> {
-  if (!['sendMessage','answerCallbackQuery','editMessageReplyMarkup','editMessageText'].includes(String(payload.method))) return { state: 'failed' };
+  if (!['sendMessage','answerCallbackQuery','editMessageReplyMarkup','editMessageText','sendPhoto','editMessageMedia','editMessageCaption'].includes(String(payload.method))) return { state: 'failed' };
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeout);
   let phase: 'request' | 'response' = 'request';
@@ -43,8 +43,23 @@ export async function deliver(token: string, payload: Record<string, unknown>, t
       body.text = view.text;
       if (body.reply_markup) body.reply_markup = {...markup, inline_keyboard: view.buttons};
     }
+    const photo=body.photo_base64;
+    delete body.photo_base64;
+    let requestBody:BodyInit=JSON.stringify(body);
+    let headers:Record<string,string>={'Content-Type':'application/json'};
+    if(typeof photo==='string'){
+      if(photo.length>1000000||!['sendPhoto','editMessageMedia'].includes(String(method)))return {state:'failed'};
+      const caption=method==='sendPhoto'?body.caption:record(body.media).caption;
+      if(typeof caption!=='string'||caption.length>1024)return {state:'failed'};
+      const bytes=Uint8Array.from(atob(photo),c=>c.charCodeAt(0));
+      const form=new FormData();
+      for(const [key,value] of Object.entries(body))form.append(key,typeof value==='object'?JSON.stringify(value):String(value));
+      form.append('chart',new Blob([bytes],{type:'image/png'}),'progress.png');
+      if(method==='sendPhoto')form.append('photo','attach://chart');
+      requestBody=form;headers={};
+    }
     const response = await transport(`https://api.telegram.org/bot${token}/${method}`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+      method: 'POST', headers, body: requestBody,
       signal: controller.signal, redirect: 'manual'
     });
     phase = 'response';
@@ -55,7 +70,7 @@ export async function deliver(token: string, payload: Record<string, unknown>, t
       return {state: 'uncertain'};
     }
     const data = record(await response.json()), messageId = record(data.result).message_id;
-    const editing = method === 'editMessageText' || method === 'editMessageReplyMarkup';
+    const editing = ['editMessageText','editMessageReplyMarkup','editMessageMedia','editMessageCaption'].includes(String(method));
     // Only the specific no-op response is successful. Other HTTP 400 errors remain failures.
     if (editing && response.status === 400 && data.ok === false && data.error_code === 400
       && typeof data.description === 'string' && /^Bad Request: message is not modified(?:$|:)/.test(data.description)

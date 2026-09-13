@@ -38,7 +38,7 @@ export async function memoryCommand(i:Input,store:WorkReader,now:number):Promise
  if(i.callback?.startsWith('focus:')){
   const task=await store.task(i.owner,i.callback.slice(6));
   if(!task)return view('Không tìm thấy việc.');
-  return {...view(`Mình đang nói về “${task.title}”. Cậu nói tiếp nhé.`),changes:[{type:'focus',owner:i.owner,taskId:task.id,expires:now+900000},{type:'cancel',owner:i.owner}]};
+  return {...view(`Đang sửa “${task.title}”. Cậu nhắn tên mới hoặc hạn muốn đổi nhé; tớ chỉ đổi phần cậu yêu cầu.`),changes:[{type:'focus',owner:i.owner,taskId:task.id,expires:now+900000},{type:'cancel',owner:i.owner}]};
  }
  return null;
 }

@@ -16,3 +16,4 @@ export type ContextChange =
  | {type:'summary-update';owner:string;content:string;through:number;expectedVersion:number;now:number};
 export type StandaloneReminderChange={type:'standalone-reminder';eventId?:string;owner:string;id:string;subject:string;message:string;due:number;created:number};
 export type ReminderActionChange={type:'reminder-action';owner:string;id:string;expectedVersion:number;action:'acknowledge'|'cancel'};
+export type TaskRename={type:'task-rename';owner:string;taskId:string;expectedVersion:number;title:string};

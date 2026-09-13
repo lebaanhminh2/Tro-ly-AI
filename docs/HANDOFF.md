@@ -1,32 +1,32 @@
 # Tiếp tục từ đây
-Cập nhật 2026-09-13. Bản staging sẵn sàng cho user nghiệm thu luồng cốt lõi; không coi đánh giá persona/năng suất đã được user chấp nhận.
+Cập nhật2026-09-13. User duyệt bảng công việc, biểu đồ/streak/thành tựu và thêm chọn-xóa nhiều/sửa từ bảng. Đã triển khai, chờ user nghiệm thu trải nghiệm.
 
-## Đang chạy
-- Worker version69d58588-3862-4dee-b854-76da1b1d5033; migration0001–0011 đã áp. Không sửa migration đã phát hành.
-- Gemini native tools duy nhất + respond(message), nhiều action + clarification trong một lượt; tối đa2 model request, không gọi model sau write.
-- Production gom mutations/receipt/pending/history/outbox cùng outer transaction; kiểm rollback và không replay nghiệp vụ.
-- Summary đọc từ đoạn cũ chưa bao phủ, recent12 cặp; snapshot20 active task + event/session/nhắc. today/tomorrow và now có +07:00 để tránh lệch ngày sau nửa đêm.
-- Task/reminder độc lập/event, lập và cập nhật buổi làm, reply đúng reminder, pause, complete/cancel hoạt động. Google runtime đã bỏ.
-- /tasks lấy3 việc ưu tiên từ toàn DB, không bỏ task gấp sau trang20; /today trộn event/session theo giờ và phân trang3 không bỏ sót. Chat thường không bị wizard chặn.
-- Snapshot summary chỉ cho thực thi với các source_turns thực sự đã gửi; respond đứng trước action không làm lệch @index.
-- Nhóm có duplicate chờ confirmation chung (chưa ghi nửa nhóm); clarification có thể nhiều mục độc lập. Không có nhiều nhóm confirmation đồng thời: đề xuất mới thay nhóm cũ.
+## Bản hiện tại
+- Worker staging version4ca9ceb5-9eaf-4fc0-a36e-44631b57903b. Migration0001–0012 đã áp cloud; tuyệt đối không sửa lại.
+- /tasks hoặc Gemini show_work mở bảng5 việc/trang, lọc và chọn nhiều qua các trang. Review rồi confirm mới soft-delete/hủy reminder/session/clarification liên quan.
+- Selection revision/expiry và task version được kiểm; stale thì không xóa, yêu cầu chọn lại. Thoát chọn xóa selection. Không có nút khôi phục thùng rác trong bản này; deleted_at giữ dữ liệu để phục hồi có chủ đích.
+- Chi tiết có Sửa bằng chat khi AI bật; focus task rồi đổi tên/hạn qua cùng executor. Tên+hạn cùng một câu được hỗ trợ.
+- /progress, show_work progress, nút Tiến bộ mở PNG backend tự vẽ (CompressionStream native, không dependency/API ảnh).
+- Biểu đồ7 ngày, ô hoạt động28 ngày, streak và các mốc1/10/30 task,3/7/14/30 ngày. Số liệu bắt đầu từ0012, không bịa lịch sử completed cũ.
+- task_completions ghi ngày hoàn thành/deadline snapshot; reopen xóa current completion không cộng trùng task. record_progress chỉ ghi mốc user đã làm, nội dung giống nhau cùng task không cộng thêm.
+- Achievements giữ khi streak đứt, mỗi code có outbox key cố định chống thông báo lặp/concurrent.
+- Chart refresh đọc DB sau commit; caption lời khen giữ ngắn. Chuyển chart↔achievements sửa ảnh cùng message; chữ↔ảnh tạo card mới và vô hiệu nút cũ.
+- Gemini native tools duy nhất + respond; deferred mutations/receipt/history/outbox cùng transaction. Không gọi model khi chuyển trang/lọc.
+- Quota app40/24h,4/phút; AI_TRIAL_ENDS_AT vẫn2026-09-13 18:42:18 VN, chưa gia hạn. Hết AI bảng/nút/nhắc deterministic vẫn dùng được.
 
-## Kiểm chứng
-- Full suite88 test chính +25 experiments đạt; nhóm assistant-flow13/13 đạt (có3 regression mới), typecheck/dry-run đạt. Test bổ sung: atomic outer rollback, batch confirmation, old history summary, migration/standalone/event và planning conflict.
-- Live staging QA1309: phát hiện sai ngày mai, đã sửa today/tomorrow. QA1309B lưu hạn14/09 đúng; hỏi giờ → trả lời đổi giờ → reminder gửi → complete hủy follow-up.
-- 4 tin QA dùng4 request; Telegram replies67–69/71, reminder70 sent_at1789238114411. Message IDs là bằng chứng Telegram nhận, không chứng minh push trên iPhone.
-- Đã xóa đúng2 task QA,2 clarification,1 reminder, undo và4 history giả. Receipt/outbox giữ audit. Không sửa task thật; dữ liệu QA có thể dựng lại từ receipt.
-- Đợt trước tối đa16 request direct smoke (bao gồm1 probe bị dừng không rõ provider); sau nới quota4 runtime QA +2 direct planning probe. Lần đầu model tạo reminder trùng plan_work; đã sửa tool description, lần sau đúng1 plan_work + respond. Không coi prompt loại bỏ mọi khả năng trùng. Không gọi tiếp vô hạn.
+## Bằng chứng
+- Lượt full94 tests chính +25 experiments đạt; typecheck/dry-run đạt. Bổ sung cuối tên+hạn:4 integration progress tests đạt.
+- PNG thử trong Node và workerd thật; multipart sendPhoto/editMessageMedia fake đạt. Staging /progress trước gửi message87.
+- Tiếp tục lượt này không gọi Gemini. Mở /tasks và /progress thật: done; Telegram sent message106 và107. Không khẳng định push hoặc độ đẹp trên iPhone thay user.
+- Gemini live của đợt trước:2/8 request cho show_work(all) và record_progress+show_work+respond đúng. Còn tối đa6 theo ngân sách đợt này, không tự gia hạn.
+- Test xóa chạy DB local: non-destructive selection, stale không xóa, owner scope, soft-delete, thành tích vẫn giữ, concurrent unlock không gửi lặp.
+- Live xóa task QA đã bị môi trường chặn lượt trước; không workaround. Read-only xác nhận qa_board_0012_a/b không tồn tại. Lượt này không tạo/xóa dữ liệu thật.
+- Backup .wrangler/staging-before-0012.sql ignored; restore SQLite cần foreign_keys=OFF trong import vì export thứ tự bảng, bật ON và foreign_key_check0 sau import; migration giữ task counts.
 
-## Quyền/quota
-- User duyệt nới hạn mức: trần APP từ20 lên40/rolling24h, giữ4/phút; không phải quota Google.
-- Sau QA runtime dùng24/40, còn16 tại thời điểm kiểm (user dùng sẽ thay đổi). Không reset counters hoặc paid fallback.
-- Pilot vẫn hết2026-09-13 18:42:18 VN; chưa được gia hạn. Bot báo rõ quota/time-limit, reminder đã lưu tiếp tục chạy.
-- Git commit local; chưa push vì môi trường từ chối quyền xuất bản riêng. Không tự tăng budget hoặc thay secret.
-
-## Giới hạn cần nói thật
-- Model có thể hiểu sai, prompt không phải bảo đảm. Nghiệm thu live đã chứng minh một chuỗi, không tất cả cách nói.
-- Summary là nén mất mát; raw history30 ngày. Persona cần user dùng đánh giá; không hứa như người thật.
-- Chủ động dựa giờ rảnh/work plan đã biết; không tự gọi Gemini mỗi phút/không planner nền độc lập. Không biết lịch ngoài sau bỏ Google.
-- Nếu cần nhiều confirmation độc lập, pending proposal mới thay cũ hoặc conflict batch chọn lại: đó là mở rộng tiếp theo, không tuyên bố đã có đầy đủ.
-- Backup trước0011: .wrangler/staging-before-0011.sql ignored, restore local + migration giữ counts/FK. Không commit/in dữ liệu backup.
+## Giới hạn
+- Chưa có chọn kỳ lịch sử trong chart; cố định7/28 ngày. Không streak freeze/XP, không lịch ngoài/Google, không AI planner nền liên tục.
+- Một nhóm confirmation hiện hành cho chat; clarification nhiều mục. Delete nhiều từ bảng có review riêng.
+- Dữ liệu thống kê không chứng minh khối lượng/độ khó; thời gian dự kiến không được tính thành tập trung.
+- Raw history30 ngày, summary mất mát; không hứa hiểu đúng mọi câu.
+- Cần user nghiệm thu nội dung cute, độ đọc ảnh và thao tác trên iPhone; không cần user chạy unit tests.
+- Git local lưu checkpoint, không push do quyền xuất bản từng bị từ chối. Không commit secrets/backup.

@@ -25,6 +25,8 @@ function deadlineArg(value:unknown){
 export function validateTool(call:ToolCall,now:number):void{
  const a=call.args;
  switch(call.name){
+  case 'show_work':fields(a,['screen','filter']);if(!['tasks','progress','achievements'].includes(String(a.screen))||!['active','all','overdue','today','upcoming','undated','completed'].includes(String(a.filter)))throw Error('INVALID_VIEW');break;
+  case 'record_progress':fields(a,['task_id','expected_version','content']);textArg(a.task_id,100);textArg(a.content,300);break;
   case 'update_event':fields(a,['event_id','expected_version','cancelled','start','end']);textArg(a.event_id,100);if(typeof a.cancelled!=='boolean')throw Error('INVALID_EVENT_ACTION');{const start=timestamp(a.start);if(!a.cancelled&&start<=now)throw Error('EVENT_IN_PAST');if(a.end!==null&&timestamp(a.end)<=start)throw Error('INVALID_EVENT_END');}break;
   case 'reschedule_reminder':fields(a,['reminder_id','expected_version','at','message']);textArg(a.reminder_id,100);textArg(a.message,500);if(timestamp(a.at)<=now)throw Error('REMINDER_IN_PAST');break;
   case 'plan_work':fields(a,['task_id','expected_version','at','minutes']);textArg(a.task_id,100);if(timestamp(a.at)<=now||!Number.isInteger(a.minutes)||Number(a.minutes)<5||Number(a.minutes)>180)throw Error('INVALID_WORK_BLOCK');break;
@@ -46,8 +48,8 @@ export function validateTool(call:ToolCall,now:number):void{
   case 'get_agenda':fields(a,['from','to','cursor']);{const from=timestamp(a.from),to=timestamp(a.to);if(to<=from||to-from>31*86400000)throw Error('INVALID_RANGE');}cursorArg(a.cursor);break;
   case 'create_task':fields(a,['title','deadline']);textArg(a.title,160);deadlineArg(a.deadline);break;
   case 'update_task':fields(a,['task_id','expected_version','patch']);textArg(a.task_id,100);if(!a.patch||typeof a.patch!=='object'||Array.isArray(a.patch))throw Error('INVALID_PATCH');{
-   const patch=a.patch as Record<string,unknown>;fields(patch,[],['deadline','status']);if(!Object.keys(patch).length)throw Error('EMPTY_PATCH');
-   if('deadline' in patch)deadlineArg(patch.deadline);if('status' in patch&&!['active','completed'].includes(String(patch.status)))throw Error('INVALID_STATUS');
+   const patch=a.patch as Record<string,unknown>;fields(patch,[],['deadline','status','title']);if(!Object.keys(patch).length)throw Error('EMPTY_PATCH');
+   if('title' in patch)textArg(patch.title,160);if('deadline' in patch)deadlineArg(patch.deadline);if('status' in patch&&!['active','completed'].includes(String(patch.status)))throw Error('INVALID_STATUS');
   }break;
   case 'set_reminder':fields(a,['task_id','expected_version','at']);textArg(a.task_id,100);if(timestamp(a.at)<=now)throw Error('REMINDER_IN_PAST');break;
   case 'set_reminder_pause':fields(a,['until']);if(a.until!==null&&(timestamp(a.until)<=now||timestamp(a.until)-now>7*86400000))throw Error('INVALID_PAUSE');break;

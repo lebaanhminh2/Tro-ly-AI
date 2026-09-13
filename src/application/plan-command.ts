@@ -1,3 +1,4 @@
+import {boardCommand} from './progress-renderer.ts';
 import { deadlineValue } from '../domain/time.ts';
 import { confirmationAvailable } from '../domain/work.ts';
 import type { Input, Plan, Proposal, Button } from '../domain/work.ts';
@@ -15,6 +16,7 @@ function formatDeadline(value:string){
  return Number.isFinite(time)?new Date(time+7*3600000).toISOString().slice(0,16).replace('T',' '):value;
 }
 export async function planCommand(input: Input, store: WorkReader, now: number, chat?: ChatService): Promise<Plan> {
+  const board=await boardCommand(input,store,now);if(board){board.changes.push({type:'cancel',owner:input.owner});return board;}
   if(input.callback?.startsWith('tool-confirm:')&&chat){
     const result=await chat(input.owner,'',[],input,store,now);
     return typeof result==='string'?{view:{text:result,buttons:[]},changes:[]}:result;
@@ -96,7 +98,7 @@ export async function planCommand(input: Input, store: WorkReader, now: number, 
     const top=store.priorityTasks?await store.priorityTasks(owner):active.slice(0,3);
     const lines=top.map((t,index)=>`${index+1}. ${t.title} — ${t.deadline?formatDeadline(t.deadline):'chưa đặt hạn'}`);
     return {...view(top.length?`Trước mắt cậu xem ${top.length} việc này nhé:\n${lines.join('\n')}`:'Chưa có việc đang làm. Cậu nhắn tên việc và hạn, tớ ghi cho nhé.',
-      [...top.map(t=>[{text:t.title,callback_data:`task:${t.id}`}]),[{text:'Xem toàn bộ',callback_data:'page:0'}]]),changes:[{type:'cancel',owner}]};
+      [...top.map(t=>[{text:t.title,callback_data:`task:${t.id}`}]),[{text:'Xem toàn bộ',callback_data:'board:all:0'}]]),changes:[{type:'cancel',owner}]};
   }
   if (text === '/tasks' || callback?.startsWith('page:')) {
     const rawOffset = callback?.slice(5) ?? '0';
@@ -112,7 +114,7 @@ export async function planCommand(input: Input, store: WorkReader, now: number, 
     const task=await store.task(owner,callback.slice(5));
     if(!task)return view('Không tìm thấy việc này.');
     const buttons:Button[][]=[[{text:'Đặt hạn',callback_data:`deadline:${task.id}`},{text:'Lên lịch',callback_data:`schedule:${task.id}`}]];
-    if(chat&&await store.aiEnabled(owner))buttons.push([{text:'Trò chuyện',callback_data:`focus:${task.id}`}]);
+    if(chat&&await store.aiEnabled(owner))buttons.push([{text:'Sửa bằng chat',callback_data:`focus:${task.id}`}]);
     buttons.push([{text:'Danh sách việc',callback_data:'page:0'}]);
     return {...view(`${task.title}\n${task.status==='completed'?'Đã hoàn thành\n':''}Hạn: ${task.deadline??'Chưa đặt'}`,task.status==='completed'?[[{text:'Danh sách việc',callback_data:'page:0'}]]:buttons),changes:[{type:'cancel',owner}]};
   }

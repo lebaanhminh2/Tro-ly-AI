@@ -8,6 +8,7 @@ import {memoryStatements} from './memory.ts';
 import type {Memory,ConversationTurn} from '../../domain/memory.ts';
 import {renderView} from '../../application/ui-renderer.ts';
 import {D1UiStore} from './ui-store.ts';
+import {progressData,workPage,boardSelection,progressStatements} from './progress-store.ts';
 import {localEvents,eventStatements} from './event-store.ts';
 import {conversationStatements} from './conversation-store.ts';
 
@@ -15,12 +16,15 @@ export class D1WorkStore implements WorkStore {
   private db: Database;
   constructor(db: Database, privateCards = false) { this.db = db; this.cardsEnabled=privateCards; }
   private cardsEnabled:boolean;
+  progress(owner:string){return progressData(this.db,owner);}
+  workPage(owner:string,filter:import('../../domain/progress.ts').WorkFilter,offset:number,now:number){return workPage(this.db,owner,filter,offset,now);}
+  boardSelection(owner:string){return boardSelection(this.db,owner);}
   async priorityTasks(owner:string){
-    return (await query(this.db,"SELECT * FROM tasks WHERE owner=? AND status='active' ORDER BY deadline IS NULL, CASE WHEN deadline_precision='date' THEN julianday(deadline||'T00:00:00+07:00') ELSE julianday(deadline) END,created,id LIMIT 3",owner).all<Task>()).results;
+    return (await query(this.db,"SELECT * FROM tasks WHERE owner=? AND deleted_at IS NULL AND status='active' ORDER BY deadline IS NULL, CASE WHEN deadline_precision='date' THEN julianday(deadline||'T00:00:00+07:00') ELSE julianday(deadline) END,created,id LIMIT 3",owner).all<Task>()).results;
   }
   async findTasks(owner:string,text:string,status:'active'|'completed'|'all',cursor:number){
     if(text.length>160||!Number.isSafeInteger(cursor)||cursor<0||cursor>10000||!['active','completed','all'].includes(status))throw Error('INVALID_QUERY');
-    const rows=(await query(this.db,`SELECT * FROM tasks WHERE owner=? AND (?='all' OR status=?)
+    const rows=(await query(this.db,`SELECT * FROM tasks WHERE owner=? AND deleted_at IS NULL AND (?='all' OR status=?)
       AND (?='' OR instr(lower(title),lower(?))>0) ORDER BY created,id LIMIT 11 OFFSET ?`,owner,status,status,text,text,cursor).all<Task>()).results;
     return {tasks:rows.slice(0,10),nextCursor:rows.length>10?cursor+10:null};
   }
@@ -30,15 +34,15 @@ export class D1WorkStore implements WorkStore {
       SELECT 'session' AS kind,s.id,t.title,s.start_at AS at,s.status FROM sessions s JOIN tasks t ON t.id=s.task_id AND t.owner=s.owner WHERE s.owner=? AND s.start_at>=? AND s.start_at<? AND s.status!='draft'
       UNION ALL SELECT 'reminder',a.id,COALESCE(a.subject,t.title),a.due,a.status FROM task_appointments a LEFT JOIN tasks t ON t.id=a.task_id AND t.owner=a.owner WHERE a.owner=? AND a.due>=? AND a.due<? AND a.status='active'
       UNION ALL SELECT 'event',id,title,start_at,status FROM local_events WHERE owner=? AND status='scheduled'
-      UNION ALL SELECT 'deadline',id,title,CAST((julianday(CASE WHEN deadline_precision='date' THEN deadline||'T00:00:00+07:00' ELSE deadline END)-2440587.5)*86400000 AS INTEGER),status FROM tasks WHERE owner=? AND status='active' AND deadline IS NOT NULL
+      UNION ALL SELECT 'deadline',id,title,CAST((julianday(CASE WHEN deadline_precision='date' THEN deadline||'T00:00:00+07:00' ELSE deadline END)-2440587.5)*86400000 AS INTEGER),status FROM tasks WHERE owner=? AND deleted_at IS NULL AND status='active' AND deadline IS NOT NULL
     ) WHERE at>=? AND at<? ORDER BY at,kind,id LIMIT 11 OFFSET ?`,owner,from,to,owner,from,to,owner,owner,from,to,cursor).all<Record<string,unknown>>()).results;
     return {items:rows.slice(0,10),nextCursor:rows.length>10?cursor+10:null,source:'local',timezone:'Asia/Ho_Chi_Minh'};
   }
   async completionUndo(owner:string,taskId:string,version:number,now:number){return !!await query(this.db,'SELECT task_id FROM task_completion_undo WHERE owner=? AND task_id=? AND expected_version=? AND expires>?',owner,taskId,version,now).first();}
   async conversationTasks(owner:string,text:string){
-    return (await query(this.db,`SELECT * FROM tasks WHERE owner=? AND instr(lower(?),lower(title))>0 ORDER BY length(title) DESC,created DESC LIMIT 20`,owner,text).all<Task>()).results;
+    return (await query(this.db,`SELECT * FROM tasks WHERE owner=? AND deleted_at IS NULL AND instr(lower(?),lower(title))>0 ORDER BY length(title) DESC,created DESC LIMIT 20`,owner,text).all<Task>()).results;
   }
-  async sameTitleTasks(owner:string,title:string){return (await query(this.db,'SELECT * FROM tasks WHERE owner=? AND title=? ORDER BY created LIMIT 2',owner,title).all<Task>()).results;}
+  async sameTitleTasks(owner:string,title:string){return (await query(this.db,'SELECT * FROM tasks WHERE owner=? AND deleted_at IS NULL AND title=? ORDER BY created LIMIT 2',owner,title).all<Task>()).results;}
   conversationPending(owner:string,now:number){return query(this.db,'SELECT id,kind,draft,expires FROM conversation_pending WHERE owner=? AND expires>?',owner,now).first<import('../../domain/conversation.ts').PendingConversation>();}
   async prepareUi(lease:Lease,now:number){
     if(!this.cardsEnabled)return;
@@ -94,8 +98,8 @@ export class D1WorkStore implements WorkStore {
   session(owner:string,id:string){return query(this.db,'SELECT * FROM sessions WHERE owner=? AND id=?',owner,id).first<Session>();}
   sessionInput(owner:string){return query(this.db,'SELECT task_id,expires FROM session_input WHERE owner=?',owner).first<{task_id:string;expires:number}>();}
   preferences(owner:string){return query(this.db,'SELECT * FROM reminder_preferences WHERE owner=?',owner).first<Preferences>();}
-  task(owner: string, id: string) { return query(this.db, 'SELECT * FROM tasks WHERE owner=? AND id=?', owner, id).first<Task>(); }
-  async tasks(owner: string, offset: number) { return (await query(this.db, 'SELECT * FROM tasks WHERE owner=? ORDER BY created,id LIMIT 10 OFFSET ?', owner, offset).all<Task>()).results; }
+  task(owner: string, id: string) { return query(this.db, 'SELECT * FROM tasks WHERE owner=? AND deleted_at IS NULL AND id=?', owner, id).first<Task>(); }
+  async tasks(owner: string, offset: number) { return (await query(this.db, 'SELECT * FROM tasks WHERE owner=? AND deleted_at IS NULL ORDER BY created,id LIMIT 10 OFFSET ?', owner, offset).all<Task>()).results; }
   proposal(owner: string, id: string) { return query(this.db, 'SELECT * FROM proposals WHERE owner=? AND id=?', owner, id).first<Proposal>(); }
   selection(owner: string) { return query(this.db, 'SELECT * FROM selections WHERE owner=?', owner).first<Selection>(); }
   async result(owner: string, id: number): Promise<ViewResult | null> {
@@ -128,7 +132,13 @@ export class D1WorkStore implements WorkStore {
     const q=(sql:string,...args:(string|number|null)[])=>query(this.db,sql,...args);
     const statements:Statement[]=[];
     for (const change of changes) {
-      if(change.type==='event-update'){
+      if(change.type==='task-rename'){
+        if(change.owner!==owner)throw Error('OWNER_MISMATCH');
+        statements.push(q('INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM tasks WHERE owner=? AND id=? AND version=? AND deleted_at IS NULL) THEN 1 ELSE 0 END',owner,change.taskId,change.expectedVersion));
+        statements.push(q('UPDATE tasks SET title=?,version=version+1 WHERE owner=? AND id=?',change.title,owner,change.taskId));
+      }else if(change.type==='progress-record'||change.type==='board-select'||change.type==='tasks-delete'){
+        statements.push(...progressStatements(this.db,owner,change));
+      }else if(change.type==='event-update'){
         if(change.owner!==owner)throw Error('OWNER_MISMATCH');
         statements.push(q("INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM local_events WHERE owner=? AND id=? AND version=?) THEN 1 ELSE 0 END",owner,change.id,change.expectedVersion));
         statements.push(q("UPDATE local_events SET start_at=?,end_at=?,status=?,version=version+1 WHERE owner=? AND id=?",change.start,change.end,change.cancelled?'cancelled':'scheduled',owner,change.id));
@@ -160,6 +170,7 @@ export class D1WorkStore implements WorkStore {
         if(change.operation==='reopen')statements.push(q('INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM task_completion_undo WHERE owner=? AND task_id=? AND expected_version=? AND expires>?) THEN 1 ELSE 0 END',owner,change.taskId,change.expectedVersion,now));
         statements.push(q('UPDATE tasks SET status=?,version=version+1 WHERE owner=? AND id=?',change.operation==='complete'?'completed':'active',owner,change.taskId));
         if(change.operation==='complete'){
+          statements.push(q('UPDATE task_completions SET completed_at=? WHERE owner=? AND task_id=?',now,owner,change.taskId));
           statements.push(q('INSERT INTO task_completion_undo(owner,task_id,expected_version,expires) VALUES(?,?,?,?) ON CONFLICT(owner,task_id) DO UPDATE SET expected_version=excluded.expected_version,expires=excluded.expires',owner,change.taskId,change.expectedVersion+1,now+900000));
           statements.push(q("UPDATE task_appointments SET status='cancelled' WHERE owner=? AND task_id=? AND status='active'",owner,change.taskId));
           statements.push(q("UPDATE reminders SET status='cancelled' WHERE owner=? AND status IN ('pending','queued') AND session_id IN (SELECT id FROM sessions WHERE owner=? AND task_id=?)",owner,owner,change.taskId));
@@ -236,7 +247,7 @@ export class D1WorkStore implements WorkStore {
       const nextView={...plan.view,silent:false};
       if(inputContinues&&!nextView.buttons.length)nextView.buttons=[[{text:'Hủy',callback_data:'cancel-input'}]];
       statements.push(...ui.update(lease.ui.card,lease.ui.action,nextView,nextView.buttons.length?'active':'completed',now));
-    }else if(this.cardsEnabled&&!lease.uiStale&&plan.view.buttons.length){
+    }else if(this.cardsEnabled&&!lease.uiStale&&(plan.view.buttons.length||plan.view.photo)){
       const created=ui.create(owner,input.chat,plan.view,now,now+900000);renderedCard=created.id;
       statements.push(...created.statements);
     }else if(!plan.view.silent&&!lease.uiStale)statements.push(q(`INSERT INTO outbox(id,payload,available) SELECT ?,?,? FROM command_inbox WHERE owner=? AND update_id=? AND delivery=1`,

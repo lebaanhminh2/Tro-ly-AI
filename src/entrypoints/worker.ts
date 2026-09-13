@@ -1,3 +1,5 @@
+import {boardCommand} from '../application/progress-renderer.ts';
+import {unlockAchievements} from '../adapters/d1/progress-store.ts';
 import { configured } from '../config/env.ts';
 import type { Env } from '../config/env.ts';
 import { incoming, message } from '../adapters/telegram/api.ts';
@@ -48,6 +50,15 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
         const client=new Gemini({apiKey:env.GEMINI_API_KEY!,model:env.GEMINI_MODEL!,transport:(url,options)=>transport(url,{...options,redirect:'manual'}),timeoutMs:5000});
         return (await client.generateTools(contents,TOOL_PERSONA,allowTools)).output;
       },()=>clock.now());
+      if(journal.requestedView){
+        const args=journal.requestedView.args;
+        const callback=args.screen==='tasks'?'board:'+String(args.filter)+':0':args.screen==='achievements'?'progress:achievements':'progress:chart';
+        const view=await boardCommand({...lease.input,text:undefined,callback},reader,clock.now());
+        if(view){
+          if(reply.trim()&&reply.length<250){view.view.intro=reply;view.view.text=reply+'\n\n'+view.view.text;}
+          return view;
+        }
+      }
       const awaiting=await journal.pending(owner,clock.now());
       if(awaiting&&awaiting.id===`pending_${owner}_${lease.input.updateId}`)return {view:{text:reply,buttons:[[{text:'Xác nhận',callback_data:`tool-confirm:y:${awaiting.id}`},{text:'Thôi',callback_data:`tool-confirm:n:${awaiting.id}`}]]},changes:[]};
       return reply;
@@ -59,6 +70,7 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
       if (!configured(env)) return;
       const store = new D1WorkStore(env.DB,cardsEnabled);
       await expireMemory(env.DB,clock.now());
+      await unlockAchievements(env.DB,env.TELEGRAM_USER_ID,clock.now());
       await recoverInterrupted(env.DB, clock.now()); // Handles only legacy prototype updates and delivery leases.
       for (const owner of await store.pendingOwners()) {
         if (owner === env.TELEGRAM_USER_ID) await processInbox(store, owner, clock, runtimeChat(env),4);
@@ -106,7 +118,8 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
         if (!cardsEnabled && env.DELIVERY_MODE === 'outbox' && input.callbackId) {
           await query(env.DB, 'INSERT OR IGNORE INTO outbox(id,payload,available) VALUES(?,?,?)', `ack:${input.owner}:${input.updateId}`,
             JSON.stringify({ method: 'answerCallbackQuery', callback_query_id: input.callbackId }),clock.now()).run();
-          await flushOutbox(env, transport, clock.now());
+          await unlockAchievements(env.DB,input.owner,clock.now());
+        await flushOutbox(env, transport, clock.now());
         }
         await processInbox(store, input.owner, clock, runtimeChat(env),4);
         await flushOutbox(env, transport, clock.now());

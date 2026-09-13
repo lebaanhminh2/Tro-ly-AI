@@ -7,6 +7,7 @@ export type ToolTurnPorts={
  model:(step:number,contents:ModelContent[],allowTools:boolean)=>Promise<ModelStep>;
  execute:(step:number,call:ToolCall)=>Promise<ToolOutcome>;
  commit:(step:number,call:ToolCall,outcome:ToolOutcome)=>Promise<Record<string,unknown>>;
+ view?:(call:ToolCall)=>void;
  batch?:(calls:ToolCall[],message:string)=>Promise<string>;
 };
 export async function runToolTurn(initial:ModelContent[],ports:ToolTurnPorts):Promise<string>{
@@ -19,23 +20,28 @@ export async function runToolTurn(initial:ModelContent[],ports:ToolTurnPorts):Pr
    if(code==='AI_TRIAL_ENDED')return 'Đợt dùng thử AI đã hết thời hạn cấu hình. Các lời nhắc đã lưu vẫn chạy; cần mở lại thời hạn trước khi chat tiếp.';
    return fallback;
   }
+  const unfilteredCalls=response.calls;
+  const views=response.calls.filter(call=>call.name==='show_work');
+  if(views.length>1)return fallback;
+  if(views.length&&ports.view)ports.view(views[0]!);
+  response={...response,calls:response.calls.filter(call=>call.name!=='show_work')};
   const replies=response.calls.filter(call=>call.name==='respond');
   if(replies.length>1)return 'Tớ chưa xử lý được lượt này, cậu nhắn lại giúp tớ nhé.';
   if(replies.length){
    const args=replies[0]!.args;
    if(Object.keys(args).length!==1||typeof args.message!=='string'||!args.message.trim()||args.message.length>4000)return fallback;
-   const originalCalls=response.calls;
-   const mapped=originalCalls.filter(call=>call.name!=='respond').map(call=>{
+   const originalCalls=unfilteredCalls;
+   const mapped=originalCalls.filter(call=>call.name!=='respond'&&call.name!=='show_work').map(call=>{
     const target=call.args.task_id;
     if(typeof target!=='string'||!/^@\d+$/.test(target))return call;
     const index=Number(target.slice(1));
     if(index>=originalCalls.length||originalCalls[index]!.name!=='create_task')return call;
-    const shifted=originalCalls.slice(0,index).filter(c=>c.name!=='respond').length;
+    const shifted=originalCalls.slice(0,index).filter(c=>c.name!=='respond'&&c.name!=='show_work').length;
     return {...call,args:{...call.args,task_id:'@'+shifted}};
    });
    response={...response,text:args.message,calls:mapped};
   }
-  if(!response.calls.length)return response.text;
+  if(!response.calls.length)return response.text||'Đây nhé cậu.';
   const writes=response.calls.filter(call=>!isReadTool(call.name));
   if(writes.length>1&&response.calls.length===writes.length&&ports.batch){
    try{return await ports.batch(writes,response.text);}catch{return 'Tớ chưa lưu được nhóm thay đổi này. Chưa thực hiện thêm; mình kiểm tra lại nhé.';}
@@ -44,7 +50,7 @@ export async function runToolTurn(initial:ModelContent[],ports:ToolTurnPorts):Pr
   if(writes.length>1||(writes.length&&response.calls.length>1)||wrote)return wrote?fallback:'Cậu đang yêu cầu nhiều thay đổi. Mình xử lý từng việc để tránh làm nhầm nhé.';
   if(reads+response.calls.filter(call=>isReadTool(call.name)).length>2)return 'Tớ cần thu hẹp việc đang tìm. Cậu nói rõ tên hoặc khoảng ngày giúp tớ nhé.';
   contents.push(response.content);
-  const results:Record<string,unknown>[]=replies.map(call=>toolResponse(call,{status:'deferred_until_read_result'}));
+  const results:Record<string,unknown>[]=[...replies,...views].map(call=>toolResponse(call,{status:'deferred_until_read_result'}));
   for(const call of response.calls){
    if(isReadTool(call.name))reads++;
    let outcome:ToolOutcome;

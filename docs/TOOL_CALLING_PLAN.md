@@ -5,6 +5,8 @@ Checkpoint triển khai và live QA xem HANDOFF; đã có bản để user nghi�
 
 Checkpoint rà soát2026-09-13: đã deploy sửa /today phân trang event+session, priority task ngoài20, bảo toàn @index khi respond đứng trước, giới hạn summary theo snapshot. 88+25 tests và assistant-flow13 đạt. Còn giới hạn một nhóm confirmation hiện hành, planner không tự chạy AI nền; nghiệm thu người dùng chưa có.
 
+Bổ sung đã duyệt và triển khai: board5 mục, filter/select/review/soft-delete, PNG7/28 ngày, streak/achievement, completion/milestone DB, Sửa bằng chat. Checkpoint/ngân sách mới nhất trong HANDOFF, không dùng kế hoạch cũ để sửa migration đã áp.
+
 ## 1. Đích và bằng chứng rà soát
 - Giữ Telegram/Workers/D1/Gemini free/cron/outbox. Bỏ Google; không đổi provider/framework.
 - Một lượt có thể đồng thời trò chuyện, làm nhiều việc rõ và hỏi phần còn thiếu: message + actions_now[] + pending[].

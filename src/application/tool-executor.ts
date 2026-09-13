@@ -8,6 +8,11 @@ export type ToolOutcome={result:Record<string,unknown>;changes:Change[];fallback
 export async function executeTool(call:ToolCall,store:WorkReader,owner:string,updateId:number,now:number,confirmed=false,actionIndex?:number):Promise<ToolOutcome>{
  validateTool(call,now);
  const a=call.args;
+ if(call.name==='show_work')throw Error('VIEW_IS_NOT_A_MUTATION');
+ if(call.name==='record_progress'){
+  const task=await store.task(owner,String(a.task_id));if(!task||task.status==='completed'||task.version!==a.expected_version)throw Error('TASK_NOT_AVAILABLE');
+  return {result:{status:'planned'},fallback:'Thêm một bước rồi này, giỏi quá :>',changes:[{type:'progress-record',owner,id:`progress_${owner}_${updateId}_${actionIndex??0}`,taskId:task.id,content:String(a.content),created:now,updateId}]};
+ }
  if(call.name==='respond')throw Error('REPLY_IS_NOT_A_MUTATION');
  const suffix=actionIndex===undefined?'':`_${actionIndex}`;
  if(call.name==='update_event'){
@@ -106,6 +111,9 @@ export async function executeTool(call:ToolCall,store:WorkReader,owner:string,up
  }
  const patch=a.patch as Record<string,unknown>;
  const changes:Change[]=[];
+ if('title' in patch&&Object.keys(patch).length===1){
+  return {result:{status:'planned'},fallback:`Tớ đã đổi tên thành “${patch.title}”.`,changes:[{type:'task-rename',owner,taskId:task.id,expectedVersion:task.version,title:String(patch.title)}]};
+ }
  if('status' in patch&&patch.status!==task.status){
   if(patch.status==='active'&&!await store.completionUndo?.(owner,task.id,task.version,now))return {result:{status:'rejected',reason:'undo_not_available'},changes:[],fallback:'Việc đã thay đổi hoặc hết thời hạn hoàn tác.'};
   if('deadline' in patch)return {result:{status:'needs_confirmation',reason:'split_status_and_deadline'},changes:[],fallback:'Mình đổi trạng thái hay hạn trước nhé?'};
@@ -113,5 +121,6 @@ export async function executeTool(call:ToolCall,store:WorkReader,owner:string,up
  }else if('deadline' in patch){
   changes.push({type:'conversation-task',owner,updateId,taskId:task.id,title:null,created:now,deadline:patch.deadline as import('../domain/conversation.ts').Deadline|null,expectedVersion:task.version});
  }
+ if('title' in patch)changes.push({type:'task-rename',owner,taskId:task.id,expectedVersion:task.version+changes.length,title:String(patch.title)});
  return {result:{status:changes.length?'planned':'unchanged',task_id:task.id,patch},changes,fallback:changes.length?`Tớ đã cập nhật “${task.title}”.`:'Việc đã ở trạng thái đó rồi nhé.'};
 }

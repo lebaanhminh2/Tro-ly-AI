@@ -2,6 +2,8 @@ import {query, type Database, type Statement} from './database.ts';
 import {renderView} from '../../application/ui-renderer.ts';
 import {actionAvailable, type Card, type CardAction, type CardStatus} from '../../domain/ui.ts';
 import type {View} from '../../domain/work.ts';
+import {progressData} from './progress-store.ts';
+import {progressView} from '../../application/progress-renderer.ts';
 import {deliver} from '../telegram/api.ts';
 
 type UiDelivery = {id: string; card_id: string; revision: number; state: string; attempts: number; claim_token: string | null};
@@ -159,6 +161,17 @@ export class D1UiStore {
 
   update(card: Card, action: CardAction, view: View, status: CardStatus, now: number): Statement[] {
     if (action.card_id !== card.id || action.owner !== card.owner || action.revision !== card.revision) throw Error('CARD_ACTION_MISMATCH');
+    const previous=JSON.parse(card.view_json) as View;
+    if(Boolean(previous.photo)!==Boolean(view.photo)){
+      const replacement=this.create(card.owner,card.chat_id,view,now,Math.max(card.expires,now+60000));
+      return [
+        query(this.db,"INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM ui_actions a JOIN ui_cards c ON c.id=a.card_id WHERE a.token=? AND a.consumed=0 AND c.id=? AND c.revision=? AND c.rendered_revision=c.revision AND c.status='active' AND c.expires>?) THEN 1 ELSE 0 END",action.token,card.id,card.revision,now),
+        query(this.db,"UPDATE ui_cards SET status='expired' WHERE id=?",card.id),
+        query(this.db,'UPDATE ui_actions SET consumed=1 WHERE card_id=?',card.id),
+        query(this.db,'INSERT OR IGNORE INTO outbox(id,payload,available) VALUES(?,?,?)','clear:'+card.id+':'+card.revision,JSON.stringify({method:'editMessageReplyMarkup',chat_id:card.chat_id,message_id:card.message_id,reply_markup:{inline_keyboard:[]}}),now),
+        ...replacement.statements,query(this.db,'DELETE FROM transaction_guard')
+      ];
+    }
     const revision = card.revision + 1, encoded = this.encode(card.id,card.owner,revision,view);
     return [
       query(this.db, `INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(
@@ -189,10 +202,15 @@ export class D1UiStore {
     const started = await query(this.db, `UPDATE ui_deliveries SET state='sending',attempts=attempts+1,claim_token=? WHERE id=? AND state='pending'
       AND EXISTS(SELECT 1 FROM ui_cards WHERE id=? AND lease_token=? AND revision=ui_deliveries.revision)`,token,job.id,id,token).run();
     if (!started.meta.changes) return null;
-    const view = JSON.parse(card.view_json) as View;
+    let view = JSON.parse(card.view_json) as View;
+    if(view.dashboard){
+      const fresh=await progressView(await progressData(this.db,owner),now,view.dashboard==='achievements');
+      view={...fresh,intro:view.intro,text:(view.intro?view.intro+'\n\n':'')+fresh.text,buttons:view.buttons};
+      await query(this.db,'UPDATE ui_cards SET view_json=? WHERE id=? AND owner=? AND revision=? AND lease_token=?',JSON.stringify(view),id,owner,card.revision,token).run();
+    }
     return {job,card,token,payload: {
-      method: card.message_id === null ? 'sendMessage' : 'editMessageText', chat_id: card.chat_id,
-      ...(card.message_id === null ? {} : {message_id: card.message_id}),text:view.text,reply_markup:{inline_keyboard:view.buttons}
+      method: card.message_id === null ? (view.photo?'sendPhoto':'sendMessage') : (view.photo?'editMessageMedia':'editMessageText'), chat_id: card.chat_id,
+      ...(card.message_id === null ? {} : {message_id: card.message_id}),...(view.photo?{photo_base64:view.photo,...(card.message_id===null?{caption:view.text}:{media:{type:'photo',media:'attach://chart',caption:view.text}})}:{text:view.text}),reply_markup:{inline_keyboard:view.buttons}
     }};
   }
 

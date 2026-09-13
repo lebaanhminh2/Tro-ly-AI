@@ -64,3 +64,9 @@ Yêu cầu rõ, nội bộ và có thể hoàn tác thì tự làm; được th�
 Dữ liệu công việc không nhạy cảm nên không xây policy nặng. Vẫn giữ owner authentication, bảo vệ secret/API key, schema action, idempotency, transaction và không cho LLM chạy SQL/URL tùy ý.
 
 Exact reminder do scheduler/outbox gửi, không phụ thuộc Gemini đang còn quota. Mỗi hẹn có một nhắc chính và tối đa một follow-up sau 15 phút nếu chưa có phản hồi liên quan; giới hạn tính theo từng task/reminder, không theo ngày.
+
+## Bảng và động lực
+- Xem toàn bộ → bảng DB5 việc/trang, lọc; không AI dump danh sách dài. Chọn nhiều → review → xác nhận xóa, hủy nhắc liên quan. Soft-delete giữ thành tích; sửa tên/hạn qua nút focus + chat.
+- Tiến bộ: PNG backend vẽ số hoàn thành7 ngày, hoạt động28 ngày; streak tính ngày VN có completion/mốc nhỏ, không tính nhắn tin/đặt lịch.
+- Thành tựu1/10/30 task và3/7/14/30 ngày; mở khóa một lần và giữ khi chuỗi đứt. Không dữ liệu lịch sử thì không suy ngược từ status.
+- Lời khen cute/thân mật kiểu bạn gái theo mốc thật, không dùng tình cảm gây áp lực. Gọi model chỉ khi trò chuyện, không khi xem/chuyển bảng.
