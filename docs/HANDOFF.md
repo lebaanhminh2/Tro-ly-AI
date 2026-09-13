@@ -1,6 +1,13 @@
 # Tiếp tục từ đây
 2026-09-13. User yêu cầu làm liên tục đến nghiệm thu Mini App + lịch + tu luyện. Đây là checkpoint đang làm, KHÔNG hoàn tất, không xin lại scope đã duyệt.
 
+## Tối ưu lượt gần nhất
+- Context tải song song các truy vấn độc lập (không đổi schema/không gọi thêm model); 13 assistant-flow tests +8 planner/API tests và typecheck đạt.
+- ASSETS mode cung cấp task_codes gồm mã cha/con + UUID; model được nhắc không hoàn thành cha thay bước con. Chưa có tool mutate step qua chat, UI API đã có.
+- Bootstrap trả resting thật; live UI không còn nút chỉ đổi resting ở browser. Không bật ASSETS/deploy/cloud trong lượt này.
+- Preview http://127.0.0.1:4173 còn trả200 trên máy local, user có thể review UI; không phải sản phẩm live.
+- Token user sắp hết: ưu tiên gates phát hành và lưu checkpoint, không mở thêm feature hoặc ngụy trang mock thành live.
+
 ## Tiến độ lượt mới nhất
 - Morning reply kiểm owner + outbox sent message ID + ngày sinh hoạt hiện tại/asleep; worker và executor nhận cùng quyền phiên lịch. Tin hôm qua/foreign không được replan.
 - Vé task hoàn thành qua chat: syncTaskTickets sau processInbox và cron khi ASSETS bật; migration0015 backfill awards cho task completed cũ để không phát vé hồi tố. Test chat/reopen không award2 lần đạt.

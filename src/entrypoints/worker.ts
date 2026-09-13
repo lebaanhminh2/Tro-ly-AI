@@ -39,8 +39,11 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
       const [context,pending]=await Promise.all([buildContext(reader,owner,text||'Xác nhận bằng nút',lease.input.receivedAt??clock.now()),journal.pending(owner,clock.now())]);
       if(confirmation&&(!pending||pending.id!==confirmation[2]))return 'Đề xuất này đã cũ hoặc đã được xử lý.';
       const scheduling=/^\/lich(?:\s|$|@)/i.test(lease.input.text??'')||(env.ASSETS?await reader.isMorningReply?.(owner,input?.replyToMessageId,clock.now())??false:false);
+      const hierarchy=env.ASSETS?await store.hierarchy(owner):[];
+      const requestedCodes=new Set([...text.matchAll(/#(\d+)(?:\.(\d+))?/g)].map(m=>Number(m[1])));
+      const relevantHierarchy=hierarchy.filter(t=>requestedCodes.has(t.public_code)||context.tasks.some(c=>c.id===t.id));
       const schedule=env.ASSETS?await reader.scheduleContext?.(owner,clock.now())??null:null;
-      const initial=[{role:'user' as const,parts:[{text:JSON.stringify({contextData:{...JSON.parse(context.context),schedule},pending,replyToMessageId:input?.replyToMessageId??null})}]},
+      const initial=[{role:'user' as const,parts:[{text:JSON.stringify({contextData:{...JSON.parse(context.context),schedule,task_codes:relevantHierarchy.map(t=>({id:t.id,code:'#'+t.public_code,title:t.title,version:t.version,status:t.status,steps:t.steps.map(s=>({id:s.id,code:'#'+t.public_code+'.'+s.step_code,title:s.title,status:s.status,version:s.version}))}))},pending,replyToMessageId:input?.replyToMessageId??null})}]},
         ...context.turns.map(turn=>({role:turn.role,parts:[{text:turn.text}]}))];
       const snapshotReader=Object.create(reader) as typeof reader;
       const summaryRequest=JSON.parse(context.context).summary_request as {source_turns:{id:number;user:string;assistant:string}[]}|null;

@@ -3,7 +3,7 @@ export function renderToday(ui,state){
  const root=el('section');
  root.append(heading('Một ngày, từng bước.',state.live?new Date(state.serverNow).toLocaleDateString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',weekday:'long',day:'numeric',month:'long'}):'Chủ nhật, 13 tháng 9 · Dữ liệu mẫu'));
  if(state.resting){
-  const rest=card();rest.append(el('h2','Nghỉ ngơi thôi, cậu 🌙'),el('p','Không gửi nhắc chủ động. Cậu vẫn chỉnh lịch và công việc bình thường.','subtitle'),button('Hoạt động lại',()=>{state.resting=false;render();},'secondary'));root.append(rest);
+  const rest=card();rest.append(el('h2','Nghỉ ngơi thôi, cậu 🌙'),el('p','Không gửi nhắc chủ động. Cậu vẫn chỉnh lịch và công việc bình thường.','subtitle'),...(state.live?[]:[button('Hoạt động lại',()=>{state.resting=false;render();},'secondary')]));root.append(rest);
  }
  const next=state.tasks.find(t=>!t.done);
  if(next){

@@ -1,8 +1,11 @@
 import type {WorkReader} from '../ports/work-store.ts';
 type Turn={role:'user'|'model';text:string};
 export async function buildContext(store:WorkReader,owner:string,text:string,now:number){
- const [focus,memories,history,summary,pending]=await Promise.all([store.focus(owner,now),store.memories(owner,now),store.history(owner,now),store.summary?.(owner)??null,store.clarifications?.(owner,now)??[]]);
- const progress=await store.progress?.(owner);
+ const [focus,memories,history,summary,pending,progress,priority,active,events,appointments,blocks]=await Promise.all([
+  store.focus(owner,now),store.memories(owner,now),store.history(owner,now),store.summary?.(owner)??null,store.clarifications?.(owner,now)??[],store.progress?.(owner),
+  store.priorityTasks?.(owner)??[],store.findTasks?.(owner,'','active',0)??null,
+  store.events?.(owner,now-86400000,now+7*86400000)??[],store.appointmentContext?.(owner,now)??[],store.sessions(owner,now-86400000,now+86400000)
+ ]);
  const progressContext=progress?{recent_steps:progress.milestones.slice(0,3),recent_completed:progress.completions.slice(0,3),achievements:progress.achievements}:null;
  const source=await store.unsummarized?.(owner,now,summary?.covered_through??-1)??history;
  const summarySource:typeof source=[];
@@ -13,13 +16,10 @@ export async function buildContext(store:WorkReader,owner:string,text:string,now
   summarySource.push(turn);sourceSize+=size;
  }
  const [focused,mentioned]=await Promise.all([focus?store.task(owner,focus):Promise.resolve(null),store.conversationTasks?.(owner,text)??Promise.resolve([])]);
- const priority=await store.priorityTasks?.(owner)??[];
  const candidates=[...mentioned,...priority,...(focused?[focused]:[])];
- const active=store.findTasks?await store.findTasks(owner,'','active',0):null;
  const extra=active?.nextCursor!==null&&active?.nextCursor!==undefined?await store.findTasks!(owner,'','active',active.nextCursor):null;
  const tasks=[...new Map([...candidates,...(active?.tasks??await store.tasks(owner,0)),...(extra?.tasks??[])].map(t=>[t.id,t])).values()];
  const nextTaskCursor=extra?extra.nextCursor:active?.nextCursor??null;
- const [events,appointments,blocks]=await Promise.all([store.events?.(owner,now-86400000,now+7*86400000)??[],store.appointmentContext?.(owner,now)??[],store.sessions(owner,now-86400000,now+86400000)]);
  const turns:Turn[]=history.flatMap(h=>[{role:'user' as const,text:h.user_text},{role:'model' as const,text:h.assistant_text}]);
  turns.push({role:'user',text});
  const localNow=new Date(now+7*3600000).toISOString().slice(0,19)+'+07:00';

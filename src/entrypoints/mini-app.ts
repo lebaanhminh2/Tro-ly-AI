@@ -28,7 +28,7 @@ export async function miniAppApi(request:Request,env:Env,now=Date.now()):Promise
     healthy.read(owner),work.hierarchy(owner),rules.rules(owner),
     query(env.DB,'SELECT start_minutes,sleep_minutes,version FROM schedule_settings WHERE owner=?',owner).first(),work.progress(owner),work.sessions(owner,now-86400000,now+86400000),work.events(owner,now-86400000,now+7*86400000),new ScheduleStore(env.DB).ensureDay(owner,now)
    ]);
-   return json({now,account,tasks,reminders,settings,progress,sessions,events,day,realms:REALMS,loot:LOOT,charms:CHARMS,needsSetup:!settings});
+   return json({now,account,tasks,reminders,settings,progress,sessions,events,day,resting:await new ScheduleStore(env.DB).isResting(owner,now),realms:REALMS,loot:LOOT,charms:CHARMS,needsSetup:!settings});
   }
   if(request.method!=='POST'||!['/api/cultivation','/api/tasks','/api/settings','/api/reminders','/api/schedule','/api/reminder-instance','/api/tasks-delete','/api/session'].includes(url.pathname))return json({error:'NOT_FOUND'},404);
   // Read a bounded body, including chunked requests.
