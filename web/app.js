@@ -1,4 +1,4 @@
-import {connectLive,liveMutation,createDemo,realms,loot,talismans,demoDraw,demoFuse,demoBreakthrough,demoCompleteTask} from './api.js';
+import {applyTheme,setThemePreference,themePreference,connectLive,liveMutation,createDemo,realms,loot,talismans,demoDraw,demoFuse,demoBreakthrough,demoCompleteTask} from './api.js';
 import {renderToday} from './views/today.js';
 import {renderReminders} from './views/reminders.js';
 import {renderAchievements} from './views/achievements.js';
@@ -6,14 +6,15 @@ import {renderAchievements} from './views/achievements.js';
 const state=createDemo(),content=document.querySelector('#content'),sheet=document.querySelector('#sheet'),sheetContent=document.querySelector('#sheet-content');
 let toastTimer;
 let saving=false;
+applyTheme();
 async function performLive(path,input){
  if(saving)return null;saving=true;
- const controls=[...document.querySelectorAll('button')];controls.forEach(b=>b.disabled=true);
+ const controls=[...document.querySelectorAll('button')].map(b=>({button:b,disabled:b.disabled}));controls.forEach(({button:b})=>b.disabled=true);
  try{const data=await liveMutation(path,input);Object.assign(state,data);sheet.close();render();const result=data.result?.result??data.result;
   const labels={qi1:'+1 tu vi',qi2:'+2 tu vi',basic:'Phá Cảnh Phù sơ cấp',keepsake:'Tín vật Minh Anh',heart:'Hộ Tâm Phù',peace:'An Tâm Phù'};
   toast(result?.reward?'Nhận '+(labels[result.reward]??result.reward):typeof result?.success==='boolean'?(result.success?'Thành công ✦':'Chưa thành công. Kết quả đã lưu, không thử lại trong cùng lượt.'):result?.protected?'Đã kích hoạt bảo vệ cho hôm nay.':'Đã lưu.');return result;}
  catch(error){toast(error.message||'Chưa lưu được, kiểm tra lại nhé.');return null;}
- finally{saving=false;controls.forEach(b=>b.disabled=false);render();}
+ finally{saving=false;controls.forEach(({button:b,disabled})=>{if(b.isConnected)b.disabled=disabled;});render();}
 }
 state.live=location.pathname.startsWith('/app/');
 if(state.live){state.tasks=[];state.reminders=[];state.cultivation={...state.cultivation,qi:0,totalEarned:0,rank:0,highestRank:0,streak:0,tickets:0,inventory:{basic:0,middle:0,high:0,supreme:0,heart:0,peace:0,keepsake:0}};}
@@ -22,8 +23,9 @@ function button(text,action,className='secondary'){const b=el('button',text,clas
 function card(extra=''){return el('div',undefined,'card '+extra);}
 function heading(title,description){const box=el('div',undefined,'heading'),group=el('div');group.append(el('h1',title),el('p',description,'subtitle'));box.append(group);return box;}
 function toast(message){const node=document.querySelector('#toast');clearTimeout(toastTimer);node.textContent=message;node.classList.add('visible');toastTimer=setTimeout(()=>node.classList.remove('visible'),3500);}
-function openSheet(title){sheetContent.replaceChildren();const row=el('div',undefined,'sheet-title-row'),h=el('h2',title);h.id='sheet-title';row.append(h,button('✕',()=>sheet.close(),'icon-button'));sheetContent.append(row);if(!sheet.open)sheet.showModal();}
-function field(label,type,value='',required=true){const wrap=el('label',label,'form-field'),input=el('input');input.type=type;input.value=value;input.required=required;wrap.append(input);return {wrap,input};}
+function icon(name){const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('aria-hidden','true');svg.setAttribute('fill','none');svg.setAttribute('stroke','currentColor');svg.setAttribute('stroke-width','1.8');svg.setAttribute('stroke-linecap','round');const path=document.createElementNS(svg.namespaceURI,'path');path.setAttribute('d',name==='close'?'M6 6l12 12M18 6L6 18':'M9 3h6l1 3 3 1 2 5-2 5-3 1-1 3H9l-1-3-3-1-2-5 2-5 3-1z M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0');svg.append(path);return svg;}
+function openSheet(title){sheetContent.replaceChildren();const row=el('div',undefined,'sheet-title-row'),h=el('h2',title);h.id='sheet-title';h.tabIndex=-1;const close=button('',()=>sheet.close(),'icon-button');close.setAttribute('aria-label','Đóng');close.append(icon('close'));row.append(h,close);sheetContent.append(row);if(!sheet.open)sheet.showModal();h.focus({preventScroll:true});}
+function field(label,type,value='',required=true){const wrap=el('label',label,'form-field'),input=el('input');input.type=type;input.value=value;input.required=required;wrap.append(input);if(type==='time'){input.step='60';const hint=el('span','','clock-hint');const update=()=>{if(!input.value){hint.textContent='Chọn giờ · định dạng 24 giờ';return;}const [h,m]=input.value.split(':').map(Number);hint.textContent=input.value+' — '+(h%12||12)+' giờ'+(m?' '+m+' phút':'')+' '+(h<12?'sáng':h<18?'chiều':'tối');};input.addEventListener('input',update);update();wrap.append(hint);}return {wrap,input};}
 function empty(title,text,action,label){const c=card('empty');c.append(el('span','✧','empty-symbol'),el('h2',title),el('p',text),button(label,action,'primary'));return c;}
 function confirm(title,description,action){openSheet(title);sheetContent.append(el('p',description,'hint'));const actions=el('div',undefined,'actions');actions.append(button('Xác nhận',()=>{sheet.close();action();},'primary'),button('Quay lại',()=>sheet.close(),'secondary'));sheetContent.append(actions);}
 function toggleTask(task){
@@ -57,15 +59,26 @@ function openTask(task){
 function confirmDelete(){if(state.live){const items=state.tasks.filter(t=>state.selected.has(t.code));confirm('Xóa '+items.length+' công việc?',items.map(t=>'#'+t.code+' '+t.title).join(' · ')+' — lời nhắc liên quan sẽ được hủy.',async()=>{const result=await performLive('tasks-delete',{items:items.map(t=>({id:t.id,version:t.version})),confirm:true});if(result){state.selected.clear();state.selecting=false;render();}});return;}const selected=state.tasks.filter(t=>state.selected.has(t.code));confirm('Xóa '+selected.length+' công việc?',selected.map(t=>'#'+t.code+' '+t.title).join(' · ')+' — thao tác này chỉ tác động dữ liệu demo.',()=>{state.tasks=state.tasks.filter(t=>!state.selected.has(t.code));state.selected.clear();state.selecting=false;render();toast('Đã xóa trong bản mẫu. Tải lại trang để khôi phục.');});}
 function openReminder(reminder){
  openSheet(reminder?'Chỉnh lời nhắc':'Thêm lời nhắc');
- const form=el('form'),name=field('Nhắc việc gì?','text',reminder?.title??''),times=field('Giờ nhắc · ví dụ 09:00, 15:00','text',reminder?.times??'09:00');
+ const form=el('form'),name=field('Nhắc việc gì?','text',reminder?.title??'');
+ const times=el('fieldset',undefined,'time-slots'),legend=el('legend','Giờ nhắc · 24 giờ');times.append(legend);
+ const rows=el('div');times.append(rows);
+ const addTime=value=>{
+  if(rows.children.length>=8)return;
+  const row=el('div',undefined,'time-slot'),time=field('Giờ '+(rows.children.length+1),'time',value),remove=button('Bỏ giờ',()=>{row.remove();refreshTimes();},'secondary');
+  row.append(time.wrap,remove);rows.append(row);refreshTimes();
+ };
+ const refreshTimes=()=>{[...rows.children].forEach((row,index)=>{row.querySelector('label').firstChild.textContent='Giờ '+(index+1);row.querySelector('button').disabled=rows.children.length===1;});add.disabled=rows.children.length>=8;};
+ const add=button('+ Thêm giờ',()=>addTime(''),'text-button');times.append(add);
+ for(const value of (reminder?.times??'09:00').split(',').map(t=>t.trim()))addTime(value);
+
  const typeLabel=el('label','Lặp lại','form-field'),type=el('select');for(const [value,label] of [['once','Một lần'],['daily','Hằng ngày'],['weekdays','Các thứ trong tuần']]){const option=el('option',label);option.value=value;type.append(option);}type.value=reminder?.kind??'daily';typeLabel.append(type);
- const from=field('Bắt đầu từ','date',reminder?.start??'2026-09-13'),end=field('Kết thúc · bỏ trống để tiếp tục','date',reminder?.end??'',false);
+ const from=field('Bắt đầu từ','date',reminder?.start??new Date((state.serverNow??Date.now())+25200000).toISOString().slice(0,10)),end=field('Kết thúc · bỏ trống để tiếp tục','date',reminder?.end??'',false);
  const days=el('div',undefined,'weekday-list');for(let n=1;n<=7;n++){const label=el('label'),input=el('input');input.type='checkbox';input.value=String(n);input.checked=reminder?.weekdays.includes(n)??[1,3,5].includes(n);label.append(input,el('span',n===7?'CN':'T'+(n+1)));days.append(label);}
  const showDays=()=>{days.hidden=type.value!=='weekdays';end.wrap.hidden=type.value==='once';};type.addEventListener('change',showDays);showDays();
- form.append(name.wrap,typeLabel,days,times.wrap,from.wrap,end.wrap,el('p','Lịch lặp tiếp tục đến khi tắt hoặc đến ngày kết thúc. Không phải thiết lập lại mỗi sáng.','hint'));
+ form.append(name.wrap,typeLabel,days,times,from.wrap,end.wrap,el('p','Lịch lặp tiếp tục đến khi tắt hoặc đến ngày kết thúc. Không phải thiết lập lại mỗi sáng.','hint'));
  const submit=el('button',state.live?(reminder?'Lưu cả lịch':'Tạo lịch'):(reminder?'Lưu cả lịch mẫu':'Tạo lịch mẫu'),'primary');submit.type='submit';form.append(submit);
  form.addEventListener('submit',event=>{
-  event.preventDefault();const slots=times.input.value.split(',').map(t=>t.trim());if(slots.some(t=>!/^([01]\d|2[0-3]):[0-5]\d$/.test(t))){toast('Nhập giờ dạng HH:mm, cách nhau bằng dấu phẩy.');return;}
+  event.preventDefault();const slots=[...rows.querySelectorAll('input')].map(t=>t.value);if(slots.some(t=>!/^([01]\d|2[0-3]):[0-5]\d$/.test(t))){toast('Chọn giờ hợp lệ cho từng lần nhắc nhé.');return;}
   const weekdays=[...days.querySelectorAll('input:checked')].map(i=>Number(i.value));if(type.value==='weekdays'&&!weekdays.length){toast('Chọn ít nhất một thứ.');return;}if(end.input.value&&end.input.value<from.input.value){toast('Ngày kết thúc phải sau ngày bắt đầu.');return;}
   const value={title:name.input.value.trim(),kind:type.value,times:[...new Set(slots)].join(', '),weekdays,start:from.input.value,end:type.value==='once'?'':end.input.value,enabled:reminder?.enabled??true};
   if(!value.title)return;if(state.live){performLive('reminders',{rule:{...(reminder?{id:reminder.id}:{}),title:value.title,kind:value.kind,times:[...new Set(slots)],weekdays,startDate:value.start,endDate:value.end||null,enabled:value.enabled,version:reminder?.version??0}});return;}if(reminder)Object.assign(reminder,value);else state.reminders.push({id:state.nextReminder++,...value});sheet.close();render();toast('Đã cập nhật lịch mẫu, chưa tạo thông báo thật.');
@@ -74,13 +87,13 @@ function openReminder(reminder){
  if(reminder){const actions=el('div',undefined,'actions');actions.style.marginTop='18px';actions.append(button('Dời lần kế tiếp',()=>{openSheet('Dời riêng lần kế tiếp');const f=el('form'),date=field('Ngày','date',new Date((state.serverNow??Date.now())+7*3600000).toISOString().slice(0,10)),time=field('Giờ Việt Nam','time','19:00');f.append(date.wrap,time.wrap,el('p','Những lần sau vẫn giữ quy tắc cũ.','hint'));const save=el('button','Lưu lần này','primary');save.type='submit';f.append(save);f.addEventListener('submit',e=>{e.preventDefault();const due=Date.parse(date.input.value+'T'+time.input.value+':00+07:00');if(due<=Date.now()){toast('Chọn giờ tương lai nhé.');return;}if(state.live)performLive('reminder-instance',{ruleId:reminder.id,operation:'move',due});else{toast('Demo: chỉ dời một lần, chưa lưu server.');sheet.close();}});sheetContent.append(f);},'secondary'),button('Bỏ lần kế tiếp',()=>{if(state.live){performLive('reminder-instance',{ruleId:reminder.id,operation:'skip'});return;}reminder.skipped=true;sheet.close();render();toast('Demo: bỏ một lần, không tắt lịch lặp.');},'secondary'),button(reminder.enabled?'Tắt cả lịch':'Bật cả lịch',()=>{if(state.live){performLive('reminders',{rule:{id:reminder.id,title:reminder.title,kind:reminder.kind,times:reminder.times.split(',').map(t=>t.trim()),weekdays:reminder.weekdays,startDate:reminder.start,endDate:reminder.end||null,enabled:!reminder.enabled,version:reminder.version}});return;}reminder.enabled=!reminder.enabled;sheet.close();render();},'secondary'));sheetContent.append(actions);}
 }
 function openSettings(){
- openSheet('Nhịp sinh hoạt');const form=el('form'),start=field('Bắt đầu ngày','time',state.start),sleep=field('Giờ nghỉ mục tiêu','time',state.sleep);form.append(start.wrap,sleep.wrap,el('p','Giờ nghỉ là mục tiêu. /ngu mới xác nhận cậu bắt đầu nghỉ; chat và chỉnh dữ liệu vẫn hoạt động.','hint'));
- const save=el('button',state.live?'Lưu giờ sinh hoạt':'Lưu trong bản mẫu','primary');save.type='submit';form.append(save);form.addEventListener('submit',e=>{e.preventDefault();if(start.input.value===sleep.input.value){toast('Giờ bắt đầu và giờ nghỉ cần khác nhau.');return;}if(state.live){performLive('settings',{start:start.input.value,sleep:sleep.input.value,version:state.settingsVersion});return;}state.start=start.input.value;state.sleep=sleep.input.value;sheet.close();render();toast('Demo: chưa đổi giờ sinh hoạt trên bot.');});sheetContent.append(form);
+ openSheet('Cài đặt');const form=el('form'),start=field('Bắt đầu ngày','time',state.start),sleep=field('Giờ nghỉ mục tiêu','time',state.sleep);form.append(start.wrap,sleep.wrap,el('p','Giờ nghỉ là mục tiêu. /ngu mới xác nhận cậu bắt đầu nghỉ; chat và chỉnh dữ liệu vẫn hoạt động.','hint'));
+ const save=el('button',state.live?'Lưu giờ sinh hoạt':'Lưu trong bản mẫu','primary');save.type='submit';form.append(save);form.addEventListener('submit',e=>{e.preventDefault();if(start.input.value===sleep.input.value){toast('Giờ bắt đầu và giờ nghỉ cần khác nhau.');return;}if(state.live){performLive('settings',{start:start.input.value,sleep:sleep.input.value,version:state.settingsVersion});return;}state.start=start.input.value;state.sleep=sleep.input.value;sheet.close();render();toast('Demo: chưa đổi giờ sinh hoạt trên bot.');});const themeLabel=el('label','Giao diện','form-field'),theme=el('select');for(const [value,label] of [['auto','Theo Telegram'],['light','Sáng'],['dark','Tối']]){const option=el('option',label);option.value=value;theme.append(option);}theme.value=themePreference();theme.addEventListener('change',()=>setThemePreference(theme.value));themeLabel.append(theme);sheetContent.append(form,themeLabel);
 }
 function openAvailability(){
  if(state.live){
   openSheet('Thời gian hôm nay');
-  if(!state.day){sheetContent.append(el('p','Chọn giờ sinh hoạt trước nhé.','hint'),button('Cài đặt',openSettings,'primary'));return;}
+  if(!state.day){sheetContent.append(el('p',state.needsSetup?'Chọn giờ sinh hoạt trước nhé.':'Giờ sinh hoạt đã lưu. Chưa bắt đầu ngày hoạt động tiếp theo; cậu không cần cài lại.','hint'),button('Cài đặt',openSettings,'primary'));return;}
   const form=el('form'),from=field('Có thể bắt đầu lúc','time',state.start),to=field('Có thể làm đến','time',state.sleep);
   form.append(from.wrap,to.wrap,el('p','Xếp lại các buổi chưa bắt đầu trong hôm nay, giữ nguyên deadline. Ước lượng dưới đây do cậu xác nhận.','hint'));
   const estimates=[];
@@ -99,7 +112,7 @@ function openShare(){openSheet(state.live?'Thẻ thành tích':'Thẻ thành tí
 function demoDay(){if(state.live&&state.day)return state.day.day;return Math.floor((Date.now()+7*3600000-4.5*3600000)/86400000);}
 
 function openDraw(){
- if(state.live){openSheet('Quay thưởng');sheetContent.append(el('p','1 vé mỗi lượt. Kết quả được lưu ở server, không quay lại khi retry.','hint'),button('Dùng 1 vé',async()=>{const r=await performLive('cultivation',{operation:'draw'});if(r)toast('Phần thưởng đã vào túi của cậu.');},'primary'));return;}
+ if(state.live){openSheet('Quay thưởng');const c=state.cultivation,blocked=c.suspended||c.tickets<1;const hint=c.suspended?'Tạm ngưng vì lâu không chat. Nhắn Minh Anh để hoạt động lại.':c.tickets<1?'Chưa có vé. Hoàn thành một task lần đầu để nhận 1 vé.':'Cậu có '+c.tickets+' vé. /ngu không khóa quay thưởng.';const draw=button('Dùng 1 vé',async()=>{if(state.cultivation.tickets<1||state.cultivation.suspended)return;await performLive('cultivation',{operation:'draw'});},'primary');draw.disabled=blocked;sheetContent.append(el('p',hint,'hint'),draw);return;}
  openSheet('Linh bảo · Quay thưởng');
  sheetContent.append(el('p','1 vé / lần · Không mua bằng tiền · Kết quả demo','hint'));
  const result=el('div','Cậu có '+state.cultivation.tickets+' vé','loot-result');result.setAttribute('role','status');
@@ -115,24 +128,27 @@ function openDraw(){
 function openInventory(){
  openSheet('Túi vật phẩm');
  const c=state.cultivation;
+ const itemHeading=(name,count)=>{const row=el('div',undefined,'inventory-heading');row.append(el('h3',name),el('span','×'+count,'quantity-badge'));return row;};
+ sheetContent.append(el('p','BẢO VỆ','inventory-group'));
  for(const [key,name,description] of [
   ['heart','Hộ Tâm Phù','Giữ chuỗi cho một ngày lỡ, không cộng ngày đúng giờ. Không chặn trừ tu vi.'],
   ['peace','An Tâm Phù','Chặn một lần −20 tu vi trong ngày đã dùng; không giữ chuỗi.']
  ]){
-  const item=el('section',undefined,'item-row');item.append(el('h3',name+' · '+c.inventory[key]),el('p',description,'hint'));
-  const use=button(c.active[key]?(state.live?'Đã kích hoạt hôm nay':'Đã kích hoạt trong demo'):'Dùng hôm nay',()=>confirm('Dùng '+name+'?',description+' Chỉ áp dụng ngày sinh hoạt này trong demo.',()=>{
+  const item=el('section',undefined,'item-row');item.append(itemHeading(name,c.inventory[key]),el('p',description,'hint'));
+  const use=button(c.active[key]?(state.live?'Đã kích hoạt hôm nay':'Đã kích hoạt trong demo'):'Dùng hôm nay',()=>confirm('Dùng '+name+'?',description+(state.live?' Chỉ áp dụng ngày sinh hoạt hiện tại.':' Chỉ áp dụng ngày sinh hoạt này trong demo.'),()=>{
    if(c.active[key]||c.inventory[key]<1)return;if(state.live){performLive('cultivation',{operation:'protect',item:key});return;}c.inventory[key]--;c.active[key]=true;c.log.unshift('Dùng '+name+' (demo)');openInventory();render();
   }),'secondary');use.disabled=c.active[key]||c.inventory[key]<1;item.append(use);sheetContent.append(item);
  }
+ sheetContent.append(el('p','PHÁ CẢNH','inventory-group'));
  for(const t of talismans){
-  const item=el('section',undefined,'item-row');item.append(el('h3','Phá Cảnh Phù · '+t.name+' ×'+c.inventory[t.key]),el('p','+'+t.boost+' điểm % cho một lần đột phá.','hint'));
+  const item=el('section',undefined,'item-row');item.append(itemHeading('Phá Cảnh Phù · '+t.name,c.inventory[t.key]),el('p','+'+t.boost+' điểm % cho một lần đột phá.','hint'));
   if(t.next){const fuse=button('Ghép 3 lá · '+t.chance+'%',()=>confirm('Ghép lên '+talismans.find(n=>n.key===t.next).name+'?',
    'Thành công: tiêu hao 3 lá. Thất bại: mất 1, trả lại 2. Tỷ lệ '+t.chance+'%.',()=>{
     if(state.live){performLive('cultivation',{operation:'fuse',item:t.key});return;}const success=demoFuse(c,t.key);if(success===null)return;toast(success?'Ghép thành công ✦':'Chưa thành, đã trả lại 2 lá.');openInventory();render();
    }),'secondary');fuse.disabled=c.inventory[t.key]<3;item.append(fuse);}
   sheetContent.append(item);
  }
- sheetContent.append(el('h3','Tín vật Minh Anh · '+c.inventory.keepsake),el('p','Vật phẩm sưu tầm demo, không phải tu vi. Nội dung bộ sưu tập sẽ thiết kế riêng.','hint'));
+ sheetContent.append(el('p','TÍN VẬT','inventory-group'),itemHeading('Tín vật Minh Anh',c.inventory.keepsake),el('p','Vật phẩm sưu tầm, không phải tu vi.','hint'));
 }
 function openBreakthrough(){
  const c=state.cultivation,target=realms[c.rank+1];if(!target)return;
@@ -144,7 +160,7 @@ function openBreakthrough(){
  const info=el('p',undefined,'hint'),result=el('div',undefined,'loot-result');result.hidden=true;result.setAttribute('role','status');
  const chance=()=>Math.min(100,[70,85,100][Math.min(c.failures,2)]+(talismans.find(t=>t.key===select.value)?.boost??0));
  const explain=()=>{info.textContent='Thành công '+chance()+'% · Thất bại giữ tu vi/chuỗi, phù đã chọn vẫn tiêu hao. Mỗi ngày chỉ thử 1 lần.';};select.addEventListener('change',explain);explain();
- const attempt=button('Thử đột phá',()=>{
+ const attempt=button('Đột phá',()=>{
   if(state.live){performLive('cultivation',{operation:'breakthrough',item:select.value||null});return;}
   const r=demoBreakthrough(c,demoDay(),select.value||null);
   if(!r)return;attempt.disabled=true;select.disabled=true;result.hidden=false;
@@ -168,6 +184,7 @@ function render(){
  controls.append(button('Sáng / tối',()=>{const dark=document.documentElement.dataset.theme==='dark';document.documentElement.dataset.theme=dark?'light':'dark';},'text-button'),button('Xem chế độ nghỉ',()=>{state.resting=!state.resting;state.tab='today';state.screenState='ready';render();},'text-button'));
  if(!state.live)content.append(controls);
 }
+document.querySelector('#settings').replaceChildren(icon('settings'));
 document.querySelector('#settings').addEventListener('click',openSettings);
 for(const b of document.querySelectorAll('[data-tab]'))b.addEventListener('click',()=>{if(state.live&&!state.loaded){toast('Mở lại từ Telegram để tải dữ liệu thật.');return;}state.tab=b.dataset.tab;state.screenState='ready';render();window.scrollTo(0,0);});
 sheet.addEventListener('click',event=>{if(event.target===sheet){const r=sheet.getBoundingClientRect();if(event.clientY<r.top)sheet.close();}});

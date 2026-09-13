@@ -75,6 +75,16 @@ export function demoBreakthrough(c,day,key=null,now=Date.now(),random=Math.rando
 }
 
 const pendingRequests=new Map();
+export function themePreference(){try{const value=localStorage.getItem('minh-anh-theme');return ['light','dark'].includes(value)?value:'auto';}catch{return 'auto';}}
+export function applyTheme(preference=themePreference()){
+ const automatic=globalThis.Telegram?.WebApp?.colorScheme??(globalThis.matchMedia?.('(prefers-color-scheme: dark)').matches?'dark':'light');
+ document.documentElement.dataset.theme=preference==='auto'?automatic:preference;
+}
+export function setThemePreference(value){
+ if(!['auto','light','dark'].includes(value))return;
+ try{localStorage.setItem('minh-anh-theme',value);}catch{}
+ applyTheme(value);
+}
 export async function connectLive(){
  if(!globalThis.Telegram?.WebApp){
   await new Promise((resolve,reject)=>{
@@ -84,7 +94,7 @@ export async function connectLive(){
  }
  const app=globalThis.Telegram?.WebApp;
  if(!app?.initData)throw Error('Hãy mở ứng dụng từ nút trong Telegram, không mở đường dẫn trực tiếp.');
- const theme=()=>{document.documentElement.dataset.theme=app.colorScheme==='dark'?'dark':'light';};
+ const theme=()=>applyTheme();
  theme();app.onEvent?.('themeChanged',theme);
  app.ready();app.expand();
  return refreshLive();
@@ -102,7 +112,7 @@ async function liveRequest(path,body){
  const result=await response.json();
  if(!response.ok){
   if(response.status<500&&key)pendingRequests.delete(key);
-  const messages={AUTH_REQUIRED:'Phiên đã hết hạn. Đóng và mở lại từ Telegram nhé.',SETUP_REQUIRED:'Chọn giờ bắt đầu và giờ nghỉ trước nhé.',STALE_TASK:'Việc vừa thay đổi. Mở lại danh sách rồi thử lại.',CONFIRM_CHILDREN:'Task còn bước chưa xong. Hãy xác nhận hoàn thành cả nhóm.',CONFIRM_REOPEN_PARENT:'Cần xác nhận mở lại task cha.',DRAW_UNAVAILABLE:'Chưa có vé quay hoặc tài khoản đang tạm nghỉ.',BREAKTHROUGH_UNAVAILABLE:'Chưa đủ điều kiện hoặc hôm nay đã thử đột phá.',FUSION_UNAVAILABLE:'Chưa đủ ba phù cùng cấp.',ITEM_UNAVAILABLE:'Vật phẩm chưa dùng được lúc này.',ALREADY_PROTECTED:'Hôm nay đã kích hoạt bảo vệ rồi.',NO_NEXT_REMINDER:'Không còn lần nhắc sắp tới để sửa.'};
+  const messages={AUTH_REQUIRED:'Phiên đã hết hạn. Đóng và mở lại từ Telegram nhé.',SETUP_REQUIRED:'Chọn giờ bắt đầu và giờ nghỉ trước nhé.',STALE_TASK:'Việc vừa thay đổi. Mở lại danh sách rồi thử lại.',CONFIRM_CHILDREN:'Task còn bước chưa xong. Hãy xác nhận hoàn thành cả nhóm.',CONFIRM_REOPEN_PARENT:'Cần xác nhận mở lại task cha.',DRAW_UNAVAILABLE:'Chưa thể quay lúc này.',NO_TICKETS:'Cậu chưa có vé. Hoàn thành một task lần đầu để nhận 1 vé.',ACCOUNT_SUSPENDED:'Tài khoản tạm ngưng do ba ngày không chat. Nhắn cho Minh Anh để hoạt động lại; đây không phải chế độ /ngu.',NO_ACTIVE_DAY:'Cậu đã lưu giờ sinh hoạt. Ngày hoạt động tiếp theo chưa bắt đầu; không cần thiết lập lại.',BREAKTHROUGH_UNAVAILABLE:'Chưa đủ điều kiện hoặc hôm nay đã thử đột phá.',FUSION_UNAVAILABLE:'Chưa đủ ba phù cùng cấp.',ITEM_UNAVAILABLE:'Vật phẩm chưa dùng được lúc này.',ALREADY_PROTECTED:'Hôm nay đã kích hoạt bảo vệ rồi.',NO_NEXT_REMINDER:'Không còn lần nhắc sắp tới để sửa.'};
   throw Error(result.message??messages[result.error]??'Chưa xác nhận được kết quả. Kiểm tra lại trước khi thao tác mới.');
  }
  return result;

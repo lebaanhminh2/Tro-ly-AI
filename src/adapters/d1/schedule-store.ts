@@ -10,7 +10,7 @@ export class ScheduleStore{
  constructor(db:Database){this.db=db;}
  settings(owner:string){return query(this.db,'SELECT start_minutes,sleep_minutes,version,updated FROM schedule_settings WHERE owner=?',owner).first<ScheduleSettings>();}
  async openDialog(owner:string,now:number){
-  const day=await this.ensureDay(owner,now);if(!day)throw Error('SETUP_REQUIRED');
+  const day=await this.ensureDay(owner,now);if(!day){const settings=await this.settings(owner);throw Error(settings?.sleep_minutes!==null&&settings?'NO_ACTIVE_DAY':'SETUP_REQUIRED');}
   await query(this.db,'INSERT INTO schedule_dialogs(owner,day,expires) VALUES(?,?,?) ON CONFLICT(owner) DO UPDATE SET day=excluded.day,expires=excluded.expires',owner,day.day,Math.min(now+900000,day.end_at)).run();
  }
  async closeDialog(owner:string){await query(this.db,'DELETE FROM schedule_dialogs WHERE owner=?',owner).run();}

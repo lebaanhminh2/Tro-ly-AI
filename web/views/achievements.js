@@ -27,7 +27,7 @@ export function renderAchievements(ui,state){
  if(next){
   const target=card();target.append(el('p','ĐỘT PHÁ TIẾP THEO','eyebrow'),el('h2',next.name),el('p',c.qi+'/'+next.qi+' tu vi · '+c.streak+'/'+next.days+' ngày đúng giờ','subtitle'));
   const track=el('div',undefined,'track'),fill=el('span');fill.style.width=Math.min(100,100*Math.min(c.qi/next.qi,c.streak/next.days))+'%';track.append(fill);target.append(track);
-  const attempt=button('Thử đột phá',()=>ui.openBreakthrough(),'primary');attempt.disabled=c.qi<next.qi||c.streak<next.days||c.attemptDay===ui.demoDay();target.append(attempt);
+  const attempt=button('Đột phá',()=>ui.openBreakthrough(),'primary');attempt.disabled=c.qi<next.qi||c.streak<next.days||c.attemptDay===ui.demoDay();target.append(attempt);
   target.append(el('p',c.attemptDay===ui.demoDay()?'Đã thử hôm nay · ngày mới mới được thử tiếp.':'Mỗi ngày 1 lần · thất bại không mất tu vi.','hint'));root.append(target);
  }
  const tools=el('div',undefined,'reward-tools');tools.append(button('✦ Quay thưởng · '+c.tickets+' vé',()=>ui.openDraw(),'primary'),button('▣ Túi vật phẩm',()=>ui.openInventory(),'secondary'));root.append(tools);

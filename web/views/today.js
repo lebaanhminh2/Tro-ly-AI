@@ -6,7 +6,7 @@ export function renderToday(ui,state){
   const rest=card();rest.append(el('h2','Nghỉ ngơi thôi, cậu 🌙'),el('p','Không gửi nhắc chủ động. Cậu vẫn chỉnh lịch và công việc bình thường.','subtitle'),...(state.live?[]:[button('Hoạt động lại',()=>{state.resting=false;render();},'secondary')]));root.append(rest);
  }
  const next=state.tasks.find(t=>!t.done);
- if(next){
+ if(next&&!state.resting){
   const hero=el('article',undefined,'hero');
   hero.append(el('p','LÀM TIẾP · #'+next.code,'eyebrow'),el('h2',next.title),el('p',(next.steps.find(s=>!s.done)?.title??'Bắt đầu từ phần nhỏ nhất')+(state.live?'':' · dự kiến 25 phút')));
   const actions=el('div',undefined,'actions');

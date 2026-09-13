@@ -4,3 +4,21 @@
 .reward-tools{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}.realm-path{margin-top:14px}.realm-path summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:650}.realm-path .rank-row h3{flex:1}.realm-path .rank-row small{text-align:right}.protection{margin-top:12px;color:var(--green)}.card>.track{margin:14px 0}.item-row{padding:16px 0;border-bottom:1px solid var(--line)}.item-row .actions{margin-top:10px}.loot-result{padding:20px;border-radius:18px;background:var(--soft);color:var(--accent);margin:14px 0;text-align:center;font-weight:650}
 :root[data-theme=dark]{color-scheme:dark;--bg:#17161f;--surface:#22212d;--text:#efedf7;--muted:#aaa5bb;--line:#34313f;--accent:#b5a0ff;--soft:#322b46;--green:#83c9b5;--gold:#dfbd7f}:root[data-theme=dark] .hero{background:linear-gradient(135deg,#312944,#233e39);border-color:#454052}:root[data-theme=dark] .hero p{color:#c2b9d4}:root[data-theme=dark] .rank-card{background:linear-gradient(140deg,#3e3424,#30283e);color:#eddab4;border-color:#706044}
 @media(min-width:650px){.shell{border-left:1px solid var(--line);border-right:1px solid var(--line)}}@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}@media(max-width:360px){main{padding-left:16px;padding-right:16px}h1{font-size:27px}.chart{gap:8px}}
+/* Touch controls remain consistent in iOS WebView; keyboard focus stays visible. */
+.icon-button{display:inline-grid;place-items:center;flex:0 0 44px;padding:0;line-height:1;-webkit-appearance:none;appearance:none}
+.icon-button svg{width:22px;height:22px;display:block}
+.sheet-title-row h2:focus{outline:none}
+.icon-button:focus-visible{outline-width:2px;outline-offset:2px}
+.form-field input[type=time],.form-field input[type=date]{display:block;min-height:48px;min-width:0;width:100%;max-width:100%;font-size:16px;line-height:1.4}
+.form-field input::-webkit-date-and-time-value{text-align:left;min-height:24px}
+.clock-hint{font-size:12px;color:var(--muted)}
+.time-slots{border:1px solid var(--line);border-radius:16px;margin:16px 0;padding:12px;min-width:0}
+.time-slots legend{font-size:13px;padding:0 6px}
+.time-slot{display:flex;align-items:center;gap:10px}
+.time-slot .form-field{flex:1;min-width:0;margin:8px 0}
+.time-slot .secondary{flex-shrink:0;font-size:12px;padding:8px}
+.inventory-group{font-size:11px;letter-spacing:1.5px;font-weight:700;color:var(--muted);margin:24px 0 8px}
+.item-row{padding:16px;background:var(--bg);border:1px solid var(--line);border-radius:18px;margin-bottom:12px}
+.inventory-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.inventory-heading h3{min-width:0;line-height:1.5}
+.quantity-badge{font-size:24px;font-weight:750;line-height:1;min-width:54px;padding:12px;text-align:center;background:var(--soft);color:var(--accent);border-radius:14px;flex-shrink:0}

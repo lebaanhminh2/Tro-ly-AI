@@ -121,6 +121,8 @@ export async function miniAppApi(request:Request,env:Env,now=Date.now()):Promise
   if(operation==='fuse'&&(!Object.hasOwn(CHARMS,String(item))||item==='supreme'))return json({error:'INVALID_ITEM'},400);
   if(operation==='breakthrough'&&item!==undefined&&item!==null&&!Object.hasOwn(CHARMS,String(item)))return json({error:'INVALID_ITEM'},400);
   const result=await healthy.mutate<Record<string,unknown>>(owner,input.id,String(operation),input,now,state=>{
+   if(state.suspended)throw Error('ACCOUNT_SUSPENDED');
+   if(operation==='draw'&&state.tickets<1)throw Error('NO_TICKETS');
    if(operation==='draw'){const r=drawReward(state,random());return {state:r.state,result:{reward:r.reward}};}
    if(operation==='fuse'){const r=fuseCharm(state,item as Charm,random());return {state:r.state,result:{success:r.success}};}
    if(operation==='protect')return {state:useProtection(state,item as 'heart'|'peace',day),result:{protected:true}};
@@ -129,7 +131,7 @@ export async function miniAppApi(request:Request,env:Env,now=Date.now()):Promise
   return json({result,account:await healthy.read(owner)});
  }catch(error){
   const code=error instanceof Error?error.message:'';
-  if(['DRAW_UNAVAILABLE','FUSION_UNAVAILABLE','ITEM_UNAVAILABLE','BREAKTHROUGH_UNAVAILABLE','ALREADY_PROTECTED','REQUEST_ID_REUSED','STALE_TASK','CONFIRM_CHILDREN','CONFIRM_REOPEN_PARENT','CONFIRM_DELETE','STEP_NOT_FOUND','NO_NEXT_REMINDER','SESSION_CHANGED'].includes(code))return json({error:code},409);
+  if(['NO_ACTIVE_DAY','NO_TICKETS','ACCOUNT_SUSPENDED','DRAW_UNAVAILABLE','FUSION_UNAVAILABLE','ITEM_UNAVAILABLE','BREAKTHROUGH_UNAVAILABLE','ALREADY_PROTECTED','REQUEST_ID_REUSED','STALE_TASK','CONFIRM_CHILDREN','CONFIRM_REOPEN_PARENT','CONFIRM_DELETE','STEP_NOT_FOUND','NO_NEXT_REMINDER','SESSION_CHANGED'].includes(code))return json({error:code},409);
   if(code.startsWith('INVALID_'))return json({error:'INVALID_REQUEST'},400);
   if(error instanceof SyntaxError)return json({error:'INVALID_REQUEST'},400);
   return json({error:'OPERATION_NOT_CONFIRMED',message:'Chưa xác nhận được kết quả. Kiểm tra lại trước khi thử hành động mới.'},503);
