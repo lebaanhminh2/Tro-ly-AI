@@ -152,7 +152,7 @@ export class ConversationStore {
    await query(this.db,`UPDATE tool_steps SET state='failed' WHERE owner=? AND update_id=? AND step_key=? AND state='started'
     AND EXISTS(SELECT 1 FROM owner_leases WHERE owner=? AND token=? AND expires>?)`,lease.owner,lease.input.updateId,key,lease.owner,lease.token,clock()).run();
    const code=error instanceof Error?error.message:'';
-   throw Error(['AI_QUOTA','AI_TRIAL_ENDED'].includes(code)?code:'STEP_UNAVAILABLE');
+   throw Error(['AI_QUOTA','AI_TRIAL_ENDED','PROVIDER_RATE_LIMIT'].includes(code)?code:'STEP_UNAVAILABLE');
   }
  }
 

@@ -1,4 +1,6 @@
 # Kế hoạch thay luồng trợ lý — phạm vi đã duyệt
+
+Quyết định mới nhất: user duyệt bỏ trần ứng dụng và expiry pilot khỏi production. Các số40/24h và ngày hết hạn ở ghi chú cũ bên dưới là lịch sử, không còn cấu hình chạy. Giữ dedupe, tối đa2 model steps/turn; lỗi Google429 báo đúng nguồn.
 Cập nhật 2026-09-13. Sản phẩm đã chốt; user đã duyệt danh sách thay source và ngân sách tối đa20 request trong lượt tiếp theo. Không coi tài liệu là code đã chạy.
 
 Checkpoint triển khai và live QA xem HANDOFF; đã có bản để user nghiệm thu. Protocol JSON tổng hợp đã thử không đạt; triển khai native tools + respond(message), không duy trì hai protocol.

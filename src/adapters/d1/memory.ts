@@ -27,7 +27,11 @@ export function memoryStatements(db:Database,owner:string,c:MemoryChange){
  if(c.type==='ai-enabled')return [q('INSERT INTO memory_settings(owner,enabled) VALUES(?,?) ON CONFLICT(owner) DO UPDATE SET enabled=excluded.enabled',owner,c.enabled?1:0)];
  return [q('INSERT INTO chat_focus(owner,task_id,expires) VALUES(?,?,?) ON CONFLICT(owner) DO UPDATE SET task_id=excluded.task_id,expires=excluded.expires',owner,c.taskId,c.expires)];
 }
-export async function reserveAi(db:Database,scope:string,command:string,now:number,limit=100){
+export async function reserveAi(db:Database,scope:string,command:string,now:number,limit:number|null=100){
+ if(limit===null){
+  const result=await query(db,'INSERT OR IGNORE INTO ai_reservations(scope,command_key,created) VALUES(?,?,?)',scope,command,now).run();
+  return result.meta.changes>0;
+ }
  if(!Number.isInteger(limit)||limit<1||limit>500)throw Error('INVALID_QUOTA');
  // Conservative rolling 24 hours, not provider billing/reset time. All retries consume reservation.
  const r=await query(db,`INSERT OR IGNORE INTO ai_reservations(scope,command_key,created)

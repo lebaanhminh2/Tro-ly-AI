@@ -46,7 +46,7 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
         }
         if(!await reader.aiEnabled(owner))throw Error('AI_DISABLED');
         if(env.AI_TRIAL_ENDS_AT&&(!Number.isFinite(Date.parse(env.AI_TRIAL_ENDS_AT))||clock.now()>=Date.parse(env.AI_TRIAL_ENDS_AT)))throw Error('AI_TRIAL_ENDED');
-        if(!await reserveAi(env.DB,'runtime:gemini',`${owner}:${lease.input.updateId}:tool:${step}`,clock.now(),Number(env.AI_DAILY_LIMIT)))throw Error('AI_QUOTA');
+        if(!await reserveAi(env.DB,'runtime:gemini',`${owner}:${lease.input.updateId}:tool:${step}`,clock.now(),env.AI_DAILY_LIMIT===undefined?null:Number(env.AI_DAILY_LIMIT)))throw Error('AI_QUOTA');
         const client=new Gemini({apiKey:env.GEMINI_API_KEY!,model:env.GEMINI_MODEL!,transport:(url,options)=>transport(url,{...options,redirect:'manual'}),timeoutMs:5000});
         return (await client.generateTools(contents,TOOL_PERSONA,allowTools)).output;
       },()=>clock.now());

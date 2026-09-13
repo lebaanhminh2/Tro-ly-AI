@@ -15,6 +15,5 @@ export function aiConfigured(env: Env): boolean {
   return env.AI_MODE === 'on'
     && /^[A-Za-z0-9._-]{1,256}$/.test(env.GEMINI_API_KEY ?? '')
     && /^[A-Za-z0-9._-]{1,100}$/.test(env.GEMINI_MODEL ?? '')
-    && /^[1-9]\d{0,2}$/.test(env.AI_DAILY_LIMIT ?? '')
-    && Number(env.AI_DAILY_LIMIT) <= 500;
+    && (env.AI_DAILY_LIMIT===undefined || (/^[1-9]\d{0,2}$/.test(env.AI_DAILY_LIMIT) && Number(env.AI_DAILY_LIMIT)<=500));
 }

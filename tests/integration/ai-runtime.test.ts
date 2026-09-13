@@ -40,6 +40,7 @@ test('runtime config requires explicit AI switch, key, model and bounded budget'
   assert.equal(configured(env), false);
   Object.assign(env, {GEMINI_API_KEY: 'synthetic-key', GEMINI_MODEL: 'test-model', AI_DAILY_LIMIT: '20'});
   assert.equal(configured(env), true);
+  assert.equal(configured({...env,AI_DAILY_LIMIT:undefined}),true);
   for (const value of ['', '0', '-1', '501', '1.5', 'NaN', ' 20']) {
     assert.equal(configured({...env, AI_DAILY_LIMIT: value}), false);
   }
@@ -111,7 +112,7 @@ test('runtime Gemini wiring: context, switches, persistent quota, replay and saf
     failure = true;
     const failed = await request('lỗi provider');
     const failedText = await failed.text();
-    assert.match(failedText, /gián đoạn/);
+    assert.match(failedText, /Google/);
     assert.ok(!failedText.includes('synthetic-key'));
     assert.equal(calls, 3);
     await request('/tasks');
@@ -121,9 +122,28 @@ test('runtime Gemini wiring: context, switches, persistent quota, replay and saf
     await store.accept({owner: '123', chat: 123, updateId: ++seq, text: 'chờ xử lý'}, now, false);
     await createWorker(undefined, transport, {now: () => now}).scheduled({}, env);
     assert.equal(calls, 4);
-    assert.match((await store.result('123', seq))!.text, /gián đoạn/);
+    assert.match((await store.result('123', seq))!.text, /Google/);
     const reservations = await query(db, 'SELECT COUNT(*) AS n FROM ai_reservations').first<{n: number}>();
     assert.equal(reservations!.n, 4);
     assert.equal((await store.tasks('123', 0)).length, 0);
   } finally { await mf.dispose(); }
+});
+
+test('production without pilot settings passes forty daily and four minute calls, preserving dedupe',async()=>{
+ const {reserveAi}=await import('../../src/adapters/d1/memory.ts');
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
+  const now=Date.parse('2026-09-14T08:00:00+07:00');
+  for(let i=0;i<45;i++)assert.equal(await reserveAi(db,'runtime:gemini','prior:'+i,now,null),true);
+  assert.equal(await reserveAi(db,'runtime:gemini','prior:0',now,null),false);
+  let calls=0;
+  const env:Env={DB:db,TELEGRAM_USER_ID:'123',TELEGRAM_WEBHOOK_SECRET:'x'.repeat(32),AI_MODE:'on',GEMINI_API_KEY:'fake',GEMINI_MODEL:'test-model'};
+  const transport:typeof fetch=async()=>{calls++;return Response.json({candidates:[{finishReason:'STOP',content:{role:'model',parts:[{text:'Still available.'}]}}]});};
+  const request=()=>new Request('https://local/telegram',{method:'POST',headers:{'X-Telegram-Bot-Api-Secret-Token':env.TELEGRAM_WEBHOOK_SECRET},body:JSON.stringify({update_id:991,message:{from:{id:123},chat:{id:123,type:'private'},text:'hello'}})});
+  const worker=createWorker(undefined,transport,{now:()=>now});
+  assert.match(await (await worker.fetch(request(),env)).text(),/Still available/);
+  await worker.fetch(request(),env);assert.equal(calls,1);
+ }finally{await mf.dispose();}
 });

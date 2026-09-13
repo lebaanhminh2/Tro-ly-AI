@@ -16,6 +16,7 @@ export async function runToolTurn(initial:ModelContent[],ports:ToolTurnPorts):Pr
   let response:ModelStep;
   try{response=await ports.model(step,contents,!wrote);}catch(error){
    const code=error instanceof Error?error.message:'';
+   if(code==='PROVIDER_RATE_LIMIT')return 'Gemini phía Google đang giới hạn lượt gọi hoặc tốc độ lúc này. Cậu thử lại sau nhé; các lời nhắc đã lưu vẫn chạy.';
    if(code==='AI_QUOTA')return 'Tớ đã chạm giới hạn gọi AI do bot đặt cho hôm nay. Lời nhắc đã lưu vẫn chạy; khi có lượt trở lại mình trò chuyện tiếp nhé.';
    if(code==='AI_TRIAL_ENDED')return 'Đợt dùng thử AI đã hết thời hạn cấu hình. Các lời nhắc đã lưu vẫn chạy; cần mở lại thời hạn trước khi chat tiếp.';
    return fallback;

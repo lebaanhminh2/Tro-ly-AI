@@ -37,7 +37,7 @@ Kiểm kết quả theo hành vi, không lấy số test/audit=0 làm chứng nh
 4. Không giả deploy thành công = người dùng đã nhận tin/AI hiểu đúng.
 5. Rollback code/config có chủ đích; không rollback schema hoặc xóa DB tùy tiện.
 
-Quota/pilot deadline hiện tại đọc HANDOFF + wrangler; không tự gia hạn. User đã duyệt tăng trần app40/24h, giữ4/phút; không đồng nghĩa quota Google. Kết quả QA và expiry ở HANDOFF. Source mới vẫn chạy hẹn đã lưu khi AI off; không phụ thuộc lựa chọn model.
+User đã duyệt bỏ quota pilot trong production: không AI_DAILY_LIMIT/AI_TRIAL_ENDS_AT trong wrangler. Request vẫn ghi receipt để chống trùng; không bỏ counters/dedupe. Nếu cấu hình AI_DAILY_LIMIT riêng ở môi trường thử thì limiter cũ vẫn áp dụng. Google429 không được coi là app quota. Source mới vẫn chạy hẹn đã lưu khi AI off; không phụ thuộc lựa chọn model.
 Source mới không có Google/OAuth. Migration lịch sử vẫn giữ để nâng cấp dữ liệu.
 
 ## Checklist bảo mật bắt buộc
