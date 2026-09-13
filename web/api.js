@@ -102,7 +102,8 @@ async function liveRequest(path,body){
  const result=await response.json();
  if(!response.ok){
   if(response.status<500&&key)pendingRequests.delete(key);
-  throw Error(result.message??result.error??'Chưa xác nhận được kết quả.');
+  const messages={AUTH_REQUIRED:'Phiên đã hết hạn. Đóng và mở lại từ Telegram nhé.',SETUP_REQUIRED:'Chọn giờ bắt đầu và giờ nghỉ trước nhé.',STALE_TASK:'Việc vừa thay đổi. Mở lại danh sách rồi thử lại.',CONFIRM_CHILDREN:'Task còn bước chưa xong. Hãy xác nhận hoàn thành cả nhóm.',CONFIRM_REOPEN_PARENT:'Cần xác nhận mở lại task cha.',DRAW_UNAVAILABLE:'Chưa có vé quay hoặc tài khoản đang tạm nghỉ.',BREAKTHROUGH_UNAVAILABLE:'Chưa đủ điều kiện hoặc hôm nay đã thử đột phá.',FUSION_UNAVAILABLE:'Chưa đủ ba phù cùng cấp.',ITEM_UNAVAILABLE:'Vật phẩm chưa dùng được lúc này.',ALREADY_PROTECTED:'Hôm nay đã kích hoạt bảo vệ rồi.',NO_NEXT_REMINDER:'Không còn lần nhắc sắp tới để sửa.'};
+  throw Error(result.message??messages[result.error]??'Chưa xác nhận được kết quả. Kiểm tra lại trước khi thao tác mới.');
  }
  return result;
 }

@@ -6,7 +6,7 @@
 - entrypoints nối application/domain/ports/adapters. Không domain SQL/fetch, không runtime import experiments/tests.
 - Schema thực tế: migrations; interface: src/ports; không chép lại toàn schema trong docs.
 - D1 lưu tasks, sessions, appointments, memory, pending, receipts, inbox/outbox, UI revisions;0012 thêm completion/progress/achievement/board selection và deleted_at.
-- Source production hiện dùng Gemini native tools, AI_MODE off/on; legacy harness chỉ experiments. Cloud giữ bản cũ cho tới checkpoint deploy ghi trong HANDOFF. Bản board/progress cần0012; cloud hiện đã áp, xem HANDOFF cho version/ngân sách. Production staged mutations được outer commit lưu cùng receipt/history/outbox.
+- Source production hiện dùng Gemini native tools, AI_MODE off/on; legacy harness chỉ experiments. Cloud giữ bản cũ cho tới checkpoint deploy ghi trong HANDOFF. Mini App/healthy cần0015; cloud hiện đã áp, xem HANDOFF cho version/ngân sách. Production staged mutations được outer commit lưu cùng receipt/history/outbox.
 
 ## Kiểm tra local
 
@@ -24,7 +24,7 @@ Kiểm kết quả theo hành vi, không lấy số test/audit=0 làm chứng nh
 - Worker personal-assistant-staging; DB assistant-staging. UUID/flags trong wrangler.jsonc.
 - Origin: https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev
 - Bot @Minh_Anh_cua_Minh_bot; private owner allowlist. Telegram webhook đã đăng ký.
-- Migration0001–0012 đã áp; migration tiếp theo phải mới, không sửa lịch sử.
+- Migration0001–0015 đã áp; migration tiếp theo phải mới, không sửa lịch sử.
 - Cloud có Telegram secrets và Gemini key. Không tải/in giá trị cloud secret.
 - Local .dev.vars.webhook-secret.dpapi là bản webhook secret mã hóa cho user Windows hiện tại, ignored Git; không phải token bot.
 - `scripts/telegram-setup.ps1`: -SelfTest offline; -RegisterWebhook thay kết nối thật, chỉ dùng khi có quyền, không chạy để “kiểm tra cho chắc”.
@@ -52,6 +52,9 @@ Source mới không có Google/OAuth. Migration lịch sử vẫn giữ để n�
 
 Thống kê /progress dùng PNG native; sendPhoto/editMessageMedia multipart chỉ gọi Telegram host cố định. Chuyển ảnh/chữ tạo card mới, không sửa kiểu message không tương thích.
 Soft-delete không erase task: không tự phục hồi bằng cách bật lại reminder cũ; chỉ restore có chủ đích sau xác nhận user.
+
+Mini App live tại /app/; /api xác thực Telegram initData15phút, API401 thì mở lại từ Telegram. /kiemtra đăng ký menu cho owner. Không đưa initData/key/token vào log hoặc URL.
+Backup trước release Mini App: .wrangler/staging-before-miniapp.sql ignored, đã restore thử0013–15. Không rollback code về bản chưa hỗ trợ state/scheduler mới mà không xem migration compatibility.
 
 ## Khi có lỗi
 

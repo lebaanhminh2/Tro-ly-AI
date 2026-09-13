@@ -62,6 +62,7 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
         return (await client.generateTools(contents,scheduling?SCHEDULE_PROMPT:TOOL_PERSONA+sleepPhase,allowTools,scheduling?['replan_day','respond']:undefined)).output;
       },()=>clock.now());
       if(journal.requestedView){
+        if(env.ASSETS)return 'Cậu mở nút “Mở ứng dụng” cạnh ô nhập tin nhắn nhé — lịch, lời nhắc và tu vi đều ở đó, không cần đọc danh sách dài trong chat.';
         const args=journal.requestedView.args;
         const callback=args.screen==='tasks'?'board:'+String(args.filter)+':0':args.screen==='achievements'?'progress:achievements':'progress:chart';
         const view=await boardCommand({...lease.input,text:undefined,callback},reader,clock.now());
@@ -131,6 +132,7 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
       let input;
       try { input = incoming(JSON.parse(raw)); } catch { return new Response('Bad request', { status: 400 }); }
       if (!input || input.owner !== env.TELEGRAM_USER_ID) return new Response('OK');
+      if(env.ASSETS&&/^\/(start|tasks|today|progress|settings)(?:@[A-Za-z0-9_]+)?$/i.test(input.text??''))input={...input,text:'/kiemtra'};
       try {
         const store = new D1WorkStore(env.DB,cardsEnabled);
         const isNew = await store.accept(input, clock.now(), env.DELIVERY_MODE === 'outbox');
