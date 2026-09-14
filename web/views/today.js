@@ -30,7 +30,7 @@ export function renderToday(ui,state){
  if(state.mode==='timeline'){
   root.append(renderDailyPlan(ui,state));
  }else{
-  const tools=el('div',undefined,'section-heading'),actions=el('div',undefined,'heading-actions');actions.append(button('+ Tạo task',()=>openTask(null),'primary'),button(state.selecting?'Thoát chọn':'Chọn nhiều',()=>{state.selecting=!state.selecting;state.selected.clear();render();},'text-button'));tools.append(el('h2',buckets.active.length+' việc đang làm'),actions);root.append(tools);
+  const tools=el('div',undefined,'section-heading'),actions=el('div',undefined,'heading-actions');const selectButton=button(state.selecting?'Thoát chọn':'Chọn nhiều',()=>{state.selecting=!state.selecting;state.selected.clear();render();},'text-button selection-toggle');selectButton.setAttribute('aria-pressed',String(state.selecting));actions.append(button('+ Tạo task',()=>openTask(null),'primary'),selectButton);tools.append(el('h2',buckets.active.length+' việc đang làm'),actions);root.append(tools);
   const taskList=tasks=>{const list=card();
   for(const task of tasks){
    const row=el('div',undefined,'task-row'+(task.done?' done':'')),check=el('input');check.type='checkbox';check.className='check';check.checked=state.selecting?state.selected.has(task.code):task.done;check.setAttribute('aria-label',(state.selecting?'Chọn ':'Hoàn thành ')+task.title);
