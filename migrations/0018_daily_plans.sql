@@ -25,5 +25,5 @@ CREATE TABLE daily_contacts (
  PRIMARY KEY(owner,day,task_id)
 );
 /* Legacy sessions/reminders are preserved during migration. The new daily-plan
-   dispatcher owns only its own IDs; old records remain auditable and usable. */
+   dispatcher owns only its own IDs and remains auditable */
 SELECT 1;
