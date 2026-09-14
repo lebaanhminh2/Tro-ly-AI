@@ -146,3 +146,35 @@ test('bootstrap includes chat-created one-time reminders in the same management 
   assert.deepEqual(body.reminders[0]?.times,['12:00']);assert.equal(body.reminders[0]?.origin,'appointment');assert.equal(body.reminders[0]?.kind,'once');
  }finally{await mf.dispose();}
 });
+
+test('Mini App persists task notes and hides delivered one-time reminders next operating day',async()=>{
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
+  const token='123:fake',now=Date.parse('2026-09-14T12:00:00+07:00'),headers=(at:number)=>{
+   const params=new URLSearchParams({auth_date:String(at/1000),user:JSON.stringify({id:123})});
+   params.set('hash',createHmac('sha256',createHmac('sha256','WebAppData').update(token).digest()).update([...params].sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>k+'='+v).join('\n')).digest('hex'));
+   return {'X-Telegram-Init-Data':params.toString(),'Content-Type':'application/json'};
+  };
+  const env={DB:db,TELEGRAM_USER_ID:'123',TELEGRAM_WEBHOOK_SECRET:'x'.repeat(32),TELEGRAM_BOT_TOKEN:token};
+  await db.prepare('INSERT INTO schedule_settings(owner,start_minutes,sleep_minutes,updated) VALUES(?,270,1350,?)').bind('123',now).run();
+  const created=await miniAppApi(new Request('https://local/api/tasks',{method:'POST',headers:headers(now),body:JSON.stringify({id:'note_create_001',operation:'create',title:'Bài tập',note:'Công thức ở trang 12',deadline:null})}),env,now);
+  assert.equal(created.status,200);const taskId=String(((await created.json()) as {result:{id:string}}).result.id);
+  const saved=await db.prepare('SELECT note FROM tasks WHERE id=?').bind(taskId).first<{note:string}>();assert.equal(saved?.note,'Công thức ở trang 12');
+  const updated=await miniAppApi(new Request('https://local/api/tasks',{method:'POST',headers:headers(now),body:JSON.stringify({id:'note_update_001',operation:'edit',taskId,version:1,title:'Bài tập',note:'Đổi sang trang 14'})}),env,now);
+  assert.equal(updated.status,200);assert.equal((await db.prepare('SELECT note FROM tasks WHERE id=?').bind(taskId).first<{note:string}>())?.note,'Đổi sang trang 14');
+  await db.prepare("INSERT INTO task_appointments(id,owner,task_id,due,status,subject) VALUES('delivered-once','123',NULL,?,'expired','Dậy thôi')").bind(Date.parse('2026-09-14T07:00:00+07:00')).run();
+  await db.exec("INSERT INTO recurrence_rules(id,owner,title,kind,times_json,weekdays_json,start_date,end_date,enabled,version,created) VALUES('web-once','123','Nộp bài','once','[\"08:00\"]','[]','2026-09-14',NULL,1,1,0); INSERT INTO recurrence_occurrences(id,rule_id,owner,rule_version,slot,due,status) VALUES('web-once-slot','web-once','123',1,'2026-09-14T08:00',1789347600000,'sent')");
+  const current=await miniAppApi(new Request('https://local/api/bootstrap',{headers:headers(now)}),env,now);
+  const currentBody=await current.json() as {tasks:{id:string;note:string}[];reminders:{id:string;delivered?:boolean;past?:boolean}[];dailyPlan:{version:number}};
+  assert.equal(currentBody.tasks.find(task=>task.id===taskId)?.note,'Đổi sang trang 14');
+  assert.equal(currentBody.reminders.find(item=>item.id==='delivered-once')?.delivered,false);assert.equal(currentBody.reminders.find(item=>item.id==='delivered-once')?.past,true);
+  assert.equal(currentBody.reminders.find(item=>item.id==='web-once')?.delivered,true);
+  const editedPlan=await miniAppApi(new Request('https://local/api/day-plan',{method:'POST',headers:headers(now),body:JSON.stringify({id:'day_plan_edit_001',version:currentBody.dailyPlan.version,items:[{taskId,minutes:35}]})}),env,now);
+  assert.equal(editedPlan.status,200);
+  const next=now+86400000;
+  const tomorrow=await miniAppApi(new Request('https://local/api/bootstrap',{headers:headers(next)}),env,next);
+  const tomorrowBody=await tomorrow.json() as {reminders:{id:string}[]};assert.ok(!tomorrowBody.reminders.some(item=>item.id==='delivered-once'));assert.ok(!tomorrowBody.reminders.some(item=>item.id==='web-once'));
+ }finally{await mf.dispose();}
+});

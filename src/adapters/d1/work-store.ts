@@ -72,10 +72,11 @@ export class D1WorkStore implements WorkStore {
     const result=await this.mutateHierarchy(owner,requestId,args,now,s=>statements.push(...s));
     return {result,statements};
   }
-  async mutateHierarchy(owner:string,requestId:string,input:{operation:string;taskId?:string;stepId?:string;version?:number;title?:string;deadline?:string|null;complete?:boolean;confirm?:boolean},now:number,defer?:(statements:Statement[])=>void){
+  async mutateHierarchy(owner:string,requestId:string,input:{operation:string;taskId?:string;stepId?:string;version?:number;title?:string;note?:string;deadline?:string|null;complete?:boolean;confirm?:boolean},now:number,defer?:(statements:Statement[])=>void){
     const operation=input.operation;
     if(!['create','edit','complete','delete','add_step','step_status','edit_step','delete_step'].includes(operation))throw Error('INVALID_OPERATION');
     if(['create','edit','add_step','edit_step'].includes(operation)&&(!input.title?.trim()||input.title.length>160))throw Error('INVALID_TITLE');
+    if(input.note!==undefined&&(typeof input.note!=='string'||input.note.length>2000))throw Error('INVALID_NOTE');
     if(input.deadline!==undefined&&input.deadline!==null&&!/^\d{4}-\d{2}-\d{2}$/.test(input.deadline))throw Error('INVALID_DEADLINE');
     if(input.deadline){const parsed=Date.parse(input.deadline+'T00:00:00Z');if(!Number.isFinite(parsed)||new Date(parsed).toISOString().slice(0,10)!==input.deadline)throw Error('INVALID_DEADLINE');}
     if(operation==='complete'||operation==='step_status'){if(typeof input.complete!=='boolean')throw Error('INVALID_STATUS');}
@@ -88,16 +89,18 @@ export class D1WorkStore implements WorkStore {
     return new HealthyStore(this.db,defer).mutate<Record<string,unknown>>(owner,requestId,'task:'+operation,input,now,state=>{
       const statements:Statement[]=[];
       if(operation==='create'){
-        statements.push(q('INSERT INTO tasks(id,owner,title,deadline,deadline_precision,created) VALUES(?,?,?,?,?,?)',id,owner,input.title!.trim(),input.deadline??null,input.deadline?'date':null,now));
+        statements.push(q('INSERT INTO tasks(id,owner,title,note,deadline,deadline_precision,created) VALUES(?,?,?,?,?,?,?)',id,owner,input.title!.trim(),input.note?.trim()??'',input.deadline??null,input.deadline?'date':null,now));
         return {state,result:{id},statements};
       }
       if(!task||task.version!==input.version)throw Error('STALE_TASK');
       statements.push(q('INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM tasks WHERE owner=? AND id=? AND version=? AND deleted_at IS NULL) THEN 1 ELSE 0 END',owner,task.id,input.version!));
       if(operation==='edit'){
-        statements.push(q('UPDATE tasks SET title=?,deadline=?,version=version+1 WHERE owner=? AND id=?',input.title!.trim(),input.deadline===undefined?task.deadline:input.deadline,owner,task.id));
+        statements.push(q('UPDATE tasks SET title=?,note=?,deadline=?,version=version+1 WHERE owner=? AND id=?',input.title!.trim(),input.note===undefined?task.note??'':input.note.trim(),input.deadline===undefined?task.deadline:input.deadline,owner,task.id));
       }else if(operation==='complete'){
         if(input.complete&&children.some(s=>s.status!=='completed')&&!input.confirm)throw Error('CONFIRM_CHILDREN');
         statements.push(q('UPDATE tasks SET status=?,version=version+1 WHERE owner=? AND id=?',input.complete?'completed':'active',owner,task.id));
+        statements.push(q("UPDATE outbox SET state='failed' WHERE id LIKE ? AND state='pending'",'nudge:'+owner+':%'));
+        statements.push(q("UPDATE nudge_cycles SET cycle=cycle+1,version=version+1,tasks_json='[]',attempts=0,next_at=?,blocked_json='[]',lease_until=0 WHERE owner=?",now,owner));
         if(input.complete){
           statements.push(q("UPDATE task_steps SET status='completed',completed_at=COALESCE(completed_at,?),version=version+1 WHERE owner=? AND task_id=? AND deleted_at IS NULL AND status='active'",now,owner,task.id));
           statements.push(q('UPDATE task_completions SET completed_at=? WHERE owner=? AND task_id=?',now,owner,task.id));
@@ -290,6 +293,8 @@ export class D1WorkStore implements WorkStore {
         statements.push(q(`INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM ${native?'tool_steps':'conversation_receipts'} WHERE owner=? AND update_id=? AND ${native?"kind='write' AND state='done'":"state='ready'"}) AND EXISTS(SELECT 1 FROM tasks WHERE owner=? AND id=? AND version=? AND status=?) THEN 1 ELSE 0 END`,owner,change.updateId,owner,change.taskId,change.expectedVersion,change.operation==='complete'?'active':'completed'));
         if(change.operation==='reopen')statements.push(q('INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM task_completion_undo WHERE owner=? AND task_id=? AND expected_version=? AND expires>?) THEN 1 ELSE 0 END',owner,change.taskId,change.expectedVersion,now));
         statements.push(q('UPDATE tasks SET status=?,version=version+1 WHERE owner=? AND id=?',change.operation==='complete'?'completed':'active',owner,change.taskId));
+        statements.push(q("UPDATE outbox SET state='failed' WHERE id LIKE ? AND state='pending'",'nudge:'+owner+':%'));
+        statements.push(q("UPDATE nudge_cycles SET cycle=cycle+1,version=version+1,tasks_json='[]',attempts=0,next_at=?,blocked_json='[]',lease_until=0 WHERE owner=?",now,owner));
         if(change.operation==='complete'){
           statements.push(q("UPDATE task_steps SET status='completed',completed_at=COALESCE(completed_at,?),version=version+1 WHERE owner=? AND task_id=? AND status='active' AND deleted_at IS NULL",now,owner,change.taskId));
           statements.push(q('UPDATE task_completions SET completed_at=? WHERE owner=? AND task_id=?',now,owner,change.taskId));

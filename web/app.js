@@ -28,6 +28,7 @@ function toast(message){const inline=document.querySelector('#sheet-feedback');i
 function icon(name){const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('aria-hidden','true');svg.setAttribute('fill','none');svg.setAttribute('stroke','currentColor');svg.setAttribute('stroke-width','1.8');svg.setAttribute('stroke-linecap','round');const path=document.createElementNS(svg.namespaceURI,'path');path.setAttribute('d',name==='close'?'M6 6l12 12M18 6L6 18':'M9 3h6l1 3 3 1 2 5-2 5-3 1-1 3H9l-1-3-3-1-2-5 2-5 3-1z M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0');svg.append(path);return svg;}
 function openSheet(title){sheetContent.replaceChildren();const row=el('div',undefined,'sheet-title-row'),h=el('h2',title);h.id='sheet-title';h.tabIndex=-1;const close=button('',()=>sheet.close(),'icon-button');close.setAttribute('aria-label','Đóng');close.append(icon('close'));row.append(h,close);sheetContent.append(row);const feedback=el('p','','form-feedback');feedback.id='sheet-feedback';feedback.hidden=true;feedback.setAttribute('role','status');sheetContent.append(feedback);if(!sheet.open)sheet.showModal();h.focus({preventScroll:true});}
 function field(label,type,value='',required=true){const wrap=el('label',label,'form-field'),input=el('input');input.type=type;input.value=value;input.required=required;wrap.append(input);if(type==='time'){input.step='60';const hint=el('span','','clock-hint');const update=()=>{if(!input.value){hint.textContent='Chọn giờ · định dạng 24 giờ';return;}const [h,m]=input.value.split(':').map(Number);hint.textContent=input.value+' — '+(h%12||12)+' giờ'+(m?' '+m+' phút':'')+' '+(h<12?'sáng':h<18?'chiều':'tối');};input.addEventListener('input',update);update();wrap.append(hint);}return {wrap,input};}
+function noteField(value=''){const wrap=el('label','Ghi chú','form-field'),input=el('textarea');input.value=value;input.maxLength=2000;input.rows=5;input.placeholder='Thông tin quan trọng, đường dẫn, ý tưởng…';wrap.append(input,el('span','Chỉ lưu cùng task, không tự gửi cho Gemini.','clock-hint'));return {wrap,input};}
 function empty(title,text,action,label){const c=card('empty');c.append(el('span','✧','empty-symbol'),el('h2',title),el('p',text),button(label,action,'primary'));return c;}
 function confirm(title,description,action){openSheet(title);sheetContent.append(el('p',description,'hint'));const actions=el('div',undefined,'actions');actions.append(button('Xác nhận',()=>{sheet.close();action();},'primary'),button('Quay lại',()=>sheet.close(),'secondary'));sheetContent.append(actions);}
 function toggleTask(task){
@@ -39,7 +40,7 @@ function toggleTask(task){
 }
 function openTask(task){
  openSheet(task?'#'+task.code+' · Chi tiết':'Thêm công việc');
- const form=el('form'),name=field('Tên công việc','text',task?.title??''),deadline=field('Ngày hết hạn','date',task?.deadline?.slice(0,10)??'',false);name.input.maxLength=160;form.append(name.wrap,deadline.wrap);
+ const form=el('form'),name=field('Tên công việc','text',task?.title??''),note=noteField(task?.note??''),deadline=field('Ngày hết hạn','date',task?.deadline?.slice(0,10)??'',false);name.input.maxLength=160;form.append(name.wrap,note.wrap,deadline.wrap);
  if(task){
   form.append(el('h3','Các bước nhỏ'));
   for(const step of task.steps){const row=el('label',undefined,'task-row'),check=el('input');check.type='checkbox';check.className='check';check.checked=step.done;const label=el('span','#'+step.code+' · '+step.title);
@@ -55,8 +56,38 @@ function openTask(task){
  }
  const actions=el('div',undefined,'actions'),save=el('button',state.live?'Lưu thay đổi':'Lưu thay đổi mẫu','primary');save.type='submit';actions.append(save);
  if(task)actions.append(button(task.done?'Mở lại':'Hoàn thành',()=>toggleTask(task),'secondary'));
- form.append(actions);form.addEventListener('submit',event=>{event.preventDefault();const title=name.input.value.trim();if(!title)return;if(state.live){performLive('tasks',{operation:task?'edit':'create',...(task?{taskId:task.id,version:task.version}:{}),title,...(!task||deadline.input.value!==task.deadline?.slice(0,10)?{deadline:deadline.input.value||null}:{})});return;}if(task){task.title=title;task.deadline=deadline.input.value;}else state.tasks.push({code:state.nextTask++,title,deadline:deadline.input.value,done:false,steps:[],nextStep:1});sheet.close();render();toast('Đã đổi bản mẫu · Không lưu lên bot');});
+ if(task&&state.live)actions.append(button(state.dailyPlan?.plan?.items.some(item=>item.taskId===task.id)?'Chỉnh trong hôm nay':'Thêm vào hôm nay',()=>openTodayPlan(task.id),'secondary'));
+ form.append(actions);form.addEventListener('submit',event=>{event.preventDefault();const title=name.input.value.trim();if(!title)return;if(state.live){performLive('tasks',{operation:task?'edit':'create',...(task?{taskId:task.id,version:task.version}:{}),title,note:note.input.value,...(!task||deadline.input.value!==task.deadline?.slice(0,10)?{deadline:deadline.input.value||null}:{})});return;}if(task){task.title=title;task.note=note.input.value;task.deadline=deadline.input.value;}else state.tasks.push({code:state.nextTask++,title,note:note.input.value,deadline:deadline.input.value,done:false,steps:[],nextStep:1});sheet.close();render();toast('Đã đổi bản mẫu · Không lưu lên bot');});
  sheetContent.append(form,el('p','Mã không đổi khi sắp xếp. Trong bản thật cậu có thể nói “sửa task #24”.','hint'));
+}
+
+function openTodayPlan(addTaskId=null){
+ openSheet('Chỉnh kế hoạch hôm nay');
+ if(!state.live||!state.dailyPlan?.plan){sheetContent.append(el('p','Chưa có kế hoạch để chỉnh. Cài giờ sinh hoạt trước nhé.','hint'));return;}
+ const plan=state.dailyPlan.plan;
+ const entries=plan.items.map(item=>({taskId:item.taskId,minutes:item.minutes}));
+ if(addTaskId&&!entries.some(item=>item.taskId===addTaskId)){const task=state.tasks.find(item=>item.id===addTaskId);if(task&&!task.done)entries.push({taskId:task.id,minutes:45});}
+ const intro=el('p','Thêm, đổi phút, sắp xếp hoặc để việc sang hôm khác. Sức chứa được tính riêng cho ngày này; phần vượt sẽ hiện rõ.','hint'),rows=el('div'),picker=el('div',undefined,'plan-picker'),feedback=el('p','','hint');
+ const sync=()=>{[...rows.querySelectorAll('[data-task-id]')].forEach(row=>{const item=entries.find(entry=>entry.taskId===row.dataset.taskId);if(item)item.minutes=Number(row.querySelector('input').value);});};
+ const draw=()=>{
+  rows.replaceChildren();
+  for(const [index,item] of entries.entries()){
+   const task=state.tasks.find(value=>value.id===item.taskId);if(!task)continue;
+   const row=el('section',undefined,'plan-edit-row');row.dataset.taskId=item.taskId;
+   const info=el('div');info.append(el('strong','#'+task.code+' '+task.title),el('small',task.done?'Đã xong hôm nay':'Trong kế hoạch hôm nay'));
+   const minutes=field('Phút','number',String(item.minutes));minutes.input.min='5';minutes.input.max='960';minutes.input.step='5';
+   const controls=el('div',undefined,'plan-order');
+   const up=button('↑',()=>{sync();[entries[index-1],entries[index]]=[entries[index],entries[index-1]];draw();},'secondary');up.disabled=index===0;up.setAttribute('aria-label','Đưa lên');
+   const down=button('↓',()=>{sync();[entries[index],entries[index+1]]=[entries[index+1],entries[index]];draw();},'secondary');down.disabled=index===entries.length-1;down.setAttribute('aria-label','Đưa xuống');
+   controls.append(up,down,button('Để hôm khác',()=>{sync();entries.splice(index,1);draw();},'text-button'));row.append(info,minutes.wrap,controls);rows.append(row);
+  }
+  picker.replaceChildren();const available=state.tasks.filter(task=>!task.done&&!entries.some(item=>item.taskId===task.id));
+  if(available.length){const select=el('select');for(const task of available){const option=el('option','#'+task.code+' · '+task.title);option.value=task.id;select.append(option);}picker.append(select,button('+ Thêm vào hôm nay',()=>{sync();entries.push({taskId:select.value,minutes:45});draw();},'secondary'));}
+  else picker.append(el('p','Không còn task nào để thêm.','hint'));
+  const total=entries.reduce((sum,item)=>sum+item.minutes,0),capacity=plan.capacity??0;feedback.textContent=total+' phút đã chọn · sức chứa hôm nay '+capacity+' phút'+(total>capacity?' · vượt '+(total-capacity)+' phút':'')+'.';
+ };
+ draw();
+ const form=el('form'),save=el('button','Lưu kế hoạch hôm nay','primary');save.type='submit';form.append(intro,rows,picker,feedback,save);form.addEventListener('submit',async event=>{event.preventDefault();sync();if(entries.some(item=>!Number.isInteger(item.minutes)||item.minutes<5||item.minutes>960)){toast('Mỗi việc cần từ 5 đến 960 phút nhé.');return;}const result=await performLive('day-plan',{version:state.dailyPlan.version,items:entries});if(result?.unscheduled)toast('Đã lưu, nhưng còn '+result.unscheduled+' phút chưa có khung giờ thật để nhắc.');});sheetContent.append(form);
 }
 function confirmDelete(){if(state.live){const items=state.tasks.filter(t=>state.selected.has(t.code));confirm('Xóa '+items.length+' công việc?',items.map(t=>'#'+t.code+' '+t.title).join(' · ')+' — lời nhắc liên quan sẽ được hủy.',async()=>{const result=await performLive('tasks-delete',{items:items.map(t=>({id:t.id,version:t.version})),confirm:true});if(result){state.selected.clear();state.selecting=false;render();}});return;}const selected=state.tasks.filter(t=>state.selected.has(t.code));confirm('Xóa '+selected.length+' công việc?',selected.map(t=>'#'+t.code+' '+t.title).join(' · ')+' — thao tác này chỉ tác động dữ liệu demo.',()=>{state.tasks=state.tasks.filter(t=>!state.selected.has(t.code));state.selected.clear();state.selecting=false;render();toast('Đã xóa trong bản mẫu. Tải lại trang để khôi phục.');});}
 function openReminder(reminder){
@@ -204,7 +235,7 @@ function editTimeline(block){
  form.addEventListener('submit',e=>{e.preventDefault();const [h,m]=time.input.value.split(':').map(Number),day=new Date(state.timeline.window.start+25200000).toISOString().slice(0,10);let at=Date.parse(day+'T'+String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':00+07:00');if(at<state.timeline.window.start)at+=86400000;moveTimeline(block,at);});
  sheetContent.append(form);if(task)sheetContent.append(button('Chi tiết công việc',()=>openTask(task),'text-button'));
 }
-const ui={moveTimeline,undoTimeline,editTimeline,state:()=>state,cultivation:()=>state.cultivation,demoDay,openDraw,openInventory,openBreakthrough,el,button,heading,card,toast,empty,render,openTask,toggleTask,confirmDelete,openReminder,openAvailability,openShare};
+const ui={moveTimeline,undoTimeline,editTimeline,state:()=>state,cultivation:()=>state.cultivation,demoDay,openDraw,openInventory,openBreakthrough,el,button,heading,card,toast,empty,render,openTask,openTodayPlan,toggleTask,confirmDelete,openReminder,openAvailability,openShare};
 function render(){
  const previousScroll=document.querySelector('.time-scroll');if(previousScroll)state.timelineScroll=previousScroll.scrollTop;
  content.removeAttribute('aria-busy');

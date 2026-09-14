@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {planDay} from '../../src/application/daily-planner.ts';
 import {availableRanges} from '../../src/domain/availability.ts';
+import {chooseManualPlan} from '../../src/application/work-planner.ts';
 const hour=3600000;
 test('availability patches subtract busy time without erasing other hours',()=>{
  assert.deepEqual(availableRanges([{start:14*hour,end:17*hour}],[{start:15*hour,end:16*hour}],0),[{start:14*hour,end:15*hour},{start:16*hour,end:17*hour}]);
@@ -25,6 +26,49 @@ test('completed/deleted work excluded; missing estimate or missed deadline not g
  assert.equal(result.blocks.length,1);
  assert.equal(result.blocks[0]!.taskId,'late');
  assert.deepEqual(new Set(result.unplanned.map(t=>t.reason)),new Set(['needs_estimate']));
+});
+
+test('manual Today may exceed calculated capacity but only real windows are nudged',()=>{
+ const start=Date.parse('2026-09-14T08:00:00+07:00'),end=Date.parse('2026-09-14T18:00:00+07:00');
+ const tasks=[
+  {id:'a',title:'A',deadline:null,remaining:500,priority:0,updated:0,created:0},
+  {id:'b',title:'B',deadline:null,remaining:500,priority:0,updated:0,created:1}
+ ];
+ const plan=chooseManualPlan(tasks,[{day:1,ranges:[{start,end}],assumed:false}],start,[{taskId:'a',minutes:500},{taskId:'b',minutes:500}]);
+ assert.equal(plan.capacity,480,'capacity is calculated from this day, including contingency');
+ assert.equal(plan.planned,1000);assert.equal(plan.overflow,520);
+ assert.ok((plan.unscheduled??0)>0);
+ assert.equal(plan.items.reduce((sum,item)=>sum+(item.scheduledMinutes??0),0),plan.planned-plan.unscheduled!);
+ assert.ok(plan.items.flatMap(item=>item.windows).every(window=>window.start>=start&&window.end<=end));
+});
+
+test('manual Today preserves completed totals, supports removal and resets at next operating day',async()=>{
+ const {readFileSync,readdirSync}=await import('node:fs');
+ const {Miniflare}=await import('miniflare');
+ const {ScheduleStore}=await import('../../src/adapters/d1/schedule-store.ts');
+ const {D1WorkStore}=await import('../../src/adapters/d1/work-store.ts');
+ const {DayPlanStore}=await import('../../src/adapters/d1/day-plan-store.ts');
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as import('../../src/adapters/d1/database.ts').Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
+  const now=Date.parse('2026-09-14T08:00:00+07:00'),schedule=new ScheduleStore(db),work=new D1WorkStore(db),plans=new DayPlanStore(db);
+  await schedule.configure('123','04:30','22:30',0,now);
+  await db.exec("INSERT INTO tasks(id,owner,title,created) VALUES('a','123','A',0),('b','123','B',1)");
+  const initial=(await plans.ensure('123',now))!;
+  await db.prepare("INSERT INTO nudge_cycles(owner,day,next_at) VALUES('123',?,0)").bind(initial.plan.day).run();
+  await db.prepare("INSERT INTO outbox(id,payload,available) VALUES('nudge:123:old','{}',0)").run();
+  await plans.replace('123','manual_plan_001',initial.version,[{taskId:'a',minutes:500},{taskId:'b',minutes:500}],now);
+  let saved=(await plans.ensure('123',now))!;assert.equal(saved.plan.planned,1000);assert.deepEqual(saved.plan.manualItems?.map(item=>item.taskId),['a','b']);
+  assert.equal((await db.prepare("SELECT state FROM outbox WHERE id='nudge:123:old'").first<{state:string}>())!.state,'failed');
+  await db.prepare("UPDATE nudge_cycles SET attempts=2,tasks_json='[\"a\"]' WHERE owner='123'").run();
+  await work.mutateHierarchy('123','complete_a_001',{operation:'complete',taskId:'a',version:1,complete:true,confirm:true},now+1000);
+  const cycle=await db.prepare("SELECT attempts,tasks_json FROM nudge_cycles WHERE owner='123'").first<{attempts:number;tasks_json:string}>();assert.equal(cycle?.attempts,0);assert.equal(cycle?.tasks_json,'[]');
+  saved=(await plans.ensure('123',now+1000))!;assert.equal(saved.plan.planned,1000);assert.equal(saved.plan.items.length,2);
+  await plans.replace('123','remove_b_001',saved.version,[{taskId:'a',minutes:500}],now+2000);
+  saved=(await plans.ensure('123',now+2000))!;assert.deepEqual(saved.plan.items.map(item=>item.taskId),['a']);assert.equal(saved.plan.planned,500);
+  const tomorrow=(await plans.ensure('123',now+86400000))!;assert.ok(!tomorrow.plan.items.some(item=>item.taskId==='a'));assert.ok(tomorrow.plan.items.some(item=>item.taskId==='b'));
+ }finally{await mf.dispose();}
 });
 
 test('replan persists blocks and keeps omitted tasks visible as unplanned',async()=>{

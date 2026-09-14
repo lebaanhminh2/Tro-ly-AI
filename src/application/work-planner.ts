@@ -1,8 +1,9 @@
 import {availableRanges,type TimeRange} from '../domain/availability.ts';
 export type Candidate={id:string;title:string;deadline:number|null;remaining:number|null;priority:number;updated:number;created:number};
 export type DayCapacity={day:number;ranges:TimeRange[];assumed:boolean};
-export type DayItem={taskId:string;minutes:number;remaining:number|null;provisional:boolean;reason:string;windows:TimeRange[]};
-export type WorkPlan={day:number;items:DayItem[];later:{taskId:string;reason:string}[];risks:{taskId:string;reason:string}[];capacity:number;planned:number;assumed:boolean;futureAssumed:boolean;horizonEnd:number;forecast:{day:number;minutes:number;tasks:string[]}[]};
+export type DayItem={taskId:string;minutes:number;remaining:number|null;provisional:boolean;reason:string;windows:TimeRange[];scheduledMinutes?:number;manual?:boolean};
+export type ManualDayItem={taskId:string;minutes:number};
+export type WorkPlan={day:number;items:DayItem[];later:{taskId:string;reason:string}[];risks:{taskId:string;reason:string}[];capacity:number;planned:number;assumed:boolean;futureAssumed:boolean;horizonEnd:number;forecast:{day:number;minutes:number;tasks:string[]}[];manualItems?:ManualDayItem[];overflow?:number;unscheduled?:number};
 const MIN=60000;
 // Work occupies at most 80% of each available interval. The rest is transition,
 // rest and contingency, not extra work hidden outside the budget.
@@ -10,8 +11,9 @@ export function chooseDailyPlan(tasks:Candidate[],days:DayCapacity[],now:number,
  if(!days.length)throw Error('INVALID_PLAN_DAYS');
  if(new Set(tasks.map(t=>t.id)).size!==tasks.length)throw Error('DUPLICATE_TASK');
  for(const t of tasks)if(t.remaining!==null&&(!Number.isInteger(t.remaining)||t.remaining<1||t.remaining>100000)||!Number.isInteger(t.priority)||t.priority<0||t.priority>2)throw Error('INVALID_ESTIMATE');
- const usable=days.map(d=>availableRanges(d.ranges,[],now).filter(r=>r.end-r.start>=10*MIN).map(r=>({start:r.start,end:r.start+Math.floor((r.end-r.start)/MIN*.8)*MIN})));
- const capacity=usable[0]!.reduce((n,r)=>n+Math.floor((r.end-r.start)/MIN),0);
+ const fullUsable=days.map(d=>availableRanges(d.ranges,[],d.ranges[0]?.start??now).filter(r=>r.end-r.start>=10*MIN).map(r=>({start:r.start,end:r.start+Math.floor((r.end-r.start)/MIN*.8)*MIN})));
+ const usable=days.map((d,index)=>availableRanges(fullUsable[index]!,[],now));
+ const capacity=fullUsable[0]!.reduce((n,r)=>n+Math.floor((r.end-r.start)/MIN),0);
  const remaining=new Map(tasks.map(t=>[t.id,t.remaining??45]));
  const allocations:DayItem[][]=days.map(()=>[]);
  const risks:WorkPlan['risks']=[];
@@ -61,4 +63,30 @@ export function chooseDailyPlan(tasks:Candidate[],days:DayCapacity[],now:number,
  return {day:days[0]!.day,items:today,later:tasks.filter(t=>!today.some(i=>i.taskId===t.id)).map(t=>({taskId:t.id,reason:'not_selected_today'})),risks,
   capacity,planned:today.reduce((n,t)=>n+t.minutes,0),assumed:days[0]!.assumed,futureAssumed:days.slice(1).some(d=>d.assumed),horizonEnd,
   forecast:days.map((day,index)=>({day:day.day,minutes:allocations[index]!.reduce((n,t)=>n+t.minutes,0),tasks:allocations[index]!.map(t=>t.taskId)}))};
+}
+
+// Once the user edits Today, that exact selection becomes authoritative for
+// this operating day. It may consume the normal 20% contingency, but busy and
+// sleep time remain hard boundaries. Minutes without a real slot stay visible
+// as unscheduled and never receive a fake timed nudge.
+export function chooseManualPlan(tasks:Candidate[],days:DayCapacity[],now:number,manualItems:ManualDayItem[]):WorkPlan{
+ if(!days.length||manualItems.length>50||new Set(manualItems.map(i=>i.taskId)).size!==manualItems.length||manualItems.some(i=>!Number.isInteger(i.minutes)||i.minutes<5||i.minutes>960))throw Error('INVALID_MANUAL_PLAN');
+ const byId=new Map(tasks.map(t=>[t.id,t])),base=chooseDailyPlan(tasks,days,now);
+ if(manualItems.some(i=>!byId.has(i.taskId)))throw Error('TASK_NOT_AVAILABLE');
+ const ranges=availableRanges(days[0]!.ranges,[],now).filter(r=>r.end-r.start>=5*MIN).map(r=>({...r}));
+ const items:DayItem[]=[];
+ for(const selected of manualItems){
+  const task=byId.get(selected.taskId)!,windows:TimeRange[]=[];let wanted=selected.minutes;
+  for(const range of ranges){
+   if(wanted<=0)break;
+   const room=Math.floor((range.end-range.start)/MIN);if(room<5)continue;
+   const minutes=Math.min(room,wanted);windows.push({start:range.start,end:range.start+minutes*MIN});
+   range.start+=(minutes+10)*MIN;wanted-=minutes;
+  }
+  items.push({taskId:task.id,minutes:selected.minutes,remaining:task.remaining,provisional:task.remaining===null,reason:'manual_today',windows,scheduledMinutes:selected.minutes-wanted,manual:true});
+ }
+ const planned=items.reduce((sum,item)=>sum+item.minutes,0),scheduled=items.reduce((sum,item)=>sum+(item.scheduledMinutes??item.minutes),0);
+ return {...base,items,later:tasks.filter(t=>!items.some(i=>i.taskId===t.id)).map(t=>({taskId:t.id,reason:'not_selected_today'})),planned,
+  manualItems:manualItems.map(i=>({...i})),overflow:Math.max(0,planned-base.capacity),unscheduled:planned-scheduled,
+  forecast:base.forecast.map((day,index)=>index?day:{...day,minutes:planned,tasks:items.map(i=>i.taskId)})};
 }

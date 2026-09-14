@@ -1,3 +1,4 @@
+import {taskBuckets} from '../api.js';
 const SCALE=2.4/60000;
 const clock=t=>new Date(t).toLocaleTimeString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit'});
 export function updateTimelineClock(state){
@@ -40,7 +41,7 @@ export function renderTimeline(ui,state){
  }
  const now=el('div',undefined,'time-now');now.dataset.start=range.start;now.dataset.end=range.target;now.append(el('span',''));canvas.append(now);
  const foot=el('p',clock(range.target)+' · Giờ ngủ mục tiêu','footer-note');root.append(foot);
- const done=state.tasks.filter(t=>t.done);if(done.length){const details=el('details',undefined,'time-completed');details.append(el('summary',done.length+' việc đã xong'));for(const t of done)details.append(button('✓ #'+t.code+' '+t.title,()=>ui.openTask(t),'text-button'));root.append(details);}
+ const done=taskBuckets(state.tasks,state.operatingDay,state.start).completedToday;if(done.length){const details=el('details',undefined,'time-completed');details.append(el('summary',done.length+' việc đã xong hôm nay'));for(const t of done)details.append(button('✓ #'+t.code+' '+t.title,()=>ui.openTask(t),'text-button'));root.append(details);}
  requestAnimationFrame(()=>{if(!root.isConnected)return;updateTimelineClock(state);if(state.timelineScroll!==undefined)scroll.scrollTop=state.timelineScroll;else scroll.scrollTop=Math.max(0,(Math.min(state.serverNow??Date.now(),range.target)-range.start)*SCALE-100);});
  return root;
 }

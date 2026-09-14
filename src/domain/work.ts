@@ -1,4 +1,4 @@
-export type Task = { id: string; owner: string; title: string; deadline: string | null; version: number;status?:'active'|'completed' };
+export type Task = { id: string; owner: string; title: string; note?:string; deadline: string | null; version: number;status?:'active'|'completed' };
 export type Proposal = { id: string; owner: string; task_id: string; operation: 'capture' | 'deadline'; value: string;
   expected_version: number; expires: number; status: 'pending' | 'accepted' | 'rejected' };
 export type Selection = { owner: string; task_id: string; version: number; expires: number };

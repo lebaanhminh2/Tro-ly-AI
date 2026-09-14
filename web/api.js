@@ -19,6 +19,19 @@ export function createDemo(){
  };
 }
 
+const DAY_MS=86400000;
+export function taskBuckets(tasks,day,start='04:30'){
+ const [hour,minute]=String(start).split(':').map(Number),startMinutes=hour*60+minute;
+ const completionDay=at=>Math.floor((at+7*3600000-startMinutes*60000)/DAY_MS);
+ const active=[],completedToday=[],history=[];
+ for(const task of tasks){
+  if(!task.done)active.push(task);
+  else if(Number.isFinite(task.completedAt)&&Number.isInteger(day)&&completionDay(task.completedAt)===day)completedToday.push(task);
+  else history.push(task);
+ }
+ return {active,completedToday,history};
+}
+
 // All balances below are disposable demo state, never production rewards.
 export const realms=[
  {name:'Phàm Nhân',qi:0,days:0},{name:'Luyện Khí',qi:6,days:2},
@@ -112,7 +125,7 @@ async function liveRequest(path,body){
  const result=await response.json();
  if(!response.ok){
   if(response.status<500&&key)pendingRequests.delete(key);
-  const messages={AUTH_REQUIRED:'Phiên đã hết hạn. Đóng và mở lại từ Telegram nhé.',SETUP_REQUIRED:'Chọn giờ bắt đầu và giờ nghỉ trước nhé.',STALE_TASK:'Việc vừa thay đổi. Mở lại danh sách rồi thử lại.',CONFIRM_CHILDREN:'Task còn bước chưa xong. Hãy xác nhận hoàn thành cả nhóm.',CONFIRM_REOPEN_PARENT:'Cần xác nhận mở lại task cha.',DRAW_UNAVAILABLE:'Chưa thể quay lúc này.',NO_TICKETS:'Cậu chưa có vé. Hoàn thành một task lần đầu để nhận 1 vé.',ACCOUNT_SUSPENDED:'Tài khoản tạm ngưng do ba ngày không chat. Nhắn cho Minh Anh để hoạt động lại; đây không phải chế độ /ngu.',NO_ACTIVE_DAY:'Cậu đã lưu giờ sinh hoạt. Ngày hoạt động tiếp theo chưa bắt đầu; không cần thiết lập lại.',BREAKTHROUGH_UNAVAILABLE:'Chưa đủ điều kiện hoặc hôm nay đã thử đột phá.',FUSION_UNAVAILABLE:'Chưa đủ ba phù cùng cấp.',ITEM_UNAVAILABLE:'Vật phẩm chưa dùng được lúc này.',ALREADY_PROTECTED:'Hôm nay đã kích hoạt bảo vệ rồi.',NO_NEXT_REMINDER:'Không còn lần nhắc sắp tới để sửa.'};
+  const messages={AUTH_REQUIRED:'Phiên đã hết hạn. Đóng và mở lại từ Telegram nhé.',SETUP_REQUIRED:'Chọn giờ bắt đầu và giờ nghỉ trước nhé.',STALE_TASK:'Việc vừa thay đổi. Mở lại danh sách rồi thử lại.',TASK_NOT_AVAILABLE:'Task này không còn phù hợp để thêm vào hôm nay.',PLAN_CHANGED:'Kế hoạch vừa thay đổi. Mở lại rồi chỉnh trên bản mới nhé.',CONFIRM_CHILDREN:'Task còn bước chưa xong. Hãy xác nhận hoàn thành cả nhóm.',CONFIRM_REOPEN_PARENT:'Cần xác nhận mở lại task cha.',DRAW_UNAVAILABLE:'Chưa thể quay lúc này.',NO_TICKETS:'Cậu chưa có vé. Hoàn thành một task lần đầu để nhận 1 vé.',ACCOUNT_SUSPENDED:'Tài khoản tạm ngưng do ba ngày không chat. Nhắn cho Minh Anh để hoạt động lại; đây không phải chế độ /ngu.',NO_ACTIVE_DAY:'Cậu đã lưu giờ sinh hoạt. Ngày hoạt động tiếp theo chưa bắt đầu; không cần thiết lập lại.',BREAKTHROUGH_UNAVAILABLE:'Chưa đủ điều kiện hoặc hôm nay đã thử đột phá.',FUSION_UNAVAILABLE:'Chưa đủ ba phù cùng cấp.',ITEM_UNAVAILABLE:'Vật phẩm chưa dùng được lúc này.',ALREADY_PROTECTED:'Hôm nay đã kích hoạt bảo vệ rồi.',NO_NEXT_REMINDER:'Không còn lần nhắc sắp tới để sửa.'};
   const timelineErrors={TIMELINE_CHANGED:'Lịch vừa thay đổi. Đóng hộp và mở lại lịch trước khi kéo nhé.',TIMELINE_BLOCKED:'Giờ đó đã qua, đang bận hoặc ngoài khung làm việc. Chưa đổi lịch.',TIMELINE_NO_ROOM:'Không đủ chỗ cho các việc phía sau. Chưa lưu lần kéo này; hãy điều chỉnh khoảng rảnh hoặc thời lượng.',TIMELINE_DEADLINE:'Cách xếp này vượt deadline. Chưa đổi lịch.',TIMELINE_UNDO_EXPIRED:'Đã hết thời gian hoàn tác. Cậu vẫn có thể chỉnh giờ trực tiếp.',INVALID_TIMELINE_MOVE:'Chọn giờ tương lai theo nấc 5 phút nhé.'};
   throw Error(result.message??timelineErrors[result.error]??messages[result.error]??'Chưa xác nhận được kết quả. Kiểm tra lại trước khi thao tác mới.');
  }
@@ -121,14 +134,15 @@ async function liveRequest(path,body){
 export async function refreshLive(){
  const data=await liveRequest('bootstrap');
  const c=data.account.state;
+ const completions=new Map(data.progress.completions.map(item=>[item.task_id,item.completed_at]));
  const clock=n=>String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0');
  return {
   live:true,loaded:true,resting:data.resting,rest:data.rest,needsSetup:data.needsSetup,serverNow:data.now,settingsVersion:data.settings?.version??0,
   start:clock(data.settings?.start_minutes??270),sleep:data.settings?.sleep_minutes===null||!data.settings?'':clock(data.settings.sleep_minutes),
-  tasks:data.tasks.map(t=>({id:t.id,code:t.public_code,title:t.title,version:t.version,deadline:t.deadline??'',done:t.status==='completed',steps:t.steps.map(s=>({id:s.id,code:t.public_code+'.'+s.step_code,title:s.title,done:s.status==='completed',version:s.version}))})),
+  tasks:data.tasks.map(t=>({id:t.id,code:t.public_code,title:t.title,note:t.note??'',version:t.version,deadline:t.deadline??'',done:t.status==='completed',completedAt:completions.get(t.id)??null,steps:t.steps.map(s=>({id:s.id,code:t.public_code+'.'+s.step_code,title:s.title,done:s.status==='completed',version:s.version}))})),
   reminders:data.reminders.map(r=>({...r,times:r.times.join(', '),start:r.startDate,end:r.endDate??''})),
   cultivation:{...c,totalEarned:c.earned,active:{heart:c.heartDay===data.day?.day,peace:c.peaceDay===data.day?.day},log:[],rewardedTasks:[]},
-  day:data.day,dailyPlan:data.dailyPlan,timeline:data.timeline,loadedAt:Date.now(),progress:data.progress,sessions:data.sessions,events:data.events
+  day:data.day,operatingDay:data.day?.day??null,dailyPlan:data.dailyPlan,timeline:data.timeline,loadedAt:Date.now(),progress:data.progress,sessions:data.sessions,events:data.events
  };
 }
 export async function liveMutation(path,input){const result=await liveRequest(path,input);const refreshed=await refreshLive();pendingRequests.delete(path+JSON.stringify(input));return {result,...refreshed};}
