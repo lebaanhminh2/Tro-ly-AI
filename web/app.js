@@ -161,14 +161,22 @@ function openAvailability(){
 function openShare(){openSheet(state.live?'Thẻ thành tích':'Thẻ thành tích mẫu');const c=el('div',undefined,'rank-card');c.append(el('div','✧','rank-seal'),el('p','TU LUYỆN KỶ LUẬT','eyebrow'),el('h2',realms[state.cultivation.rank].name),el('p','Tổng tích lũy: '+state.cultivation.totalEarned+' tu vi'),el('p',state.live?'MINH ANH · TRỢ LÝ CỦA CẬU':'MINH ANH · DEMO','eyebrow'));sheetContent.append(c,el('p','Không chứa tên task hoặc lịch cá nhân. Chỉ chia sẻ khi cậu chủ động chọn.','hint'),button('Lưu thẻ PNG',()=>{const canvas=document.createElement('canvas');canvas.width=800;canvas.height=1000;const ctx=canvas.getContext('2d');ctx.fillStyle='#242034';ctx.fillRect(0,0,800,1000);ctx.textAlign='center';ctx.fillStyle='#e6c382';ctx.font='28px sans-serif';ctx.fillText('TU LUYỆN KỶ LUẬT',400,220);ctx.font='64px serif';ctx.fillText(realms[state.cultivation.rank].name,400,440);ctx.fillStyle='#f4f0ff';ctx.font='30px sans-serif';ctx.fillText('Tổng tích lũy: '+state.cultivation.totalEarned+' tu vi',400,550);ctx.font='22px sans-serif';ctx.fillText(state.live?'MINH ANH · TRỢ LÝ CỦA CẬU':'MINH ANH · DEMO',400,830);canvas.toBlob(blob=>{if(!blob)return;const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='minh-anh-thanh-tich.png';link.click();setTimeout(()=>URL.revokeObjectURL(url),10000);},'image/png');},'primary'));}
 function demoDay(){if(state.live&&state.day)return state.day.day;return Math.floor((Date.now()+7*3600000-4.5*3600000)/86400000);}
 
+async function playEffect(target,type,duration=720){
+ target.classList.remove('effect-spin','effect-breakthrough','effect-success','effect-failure');
+ target.classList.add(type==='draw'?'effect-spin':'effect-breakthrough');
+ await new Promise(resolve=>setTimeout(resolve,duration));
+ target.classList.remove('effect-spin','effect-breakthrough');
+}
 function openDraw(){
- if(state.live){openSheet('Quay thưởng');const c=state.cultivation,blocked=c.suspended||c.tickets<1;const hint=c.suspended?'Tạm ngưng vì lâu không chat. Nhắn Minh Anh để hoạt động lại.':c.tickets<1?'Chưa có vé. Hoàn thành một task lần đầu để nhận 1 vé.':'Cậu có '+c.tickets+' vé. /ngu không khóa quay thưởng.';const draw=button('Dùng 1 vé',async()=>{if(state.cultivation.tickets<1||state.cultivation.suspended)return;await performLive('cultivation',{operation:'draw'});},'primary');draw.disabled=blocked;sheetContent.append(el('p',hint,'hint'),draw);return;}
+ if(state.live){openSheet('Quay thưởng');const c=state.cultivation,blocked=c.suspended||c.tickets<1;const hint=c.suspended?'Tạm ngưng vì lâu không chat. Nhắn Minh Anh để hoạt động lại.':c.tickets<1?'Chưa có vé. Hoàn thành một task lần đầu để nhận 1 vé.':'Cậu có '+c.tickets+' vé. /ngu không khóa quay thưởng.';const draw=button('Dùng 1 vé',async()=>{if(state.cultivation.tickets<1||state.cultivation.suspended||draw.disabled)return;draw.disabled=true;draw.textContent='Đang quay…';await playEffect(draw,'draw');const saved=await performLive('cultivation',{operation:'draw'});if(saved===null&&draw.isConnected){draw.disabled=false;draw.textContent='Dùng 1 vé';}},'primary');draw.disabled=blocked;sheetContent.append(el('p',hint,'hint'),draw);return;}
  openSheet('Linh bảo · Quay thưởng');
  sheetContent.append(el('p','1 vé / lần · Không mua bằng tiền · Kết quả demo','hint'));
  const result=el('div','Cậu có '+state.cultivation.tickets+' vé','loot-result');result.setAttribute('role','status');
- const draw=button('Dùng 1 vé quay',()=>{
+ const draw=button('Dùng 1 vé quay',async()=>{
+  if(draw.disabled)return;
+  draw.disabled=true;draw.textContent='Đang quay…';await playEffect(result,'draw');
   const reward=demoDraw(state.cultivation);
-  if(!reward)return;
+  if(!reward){draw.disabled=false;draw.textContent='Dùng 1 vé quay';return;}
   result.textContent='✦ '+reward.label+' · Còn '+state.cultivation.tickets+' vé';
   draw.disabled=state.cultivation.tickets===0;render();
  },'primary');draw.disabled=state.cultivation.tickets===0;sheetContent.append(result,draw);
@@ -210,10 +218,12 @@ function openBreakthrough(){
  const info=el('p',undefined,'hint'),result=el('div',undefined,'loot-result');result.hidden=true;result.setAttribute('role','status');
  const chance=()=>Math.min(100,[70,85,100][Math.min(c.failures,2)]+(talismans.find(t=>t.key===select.value)?.boost??0));
  const explain=()=>{info.textContent='Thành công '+chance()+'% · Thất bại giữ tu vi/chuỗi, phù đã chọn vẫn tiêu hao. Mỗi ngày chỉ thử 1 lần.';};select.addEventListener('change',explain);explain();
- const attempt=button('Đột phá',()=>{
-  if(state.live){performLive('cultivation',{operation:'breakthrough',item:select.value||null});return;}
+ const attempt=button('Đột phá',async()=>{
+  if(attempt.disabled)return;
+  attempt.disabled=true;attempt.textContent='Đang đột phá…';await playEffect(attempt,'breakthrough',860);
+  if(state.live){const saved=await performLive('cultivation',{operation:'breakthrough',item:select.value||null});if(saved===null&&attempt.isConnected){attempt.disabled=false;attempt.textContent='Đột phá';}return;}
   const r=demoBreakthrough(c,demoDay(),select.value||null);
-  if(!r)return;attempt.disabled=true;select.disabled=true;result.hidden=false;
+  if(!r){attempt.disabled=false;attempt.textContent='Đột phá';return;}select.disabled=true;result.hidden=false;
   result.textContent=r.success?'Đột phá thành công ✦ '+realms[c.rank].name+' · Được bảo vệ hạ bậc 72 giờ.':'Chưa thành công. Tu vi và chuỗi vẫn giữ, mai thử tiếp nhé.';
   render();
  },'primary');attempt.disabled=c.attemptDay===demoDay()||c.qi<target.qi||c.streak<target.days;
