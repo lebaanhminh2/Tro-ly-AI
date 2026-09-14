@@ -5,21 +5,21 @@ import type {WorkPlan} from '../../application/work-planner.ts';
 import type {Env} from '../../config/env.ts';
 import {Gemini} from '../../ai/gemini.ts';
 
-async function budget(db:Database,owner:string,now:number,exclude=''){
+async function budget(db:Database,owner:string,now:number,taskId?:string,exclude=''){
  const settings=await new ScheduleStore(db).settings(owner);if(!settings||settings.sleep_minutes===null)return null;
  const day=operatingDay(now,settings.start_minutes),window=dayWindow(day,settings.start_minutes,settings.sleep_minutes);
  const chat=await query(db,"SELECT MAX(created) AS at FROM command_inbox WHERE owner=? AND created>=? AND created<=? AND json_extract(payload,'$.text') IS NOT NULL",owner,window.start,now).first<{at:number|null}>();
  const since=Math.max(window.start,chat?.at??0);
  const sent=await query(db,`SELECT COUNT(CASE WHEN COALESCE(sent_at,available)>=? THEN 1 END) AS n,MAX(COALESCE(sent_at,available)) AS last
  FROM outbox WHERE id!=? AND state IN ('sent','sending','uncertain') AND
- (id LIKE ? OR reminder_id IN(SELECT id FROM reminders WHERE owner=?)) AND COALESCE(sent_at,available)>=?`,since,exclude,'nudge:'+owner+':%',owner,window.start).first<{n:number;last:number|null}>();
- return {day,since,count:sent?.n??0,allowed:(sent?.n??0)<2&&(sent?.last===null||sent?.last===undefined||now-sent.last>=1800000)};
+ (id LIKE ? OR reminder_id IN(SELECT id FROM reminders WHERE owner=?)) AND (? IS NULL OR json_extract(payload,'$._nudge.taskId')=?) AND COALESCE(sent_at,available)>=?`,since,exclude,'nudge:'+owner+':%',owner,taskId??null,taskId??null,window.start).first<{n:number;last:number|null}>();
+ return {day,since,count:sent?.n??0,allowed:(sent?.n??0)<2&&(sent?.last===null||sent?.last===undefined||now-sent.last>=900000)};
 }
 export async function nudgeAllowed(db:Database,owner:string,id:string,now:number){
  if(await new ScheduleStore(db).isResting(owner,now))return false;
- const b=await budget(db,owner,now,id);if(!b?.allowed)return false;
  const row=await query(db,'SELECT payload FROM outbox WHERE id=?',id).first<{payload:string}>();
  if(!row)return false;const meta=JSON.parse(row.payload)._nudge;
+ const b=await budget(db,owner,now,String(meta?.taskId??''),id);if(!b?.allowed)return false;
  if(!meta||meta.day!==b.day||meta.since!==b.since||now<meta.due||now>=meta.end)return false;
  const plan=await query(db,'SELECT version,plan_json FROM daily_plans WHERE owner=?',owner).first<{version:number;plan_json:string}>();
  return !!plan&&plan.version===meta.version&&(JSON.parse(plan.plan_json) as WorkPlan).items.some(i=>i.taskId===meta.taskId)&&!!await query(db,"SELECT id FROM tasks WHERE owner=? AND id=? AND status='active' AND deleted_at IS NULL",owner,meta.taskId).first();
@@ -27,15 +27,18 @@ export async function nudgeAllowed(db:Database,owner:string,id:string,now:number
 export async function queueWorkNudge(env:Env,now:number,transport:typeof fetch){
  const owner=env.TELEGRAM_USER_ID,db=env.DB;
  if(await new ScheduleStore(db).isResting(owner,now))return;
- const b=await budget(db,owner,now);if(!b?.allowed)return;
+ const b=await budget(db,owner,now);if(!b)return;
  const saved=await query(db,'SELECT version,plan_json FROM daily_plans WHERE owner=? AND day=?',owner,b.day).first<{version:number;plan_json:string}>();if(!saved)return;
  const plan=JSON.parse(saved.plan_json) as WorkPlan;
- const item=plan.items.find(i=>i.windows.some(w=>w.start<=now&&now<w.end));if(!item)return;
+ let item;
+ for(const candidate of plan.items.filter(i=>i.windows.some(w=>w.start<=now&&now<w.end))){if((await budget(db,owner,now,candidate.taskId))?.allowed){item=candidate;break;}}
+ if(!item)return;
  const window=item.windows.find(w=>w.start<=now&&now<w.end)!;
  const task=await query(db,"SELECT title,deadline FROM tasks WHERE owner=? AND id=? AND status='active' AND deleted_at IS NULL",owner,item.taskId).first<{title:string;deadline:string|null}>();if(!task)return;
- const id=`nudge:${owner}:${b.day}:${b.since}:${b.count}`;
- const meta={day:b.day,since:b.since,taskId:item.taskId,version:saved.version,due:window.start,end:window.end};
- const fallback=b.count===0?`Cậu ơi, mình quay lại “${task.title}” nhé? Đang vướng chỗ nào thì kể tớ nghe với :>`:`Tớ ghé nhắc thêm chút thôi: “${task.title}”. Khi nào quay lại, nhắn tớ một tiếng nhé 🤍`;
+ const taskBudget=await budget(db,owner,now,item.taskId);if(!taskBudget?.allowed)return;
+ const id=`nudge:${owner}:${b.day}:${item.taskId}:${taskBudget.count}`;
+ const meta={day:b.day,since:taskBudget.since,taskId:item.taskId,version:saved.version,due:window.start,end:window.end};
+ const fallback=taskBudget.count===0?`Cậu ơi, mình quay lại “${task.title}” nhé? Đang vướng chỗ nào thì kể tớ nghe với :>`:`Tớ ghé nhắc thêm chút thôi: “${task.title}”. Khi nào quay lại, nhắn tớ một tiếng nhé 🤍`;
  // Reserve before generation: cron overlap cannot multiply provider calls.
  const claim=await query(db,"INSERT OR IGNORE INTO outbox(id,payload,available) VALUES(?,?,?)",id,JSON.stringify({method:'sendMessage',chat_id:Number(owner),text:fallback,_nudge:meta}),now+15000).run();
  if(!claim.meta.changes)return;

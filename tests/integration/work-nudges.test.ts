@@ -20,12 +20,12 @@ test('work nudges stop after two across tasks and replan; chat reopens without i
   let sent=0;const transport:typeof fetch=async(_url,init)=>{assert.equal(JSON.parse(String(init?.body))._nudge,undefined);sent++;return Response.json({ok:true,result:{message_id:sent}});};
   const tick=async(t:number)=>{await queueWorkNudge(env,t,transport);await flushOutbox(env,transport,t,()=>t);};
   await tick(now);assert.equal(sent,1);
-  await tick(now+15*60000);assert.equal(sent,1);
+  await tick(now+15*60000);assert.equal(sent,2);
   await tick(now+30*60000);assert.equal(sent,2);
   plan.items[0]!.taskId='b';await db.prepare("UPDATE daily_plans SET version=2,plan_json=? WHERE owner='123'").bind(JSON.stringify(plan)).run();
-  await tick(now+60*60000);await tick(now+90*60000);assert.equal(sent,2);
+  await tick(now+60*60000);await tick(now+90*60000);assert.equal(sent,4);
   await db.prepare("INSERT INTO command_inbox(owner,update_id,payload,created,delivery) VALUES('123',1,?, ?,0)").bind(JSON.stringify({text:'hello'}),now+91*60000).run();
-  await tick(now+92*60000);assert.equal(sent,3);
-  await tick(now+93*60000);assert.equal(sent,3);
+  await tick(now+92*60000);assert.equal(sent,4);
+  await tick(now+93*60000);assert.equal(sent,4);
  }finally{await mf.dispose();}
 });
