@@ -31,7 +31,7 @@ export function renderToday(ui,state){
   root.append(renderDailyPlan(ui,state));
  }else{
   const tools=el('div',undefined,'section-heading'),actions=el('div',undefined,'heading-actions');const selectButton=button(state.selecting?'Thoát chọn':'Chọn nhiều',()=>{state.selecting=!state.selecting;state.selected.clear();render();},'text-button selection-toggle');selectButton.setAttribute('aria-pressed',String(state.selecting));actions.append(button('+ Tạo task',()=>openTask(null),'primary'),selectButton);tools.append(el('h2',buckets.active.length+' việc đang làm'),actions);root.append(tools);
-  const taskList=tasks=>{const list=card();
+  const taskList=(tasks,className='')=>{const list=card(className);
   for(const task of tasks){
    const row=el('div',undefined,'task-row'+(task.done?' done':'')),check=el('input');check.type='checkbox';check.className='check';check.checked=state.selecting?state.selected.has(task.code):task.done;check.setAttribute('aria-label',(state.selecting?'Chọn ':'Hoàn thành ')+task.title);
    check.addEventListener('change',()=>{if(state.selecting){check.checked?state.selected.add(task.code):state.selected.delete(task.code);render();}else ui.toggleTask(task);});
@@ -40,8 +40,8 @@ export function renderToday(ui,state){
   }
   return list;};
   if(buckets.active.length)root.append(taskList(buckets.active));else root.append(el('p','Không còn việc đang làm. Ui giỏi ghê :>','hint'));
-  if(buckets.completedToday.length){const done=el('details',undefined,'daily-later');done.open=true;done.append(el('summary',buckets.completedToday.length+' việc xong hôm nay'),taskList(buckets.completedToday));root.append(done);}
-  if(buckets.history.length){const history=el('details',undefined,'daily-later');history.append(el('summary','Lịch sử · '+buckets.history.length+' việc đã hoàn thành'),taskList(buckets.history));root.append(history);}
+  if(buckets.completedToday.length){const done=el('details',undefined,'daily-later');done.open=true;done.append(el('summary',buckets.completedToday.length+' việc xong hôm nay'),taskList(buckets.completedToday,'completed-list'));root.append(done);}
+  if(buckets.history.length){const history=el('details',undefined,'daily-later history-section');history.append(el('summary','Lịch sử · '+buckets.history.length+' việc đã hoàn thành'),taskList(buckets.history,'history-list'),el('p','Lịch sử được giữ lại để xem, không đưa lại vào lịch hôm nay.','footer-note'));root.append(history);}
   if(state.selecting){const remove=button('Xóa '+state.selected.size+' việc đã chọn',()=>ui.confirmDelete(),'danger');remove.disabled=!state.selected.size;root.append(remove);}
  }
  root.append(el('p','Mã #24 không đổi khi sắp xếp. Lịch và danh sách dùng cùng một công việc.','footer-note'));

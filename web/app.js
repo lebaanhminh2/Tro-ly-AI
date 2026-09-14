@@ -280,6 +280,8 @@ document.querySelector('#settings').addEventListener('click',openSettings);
 for(const b of document.querySelectorAll('[data-tab]'))b.addEventListener('click',()=>{if(state.live&&!state.loaded){toast('Mở lại từ Telegram để tải dữ liệu thật.');return;}state.tab=b.dataset.tab;state.screenState='ready';render();refreshOnReturn();window.scrollTo(0,0);});
 sheet.addEventListener('click',event=>{if(event.target===sheet){const r=sheet.getBoundingClientRect();if(event.clientY<r.top)sheet.close();}});
 sheet.addEventListener('close',render);
+// Keep the live reward hint short; rest/sleep rules are shown elsewhere in the app.
+const rewardHintCleaner=new MutationObserver(()=>{for(const node of sheetContent.querySelectorAll('.hint')){if(node.textContent?.includes('/ngu không khóa quay thưởng'))node.textContent=node.textContent.replace(/\s*\/ngu không khóa quay thưởng\.?/,'');}});rewardHintCleaner.observe(sheetContent,{childList:true,subtree:true});
 if(state.live){
  document.querySelector('.demo-strip').textContent='MINH ANH · Dữ liệu của cậu';
  state.tasks=[];state.reminders=[];state.screenState='loading';render();
