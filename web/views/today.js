@@ -25,7 +25,7 @@ export function renderToday(ui,state){
   const b=button(label,()=>{state.mode=value;render();});b.setAttribute('aria-pressed',String(state.mode===value));toggle.append(b);
  }root.append(toggle);
  if(state.mode==='timeline'){
-  root.append(renderTimeline(ui,state));
+  root.append(renderDailyPlan(ui,state));
   root.append(button('Điều chỉnh lịch →',()=>ui.openAvailability(),'text-button'));
   const unplanned=card();unplanned.append(el('h3','Còn 2 việc chưa xếp'),el('p','Chưa biết thời lượng. Cậu có thể trao đổi qua /lich để xếp phần còn lại.','subtitle'));if(!state.live)root.append(unplanned);else {let missing=[];try{missing=JSON.parse(state.day?.intervals_json??'{}').unplanned??[];}catch{}if(missing.length){const c=card();c.append(el('h3',missing.length+' việc chưa xếp đủ'));for(const m of missing)c.append(el('p',(state.tasks.find(t=>t.id===m.taskId)?.title??'Công việc')+' · '+(m.reason==='needs_estimate'?'Chưa có ước lượng':'Còn '+m.minutes+' phút chưa xếp'),'hint'));root.append(c);}}
  }else{
@@ -42,5 +42,20 @@ export function renderToday(ui,state){
   else root.append(button('+ Thêm công việc',()=>openTask(null),'text-button'));
  }
  root.append(el('p','Mã #24 không đổi khi sắp xếp. Lịch và danh sách dùng cùng một công việc.','footer-note'));
+ return root;
+}
+
+function renderDailyPlan(ui,state){
+ const {el,button,openTask}=ui,root=el('section',undefined,'daily-plan');
+ const plan=state.dailyPlan?.plan;
+ if(!plan){root.append(el('p','Chưa có kế hoạch hôm nay. Tớ sẽ xếp khi có lịch sinh hoạt và công việc nhé.','hint'));return root;}
+ root.append(el('p',`${plan.items.length} việc cho hôm nay · ${plan.planned} phút trong ${plan.capacity} phút khả dụng.`,'plan-summary'));
+ if(plan.risks?.length)root.append(el('p','Có việc cần chú ý deadline. Tớ đã giữ phần chưa xếp để không nhồi quá tải.','warning'));
+ const list=el('div',undefined,'daily-list');
+ for(const item of plan.items){const task=state.tasks.find(t=>t.id===item.taskId);if(!task||task.done)continue;const row=el('article',undefined,'daily-item'),check=el('input');check.type='checkbox';check.className='check';check.setAttribute('aria-label','Hoàn thành '+task.title);check.addEventListener('change',()=>{check.checked=false;ui.toggleTask(task);});const info=el('button','', 'daily-item-open');info.append(el('strong','#'+task.code+' '+task.title),el('small',`${item.minutes} phút hôm nay · ${item.provisional?'ước lượng tạm':'dự kiến'}${task.deadline?' · hạn '+task.deadline.slice(0,10):''}`));info.addEventListener('click',()=>openTask(task));row.append(check,info);list.append(row);}
+ if(!list.children.length)list.append(el('p','Hôm nay chưa có việc cần làm. Các task còn lại nằm trong danh sách việc.','hint'));
+ root.append(list);
+ const later=state.tasks.filter(t=>!t.done&&!plan.items.some(i=>i.taskId===t.id));if(later.length){const details=el('details',undefined,'daily-later');details.append(el('summary',`${later.length} việc để sau`));for(const t of later)details.append(el('p',`#${t.code} ${t.title}`,'hint'));root.append(details);}
+ root.append(button('Điều chỉnh giờ rảnh',ui.openAvailability,'text-button'));
  return root;
 }

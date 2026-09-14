@@ -1,7 +1,7 @@
 // Prototype intentionally has no network/storage/auth. Reload restores the sample.
 export function createDemo(){
  return {
-  tab:'today',mode:'timeline',reminderFilter:'recurring',screenState:'ready',selected:new Set(),selecting:false,
+  tab:'today',mode:'tasks',reminderFilter:'recurring',screenState:'ready',selected:new Set(),selecting:false,
   start:'04:30',sleep:'22:30',resting:false,
   cultivation:{qi:20,totalEarned:145,rank:1,highestRank:1,streak:3,tickets:3,rewardedTasks:[],failures:0,attemptDay:null,protectedUntil:0,inventory:{basic:3,middle:0,high:0,supreme:0,heart:1,peace:1,keepsake:0},active:{heart:false,peace:false},log:[]},
   tasks:[
@@ -128,7 +128,7 @@ export async function refreshLive(){
   tasks:data.tasks.map(t=>({id:t.id,code:t.public_code,title:t.title,version:t.version,deadline:t.deadline??'',done:t.status==='completed',steps:t.steps.map(s=>({id:s.id,code:t.public_code+'.'+s.step_code,title:s.title,done:s.status==='completed',version:s.version}))})),
   reminders:data.reminders.map(r=>({...r,times:r.times.join(', '),start:r.startDate,end:r.endDate??''})),
   cultivation:{...c,totalEarned:c.earned,active:{heart:c.heartDay===data.day?.day,peace:c.peaceDay===data.day?.day},log:[],rewardedTasks:[]},
-  day:data.day,timeline:data.timeline,loadedAt:Date.now(),progress:data.progress,sessions:data.sessions,events:data.events
+  day:data.day,dailyPlan:data.dailyPlan,timeline:data.timeline,loadedAt:Date.now(),progress:data.progress,sessions:data.sessions,events:data.events
  };
 }
 export async function liveMutation(path,input){const result=await liveRequest(path,input);const refreshed=await refreshLive();pendingRequests.delete(path+JSON.stringify(input));return {result,...refreshed};}

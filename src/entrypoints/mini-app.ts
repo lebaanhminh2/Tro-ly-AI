@@ -4,6 +4,7 @@ import {HealthyStore} from '../adapters/d1/healthy-store.ts';
 import {RecurrenceStore} from '../adapters/d1/recurrence-store.ts';
 import {ScheduleStore} from '../adapters/d1/schedule-store.ts';
 import {TimelineStore} from '../adapters/d1/timeline-store.ts';
+import {DayPlanStore} from '../adapters/d1/day-plan-store.ts';
 import {D1WorkStore} from '../adapters/d1/work-store.ts';
 import {canAct} from '../domain/session.ts';
 import {sessionStatements} from '../adapters/d1/session-store.ts';
@@ -32,7 +33,7 @@ export async function miniAppApi(request:Request,env:Env,now=Date.now()):Promise
    const appointments=(await query(env.DB,"SELECT a.id,a.version,a.due,a.status,COALESCE(a.subject,t.title) AS title FROM task_appointments a LEFT JOIN tasks t ON t.id=a.task_id AND t.owner=a.owner WHERE a.owner=? AND a.status='active' AND (a.task_id IS NULL OR t.deleted_at IS NULL) ORDER BY a.due LIMIT 200",owner).all<{id:string;version:number;due:number;status:string;title:string}>()).results;
    const combined=[...reminders,...appointments.map(a=>{const local=new Date(a.due+25200000).toISOString();return {id:a.id,origin:'appointment',title:a.title,version:a.version,kind:'once',times:[local.slice(11,16)],weekdays:[],startDate:local.slice(0,10),endDate:null,enabled:true};})];
    const rest=await new ScheduleStore(env.DB).restStatus(owner,now);
-   return json({now,account,tasks,reminders:combined,settings,progress,sessions,events,day,timeline:await new TimelineStore(env.DB).read(owner,now),rest,resting:rest.reason!=='active',realms:REALMS,loot:LOOT,charms:CHARMS,needsSetup:!settings});
+   return json({now,account,tasks,reminders:combined,settings,progress,sessions,events,day,timeline:await new TimelineStore(env.DB).read(owner,now),dailyPlan:await new DayPlanStore(env.DB).ensure(owner,now),rest,resting:rest.reason!=='active',realms:REALMS,loot:LOOT,charms:CHARMS,needsSetup:!settings});
   }
   if(request.method!=='POST'||!['/api/cultivation','/api/tasks','/api/settings','/api/reminders','/api/schedule','/api/reminder-instance','/api/tasks-delete','/api/session','/api/timeline'].includes(url.pathname))return json({error:'NOT_FOUND'},404);
   // Read a bounded body, including chunked requests.

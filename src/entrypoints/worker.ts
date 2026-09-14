@@ -21,6 +21,7 @@ import {D1UiStore} from '../adapters/d1/ui-store.ts';
 import {ConversationStore,queueAppointments,acknowledgeAppointments} from '../adapters/d1/conversation-store.ts';
 import {TOOL_PERSONA} from '../ai/persona.ts';
 import {buildContext} from '../application/context-builder.ts';
+import {DayPlanStore} from '../adapters/d1/day-plan-store.ts';
 
 export { flushOutbox };
 export function createWorker(chat?: ChatService, transport: typeof fetch = fetch, clock: Clock = { now: Date.now }, cardsEnabled=false) {
@@ -87,6 +88,7 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
       if(env.ASSETS){
         const schedule=new ScheduleStore(env.DB);
         await schedule.settleClosedDays(env.TELEGRAM_USER_ID,clock.now());
+        await new DayPlanStore(env.DB).ensure(env.TELEGRAM_USER_ID,clock.now());
         await new HealthyStore(env.DB).syncTaskTickets(env.TELEGRAM_USER_ID,clock.now());
         await schedule.queueCheckIns(env.TELEGRAM_USER_ID,clock.now());
         await new RecurrenceStore(env.DB).queueDue(env.TELEGRAM_USER_ID,clock.now(),await schedule.notificationsPaused(env.TELEGRAM_USER_ID,clock.now()));

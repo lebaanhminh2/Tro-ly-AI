@@ -1,4 +1,12 @@
 # Tiếp tục từ đây
+## Daily plan thực tế — 2026-09-14 (đã deploy staging)
+- Worker `bf7228fe-9787-4c5a-8453-57d2ed9d938b`; migration0018 áp an toàn. Thêm task_planning (remaining/priority/updated), daily_plans (signature/version/plan), daily_contacts; backfill estimate mới nhất từ schedule snapshot. Không hủy session/reminder cũ, không xóa task/lịch sử.
+- `chooseDailyPlan` chọn shortlist hôm nay theo deadline/priority/created, giới hạn 80% capacity + buffer, chỉ đưa phần việc có thể làm; phần còn lại later, deadline overload/unknown duration báo risks; dự báo14 ngày theo capacity. Task không estimate dùng giả định45 phút và đánh dấu provisional, không giả vờ chính xác.
+- `DayPlanStore` tự ensure mỗi cron/bootstrap: lấy backlog active, estimate/priority đã nhớ, lịch sự kiện và free/busy hôm nay; daily budget mặc định360 phút (cấu hình schema). Tạo các block nội bộ cho scheduler nhưng UI chỉ hiển thị mỗi task một dòng. Chưa có API đổi estimate/reorder nối vào Mini App; sẽ làm ở lượt sau.
+- Mini App mặc định “Việc hôm nay”: task một dòng + checkbox, mục “Để sau”, cảnh báo deadline; timeline kéo phút vẫn tồn tại trong code nhưng không còn là màn chính và không được dùng để xếp mới. Lời nhắc session cũ vẫn có thể tồn tại/gửi nếu đã được tạo trước migration; chưa dọn để tránh mất dữ liệu.
+- `/` vẫn chỉ tạo mới; `/lich` vẫn replan availability theo planner cũ. Cron daily plan chạy trước queue reminders; hết Gemini vẫn có plan deterministic. Không gọi Gemini thật.
+- Kiểm thử typecheck và nhóm timeline/rest/mini-app/daily-planner đạt; migration0018 local/staging áp thành công; deploy staging `bf7228fe-9787-4c5a-8453-57d2ed9d938b`.
+
 ## Timeline kéo thả — 2026-09-14 (đã deploy)
 - Staging ac1ede5c-6baa-4bf6-9866-87bde8a02dcd; /app/views/timeline.js live200 có drag/clock. Không gọi Gemini thử, không sửa dữ liệu user trong kiểm thử.
 - Hôm nay dùng timeline trục giờ, vùng bận/ngoài free có sọc, now-line cập nhật15s, viewport tự cuộn gần now lần đầu. Task checkbox dùng mutation hoàn thành hiện có. Không còn start/pause/finish/skip trong app; nhắc session không inline keyboard, session-command lọc các nút thao tác cũ. Tin Telegram đã gửi trước deploy chưa tự sửa.
