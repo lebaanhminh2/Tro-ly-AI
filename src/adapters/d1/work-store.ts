@@ -46,9 +46,42 @@ export class D1WorkStore implements WorkStore {
   }
   reportSleep(owner:string,now:number){return new ScheduleStore(this.db).reportSleep(owner,now);}
   async hierarchy(owner:string){
-    const tasks=(await query(this.db,"SELECT * FROM tasks WHERE owner=? AND deleted_at IS NULL ORDER BY status,deadline IS NULL,deadline,public_code LIMIT 200",owner).all<Task&{public_code:number}>()).results;
-    const steps=(await query(this.db,"SELECT s.* FROM task_steps s JOIN tasks t ON t.id=s.task_id AND t.owner=s.owner WHERE s.owner=? AND s.deleted_at IS NULL AND t.deleted_at IS NULL ORDER BY s.step_code",owner).all<{id:string;task_id:string;step_code:number;title:string;status:string;version:number}>()).results;
+    const tasks=(await query(this.db,"SELECT * FROM tasks WHERE owner=? AND deleted_at IS NULL AND archived_at IS NULL ORDER BY status,deadline IS NULL,deadline,public_code LIMIT 200",owner).all<Task&{public_code:number}>()).results;
+    const steps=(await query(this.db,"SELECT s.* FROM task_steps s JOIN tasks t ON t.id=s.task_id AND t.owner=s.owner WHERE s.owner=? AND s.deleted_at IS NULL AND t.deleted_at IS NULL AND t.archived_at IS NULL ORDER BY s.step_code",owner).all<{id:string;task_id:string;step_code:number;title:string;status:string;version:number}>()).results;
     return tasks.map(task=>({...task,steps:steps.filter(step=>step.task_id===task.id)}));
+  }
+  async historyPage(owner:string,offset=0,limit=20){
+    if(!Number.isSafeInteger(offset)||offset<0||offset>100000)throw Error('INVALID_HISTORY_OFFSET');
+    if(!Number.isSafeInteger(limit)||limit<1||limit>50)throw Error('INVALID_HISTORY_LIMIT');
+    const [rowsResult,countResult]=await Promise.all([
+      query(this.db,`SELECT t.id,t.owner,t.title,t.note,t.deadline,t.version,t.status,t.public_code,
+      c.completed_at,t.archived_at
+      FROM tasks t JOIN task_completions c ON c.owner=t.owner AND c.task_id=t.id
+      WHERE t.owner=? AND t.deleted_at IS NULL AND t.status='completed'
+      ORDER BY c.completed_at DESC,t.public_code DESC LIMIT ? OFFSET ?`,owner,limit+1,offset).all<Record<string,unknown>>(),
+      query(this.db,"SELECT COUNT(*) AS total FROM tasks t JOIN task_completions c ON c.owner=t.owner AND c.task_id=t.id WHERE t.owner=? AND t.deleted_at IS NULL AND t.status='completed'",owner).first<{total:number}>()
+    ]);
+    const rows=rowsResult.results;
+    const items:(Record<string,unknown>&{steps:unknown[]})[]=rows.slice(0,limit).map(row=>({...row,steps:[]}));
+    return {items,total:Number(countResult?.total??0),offset,limit,hasMore:offset+items.length<Number(countResult?.total??0)};
+  }
+  async archiveCompleted(owner:string,now:number,retentionDays=90,limit=100){
+    const cutoff=now-retentionDays*86400000;
+    const rows=(await query(this.db,`SELECT t.id FROM tasks t JOIN task_completions c ON c.owner=t.owner AND c.task_id=t.id
+      WHERE t.owner=? AND t.status='completed' AND t.deleted_at IS NULL AND t.archived_at IS NULL AND c.completed_at<?
+      ORDER BY c.completed_at LIMIT ?`,owner,cutoff,limit).all<{id:string}>()).results;
+    if(!rows.length)return {archived:0};
+    const ids=rows.map(row=>row.id),marks=ids.map(()=>'?').join(','),args:(string|number|null)[]=[owner,...ids];
+    const statements:Statement[]=[
+      query(this.db,`UPDATE tasks SET archived_at=? WHERE owner=? AND id IN (${marks}) AND status='completed' AND archived_at IS NULL`,now,owner,...ids),
+      query(this.db,`DELETE FROM outbox WHERE reminder_id IN (SELECT r.id FROM reminders r JOIN sessions s ON s.id=r.session_id AND s.owner=r.owner WHERE s.owner=? AND s.task_id IN (${marks}))`,...args),
+      query(this.db,`DELETE FROM reminders WHERE owner=? AND session_id IN (SELECT id FROM sessions WHERE owner=? AND task_id IN (${marks}))`,owner,owner,...ids),
+      query(this.db,`DELETE FROM sessions WHERE owner=? AND task_id IN (${marks})`,...args),
+      query(this.db,`DELETE FROM task_steps WHERE owner=? AND task_id IN (${marks})`,...args),
+      query(this.db,`DELETE FROM task_completion_undo WHERE owner=? AND task_id IN (${marks})`,...args)
+    ];
+    await this.db.batch(statements);
+    return {archived:ids.length};
   }
   async deleteHierarchyGroup(owner:string,requestId:string,items:{id:string;version:number}[],now:number){
     if(!items.length||items.length>50||new Set(items.map(t=>t.id)).size!==items.length||items.some(t=>!t.id||!Number.isInteger(t.version)||t.version<1))throw Error('INVALID_DELETE_GROUP');

@@ -39,6 +39,13 @@ export async function miniAppApi(request:Request,env:Env,now=Date.now()):Promise
    const rest=await new ScheduleStore(env.DB).restStatus(owner,now);
    return json({now,account,tasks,reminders:combined,settings,progress,sessions,events,day,timeline:await new TimelineStore(env.DB).read(owner,now),dailyPlan:await new DayPlanStore(env.DB).ensure(owner,now),rest,resting:rest.reason!=='active',realms:REALMS,loot:LOOT,charms:CHARMS,needsSetup:!settings});
   }
+  if(request.method==='GET'&&url.pathname==='/api/history'){
+   const rawOffset=url.searchParams.get('offset')??'0';
+   const offset=Number(rawOffset);
+   if(!/^\d+$/.test(rawOffset)||!Number.isSafeInteger(offset)||offset>100000)return json({error:'INVALID_REQUEST'},400);
+   const result=await new D1WorkStore(env.DB).historyPage(owner,offset,20);
+   return json({result});
+  }
   if(request.method!=='POST'||!['/api/cultivation','/api/tasks','/api/settings','/api/reminders','/api/schedule','/api/reminder-instance','/api/tasks-delete','/api/day-plan','/api/session','/api/timeline'].includes(url.pathname))return json({error:'NOT_FOUND'},404);
   // Read a bounded body, including chunked requests.
   const reader=request.body?.getReader();if(!reader)return json({error:'INVALID_REQUEST'},400);

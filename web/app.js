@@ -1,4 +1,4 @@
-import {applyTheme,setThemePreference,themePreference,connectLive,liveMutation,refreshLive,createDemo,realms,loot,talismans,demoDraw,demoFuse,demoBreakthrough,demoCompleteTask} from './api.js';
+import {applyTheme,setThemePreference,themePreference,connectLive,liveMutation,refreshLive,historyPage,createDemo,realms,loot,talismans,demoDraw,demoFuse,demoBreakthrough,demoCompleteTask} from './api.js';
 import {renderToday} from './views/today.js';
 import {updateTimelineClock} from './views/timeline.js';
 import {renderReminders} from './views/reminders.js';
@@ -249,7 +249,18 @@ function editTimeline(block){
  form.addEventListener('submit',e=>{e.preventDefault();const [h,m]=time.input.value.split(':').map(Number),day=new Date(state.timeline.window.start+25200000).toISOString().slice(0,10);let at=Date.parse(day+'T'+String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':00+07:00');if(at<state.timeline.window.start)at+=86400000;moveTimeline(block,at);});
  sheetContent.append(form);if(task)sheetContent.append(button('Chi tiết công việc',()=>openTask(task),'text-button'));
 }
-const ui={moveTimeline,undoTimeline,editTimeline,state:()=>state,cultivation:()=>state.cultivation,demoDay,openDraw,openInventory,openBreakthrough,el,button,heading,card,toast,empty,render,openTask,openTodayPlan,toggleTask,confirmDelete,openReminder,openAvailability,openShare};
+async function loadHistory(){
+ if(!state.live||state.historyLoading||!state.historyHasMore)return;
+ state.historyLoading=true;render();
+ try{
+  const page=await historyPage(state.historyOffset??0);
+  for(const task of page.items??[])if(!state.tasks.some(item=>item.id===task.id))state.tasks.push(task);
+  state.historyOffset=(page.offset??state.historyOffset??0)+(page.items?.length??0);
+  state.historyHasMore=!!page.hasMore;state.historyTotal=page.total??state.historyTotal;
+ }catch(error){toast(error.message||'Chưa tải thêm lịch sử được.');}
+ finally{state.historyLoading=false;render();}
+}
+const ui={moveTimeline,undoTimeline,editTimeline,loadHistory,state:()=>state,cultivation:()=>state.cultivation,demoDay,openDraw,openInventory,openBreakthrough,el,button,heading,card,toast,empty,render,openTask,openTodayPlan,toggleTask,confirmDelete,openReminder,openAvailability,openShare};
 function render(){
  const previousScroll=document.querySelector('.time-scroll');if(previousScroll)state.timelineScroll=previousScroll.scrollTop;
  content.removeAttribute('aria-busy');

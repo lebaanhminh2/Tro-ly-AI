@@ -50,6 +50,8 @@ export interface WorkReader {
   preferences(owner:string):Promise<import('../domain/session.ts').Preferences|null>;
   task(owner: string, id: string): Promise<Task | null>;
   tasks(owner: string, offset: number): Promise<Task[]>;
+  historyPage?(owner:string,offset?:number,limit?:number):Promise<{items:Record<string,unknown>[];total:number;offset:number;limit:number;hasMore:boolean}>;
+  archiveCompleted?(owner:string,now:number,retentionDays?:number,limit?:number):Promise<{archived:number}>;
   proposal(owner: string, id: string): Promise<Proposal | null>;
   selection(owner: string): Promise<Selection | null>;
 }

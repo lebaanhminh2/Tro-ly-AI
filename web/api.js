@@ -2,6 +2,7 @@
 export function createDemo(){
  return {
   tab:'today',mode:'tasks',reminderFilter:'recurring',screenState:'ready',selected:new Set(),selecting:false,
+  historyOffset:0,historyHasMore:false,historyLoading:false,
   start:'04:30',sleep:'22:30',resting:false,
   cultivation:{qi:20,totalEarned:145,rank:1,highestRank:1,streak:3,tickets:3,rewardedTasks:[],failures:0,attemptDay:null,protectedUntil:0,inventory:{basic:3,middle:0,high:0,supreme:0,heart:1,peace:1,keepsake:0},active:{heart:false,peace:false},log:[]},
   tasks:[
@@ -131,15 +132,28 @@ async function liveRequest(path,body){
  }
  return result;
 }
+function mapTask(t,completions=new Map()){
+ const completedAt=t.completed_at??t.completedAt??completions.get(t.id)??null;
+ return {id:t.id,code:t.public_code??t.code,title:t.title,note:t.note??'',version:t.version,deadline:t.deadline??'',done:t.status==='completed'||t.done===true,completedAt,archivedAt:t.archived_at??null,steps:(t.steps??[]).map(s=>({id:s.id,code:s.code??((t.public_code??t.code)+'.'+s.step_code),title:s.title,done:s.status==='completed'||s.done===true,version:s.version}))};
+}
+export async function historyPage(offset=0){
+ const response=await liveRequest('history?offset='+Math.max(0,Math.floor(offset)));
+ const page=response.result??{};
+ return {items:(page.items??[]).map(item=>mapTask(item)),offset:Number(page.offset??offset),limit:Number(page.limit??20),total:Number(page.total??0),hasMore:!!page.hasMore};
+}
 export async function refreshLive(){
  const data=await liveRequest('bootstrap');
  const c=data.account.state;
  const completions=new Map(data.progress.completions.map(item=>[item.task_id,item.completed_at]));
  const clock=n=>String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0');
+ let history={items:[],offset:0,limit:20,total:0,hasMore:false};
+ try{history=await historyPage(0);}catch{/* Older deployments may not expose the paged history endpoint yet. */}
+ const baseTasks=data.tasks.map(t=>mapTask(t,completions));
+ for(const item of history.items)if(!baseTasks.some(task=>task.id===item.id))baseTasks.push(item);
  return {
   live:true,loaded:true,resting:data.resting,rest:data.rest,needsSetup:data.needsSetup,serverNow:data.now,settingsVersion:data.settings?.version??0,
   start:clock(data.settings?.start_minutes??270),sleep:data.settings?.sleep_minutes===null||!data.settings?'':clock(data.settings.sleep_minutes),
-  tasks:data.tasks.map(t=>({id:t.id,code:t.public_code,title:t.title,note:t.note??'',version:t.version,deadline:t.deadline??'',done:t.status==='completed',completedAt:completions.get(t.id)??null,steps:t.steps.map(s=>({id:s.id,code:t.public_code+'.'+s.step_code,title:s.title,done:s.status==='completed',version:s.version}))})),
+  tasks:baseTasks,historyOffset:history.offset+history.items.length,historyHasMore:history.hasMore,historyTotal:history.total,historyLoading:false,
   reminders:data.reminders.map(r=>({...r,times:r.times.join(', '),start:r.startDate,end:r.endDate??''})),
   cultivation:{...c,totalEarned:c.earned,active:{heart:c.heartDay===data.day?.day,peace:c.peaceDay===data.day?.day},log:[],rewardedTasks:[]},
   day:data.day,operatingDay:data.day?.day??null,dailyPlan:data.dailyPlan,timeline:data.timeline,loadedAt:Date.now(),progress:data.progress,sessions:data.sessions,events:data.events

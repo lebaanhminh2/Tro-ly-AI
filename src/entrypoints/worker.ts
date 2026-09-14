@@ -90,6 +90,7 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
         const schedule=new ScheduleStore(env.DB);
         await schedule.settleClosedDays(env.TELEGRAM_USER_ID,clock.now());
         await new DayPlanStore(env.DB).ensure(env.TELEGRAM_USER_ID,clock.now());
+        await store.archiveCompleted(env.TELEGRAM_USER_ID,clock.now(),90,100);
         await new HealthyStore(env.DB).syncTaskTickets(env.TELEGRAM_USER_ID,clock.now());
         await schedule.queueCheckIns(env.TELEGRAM_USER_ID,clock.now());
         await new RecurrenceStore(env.DB).queueDue(env.TELEGRAM_USER_ID,clock.now(),await schedule.notificationsPaused(env.TELEGRAM_USER_ID,clock.now()));
