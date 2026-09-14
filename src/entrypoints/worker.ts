@@ -22,6 +22,7 @@ import {ConversationStore,queueAppointments,acknowledgeAppointments} from '../ad
 import {TOOL_PERSONA} from '../ai/persona.ts';
 import {buildContext} from '../application/context-builder.ts';
 import {DayPlanStore} from '../adapters/d1/day-plan-store.ts';
+import {queueWorkNudge} from '../adapters/d1/work-nudges.ts';
 
 export { flushOutbox };
 export function createWorker(chat?: ChatService, transport: typeof fetch = fetch, clock: Clock = { now: Date.now }, cardsEnabled=false) {
@@ -99,7 +100,8 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
       for (const owner of await store.pendingOwners()) {
         if (owner === env.TELEGRAM_USER_ID) await processInbox(store, owner, clock, runtimeChat(env),4);
       }
-      await queueReminders(env.DB,env.TELEGRAM_USER_ID,clock.now());
+      if(env.ASSETS)await queueWorkNudge(env,clock.now(),transport);
+      else await queueReminders(env.DB,env.TELEGRAM_USER_ID,clock.now());
       if(cardsEnabled)await queueAppointments(env.DB,env.TELEGRAM_USER_ID,clock.now());
       await flushOutbox(env, transport, clock.now());
       await flushCards(env);

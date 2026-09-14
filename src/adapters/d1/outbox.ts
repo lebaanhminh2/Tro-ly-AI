@@ -4,6 +4,7 @@ import { configured } from '../../config/env.ts';
 import type { Env } from '../../config/env.ts';
 import { deliver } from '../telegram/api.ts';
 import { reminderAllowed } from './reminders.ts';
+import {nudgeAllowed} from './work-nudges.ts';
 
 export async function flushOutbox(env: Env, transport: typeof fetch = fetch, now = Date.now(), clock:()=>number = Date.now, onlyId?:string) {
   const wallStart=clock();
@@ -12,6 +13,10 @@ export async function flushOutbox(env: Env, transport: typeof fetch = fetch, now
   const rows = (await query(env.DB, "SELECT id,payload,reminder_id FROM outbox WHERE state='pending' AND available<=? AND attempts<3 AND (? IS NULL OR id=?) ORDER BY available,id LIMIT 4", now,onlyId??null,onlyId??null)
     .all<{ id: string; payload: string;reminder_id:string|null }>()).results;
   for (const row of rows) {
+    const legacyWork=env.ASSETS&&row.reminder_id&&!row.reminder_id.startsWith('appointment:')&&!row.reminder_id.startsWith('recurring:');
+    if(legacyWork||row.id.startsWith('nudge:')&&!await nudgeAllowed(env.DB,env.TELEGRAM_USER_ID,row.id,currentTime())){
+      await query(env.DB,"UPDATE outbox SET state='failed' WHERE id=? AND state='pending'",row.id).run();continue;
+    }
     const schedule=new ScheduleStore(env.DB);
     const blocked=async(at:number)=>row.reminder_id&&!row.reminder_id.startsWith('recurring:')&&!row.reminder_id.startsWith('appointment:')
       ?schedule.isResting(env.TELEGRAM_USER_ID,at):schedule.notificationsPaused(env.TELEGRAM_USER_ID,at);
@@ -36,7 +41,11 @@ export async function flushOutbox(env: Env, transport: typeof fetch = fetch, now
       await query(env.DB,"UPDATE outbox SET state='failed' WHERE id=? AND claim_token=?",row.id,token).run();continue;
     }
     let result;
-    try { result = await deliver(env.TELEGRAM_BOT_TOKEN!, JSON.parse(row.payload), transport); }
+    if(row.id.startsWith('nudge:')&&!await nudgeAllowed(env.DB,env.TELEGRAM_USER_ID,row.id,currentTime())){
+      await query(env.DB,"UPDATE outbox SET state='failed' WHERE id=? AND claim_token=?",row.id,token).run();continue;
+    }
+    const payload=JSON.parse(row.payload);delete payload._nudge;
+    try { result = await deliver(env.TELEGRAM_BOT_TOKEN!, payload, transport); }
     catch { result = { state: 'failed' as const }; }
     const completedAt=currentTime();
     await query(env.DB, `UPDATE outbox SET state=CASE WHEN ?='pending' AND attempts>=3 THEN 'failed' ELSE ? END,

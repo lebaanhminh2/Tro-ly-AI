@@ -1,4 +1,10 @@
 # Tiếp tục từ đây
+## Giới hạn work nudges — 2026-09-14
+- Deploy1733898f-d763-4cc2-8e64-613b87f0000f. Mini App ngắt queue và final-send của session reminders; giữ dữ liệu cũ, personal recurring/appointment không đổi. DayPlanStore không sinh thêm session per-window (tránh duplicate ID khi replan).
+- work-nudges đếm chung sent/sending/uncertain từ đầu ngày hoặc tin text mới nhất; tối đa2 và cách30min, có tính session reminders đã gửi trước deploy. Không reset khi đổi task/replan. Final send kiểm lại plan version, task active, cửa sổ giờ và nghỉ.
+- Gemini một lần mỗi nudge đã reserve trong outbox; context task,4 tin user gần nhất,2 nhắc trước; lỗi dùng fallback. Không live Gemini test. Typecheck +1 integration cap/replan/reply +4 sleep tests đạt; chưa full suite.
+- Hero palette rõ ràng khi OS dark nhưng app light. Chưa nghiệm thu iPhone thật.
+
 ## Daily plan thực tế — 2026-09-14 (đã deploy staging)
 - Worker `bf7228fe-9787-4c5a-8453-57d2ed9d938b`; migration0018 áp an toàn. Thêm task_planning (remaining/priority/updated), daily_plans (signature/version/plan), daily_contacts; backfill estimate mới nhất từ schedule snapshot. Không hủy session/reminder cũ, không xóa task/lịch sử.
 - `chooseDailyPlan` chọn shortlist hôm nay theo deadline/priority/created, giới hạn 80% capacity + buffer, chỉ đưa phần việc có thể làm; phần còn lại later, deadline overload/unknown duration báo risks; dự báo14 ngày theo capacity. Task không estimate dùng giả định45 phút và đánh dấu provisional, không giả vờ chính xác.

@@ -25,4 +25,12 @@
 .inventory-heading h3{min-width:0;line-height:1.5}
 .quantity-badge{font-size:24px;font-weight:750;line-height:1;min-width:54px;padding:12px;text-align:center;background:var(--soft);color:var(--accent);border-radius:14px;flex-shrink:0}
 .form-feedback{padding:12px;border-radius:12px;background:var(--soft);color:var(--text);font-size:13px;margin:0 0 16px;overflow-wrap:anywhere}.form-feedback[hidden]{display:none}
+/* Explicit palette prevents OS dark media rules mixing with a light app theme. */
+:root .hero{background:#ede8fa;border-color:#d9d0ef;color:#29213c}
+:root .hero h2{color:#29213c}
+:root .hero p,:root .hero .eyebrow{color:#554569}
+:root[data-theme=dark] .hero{background:#30283f;border-color:#655477;color:#faf5ff}
+:root[data-theme=dark] .hero h2{color:#faf5ff}
+:root[data-theme=dark] .hero p,:root[data-theme=dark] .hero .eyebrow{color:#ddd0ed}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]):not([data-theme=dark]) .hero{background:#30283f;border-color:#655477}:root:not([data-theme=light]):not([data-theme=dark]) .hero h2{color:#faf5ff}:root:not([data-theme=light]):not([data-theme=dark]) .hero p{color:#ddd0ed}}
 .availability-row{display:grid;grid-template-columns:1fr 1fr auto;align-items:center;gap:8px}.availability-row .form-field{min-width:0}.availability-row .secondary{padding:8px}

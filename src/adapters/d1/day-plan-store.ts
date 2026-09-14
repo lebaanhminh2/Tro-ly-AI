@@ -43,13 +43,6 @@ export class DayPlanStore{
    query(this.db,"UPDATE outbox SET state='failed' WHERE id LIKE ? AND state='pending'",'daily:'+owner+':%'),
    query(this.db,"UPDATE reminders SET status='cancelled' WHERE owner=? AND session_id IN (SELECT id FROM sessions WHERE owner=? AND id LIKE ? AND status IN ('planned','draft'))",owner,owner,'daily_'+owner+'_'+input.day+'_%'),
    query(this.db,"UPDATE sessions SET status='skipped',version=version+1 WHERE owner=? AND id LIKE ? AND status IN ('planned','draft')",owner,'daily_'+owner+'_'+input.day+'_%'),
-   ...plan.items.flatMap((item,index)=>item.windows.flatMap((window,part)=>{
-    const sessionId=`daily_${owner}_${input.day}_${index}_${part}`;
-    return [
-     query(this.db,"INSERT INTO sessions(id,owner,task_id,start_at,minutes,status,expires) VALUES(?,?,?,?,?,'planned',?)",sessionId,owner,item.taskId,window.start,Math.round((window.end-window.start)/60000),input.window.end),
-     query(this.db,"INSERT INTO reminders(id,owner,session_id,generation,ordinal,due) VALUES(?,?,?,?,?,?),(?,?,?,?,?,?)",`${sessionId}:1:1`,owner,sessionId,1,1,window.start,`${sessionId}:1:2`,owner,sessionId,1,2,window.start+900000)
-    ];
-   })),
    query(this.db,'DELETE FROM transaction_guard')
   ]);
   return {version:oldVersion+1,plan,updated:now};
