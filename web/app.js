@@ -168,17 +168,19 @@ async function playEffect(target,type,duration=720){
  target.classList.remove('effect-spin','effect-breakthrough');
 }
 function openDraw(){
- if(state.live){openSheet('Quay thưởng');const c=state.cultivation,blocked=c.suspended||c.tickets<1;const hint=c.suspended?'Tạm ngưng vì lâu không chat. Nhắn Minh Anh để hoạt động lại.':c.tickets<1?'Chưa có vé. Hoàn thành một task lần đầu để nhận 1 vé.':'Cậu có '+c.tickets+' vé. /ngu không khóa quay thưởng.';const draw=button('Dùng 1 vé',async()=>{if(state.cultivation.tickets<1||state.cultivation.suspended||draw.disabled)return;draw.disabled=true;draw.textContent='Đang quay…';await playEffect(draw,'draw');const saved=await performLive('cultivation',{operation:'draw'});if(saved===null&&draw.isConnected){draw.disabled=false;draw.textContent='Dùng 1 vé';}},'primary');draw.disabled=blocked;sheetContent.append(el('p',hint,'hint'),draw);return;}
+ if(state.live){openSheet('Quay thưởng');const c=state.cultivation,blocked=c.suspended||c.tickets<1;const hint=c.suspended?'Tạm ngưng vì lâu không chat. Nhắn Minh Anh để hoạt động lại.':c.tickets<1?'Chưa có vé. Hoàn thành một task lần đầu để nhận 1 vé.':'Cậu có '+c.tickets+' vé. /ngu không khóa quay thưởng.';const reveal=el('div','?','loot-result mystery-card');reveal.setAttribute('aria-label','Phần thưởng bí ẩn');const draw=button('Dùng 1 vé',async()=>{if(state.cultivation.tickets<1||state.cultivation.suspended||draw.disabled)return;draw.disabled=true;draw.textContent='Đang mở…';await playEffect(reveal,'draw',620);const saved=await performLive('cultivation',{operation:'draw'});if(saved===null&&draw.isConnected){draw.disabled=false;draw.textContent='Dùng 1 vé';}},'primary');draw.disabled=blocked;sheetContent.append(el('p',hint,'hint'),reveal,draw);return;}
  openSheet('Linh bảo · Quay thưởng');
  sheetContent.append(el('p','1 vé / lần · Không mua bằng tiền · Kết quả demo','hint'));
- const result=el('div','Cậu có '+state.cultivation.tickets+' vé','loot-result');result.setAttribute('role','status');
+ const result=el('div','?','loot-result mystery-card');result.setAttribute('role','status');result.setAttribute('aria-label','Phần thưởng bí ẩn');
  const draw=button('Dùng 1 vé quay',async()=>{
   if(draw.disabled)return;
-  draw.disabled=true;draw.textContent='Đang quay…';await playEffect(result,'draw');
+  draw.disabled=true;draw.textContent='Đang mở…';await playEffect(result,'draw',620);
   const reward=demoDraw(state.cultivation);
   if(!reward){draw.disabled=false;draw.textContent='Dùng 1 vé quay';return;}
+  result.classList.add('mystery-revealed');
   result.textContent='✦ '+reward.label+' · Còn '+state.cultivation.tickets+' vé';
   draw.disabled=state.cultivation.tickets===0;render();
+  draw.textContent=state.cultivation.tickets===0?'Hết vé':'Quay tiếp';
  },'primary');draw.disabled=state.cultivation.tickets===0;sheetContent.append(result,draw);
  const odds=el('details',undefined,'realm-path');odds.append(el('summary','Xác suất công khai'));
  for(const item of loot)odds.append(el('p',item.label+' — '+item.weight+'%','hint'));sheetContent.append(odds);
@@ -224,7 +226,9 @@ function openBreakthrough(){
   if(state.live){const saved=await performLive('cultivation',{operation:'breakthrough',item:select.value||null});if(saved===null&&attempt.isConnected){attempt.disabled=false;attempt.textContent='Đột phá';}return;}
   const r=demoBreakthrough(c,demoDay(),select.value||null);
   if(!r){attempt.disabled=false;attempt.textContent='Đột phá';return;}select.disabled=true;result.hidden=false;
+  result.classList.add(r.success?'effect-success':'effect-failure');
   result.textContent=r.success?'Đột phá thành công ✦ '+realms[c.rank].name+' · Được bảo vệ hạ bậc 72 giờ.':'Chưa thành công. Tu vi và chuỗi vẫn giữ, mai thử tiếp nhé.';
+  attempt.textContent='Đã thử hôm nay';
   render();
  },'primary');attempt.disabled=c.attemptDay===demoDay()||c.qi<target.qi||c.streak<target.days;
  sheetContent.append(info,attempt,result);
