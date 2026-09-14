@@ -22,7 +22,7 @@ import {ConversationStore,queueAppointments,acknowledgeAppointments} from '../ad
 import {TOOL_PERSONA} from '../ai/persona.ts';
 import {buildContext} from '../application/context-builder.ts';
 import {DayPlanStore} from '../adapters/d1/day-plan-store.ts';
-import {queueWorkNudge} from '../adapters/d1/work-nudges.ts';
+import {queueWorkNudge,receiveNudgeReply} from '../adapters/d1/work-nudges.ts';
 
 export { flushOutbox };
 export function createWorker(chat?: ChatService, transport: typeof fetch = fetch, clock: Clock = { now: Date.now }, cardsEnabled=false) {
@@ -168,6 +168,9 @@ export function createWorker(chat?: ChatService, transport: typeof fetch = fetch
         if(env.ASSETS)await new HealthyStore(env.DB).syncTaskTickets(input.owner,clock.now());
         await flushOutbox(env, transport, clock.now());
         await flushCards(env);
+        // Deliver the conversational answer first. Notification classification
+        // has separate, narrow authority and must not delay the visible reply.
+        if(env.ASSETS&&input.text)try{await receiveNudgeReply(env,input.updateId,input.text,clock.now(),transport);}catch{/* Keep prior reminder state on uncertainty. */}
         if (env.DELIVERY_MODE === 'outbox' || !isNew) return new Response('OK');
         const result = await store.result(input.owner, input.updateId);
         return result ? Response.json(message(input.chat,result.text,result.buttons)) : new Response('OK');

@@ -1,4 +1,12 @@
 # Tiếp tục từ đây
+## Chu kỳ nhắc theo phản hồi — bản local, chưa deploy
+- Kết quả: full142/142 +25/25 offline đạt; sau bổ sung next-day/final-send sleep targeted2/2 đạt, typecheck/diff-check đạt. Model được giả lập trong test: chưa chứng minh Gemini hiểu đúng mọi cách diễn đạt thực tế.
+- Thay budget suy từ tin chat bất kỳ bằng migration0019 `nudge_cycles` + `nudge_reply_receipts`. Một nhóm tối đa3 task đến giờ, một cổng chờ phản hồi chung: gửi lần đầu + tối đa1 follow-up, rồi chờ. Không giới hạn2/ngày khi user phản hồi rõ. Chu kỳ/id/version mới tránh trùng delivery key.
+- Gemini trả JSON task_ids/text/next_minutes (5..240), backend kiểm danh sách ID, độ dài350, thời điểm active và ngày hiện tại. Sàn5min chống dồn tin, fallback30min khi model lỗi. Không cho A/B/C luân phiên bypass im lặng. Unknown/unrelated reply giữ nguyên, không reset mọi task.
+- Worker gửi reply hội thoại trước rồi phân loại phản hồi bằng một Gemini call riêng nếu có nudge đã gửi. Tối đa một lần/update; lỗi/không chắc giữ state. Chỉ thay state nhắc, không tick task/đổi availability. Chỉ task được nói rõ mở lại; các task khác trong nhóm bị giữ chờ, có thể mở lại khi user gọi rõ tên/code. Báo xong suppress nhắc task đó, task DB vẫn active đến khi user tick.
+- Lease trước generation, version fence sau generation. Final send kiểm cycle/version, plan/version, task còn active, cửa sổ giờ, rest, sàn khoảng cách. Counts là attempts (bảo thủ cả khi gửi thất bại), không tự lặp vô hạn khi provider/delivery lỗi. Tin pending format cũ bị chặn, không xóa lịch sử.
+- Không gọi Gemini/Telegram thật khi test. Chưa xin lại quyền upload code ra Cloudflare sau denial trước đó; cần user cho phép rõ payload/destination trước migration0019 và deploy.
+
 ## Giới hạn work nudges — 2026-09-14
 - Deploy1733898f-d763-4cc2-8e64-613b87f0000f. Mini App ngắt queue và final-send của session reminders; giữ dữ liệu cũ, personal recurring/appointment không đổi. DayPlanStore không sinh thêm session per-window (tránh duplicate ID khi replan).
 - work-nudges đếm chung sent/sending/uncertain từ đầu ngày hoặc tin text mới nhất; tối đa2 và cách30min, có tính session reminders đã gửi trước deploy. Không reset khi đổi task/replan. Final send kiểm lại plan version, task active, cửa sổ giờ và nghỉ.
