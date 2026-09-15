@@ -134,7 +134,7 @@ async function liveRequest(path,body){
 }
 function mapTask(t,completions=new Map()){
  const completedAt=t.completed_at??t.completedAt??completions.get(t.id)??null;
- return {id:t.id,code:t.public_code??t.code,title:t.title,note:t.note??'',version:t.version,deadline:t.deadline??'',done:t.status==='completed'||t.done===true,completedAt,archivedAt:t.archived_at??null,steps:(t.steps??[]).map(s=>({id:s.id,code:s.code??((t.public_code??t.code)+'.'+s.step_code),title:s.title,done:s.status==='completed'||s.done===true,version:s.version}))};
+ return {id:t.id,code:t.public_code??t.code,title:t.title,note:t.note??'',version:t.version,deadline:t.deadline??'',done:t.status==='completed'||t.done===true,completedAt,archivedAt:t.archived_at??null,actualMinutes:Number(t.actual_minutes??t.actualMinutes??0),remainingMinutes:t.remaining_minutes??t.remainingMinutes??null,steps:(t.steps??[]).map(s=>({id:s.id,code:s.code??((t.public_code??t.code)+'.'+s.step_code),title:s.title,done:s.status==='completed'||s.done===true,version:s.version}))};
 }
 export async function historyPage(offset=0){
  const response=await liveRequest('history?offset='+Math.max(0,Math.floor(offset)));

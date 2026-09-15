@@ -129,12 +129,15 @@ test('delayed morning and bedtime notifications expire instead of sending after 
   for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
   const s=new ScheduleStore(db),now=Date.parse('2026-09-13T04:30:00+07:00');
   const day=(await s.configure('123','04:30','22:30',0,now))!;
-  const morning='healthy:morning:123:'+day.day,bed='healthy:bedtime:123:'+day.day+':0';
+  const morning='healthy:morning:123:'+day.day,pre='healthy:bedtime:123:'+day.day+':pre30',post='healthy:bedtime:123:'+day.day+':post20',legacy='healthy:bedtime:123:'+day.day+':0';
   assert.equal(await s.notificationAllowed('123',morning,now),true);
   assert.equal(await s.notificationAllowed('123',morning,now+3600000),false);
-  assert.equal(await s.notificationAllowed('123',bed,day.target_sleep),true);
-  assert.equal(await s.notificationAllowed('123',bed,day.target_sleep+1200000),false);
-  assert.equal(await s.notificationAllowed('999',bed,day.target_sleep),false);
+  assert.equal(await s.notificationAllowed('123',pre,day.target_sleep-30*60000),true);
+  assert.equal(await s.notificationAllowed('123',pre,day.target_sleep-15*60000),false);
+  assert.equal(await s.notificationAllowed('123',post,day.target_sleep+20*60000),true);
+  assert.equal(await s.notificationAllowed('123',post,day.target_sleep+40*60000),false);
+  assert.equal(await s.notificationAllowed('123',legacy,day.target_sleep),false,'old exact-bedtime messages are invalid');
+  assert.equal(await s.notificationAllowed('999',pre,day.target_sleep-30*60000),false);
  }finally{await mf.dispose();}
 });
 

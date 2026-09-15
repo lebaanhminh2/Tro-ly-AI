@@ -30,6 +30,12 @@ export async function miniAppApi(request:Request,env:Env,now=Date.now()):Promise
     healthy.read(owner),work.hierarchy(owner),rules.rules(owner),
     query(env.DB,'SELECT start_minutes,sleep_minutes,version FROM schedule_settings WHERE owner=?',owner).first(),work.progress(owner),work.sessions(owner,Math.floor((now+25200000)/86400000)*86400000-25200000,Math.floor((now+25200000)/86400000)*86400000-25200000+86400000),work.events(owner,Math.floor((now+25200000)/86400000)*86400000-25200000,Math.floor((now+25200000)/86400000)*86400000-25200000+86400000),new ScheduleStore(env.DB).ensureDay(owner,now)
    ]);
+   const [logged,planning]=await Promise.all([
+    day?query(env.DB,'SELECT task_id,minutes FROM task_work_logs WHERE owner=? AND day=?',owner,day.day).all<{task_id:string;minutes:number}>():Promise.resolve({results:[] as {task_id:string;minutes:number}[]}),
+    query(env.DB,'SELECT task_id,remaining_minutes FROM task_planning WHERE owner=?',owner).all<{task_id:string;remaining_minutes:number|null}>()
+   ]);
+   const byTask=new Map(logged.results.map(row=>[row.task_id,row.minutes])),remaining=new Map(planning.results.map(row=>[row.task_id,row.remaining_minutes]));
+   for(const task of tasks as Array<Record<string,unknown>>){task.actual_minutes=byTask.get(String(task.id))??0;task.remaining_minutes=remaining.get(String(task.id))??null;}
    const visibleStart=day?.start_at??Math.floor((now+25200000)/86400000)*86400000-25200000;
    const latest=(await query(env.DB,"SELECT o.rule_id,o.due,o.status FROM recurrence_occurrences o JOIN recurrence_rules r ON r.id=o.rule_id AND r.owner=o.owner AND r.version=o.rule_version WHERE o.owner=? AND NOT EXISTS(SELECT 1 FROM recurrence_occurrences newer WHERE newer.owner=o.owner AND newer.rule_id=o.rule_id AND newer.rule_version=o.rule_version AND newer.due>o.due)",owner).all<{rule_id:string;due:number;status:string}>()).results;
    const occurrence=new Map(latest.map(row=>[row.rule_id,row]));
@@ -46,7 +52,7 @@ export async function miniAppApi(request:Request,env:Env,now=Date.now()):Promise
    const result=await new D1WorkStore(env.DB).historyPage(owner,offset,20);
    return json({result});
   }
-  if(request.method!=='POST'||!['/api/cultivation','/api/tasks','/api/settings','/api/reminders','/api/schedule','/api/reminder-instance','/api/tasks-delete','/api/day-plan','/api/session','/api/timeline'].includes(url.pathname))return json({error:'NOT_FOUND'},404);
+  if(request.method!=='POST'||!['/api/cultivation','/api/tasks','/api/settings','/api/reminders','/api/schedule','/api/reminder-instance','/api/tasks-delete','/api/day-plan','/api/task-work','/api/session','/api/timeline'].includes(url.pathname))return json({error:'NOT_FOUND'},404);
   // Read a bounded body, including chunked requests.
   const reader=request.body?.getReader();if(!reader)return json({error:'INVALID_REQUEST'},400);
   const decoder=new TextDecoder('utf-8',{fatal:true});let raw='',bytes=0;
@@ -79,6 +85,10 @@ export async function miniAppApi(request:Request,env:Env,now=Date.now()):Promise
   if(url.pathname==='/api/day-plan'){
    if(Object.keys(input).some(k=>!['id','version','items'].includes(k))||!Number.isInteger(input.version)||!Array.isArray(input.items)||input.items.length>50||input.items.some(item=>!item||typeof item!=='object'||Object.keys(item).some(k=>!['taskId','minutes'].includes(k))||typeof item.taskId!=='string'||!Number.isInteger(item.minutes)))return json({error:'INVALID_REQUEST'},400);
    return json({result:await new DayPlanStore(env.DB).replace(owner,input.id,Number(input.version),input.items as {taskId:string;minutes:number}[],now)});
+  }
+  if(url.pathname==='/api/task-work'){
+   if(Object.keys(input).some(k=>!['id','taskId','minutes','note'].includes(k))||typeof input.taskId!=='string'||!Number.isInteger(input.minutes)||Number(input.minutes)<0||Number(input.minutes)>1440||input.note!==undefined&&input.note!==null&&typeof input.note!=='string')return json({error:'INVALID_REQUEST'},400);
+   return json({result:await new DayPlanStore(env.DB).logWork(owner,input.id,String(input.taskId),Number(input.minutes),input.note===undefined||input.note===null?null:String(input.note),now)});
   }
   if(url.pathname==='/api/timeline'){
    if(Object.keys(input).some(k=>!['id','stamp','sessionId','at','undo'].includes(k))||typeof input.stamp!=='string'||input.stamp.length>3500||

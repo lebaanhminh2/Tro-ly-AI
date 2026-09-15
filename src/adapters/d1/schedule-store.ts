@@ -138,9 +138,15 @@ export class ScheduleStore{
   if(!settings||settings.sleep_minutes===null||day!==operatingDay(now,settings.start_minutes)||await this.notificationsPaused(owner,now))return false;
   const window=dayWindow(day,settings.start_minutes,settings.sleep_minutes);
   if(parts[1]==='morning')return now>=window.start&&now<window.start+3600000;
-  const index=Number(parts[4]);if(parts[1]!=='bedtime'||!Number.isInteger(index)||index<0||index>2)return false;
-  const due=window.target+index*20*60000;
-  return now>=due&&now<due+20*60000&&now<window.end;
+  if(parts[1]!=='bedtime')return false;
+  const phase=parts[4];
+  const phases:{[key:string]:{offset:number;window:number}}={
+   pre30:{offset:-30,window:15},pre15:{offset:-15,window:15},post20:{offset:20,window:20},post40:{offset:40,window:20}
+  };
+  const rule=phase?phases[phase]:undefined;
+  if(!rule)return false;
+  const due=window.target+rule.offset*60000;
+  return now>=due&&now<due+rule.window*60000&&now<window.end;
  }
  async queueCheckIns(owner:string,now:number){
   if((await new HealthyStore(this.db).read(owner)).state.suspended)return;
@@ -153,18 +159,18 @@ export class ScheduleStore{
    id:'healthy:morning:'+owner+':'+day.day,due:day.start_at,
    text:'Chào buổi sáng cậu :> hôm nay cậu bận những khoảng nào? Trả lời trực tiếp tin này hoặc dùng /lich kèm lịch của cậu nhé.'
   });
-  for(let n=0;n<3;n++){
-   const due=day.target_sleep+n*20*60000;
-   if(now>=due&&now<due+20*60000&&now<day.end_at)messages.push({
-    id:'healthy:bedtime:'+owner+':'+day.day+':'+n,due,
-    text:[
-     'Cậu ơi, đến giờ nghỉ rồi. Thu bài lại, chuẩn bị đi ngủ với tớ nhé 🤍 Gửi /ngu khi cậu bắt đầu nghỉ.',
-     'Cho tớ xin cậu thêm một chút kỷ luật nào :> đặt máy xuống nhé, phần còn lại mai mình tính tiếp.',
-     'Tớ nhắc lần cuối tối nay thôi: nghỉ ngơi nhé cậu. Khi sẵn sàng ngủ, nhắn /ngu cho tớ biết 🤍'
-    ][n]!
-   });
+  const bedtimePhases=[
+   {key:'pre30',offset:-30,window:15,text:'Cậu ơi, còn 30 phút nữa là đến giờ nghỉ rồi. Thu bài lại dần nhé, để Minh Anh đưa cậu vào chế độ ngủ cho đúng giờ.'},
+   {key:'pre15',offset:-15,window:15,text:'Còn 15 phút thôi nè. Cậu chuẩn bị đi ngủ nhé; nếu để qua ngày mà không báo /ngu thì sẽ bị trừ 20 tu vi đấy, tớ không muốn đâu :<'},
+   {key:'post20',offset:20,window:20,text:'Cậu ơi, đã quá giờ ngủ mục tiêu rồi. Đặt máy xuống và nhắn /ngu khi cậu thực sự bắt đầu nghỉ nhé.'},
+   {key:'post40',offset:40,window:20,text:'Tớ nhắc lần cuối đêm nay thôi: đi ngủ nhé cậu. Gửi /ngu để chốt ngày, không thì 20 tu vi sẽ bay mất đó.'}
+  ];
+  for(const phase of bedtimePhases){
+   const due=day.target_sleep+phase.offset*60000;
+   if(now>=due&&now<due+phase.window*60000&&now<day.end_at)messages.push({id:'healthy:bedtime:'+owner+':'+day.day+':'+phase.key,due,text:phase.text});
   }
   if(messages.length)await this.db.batch(messages.map(m=>query(this.db,'INSERT OR IGNORE INTO outbox(id,payload,available) VALUES(?,?,?)',m.id,JSON.stringify({method:'sendMessage',chat_id:Number(owner),text:m.text}),now)));
+  return;
  }
  async settleClosedDays(owner:string,now:number){
   const healthy=new HealthyStore(this.db);

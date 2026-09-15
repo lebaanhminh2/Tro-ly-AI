@@ -71,6 +71,33 @@ test('manual Today preserves completed totals, supports removal and resets at ne
  }finally{await mf.dispose();}
 });
 
+test('daily work log replaces the same-day value and carries only remaining effort forward',async()=>{
+ const {readFileSync,readdirSync}=await import('node:fs');
+ const {Miniflare}=await import('miniflare');
+ const {ScheduleStore}=await import('../../src/adapters/d1/schedule-store.ts');
+ const {DayPlanStore}=await import('../../src/adapters/d1/day-plan-store.ts');
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as import('../../src/adapters/d1/database.ts').Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
+  const now=Date.parse('2026-09-15T08:00:00+07:00'),plans=new DayPlanStore(db);
+  await new ScheduleStore(db).configure('123','04:30','22:30',0,now);
+  await db.exec("INSERT INTO tasks(id,owner,title,created) VALUES('a','123','A',0); INSERT INTO task_planning(owner,task_id,remaining_minutes,updated) VALUES('123','a',240,0)");
+  let result=await plans.logWork('123','work_log_001','a',30,null,now);
+  assert.equal(result.remaining,210);
+  result=await plans.logWork('123','work_log_001','a',30,null,now);
+  assert.equal(result.remaining,210,'retry returns receipt and cannot subtract twice');
+  result=await plans.logWork('123','work_log_002','a',45,null,now+1000);
+  assert.equal(result.remaining,195,'editing replaces the old daily value and applies only the difference');
+  let saved=(await plans.ensure('123',now+1000))!;
+  assert.equal(saved.plan.items.find(item=>item.taskId==='a')?.actualMinutes,45);
+  assert.equal((await db.prepare("SELECT remaining_minutes FROM task_planning WHERE owner='123' AND task_id='a'").first<{remaining_minutes:number}>())!.remaining_minutes,195);
+  saved=(await plans.ensure('123',now+86400000))!;
+  assert.equal(saved.plan.items.find(item=>item.taskId==='a')?.actualMinutes,0,'new day starts a fresh actual-work field');
+  assert.equal(saved.plan.items.find(item=>item.taskId==='a')?.remaining,195,'remaining estimate persists without re-entry');
+ }finally{await mf.dispose();}
+});
+
 test('replan persists blocks and keeps omitted tasks visible as unplanned',async()=>{
  const {readFileSync,readdirSync}=await import('node:fs');
  const {Miniflare}=await import('miniflare');

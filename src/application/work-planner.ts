@@ -1,7 +1,7 @@
 import {availableRanges,type TimeRange} from '../domain/availability.ts';
 export type Candidate={id:string;title:string;deadline:number|null;remaining:number|null;priority:number;updated:number;created:number};
 export type DayCapacity={day:number;ranges:TimeRange[];assumed:boolean};
-export type DayItem={taskId:string;minutes:number;remaining:number|null;provisional:boolean;reason:string;windows:TimeRange[];scheduledMinutes?:number;manual?:boolean};
+export type DayItem={taskId:string;minutes:number;remaining:number|null;provisional:boolean;reason:string;windows:TimeRange[];scheduledMinutes?:number;manual?:boolean;actualMinutes?:number};
 export type ManualDayItem={taskId:string;minutes:number};
 export type WorkPlan={day:number;items:DayItem[];later:{taskId:string;reason:string}[];risks:{taskId:string;reason:string}[];capacity:number;planned:number;assumed:boolean;futureAssumed:boolean;horizonEnd:number;forecast:{day:number;minutes:number;tasks:string[]}[];manualItems?:ManualDayItem[];overflow?:number;unscheduled?:number};
 const MIN=60000;
@@ -10,7 +10,7 @@ const MIN=60000;
 export function chooseDailyPlan(tasks:Candidate[],days:DayCapacity[],now:number,preferred:string[]=[]):WorkPlan{
  if(!days.length)throw Error('INVALID_PLAN_DAYS');
  if(new Set(tasks.map(t=>t.id)).size!==tasks.length)throw Error('DUPLICATE_TASK');
- for(const t of tasks)if(t.remaining!==null&&(!Number.isInteger(t.remaining)||t.remaining<1||t.remaining>100000)||!Number.isInteger(t.priority)||t.priority<0||t.priority>2)throw Error('INVALID_ESTIMATE');
+ for(const t of tasks)if(t.remaining!==null&&(!Number.isInteger(t.remaining)||t.remaining<0||t.remaining>100000)||!Number.isInteger(t.priority)||t.priority<0||t.priority>2)throw Error('INVALID_ESTIMATE');
  const fullUsable=days.map(d=>availableRanges(d.ranges,[],d.ranges[0]?.start??now).filter(r=>r.end-r.start>=10*MIN).map(r=>({start:r.start,end:r.start+Math.floor((r.end-r.start)/MIN*.8)*MIN})));
  const usable=days.map((d,index)=>availableRanges(fullUsable[index]!,[],now));
  const capacity=fullUsable[0]!.reduce((n,r)=>n+Math.floor((r.end-r.start)/MIN),0);
@@ -60,7 +60,7 @@ export function chooseDailyPlan(tasks:Candidate[],days:DayCapacity[],now:number,
   }
  }
  const today=allocations[0]!;
- return {day:days[0]!.day,items:today,later:tasks.filter(t=>!today.some(i=>i.taskId===t.id)).map(t=>({taskId:t.id,reason:'not_selected_today'})),risks,
+ return {day:days[0]!.day,items:today,later:tasks.filter(t=>(t.remaining===null||t.remaining>0)&&!today.some(i=>i.taskId===t.id)).map(t=>({taskId:t.id,reason:'not_selected_today'})),risks,
   capacity,planned:today.reduce((n,t)=>n+t.minutes,0),assumed:days[0]!.assumed,futureAssumed:days.slice(1).some(d=>d.assumed),horizonEnd,
   forecast:days.map((day,index)=>({day:day.day,minutes:allocations[index]!.reduce((n,t)=>n+t.minutes,0),tasks:allocations[index]!.map(t=>t.taskId)}))};
 }

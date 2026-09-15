@@ -64,13 +64,14 @@ test('sleep state follows current wake setting, explicit pause is separate, and 
   assert.equal(crossing.changes.length,0,'work block must not cross bedtime');
   const reminder={name:'create_reminder' as const,args:{subject:'Sleep',at:'2026-09-13T22:36:00+07:00',message:'Time to sleep'}};
   assert.equal((await executeTool(reminder,work,'123',1,evening)).changes.length,1);
-  await s.queueCheckIns('123',evening);
-  assert.ok(await db.prepare("SELECT id FROM outbox WHERE id LIKE 'healthy:bedtime:%'").first());
+  const preSleep=at('2026-09-13T22:15:00');
+  await s.queueCheckIns('123',preSleep);
+  assert.ok(await db.prepare("SELECT id FROM outbox WHERE id LIKE 'healthy:bedtime:%:pre15'").first());
   const env={DB:db,TELEGRAM_USER_ID:'123',TELEGRAM_WEBHOOK_SECRET:'x'.repeat(24),TELEGRAM_BOT_TOKEN:'123:synthetic',DELIVERY_MODE:'outbox' as const,ASSETS:{fetch:async()=>new Response('')}};
   let sent=0;
   const transport:typeof fetch=async()=>{sent++;return Response.json({ok:true,result:{message_id:sent}});};
-  await flushOutbox(env,transport,evening,()=>evening);
-  assert.equal(sent,1,'bedtime prompt actually reaches transport before /ngu');
+  await flushOutbox(env,transport,preSleep,()=>preSleep);
+  assert.equal(sent,1,'pre-bedtime prompt actually reaches transport before /ngu');
   await s.reportSleep('123',evening);
   assert.equal((await s.restStatus('123',evening)).reason,'asleep');
   assert.equal(await s.notificationsPaused('123',evening),true);

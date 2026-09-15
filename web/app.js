@@ -41,6 +41,12 @@ function toggleTask(task){
 function openTask(task){
  openSheet(task?'#'+task.code+' · Chi tiết':'Thêm công việc');
  const form=el('form'),name=field('Tên công việc','text',task?.title??''),note=noteField(task?.note??''),deadline=field('Ngày hết hạn','date',task?.deadline?.slice(0,10)??'',false);name.input.maxLength=160;form.append(name.wrap,note.wrap,deadline.wrap);
+ if(task&&state.live){
+  const planned=state.dailyPlan?.plan?.items.find(item=>item.taskId===task.id),actual=Number(planned?.actualMinutes??task.actualMinutes??0);
+  const worked=field('Đã làm hôm nay (phút)','number',String(actual),false);worked.input.min='0';worked.input.max='1440';worked.input.step='5';worked.input.placeholder='0';
+  const workActions=el('div',undefined,'actions'),workSave=button('Lưu thời gian hôm nay',async()=>{const minutes=Number(worked.input.value||0);if(!Number.isInteger(minutes)||minutes<0||minutes>1440){toast('Nhập từ 0 đến 1440 phút nhé.');return;}await performLive('task-work',{taskId:task.id,minutes,note:null});},'secondary');
+  workActions.append(workSave);form.append(el('h3','Tiến độ hôm nay'),worked.wrap,el('p','Ghi nhận này chỉ áp dụng cho hôm nay. Sửa lại sẽ thay thế số phút cũ, không bị trừ lặp.','hint'),workActions);
+ }
  if(task){
   form.append(el('h3','Các bước nhỏ'));
   for(const step of task.steps){const row=el('label',undefined,'task-row'),check=el('input');check.type='checkbox';check.className='check';check.checked=step.done;const label=el('span','#'+step.code+' · '+step.title);
@@ -144,7 +150,7 @@ function openAvailability(){
   form.append(el('p','Để trống giờ rảnh: tạm dùng khung sinh hoạt. Các khoảng bận được trừ ra. Không thay deadline hoặc việc đã hoàn thành.','hint'));
   const freeRows=ranges('Có thể làm việc',saved.free),busyRows=ranges('Bận',saved.busy);
   const estimates=[];
-  for(const task of state.tasks.filter(t=>!t.done)){const old=saved.estimates?.find(e=>e.id===task.id);const f=field('#'+task.code+' · '+task.title+' — Ước tính cần làm thêm (phút)','number',old?String(old.minutes):'',false);f.input.min='5';f.input.max='600';f.input.placeholder='Chưa biết — có thể để trống';form.append(f.wrap);estimates.push({task,f});}
+  for(const task of state.tasks.filter(t=>!t.done)){const old=saved.estimates?.find(e=>e.id===task.id),remaining=task.remainingMinutes??old?.minutes??'';const f=field('#'+task.code+' · '+task.title+' — Còn khoảng (phút)','number',remaining===null?'':String(remaining),false);f.input.min='5';f.input.max='600';f.input.placeholder='Chưa biết — có thể để trống';form.append(f.wrap);estimates.push({task,f});}
   const submit=el('button','Lưu thời gian và cập nhật kế hoạch','primary');submit.type='submit';form.append(submit);
   form.addEventListener('submit',e=>{
    e.preventDefault();

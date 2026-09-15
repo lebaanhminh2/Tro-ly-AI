@@ -10,7 +10,7 @@ export class DayPlanStore{
   const settings=await query(this.db,'SELECT * FROM schedule_settings WHERE owner=?',owner).first<{version:number;start_minutes:number;sleep_minutes:number|null;daily_budget_minutes:number}>();
   if(!settings||settings.sleep_minutes===null)return null;
   const day=operatingDay(now,settings.start_minutes),window=dayWindow(day,settings.start_minutes,settings.sleep_minutes);
-  const tasks=(await query(this.db,"SELECT t.id,t.title,t.deadline,t.status,t.created,p.remaining_minutes AS remaining,COALESCE(p.priority,0) AS priority,COALESCE(p.updated,0) AS updated,COALESCE(p.version,0) AS estimate_version FROM tasks t LEFT JOIN task_planning p ON p.task_id=t.id AND p.owner=t.owner WHERE t.owner=? AND t.deleted_at IS NULL ORDER BY t.id",owner).all<{id:string;title:string;deadline:string|null;status:'active'|'completed';created:number;remaining:number|null;priority:number;updated:number;estimate_version:number}>()).results;
+  const tasks=(await query(this.db,"SELECT t.id,t.title,t.deadline,t.status,t.created,p.remaining_minutes AS remaining,COALESCE(p.priority,0) AS priority,COALESCE(p.updated,0) AS updated,COALESCE(p.version,0) AS estimate_version,COALESCE((SELECT l.minutes FROM task_work_logs l WHERE l.owner=t.owner AND l.task_id=t.id AND l.day=?),0) AS actual_minutes FROM tasks t LEFT JOIN task_planning p ON p.task_id=t.id AND p.owner=t.owner WHERE t.owner=? AND t.deleted_at IS NULL ORDER BY t.id",day,owner).all<{id:string;title:string;deadline:string|null;status:'active'|'completed';created:number;remaining:number|null;priority:number;updated:number;estimate_version:number;actual_minutes:number}>()).results;
   const saved=await query(this.db,'SELECT version,intervals_json,start_at FROM schedule_days WHERE owner=? AND start_at<=? AND end_at>? ORDER BY start_at DESC LIMIT 1',owner,now,now).first<{version:number;intervals_json:string;start_at:number}>();
   const intervals=JSON.parse(saved?.intervals_json??'{}');
   const events=(await query(this.db,"SELECT id,version,start_at,end_at FROM local_events WHERE owner=? AND status='scheduled' AND start_at<? AND COALESCE(end_at,start_at+3600000)>? ORDER BY id",owner,window.start+14*86400000,window.start).all<{id:string;version:number;start_at:number;end_at:number|null}>()).results;
@@ -23,10 +23,10 @@ export class DayPlanStore{
    const ranges=availableRanges(base.map(r=>({start:Math.max(w.start,r.start),end:Math.min(w.target,r.end)})).filter(r=>r.end>r.start),busy,w.start);
    days.push({day:day+n,ranges,assumed:!useSaved||!(intervals.free?.length||intervals.busy?.length)});
   }
-  const candidates:Candidate[]=tasks.filter(t=>t.status==='active').map(t=>({...t,deadline:t.deadline?Date.parse(t.deadline.length===10?t.deadline+'T23:59:59+07:00':t.deadline):null}));
+  const candidates:Candidate[]=tasks.filter(t=>t.status==='active'&&(t.remaining===null||t.remaining>0)).map(t=>({...t,deadline:t.deadline?Date.parse(t.deadline.length===10?t.deadline+'T23:59:59+07:00':t.deadline):null}));
   // Completion changes presentation, not the plan promised for this day.
   // Deadline/estimate/create/delete and availability changes still replan.
-  const signature=JSON.stringify([day,settings.version,saved?.version,events.map(e=>[e.id,e.version]),tasks.map(t=>[t.id,t.deadline,t.estimate_version])]);
+  const signature=JSON.stringify([day,settings.version,saved?.version,events.map(e=>[e.id,e.version]),tasks.map(t=>[t.id,t.deadline,t.estimate_version,t.actual_minutes])]);
   return {day,window,settings,tasks,candidates,days,signature};
  }
  async ensure(owner:string,now:number){
@@ -36,6 +36,8 @@ export class DayPlanStore{
   const previous=existing?.day===input.day?JSON.parse(existing.plan_json) as WorkPlan:null;
   const manual=previous?.manualItems;
   let plan=manual?chooseManualPlan(input.candidates,input.days,now,manual.filter(item=>input.candidates.some(task=>task.id===item.taskId))):chooseDailyPlan(input.candidates,input.days,now);
+  const actual=new Map(input.tasks.map(task=>[task.id,task.actual_minutes]));
+  plan.items.forEach(item=>{item.actualMinutes=actual.get(item.taskId)??0;});
   plan=this.preserveCompleted(plan,previous,input.tasks,manual);
   const oldVersion=existing?.version??0;
   await this.db.batch([
@@ -71,11 +73,26 @@ export class DayPlanStore{
   const planned=new Map(plan.items.map(item=>[item.taskId,item]));
   plan.items=items.map(item=>planned.get(item.taskId)??{...old.get(item.taskId)!,minutes:item.minutes,manual:true,scheduledMinutes:item.minutes});
   plan.manualItems=items.map(item=>({...item}));plan.planned=items.reduce((sum,item)=>sum+item.minutes,0);plan.overflow=Math.max(0,plan.planned-plan.capacity);
+  const actual=new Map(input.tasks.map(task=>[task.id,task.actual_minutes]));
+  plan.items.forEach(item=>{item.actualMinutes=actual.get(item.taskId)??0;});
   return new HealthyStore(this.db).mutate(owner,id,'plan-replace',{version,items},now,state=>({state,result:{saved:true,overflow:plan.overflow,unscheduled:plan.unscheduled??0},statements:[
    query(this.db,'INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM daily_plans WHERE owner=? AND version=? AND day=?) THEN 1 ELSE 0 END',owner,version,input.day),
    query(this.db,'UPDATE daily_plans SET version=version+1,plan_json=?,updated=? WHERE owner=?',JSON.stringify(plan),now,owner),
    query(this.db,"UPDATE outbox SET state='failed' WHERE id LIKE ? AND state='pending'",'nudge:'+owner+':%'),
    query(this.db,"UPDATE nudge_cycles SET cycle=cycle+1,version=version+1,tasks_json='[]',attempts=0,next_at=?,blocked_json='[]',lease_until=0 WHERE owner=?",now,owner)
+  ]}));
+ }
+ async logWork(owner:string,id:string,taskId:string,minutes:number,note:string|null,now:number){
+  if(!Number.isInteger(minutes)||minutes<0||minutes>1440||note!==null&&note.length>500)throw Error('INVALID_WORK_LOG');
+  const input=await this.inputs(owner,now);if(!input)throw Error('NO_ACTIVE_DAY');
+  const task=input.tasks.find(item=>item.id===taskId&&item.status==='active');if(!task)throw Error('TASK_NOT_AVAILABLE');
+  const previous=await query(this.db,'SELECT minutes FROM task_work_logs WHERE owner=? AND task_id=? AND day=?',owner,taskId,input.day).first<{minutes:number}>();
+  const oldMinutes=previous?.minutes??0,delta=minutes-oldMinutes;
+  const planning=await query(this.db,'SELECT remaining_minutes,version FROM task_planning WHERE owner=? AND task_id=?',owner,taskId).first<{remaining_minutes:number|null;version:number}>();
+  return new HealthyStore(this.db).mutate(owner,id,'task-work-log',{taskId,day:input.day,minutes,note},now,state=>({state,result:{saved:true,day:input.day,minutes,remaining:!planning||planning.remaining_minutes===null?null:Math.max(0,planning.remaining_minutes-delta)},statements:[
+   query(this.db,"INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM tasks WHERE owner=? AND id=? AND status='active' AND deleted_at IS NULL) AND COALESCE((SELECT version FROM task_planning WHERE owner=? AND task_id=?),0)=? AND COALESCE((SELECT minutes FROM task_work_logs WHERE owner=? AND task_id=? AND day=?),0)=? THEN 1 ELSE 0 END",owner,taskId,owner,taskId,planning?.version??0,owner,taskId,input.day,oldMinutes),
+   query(this.db,'INSERT INTO task_work_logs(owner,task_id,day,minutes,note,updated) VALUES(?,?,?,?,?,?) ON CONFLICT(owner,task_id,day) DO UPDATE SET minutes=excluded.minutes,note=excluded.note,updated=excluded.updated',owner,taskId,input.day,minutes,note,now),
+   ...(planning&&planning.remaining_minutes!==null?[query(this.db,'UPDATE task_planning SET remaining_minutes=?,updated=?,version=version+1 WHERE owner=? AND task_id=?',Math.max(0,planning.remaining_minutes-delta),now,owner,taskId)]:[])
   ]}));
  }
  async reorder(owner:string,id:string,version:number,ids:string[],now:number){
