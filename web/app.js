@@ -46,11 +46,11 @@ function openTask(task){
   const planned=state.dailyPlan?.plan?.items.find(item=>item.taskId===task.id),actual=Number(planned?.actualMinutes??task.actualMinutes??0);
   const remaining=task.remainingMinutes??planned?.remaining??null,baseRemaining=remaining===null?null:Number(remaining)+actual;
   let sliderMax=Math.min(1440,Math.max(120,actual+Number(remaining??0)));
-  const box=el('section',undefined,'work-progress'),head=el('div',undefined,'progress-head'),label=el('label','Tiến độ hôm nay','progress-label'),minutesControl=el('div',undefined,'minutes-control');
+  const box=el('section',undefined,'work-progress'),head=el('div',undefined,'progress-head'),label=el('label','Đã làm hôm nay','progress-label'),minutesControl=el('div',undefined,'minutes-control');
   const minutes=el('input');minutes.type='number';minutes.min='0';minutes.max='1440';minutes.step='5';minutes.value=String(actual);minutes.inputMode='numeric';minutes.className='work-minutes';minutes.setAttribute('aria-label','Số phút đã làm hôm nay');
   const slider=el('input');slider.type='range';slider.min='0';slider.max=String(sliderMax);slider.step='1';slider.value=String(Math.min(actual,sliderMax));slider.className='work-slider';slider.setAttribute('aria-label','Thanh trượt số phút đã làm hôm nay');
-  const remainingText=el('p','','progress-remaining'),hint=el('p','Nhập số hoặc kéo thanh trượt. Lưu chung với task; sửa lại không bị trừ lặp.','hint');
-  const updateProgress=value=>{let next=Number(value);if(!Number.isInteger(next)||next<0)next=0;next=Math.min(1440,next);if(next>sliderMax){sliderMax=next;slider.max=String(next);}minutes.value=String(next);slider.value=String(next);remainingText.textContent=baseRemaining===null?'Chưa có ước lượng tổng':`Còn lại khoảng ${Math.max(0,baseRemaining-next)} phút`;progress.dirty=next!==actual;progress.minutes=next;};
+  const remainingText=el('p','','progress-remaining'),hint=el('p','Nhập tổng số phút cậu đã làm trong hôm nay, hoặc kéo thanh trượt. Lưu lại không bị cộng/trừ lặp.','hint');
+  const updateProgress=value=>{let next=Number(value);if(!Number.isInteger(next)||next<0)next=0;next=Math.min(1440,next);if(next>sliderMax){sliderMax=next;slider.max=String(next);}minutes.value=String(next);slider.value=String(next);remainingText.textContent=baseRemaining===null?'Chưa có ước lượng tổng cho task này':`Còn khoảng ${Math.max(0,baseRemaining-next)} phút`;progress.dirty=next!==actual;progress.minutes=next;};
   minutes.addEventListener('input',()=>updateProgress(minutes.value));slider.addEventListener('input',()=>updateProgress(slider.value));
   progress={dirty:false,minutes:actual};updateProgress(actual);minutesControl.append(minutes,el('span','phút'));head.append(label,minutesControl);box.append(head,slider,remainingText,hint);form.append(box);
  }
@@ -206,8 +206,8 @@ function openInventory(){
  const itemHeading=(name,count)=>{const row=el('div',undefined,'inventory-heading');row.append(el('h3',name),el('span','×'+count,'quantity-badge'));return row;};
  sheetContent.append(el('p','BẢO VỆ','inventory-group'));
  for(const [key,name,description] of [
-  ['heart','Hộ Tâm Phù','Giữ chuỗi cho một ngày lỡ, không cộng ngày đúng giờ. Không chặn trừ tu vi.'],
-  ['peace','An Tâm Phù','Chặn một lần −20 tu vi trong ngày đã dùng; không giữ chuỗi.']
+  ['heart','Hộ Tâm Phù','Nếu cậu ngủ muộn, chuỗi ngủ đúng giờ không bị mất. Tu vi vẫn bị trừ 20 như bình thường.'],
+  ['peace','An Tâm Phù','Nếu cậu ngủ muộn, phù chặn lần trừ 20 tu vi của ngày đó. Chuỗi ngủ đúng giờ vẫn bị mất.']
  ]){
   const item=el('section',undefined,'item-row');item.append(itemHeading(name,c.inventory[key]),el('p',description,'hint'));
   const use=button(c.active[key]?(state.live?'Đã kích hoạt hôm nay':'Đã kích hoạt trong demo'):'Dùng hôm nay',()=>confirm('Dùng '+name+'?',description+(state.live?' Chỉ áp dụng ngày sinh hoạt hiện tại.':' Chỉ áp dụng ngày sinh hoạt này trong demo.'),()=>{
@@ -216,9 +216,9 @@ function openInventory(){
  }
  sheetContent.append(el('p','PHÁ CẢNH','inventory-group'));
  for(const t of talismans){
-  const item=el('section',undefined,'item-row');item.append(itemHeading('Phá Cảnh Phù · '+t.name,c.inventory[t.key]),el('p','+'+t.boost+' điểm % cho một lần đột phá.','hint'));
+  const item=el('section',undefined,'item-row');item.append(itemHeading('Phá Cảnh Phù · '+t.name,c.inventory[t.key]),el('p','Khi dùng trong lần đột phá này, cơ hội thành công tăng thêm '+t.boost+' điểm %. Dùng xong sẽ tiêu hao.','hint'));
   if(t.next){const fuse=button('Ghép 3 lá · '+t.chance+'%',()=>confirm('Ghép lên '+talismans.find(n=>n.key===t.next).name+'?',
-   'Thành công: tiêu hao 3 lá. Thất bại: mất 1, trả lại 2. Tỷ lệ '+t.chance+'%.',()=>{
+   'Ghép 3 phù cùng cấp. Thành công nhận 1 phù cấp cao hơn; thất bại mất 1 và trả lại 2. Tỷ lệ thành công '+t.chance+'%.',()=>{
     if(state.live){performLive('cultivation',{operation:'fuse',item:t.key});return;}const success=demoFuse(c,t.key);if(success===null)return;toast(success?'Ghép thành công ✦':'Chưa thành, đã trả lại 2 lá.');openInventory();render();
    }),'secondary');fuse.disabled=c.inventory[t.key]<3;item.append(fuse);}
   sheetContent.append(item);
@@ -234,7 +234,7 @@ function openBreakthrough(){
  label.append(select);sheetContent.append(label);
  const info=el('p',undefined,'hint'),result=el('div',undefined,'loot-result');result.hidden=true;result.setAttribute('role','status');
  const chance=()=>Math.min(100,[70,85,100][Math.min(c.failures,2)]+(talismans.find(t=>t.key===select.value)?.boost??0));
- const explain=()=>{info.textContent='Thành công '+chance()+'% · Thất bại giữ tu vi/chuỗi, phù đã chọn vẫn tiêu hao. Mỗi ngày chỉ thử 1 lần.';};select.addEventListener('change',explain);explain();
+ const explain=()=>{info.textContent='Lần này có '+chance()+'% cơ hội thành công. Nếu thất bại, tu vi và chuỗi ngủ không mất; Phá Cảnh Phù đã chọn vẫn được dùng. Mỗi ngày chỉ thử 1 lần.';};select.addEventListener('change',explain);explain();
  const attempt=button('Đột phá',async()=>{
   if(attempt.disabled)return;
   attempt.disabled=true;attempt.textContent='Đang đột phá…';await playEffect(attempt,'breakthrough',860);
