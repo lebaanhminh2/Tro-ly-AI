@@ -2,7 +2,7 @@ import {taskBuckets} from '../api.js';
 export function renderToday(ui,state){
  const {el,button,heading,card,openTask,render}=ui;
  const buckets=taskBuckets(state.tasks,state.operatingDay,state.start);
- const root=el('section');
+ const root=el('section',undefined,'today-page');
  root.append(heading('Một ngày, từng bước.',state.live?new Date(state.serverNow).toLocaleDateString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',weekday:'long',day:'numeric',month:'long'}):'Chủ nhật, 13 tháng 9 · Dữ liệu mẫu'));
  const quickActions=el('div',undefined,'today-quick-actions');quickActions.append(button('+ Tạo task',()=>openTask(null),'primary'));root.append(quickActions);
  if(state.resting){
@@ -10,7 +10,7 @@ export function renderToday(ui,state){
   const until=state.rest?.until?new Date(state.rest.until).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'}):null;
   const title=({bedtime:'Đến giờ ngủ rồi, cậu 🌙',asleep:'Cậu đã báo ngủ 🌙',paused:'Đang tạm dừng lời nhắc',inactive:'Tạm ngưng vì lâu chưa trò chuyện'}[reason]??'Nghỉ ngơi thôi, cậu 🌙');
   const detail=reason==='bedtime'?'Không giao thêm việc. Tớ vẫn nhắc đi ngủ và gửi lời nhắc riêng đã hẹn; /ngu để ngừng nhắn chủ động.':reason==='inactive'?'Nhắn cho Minh Anh để hoạt động lại.':'Ngừng nhắn chủ động'+(until?' đến '+until:'')+'.';
-  const rest=card();rest.append(el('h2',title),el('p',detail+(reason==='inactive'?' Cậu vẫn có thể chỉnh công việc.':' Cậu vẫn chỉnh lịch, công việc và nhận thưởng bình thường.'),'subtitle'),...(state.live?[]:[button('Hoạt động lại',()=>{state.resting=false;render();},'secondary')]));root.append(rest);
+  const rest=card('rest-state');rest.append(el('h2',title),el('p',detail+(reason==='inactive'?' Cậu vẫn có thể chỉnh công việc.':' Cậu vẫn chỉnh lịch, công việc và nhận thưởng bình thường.'),'subtitle'),...(state.live?[]:[button('Hoạt động lại',()=>{state.resting=false;render();},'secondary')]));root.append(rest);
  }
  const planned=state.dailyPlan?.plan?.items??[];
  const next=state.dailyPlan?.plan?planned.map(item=>state.tasks.find(task=>task.id===item.taskId&&!task.done)).find(Boolean):buckets.active[0];
@@ -31,7 +31,7 @@ export function renderToday(ui,state){
   root.append(renderDailyPlan(ui,state));
  }else{
   const tools=el('div',undefined,'section-heading'),actions=el('div',undefined,'heading-actions');const selectButton=button(state.selecting?'Thoát chọn':'Chọn nhiều',()=>{state.selecting=!state.selecting;state.selected.clear();render();},'text-button selection-toggle');selectButton.setAttribute('aria-pressed',String(state.selecting));actions.append(selectButton);tools.append(el('h2',buckets.active.length+' việc đang làm'),actions);root.append(tools);
-  const taskList=(tasks,className='',groupHistory=false)=>{const list=card(className);let month='';
+  const taskList=(tasks,className='',groupHistory=false)=>{const list=card(('task-board '+className).trim());let month='';
   for(const task of tasks){
    if(groupHistory){const key=task.completedAt?new Date(task.completedAt).toLocaleDateString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',month:'long',year:'numeric'}):'Ngày chưa rõ';if(key!==month){month=key;list.append(el('p',key,'history-month'));}}
    const row=el('div',undefined,'task-row'+(task.done?' done':'')),check=el('input');check.type='checkbox';check.className='check';check.checked=state.selecting?state.selected.has(task.code):task.done;check.setAttribute('aria-label',(state.selecting?'Chọn ':'Hoàn thành ')+task.title);
@@ -61,7 +61,7 @@ function renderDailyPlan(ui,state){
  const plan=state.dailyPlan?.plan;
  if(!plan){root.append(el('p','Chưa có kế hoạch hôm nay. Tớ sẽ xếp khi có lịch sinh hoạt và công việc nhé.','hint'));return root;}
  const completed=plan.items.filter(item=>state.tasks.find(task=>task.id===item.taskId)?.done).length,actualTotal=plan.items.reduce((sum,item)=>sum+Number(item.actualMinutes??0),0);
- const summary=el('div',undefined,'section-heading'),actions=el('div',undefined,'heading-actions');actions.append(button('Chỉnh việc hôm nay',()=>ui.openTodayPlan(),'primary'),button('Giờ bận/rảnh',()=>ui.openAvailability(),'text-button'));summary.append(el('p',`${plan.items.length} việc hôm nay · ${completed} đã xong${actualTotal?' · '+actualTotal+' phút đã làm':''} · ${plan.planned} phút kế hoạch / ${plan.capacity} phút sức chứa.`,'plan-summary'),actions);root.append(summary);
+ const summary=el('div',undefined,'section-heading plan-summary-head'),actions=el('div',undefined,'heading-actions');actions.append(button('Chỉnh việc hôm nay',()=>ui.openTodayPlan(),'primary'),button('Giờ bận/rảnh',()=>ui.openAvailability(),'text-button'));summary.append(el('p',`${plan.items.length} việc hôm nay · ${completed} đã xong${actualTotal?' · '+actualTotal+' phút đã làm':''} · ${plan.planned} phút dự kiến / ${plan.capacity} phút rảnh đã tính.`,'plan-summary'),actions);root.append(summary);
  const notices=[];
  if(plan.overflow>0)notices.push('Cậu đã chủ động thêm vượt sức chứa '+plan.overflow+' phút.');
  if(plan.unscheduled>0)notices.push(plan.unscheduled+' phút chưa có khung giờ thật nên Minh Anh chưa thể đặt mốc nhắc cho phần đó.');
