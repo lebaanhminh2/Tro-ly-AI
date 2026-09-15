@@ -1,4 +1,11 @@
 # Tiếp tục từ đây
+## Daily work log + staged bedtime nudges — 2026-09-15 (đã deploy staging)
+- Commit `bafaa6f`. Migration `0022_task_work_logs.sql` đã áp dụng trên D1 `assistant-staging`; bảng `task_work_logs` tồn tại và `task_planning` cho phép remaining bằng 0.
+- Worker `personal-assistant-staging` version `145de8d2-c236-41af-af33-757ea033693d`; asset `today.js` live có hiển thị actual minutes. `/api/bootstrap` không có initData trả401 đúng.
+- Nhắc ngủ: T-30, T-15, bỏ đúng T, T+20, T+40. ID bedtime cũ tại đúng T bị backend từ chối. `/ngu` vẫn hủy các mốc còn lại.
+- Mini App có ô `Đã làm hôm nay (phút)`. Ghi theo task/ngày, sửa cùng ngày thay thế giá trị cũ và chỉ áp dụng phần chênh lệch; ngày sau dùng remaining đã lưu, không hỏi lại. Task hết estimate vẫn cần user tick hoàn thành.
+- Full148/148 +25/25 đạt, typecheck và build dry-run đạt. Chưa gọi Gemini/Telegram thật trong kiểm thử.
+
 ## Chu kỳ nhắc theo phản hồi — bản local, chưa deploy
 - Kết quả: full142/142 +25/25 offline đạt; sau bổ sung next-day/final-send sleep targeted2/2 đạt, typecheck/diff-check đạt. Model được giả lập trong test: chưa chứng minh Gemini hiểu đúng mọi cách diễn đạt thực tế.
 - Thay budget suy từ tin chat bất kỳ bằng migration0019 `nudge_cycles` + `nudge_reply_receipts`. Một nhóm tối đa3 task đến giờ, một cổng chờ phản hồi chung: gửi lần đầu + tối đa1 follow-up, rồi chờ. Không giới hạn2/ngày khi user phản hồi rõ. Chu kỳ/id/version mới tránh trùng delivery key.
