@@ -41,11 +41,18 @@ function toggleTask(task){
 function openTask(task){
  openSheet(task?'#'+task.code+' · Chi tiết':'Thêm công việc');
  const form=el('form'),name=field('Tên công việc','text',task?.title??''),note=noteField(task?.note??''),deadline=field('Ngày hết hạn','date',task?.deadline?.slice(0,10)??'',false);name.input.maxLength=160;form.append(name.wrap,note.wrap,deadline.wrap);
+ let progress=null;
  if(task&&state.live){
   const planned=state.dailyPlan?.plan?.items.find(item=>item.taskId===task.id),actual=Number(planned?.actualMinutes??task.actualMinutes??0);
-  const worked=field('Đã làm hôm nay (phút)','number',String(actual),false);worked.input.min='0';worked.input.max='1440';worked.input.step='5';worked.input.placeholder='0';
-  const workActions=el('div',undefined,'actions'),workSave=button('Lưu thời gian hôm nay',async()=>{const minutes=Number(worked.input.value||0);if(!Number.isInteger(minutes)||minutes<0||minutes>1440){toast('Nhập từ 0 đến 1440 phút nhé.');return;}await performLive('task-work',{taskId:task.id,minutes,note:null});},'secondary');
-  workActions.append(workSave);form.append(el('h3','Tiến độ hôm nay'),worked.wrap,el('p','Ghi nhận này chỉ áp dụng cho hôm nay. Sửa lại sẽ thay thế số phút cũ, không bị trừ lặp.','hint'),workActions);
+  const remaining=task.remainingMinutes??planned?.remaining??null,baseRemaining=remaining===null?null:Number(remaining)+actual;
+  let sliderMax=Math.min(1440,Math.max(120,actual+Number(remaining??0)));
+  const box=el('section',undefined,'work-progress'),head=el('div',undefined,'progress-head'),label=el('label','Tiến độ hôm nay','progress-label'),minutesControl=el('div',undefined,'minutes-control');
+  const minutes=el('input');minutes.type='number';minutes.min='0';minutes.max='1440';minutes.step='5';minutes.value=String(actual);minutes.inputMode='numeric';minutes.className='work-minutes';minutes.setAttribute('aria-label','Số phút đã làm hôm nay');
+  const slider=el('input');slider.type='range';slider.min='0';slider.max=String(sliderMax);slider.step='1';slider.value=String(Math.min(actual,sliderMax));slider.className='work-slider';slider.setAttribute('aria-label','Thanh trượt số phút đã làm hôm nay');
+  const remainingText=el('p','','progress-remaining'),hint=el('p','Nhập số hoặc kéo thanh trượt. Lưu chung với task; sửa lại không bị trừ lặp.','hint');
+  const updateProgress=value=>{let next=Number(value);if(!Number.isInteger(next)||next<0)next=0;next=Math.min(1440,next);if(next>sliderMax){sliderMax=next;slider.max=String(next);}minutes.value=String(next);slider.value=String(next);remainingText.textContent=baseRemaining===null?'Chưa có ước lượng tổng':`Còn lại khoảng ${Math.max(0,baseRemaining-next)} phút`;progress.dirty=next!==actual;progress.minutes=next;};
+  minutes.addEventListener('input',()=>updateProgress(minutes.value));slider.addEventListener('input',()=>updateProgress(slider.value));
+  progress={dirty:false,minutes:actual};updateProgress(actual);minutesControl.append(minutes,el('span','phút'));head.append(label,minutesControl);box.append(head,slider,remainingText,hint);form.append(box);
  }
  if(task){
   form.append(el('h3','Các bước nhỏ'));
@@ -60,10 +67,10 @@ function openTask(task){
   }
   form.append(button('+ Thêm bước',()=>{openSheet('Thêm bước cho #'+task.code);const f=el('form'),title=field('Tên bước','text');f.append(title.wrap);const save=el('button','Thêm bước','primary');save.type='submit';f.append(save);f.addEventListener('submit',e=>{e.preventDefault();const value=title.input.value.trim();if(!value)return;if(state.live){performLive('tasks',{operation:'add_step',taskId:task.id,version:task.version,title:value,confirm:false});return;}task.steps.push({code:task.code+'.'+task.nextStep++,title:value,done:false});task.done=false;render();openTask(task);});sheetContent.append(f);},'text-button'));
  }
- const actions=el('div',undefined,'actions'),save=el('button',state.live?'Lưu thay đổi':'Lưu thay đổi mẫu','primary');save.type='submit';actions.append(save);
+ const actions=el('div',undefined,'actions'),save=el('button',state.live?(progress?'Lưu task và tiến độ':'Lưu thay đổi'):'Lưu thay đổi mẫu','primary');save.type='submit';actions.append(save);
  if(task)actions.append(button(task.done?'Mở lại':'Hoàn thành',()=>toggleTask(task),'secondary'));
  if(task&&state.live)actions.append(button(state.dailyPlan?.plan?.items.some(item=>item.taskId===task.id)?'Chỉnh trong hôm nay':'Thêm vào hôm nay',()=>openTodayPlan(task.id),'secondary'));
- form.append(actions);form.addEventListener('submit',event=>{event.preventDefault();const title=name.input.value.trim();if(!title)return;if(state.live){performLive('tasks',{operation:task?'edit':'create',...(task?{taskId:task.id,version:task.version}:{}),title,note:note.input.value,...(!task||deadline.input.value!==task.deadline?.slice(0,10)?{deadline:deadline.input.value||null}:{})});return;}if(task){task.title=title;task.note=note.input.value;task.deadline=deadline.input.value;}else state.tasks.push({code:state.nextTask++,title,note:note.input.value,deadline:deadline.input.value,done:false,steps:[],nextStep:1});sheet.close();render();toast('Đã đổi bản mẫu · Không lưu lên bot');});
+ form.append(actions);form.addEventListener('submit',async event=>{event.preventDefault();const title=name.input.value.trim();if(!title)return;if(state.live){const taskChanged=!task||title!==task.title||note.input.value!==(task.note??'')||deadline.input.value!==(task.deadline?.slice(0,10)??'');if(!taskChanged&&!progress?.dirty){sheet.close();return;}if(taskChanged){const saved=await performLive('tasks',{operation:task?'edit':'create',...(task?{taskId:task.id,version:task.version}:{}),title,note:note.input.value,...(!task||deadline.input.value!==task.deadline?.slice(0,10)?{deadline:deadline.input.value||null}:{})},{keepSheet:true,silent:true});if(!saved)return;}if(task&&progress?.dirty){const saved=await performLive('task-work',{taskId:task.id,minutes:progress.minutes,note:null},{keepSheet:true,silent:true});if(!saved)return;}sheet.close();render();toast(progress?.dirty?'Đã lưu task và tiến độ hôm nay.':'Đã lưu thay đổi.');return;}if(task){task.title=title;task.note=note.input.value;task.deadline=deadline.input.value;}else state.tasks.push({code:state.nextTask++,title,note:note.input.value,deadline:deadline.input.value,done:false,steps:[],nextStep:1});sheet.close();render();toast('Đã đổi bản mẫu · Không lưu lên bot');});
  sheetContent.append(form,el('p','Mã không đổi khi sắp xếp. Trong bản thật cậu có thể nói “sửa task #24”.','hint'));
 }
 
