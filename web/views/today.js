@@ -1,4 +1,3 @@
-import {renderTimeline} from './timeline.js';
 import {taskBuckets} from '../api.js';
 export function renderToday(ui,state){
  const {el,button,heading,card,openTask,render}=ui;
