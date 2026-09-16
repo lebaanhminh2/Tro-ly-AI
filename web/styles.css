@@ -70,3 +70,79 @@ dialog .actions{background:var(--surface);border-top:1px solid var(--line);box-s
 .today-page .plan-notice{padding:12px 14px;border-left-width:3px;background:var(--surface)}
 .estimate-help{margin:14px 0 4px;padding:10px 12px;border-radius:12px;background:var(--soft);color:var(--muted);font-size:12px;line-height:1.5}
 @media(max-width:390px){.plan-actions{grid-template-columns:1fr 1fr}.plan-actions .plan-action{font-size:12px;padding-left:8px;padding-right:8px}}
+
+/* Today page: one clear path from the next action to the rest of the day. */
+.today-page{gap:16px;overflow-x:hidden}
+.today-page>.heading{margin:0;align-items:flex-start}
+.today-page>.heading h1{font-size:29px;line-height:1.2}
+.today-page>.heading .subtitle{margin-top:6px}
+.today-page .today-quick-actions{margin:0;justify-content:flex-start}
+.today-page .today-quick-actions .primary{min-height:44px;padding:10px 16px}
+.today-page .rest-state{margin:0;padding:16px 18px;border-radius:16px;background:var(--surface);border:1px solid var(--line);box-shadow:none}
+.today-page .rest-state h2{font-size:18px;line-height:1.35}
+.today-page .rest-state .subtitle{margin-top:7px;line-height:1.5}
+.today-page .rest-state .secondary{margin-top:12px}
+.today-page .focus-hero{margin:0;padding:20px;border-radius:18px;background:var(--surface);border-color:var(--line);box-shadow:none}
+.today-page .focus-hero:after{color:color-mix(in srgb,var(--accent) 8%,transparent)}
+.today-page .focus-hero h2{font-size:21px;line-height:1.3;margin:10px 0 6px;max-width:calc(100% - 24px)}
+.today-page .focus-hero p:not(.eyebrow){font-size:13px;line-height:1.5}
+.today-page .focus-hero .actions{margin-top:15px}
+.today-page .focus-hero .secondary{min-height:42px;padding:9px 16px}
+.today-page .today-view-switch{margin:0}
+.today-page .today-view-switch button{min-height:42px}
+.today-page .daily-plan,.today-page .task-list-section{display:flex;flex-direction:column;gap:12px;margin:0;min-width:0}
+.plan-overview{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,auto);gap:14px;align-items:end;padding:16px;border:1px solid var(--line);border-radius:17px;background:var(--surface)}
+.plan-overview-copy{min-width:0}
+.plan-overview-copy h2{font-size:19px;line-height:1.3;margin-top:7px}
+.plan-overview-copy .plan-summary{margin:7px 0 0;font-size:12px;line-height:1.5;color:var(--muted);overflow-wrap:anywhere}
+.plan-actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:100%;max-width:280px}
+.plan-actions .plan-action{width:100%;min-width:0;min-height:42px;padding:9px 12px;box-shadow:none;font-size:12px;white-space:normal}
+.plan-actions .plan-action-main{background:var(--accent);border-color:var(--accent);color:#fff}
+.plan-notice{display:flex;gap:10px;align-items:flex-start;margin:0;padding:10px 12px;border:1px solid color-mix(in srgb,var(--gold) 24%,var(--line));border-left:3px solid var(--gold);border-radius:12px;background:color-mix(in srgb,var(--gold) 6%,var(--surface));color:var(--text);line-height:1.45}
+.notice-mark{display:grid;place-items:center;flex:0 0 20px;width:20px;height:20px;border-radius:50%;background:color-mix(in srgb,var(--gold) 18%,var(--surface));color:var(--gold);font-size:12px;font-weight:800}
+.notice-copy{min-width:0}
+.notice-copy strong{display:block;font-size:12px;color:var(--text);font-weight:750}
+.notice-copy p{margin:2px 0 0;font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.daily-list{display:grid;gap:9px;min-width:0}
+.daily-item{min-width:0;min-height:70px;padding:13px 14px;border:1px solid var(--line);border-radius:16px;background:var(--surface);box-shadow:none}
+.daily-item .check{width:23px;height:23px}
+.daily-item-open{min-width:0;gap:4px}
+.daily-item-open strong{font-size:15px;line-height:1.35}
+.daily-item-open small{font-size:11px;line-height:1.45;margin-top:2px}
+.daily-item.done{background:color-mix(in srgb,var(--soft) 62%,var(--surface));opacity:1}
+.daily-item.done .daily-item-open strong{color:var(--muted)}
+.plan-empty,.plan-empty-inline,.task-empty{padding:18px 16px;border:1px dashed var(--line);border-radius:15px;background:color-mix(in srgb,var(--soft) 55%,var(--surface))}
+.plan-empty h2{font-size:18px;margin-top:7px}
+.plan-empty .hint,.plan-empty-inline .hint,.task-empty .hint{margin:7px 0 0}
+.plan-empty-inline h3{font-size:16px}
+.plan-empty-inline .hint{margin-bottom:0}
+.task-list-heading{margin:0;gap:12px;align-items:center}
+.section-heading-copy{min-width:0}
+.section-heading-copy h2{font-size:19px;line-height:1.3}
+.section-kicker{margin-top:3px;color:var(--muted);font-size:12px;line-height:1.4}
+.task-list-heading .heading-actions{flex:0 0 auto}
+.task-list-section>.task-board{margin:0;padding:6px 15px;border-radius:16px;box-shadow:none}
+.task-list-section .task-row{padding:12px 0}
+.task-list-section .task-open strong{font-size:15px;line-height:1.35}
+.task-list-section .task-open small{font-size:11px;line-height:1.45;margin-top:3px}
+.today-page .daily-later{margin:0;padding:9px 13px;border:1px solid var(--line);border-radius:14px;background:var(--soft)}
+.today-page .daily-later>summary{min-height:42px;padding:2px 0;font-size:13px}
+.today-page .daily-later>.hint{margin:4px 0 8px}
+.today-page .history-section{border-top:0;padding-top:9px;background:transparent}
+.today-page .history-section>summary{border-top:1px solid var(--line);padding-top:11px}
+.today-page .completed-today{background:color-mix(in srgb,var(--green) 6%,var(--surface))}
+.today-page .later-task{padding:9px 0}
+
+/* Task sheet: the body scrolls; actions stay in a separate, opaque footer. */
+dialog.task-sheet-open{display:flex;flex-direction:column;overflow:hidden;padding-bottom:0}
+dialog.task-sheet-open #sheet-content{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+dialog.task-sheet-open .sheet-title-row,dialog.task-sheet-open #sheet-feedback{flex:0 0 auto}
+dialog.task-sheet-open .task-sheet{display:flex;flex:1;flex-direction:column;min-height:0;overflow:hidden}
+dialog.task-sheet-open .task-sheet-body{min-height:0;overflow:auto;padding:0 2px 8px;-webkit-overflow-scrolling:touch}
+dialog.task-sheet-open .task-sheet-body>form{padding-bottom:4px}
+dialog.task-sheet-open .task-actions{position:static;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;flex:0 0 auto;margin:0;padding:12px 0 max(12px,env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--surface);box-shadow:none;z-index:auto}
+dialog.task-sheet-open .task-actions>*{width:100%;min-width:0;min-height:48px;padding:10px 11px;white-space:normal}
+dialog.task-sheet-open .task-actions>*:last-child:nth-child(3){grid-column:1/-1}
+dialog.task-sheet-open .task-sheet-body .work-progress{margin-top:14px}
+@media(max-width:600px){.plan-overview{grid-template-columns:1fr;gap:12px}.plan-actions{max-width:none}.today-page .focus-hero h2{max-width:100%}}
+@media(max-width:390px){.today-page{gap:12px}.today-page>.heading h1{font-size:27px}.plan-overview{padding:14px}.plan-actions .plan-action{font-size:11px;padding-left:8px;padding-right:8px}.daily-item{padding-left:12px;padding-right:12px}dialog.task-sheet-open .task-actions{gap:7px;padding-top:10px}dialog.task-sheet-open .task-actions>*{font-size:12px;padding-left:8px;padding-right:8px}}
