@@ -137,8 +137,11 @@ dialog .actions{background:var(--surface);border-top:1px solid var(--line);box-s
 dialog.task-sheet-open{display:flex;flex-direction:column;overflow:hidden;padding-bottom:0}
 dialog.task-sheet-open #sheet-content{display:flex;flex-direction:column;min-height:0;overflow:hidden}
 dialog.task-sheet-open .sheet-title-row,dialog.task-sheet-open #sheet-feedback{flex:0 0 auto}
+dialog.task-sheet-open .sheet-title-row{position:relative;z-index:4;pointer-events:auto}
+dialog.task-sheet-open .sheet-title-row .icon-button{position:relative;z-index:5;touch-action:manipulation;pointer-events:auto}
+dialog.task-sheet-open .sheet-handle{flex:0 0 auto}
 dialog.task-sheet-open .task-sheet{display:flex;flex:1;flex-direction:column;min-height:0;overflow:hidden}
-dialog.task-sheet-open .task-sheet-body{min-height:0;overflow:auto;padding:0 2px 8px;-webkit-overflow-scrolling:touch}
+dialog.task-sheet-open .task-sheet-body{min-height:0;overflow:auto;padding:0 2px 8px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y}
 dialog.task-sheet-open .task-sheet-body>form{padding-bottom:4px}
 dialog.task-sheet-open .task-actions{position:static;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;flex:0 0 auto;margin:0;padding:12px 0 max(12px,env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--surface);box-shadow:none;z-index:auto}
 dialog.task-sheet-open .task-actions>*{width:100%;min-width:0;min-height:48px;padding:10px 11px;white-space:normal}

@@ -21,3 +21,10 @@ test('today controls use the shared task and progress flows',()=>{
  assert.ok(!app.includes("entries.push({taskId:select.value,minutes:45})"));
  assert.ok(api.includes('actualMinutes'));
 });
+
+test('task sheet has touch, backdrop and system-close escape paths',()=>{
+ assert.ok(app.includes("data-sheet-close"));
+ assert.ok(app.includes("sheet.addEventListener('cancel'"));
+ assert.ok(app.includes('closeSheet()'));
+ assert.ok(app.includes("sheet.classList.remove('task-sheet-open')"));
+});
