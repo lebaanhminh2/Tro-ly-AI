@@ -29,21 +29,25 @@ export class D1WorkStore implements WorkStore {
     return day?{...day,settings:await store.settings(owner)}:null;
   }
   async prepareSchedule(owner:string,now:number,version:number,free:import('../../domain/availability.ts').TimeRange[],busy:import('../../domain/availability.ts').TimeRange[],estimates:{id:string;minutes:number}[],requestId:string){
-    const tasks=[];
-    if(!estimates.length){
-      const day=await new ScheduleStore(this.db).ensureDay(owner,now);
-      const saved=day?await query(this.db,'SELECT intervals_json FROM schedule_days WHERE owner=? AND day=?',owner,day.day).first<{intervals_json:string}>():null;
-      if(saved){const intervals=JSON.parse(saved.intervals_json);if(Array.isArray(intervals.estimates))estimates=intervals.estimates;}
-    }
-    for(const e of estimates){
-      const t=await this.task(owner,e.id);if(!t||t.status==='completed')continue;
-      tasks.push({id:t.id,status:'active' as const,deleted:false,deadline:t.deadline?Date.parse(t.deadline.length===10?t.deadline+'T23:59:59+07:00':t.deadline):null,remainingMinutes:e.minutes});
-    }
-    const remaining=(await query(this.db,"SELECT id,deadline FROM tasks WHERE owner=? AND status='active' AND deleted_at IS NULL",owner).all<{id:string;deadline:string|null}>()).results;
-    const supplied=new Set(tasks.map(t=>t.id));
-    const all:import('../../application/daily-planner.ts').PlanningTask[]=[...tasks];
-    for(const t of remaining)if(!supplied.has(t.id))all.push({id:t.id,status:'active',deleted:false,deadline:t.deadline?Date.parse(t.deadline.length===10?t.deadline+'T23:59:59+07:00':t.deadline):null,remainingMinutes:null});
-    return new ScheduleStore(this.db).prepareReplan(owner,now,version,free,busy,all,requestId);
+    if(new Set(estimates.map(item=>item.id)).size!==estimates.length)throw Error('DUPLICATE_TASK');
+    const supplied=new Map(estimates.map(item=>[item.id,item.minutes]));
+    const active=(await query(this.db,`SELECT t.id,t.deadline,p.remaining_minutes
+      FROM tasks t LEFT JOIN task_planning p ON p.owner=t.owner AND p.task_id=t.id
+      WHERE t.owner=? AND t.status='active' AND t.deleted_at IS NULL`,owner)
+      .all<{id:string;deadline:string|null;remaining_minutes:number|null}>()).results;
+    const ids=new Set(active.map(task=>task.id));
+    if(estimates.some(item=>!ids.has(item.id)))throw Error('STALE_TASK');
+    const all:import('../../application/daily-planner.ts').PlanningTask[]=active.map(task=>({
+      id:task.id,status:'active',deleted:false,
+      deadline:task.deadline?Date.parse(task.deadline.length===10?task.deadline+'T23:59:59+07:00':task.deadline):null,
+      remainingMinutes:supplied.get(task.id)??task.remaining_minutes
+    }));
+    const prepared=await new ScheduleStore(this.db).prepareReplan(owner,now,version,free,busy,all,requestId);
+    for(const estimate of estimates)prepared.statements.push(query(this.db,`INSERT INTO task_planning(owner,task_id,remaining_minutes,updated)
+      VALUES(?,?,?,?) ON CONFLICT(owner,task_id) DO UPDATE SET
+      remaining_minutes=excluded.remaining_minutes,updated=excluded.updated,version=task_planning.version+1
+      WHERE task_planning.remaining_minutes IS NOT excluded.remaining_minutes`,owner,estimate.id,estimate.minutes,now));
+    return prepared;
   }
   reportSleep(owner:string,now:number){return new ScheduleStore(this.db).reportSleep(owner,now);}
   async hierarchy(owner:string){

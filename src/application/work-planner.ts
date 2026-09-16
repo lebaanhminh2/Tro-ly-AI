@@ -5,6 +5,8 @@ export type DayItem={taskId:string;minutes:number;remaining:number|null;provisio
 export type ManualDayItem={taskId:string;minutes:number};
 export type WorkPlan={day:number;items:DayItem[];later:{taskId:string;reason:string}[];risks:{taskId:string;reason:string}[];capacity:number;planned:number;assumed:boolean;futureAssumed:boolean;horizonEnd:number;forecast:{day:number;minutes:number;tasks:string[]}[];manualItems?:ManualDayItem[];overflow?:number;unscheduled?:number};
 const MIN=60000;
+const DAILY_FOCUS_LIMIT=3;
+const FOCUS_BLOCK_MINUTES=120;
 // Work occupies at most 80% of each available interval. The rest is transition,
 // rest and contingency, not extra work hidden outside the budget.
 export function chooseDailyPlan(tasks:Candidate[],days:DayCapacity[],now:number,preferred:string[]=[]):WorkPlan{
@@ -14,7 +16,8 @@ export function chooseDailyPlan(tasks:Candidate[],days:DayCapacity[],now:number,
  const fullUsable=days.map(d=>availableRanges(d.ranges,[],d.ranges[0]?.start??now).filter(r=>r.end-r.start>=10*MIN).map(r=>({start:r.start,end:r.start+Math.floor((r.end-r.start)/MIN*.8)*MIN})));
  const usable=days.map((d,index)=>availableRanges(fullUsable[index]!,[],now));
  const capacity=fullUsable[0]!.reduce((n,r)=>n+Math.floor((r.end-r.start)/MIN),0);
- const remaining=new Map(tasks.map(t=>[t.id,t.remaining??45]));
+ const known=tasks.filter(t=>t.remaining!==null);
+ const remaining=new Map(known.map(t=>[t.id,t.remaining!]));
  const allocations:DayItem[][]=days.map(()=>[]);
  const risks:WorkPlan['risks']=[];
  const horizonEnd=Math.max(now,...days.flatMap(d=>d.ranges.map(r=>r.end)));
@@ -22,28 +25,38 @@ export function chooseDailyPlan(tasks:Candidate[],days:DayCapacity[],now:number,
  let cumulative=0;
  for(const t of [...tasks].filter(t=>t.deadline!==null).sort((a,b)=>a.deadline!-b.deadline!)){
   if(t.deadline!<=now){risks.push({taskId:t.id,reason:'overdue'});continue;}
-  cumulative+=t.remaining??45;
+  if(t.remaining===null){risks.push({taskId:t.id,reason:'unknown_duration'});continue;}
+  cumulative+=t.remaining;
   const available=usable.flat().reduce((n,r)=>n+Math.max(0,Math.floor((Math.min(r.end,t.deadline!)-r.start)/MIN)),0);
-  if(t.deadline!<=horizonEnd&&cumulative>available)risks.push({taskId:t.id,reason:t.remaining===null?'unknown_duration':'deadline_capacity'});
+  if(t.deadline!<=horizonEnd&&cumulative>available)risks.push({taskId:t.id,reason:'deadline_capacity'});
   else if(t.deadline!>horizonEnd)risks.push({taskId:t.id,reason:'outside_horizon'});
  }
  for(let d=0;d<days.length;d++){
   const ranges=usable[d]!.map(r=>({...r}));
   const dayStart=days[d]!.ranges[0]?.start??now;
   const slack=(t:Candidate)=>t.deadline===null?Infinity:(t.deadline-dayStart)/MIN-(remaining.get(t.id)??0);
-  const queue=tasks.filter(t=>remaining.get(t.id)!>0).sort((a,b)=>{
+  // Unknown estimates stay out of the normal queue. If no known task remains
+  // for a future day, allow one provisional task so the plan can still make
+  // progress without turning every unknown task into a fake 45-minute block.
+  const source=known.some(t=>(remaining.get(t.id)??0)>0)
+   ? known
+   : tasks.filter(t=>t.remaining===null);
+  const queue=source.filter(t=>(remaining.get(t.id)??45)>0).sort((a,b)=>{
    // Explicit reordering applies to today; deadline-risk tasks still cannot be
    // scheduled after their deadline (risk is exposed rather than hidden).
    if(d===0&&preferred.length){const ai=preferred.indexOf(a.id),bi=preferred.indexOf(b.id);if(ai!==bi)return (ai<0?Infinity:ai)-(bi<0?Infinity:bi);}
    return slack(a)-slack(b)||b.priority-a.priority||a.created-b.created||a.id.localeCompare(b.id);
   });
+  let selected=0;
   for(const t of queue){
-   const left=remaining.get(t.id)!;
+   if(selected>=DAILY_FOCUS_LIMIT)break;
+   const left=remaining.get(t.id)??45;
    const futureDays=Math.max(1,days.slice(d).filter((day,index)=>usable[d+index]!.some(r=>t.deadline===null||r.start<t.deadline)).length);
-   // Spread long tasks over usable days instead of filling today with one task.
-   // Urgent work gets what can fit today; undated work advances in meaningful doses.
+   // Finish urgent work first. Other tasks receive one meaningful focus block;
+   // spare capacity remains a buffer instead of fragmenting every backlog item.
    const urgent=t.deadline!==null&&t.deadline<dayStart+86400000;
-   const allowance=urgent?left:Math.min(left,t.deadline===null?90:Math.max(30,Math.ceil(left/futureDays/5)*5));
+   const dailyNeed=t.deadline===null?FOCUS_BLOCK_MINUTES:Math.ceil(left/futureDays/5)*5;
+   const allowance=urgent?left:Math.min(left,Math.max(45,Math.min(FOCUS_BLOCK_MINUTES,dailyNeed)));
    let wanted=allowance;const windows:TimeRange[]=[];
    for(const r of ranges){
     if(wanted<=0)break;
@@ -55,12 +68,13 @@ export function chooseDailyPlan(tasks:Candidate[],days:DayCapacity[],now:number,
    }
    const allocated=allowance-wanted;
    if(!allocated)continue;
+   selected++;
    remaining.set(t.id,left-allocated);
    allocations[d]!.push({taskId:t.id,minutes:allocated,remaining:t.remaining,provisional:t.remaining===null,reason:urgent?'deadline_near':t.priority>0?'priority':t.deadline!==null?'deadline_spread':'steady_progress',windows});
   }
  }
  const today=allocations[0]!;
- return {day:days[0]!.day,items:today,later:tasks.filter(t=>(t.remaining===null||t.remaining>0)&&!today.some(i=>i.taskId===t.id)).map(t=>({taskId:t.id,reason:'not_selected_today'})),risks,
+ return {day:days[0]!.day,items:today,later:tasks.filter(t=>(t.remaining===null||t.remaining>0)&&!today.some(i=>i.taskId===t.id)).map(t=>({taskId:t.id,reason:t.remaining===null?'needs_estimate':'not_selected_today'})),risks,
   capacity,planned:today.reduce((n,t)=>n+t.minutes,0),assumed:days[0]!.assumed,futureAssumed:days.slice(1).some(d=>d.assumed),horizonEnd,
   forecast:days.map((day,index)=>({day:day.day,minutes:allocations[index]!.reduce((n,t)=>n+t.minutes,0),tasks:allocations[index]!.map(t=>t.taskId)}))};
 }

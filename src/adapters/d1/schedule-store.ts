@@ -90,6 +90,9 @@ export class ScheduleStore{
     query(this.db,'INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM schedule_days WHERE owner=? AND day=? AND version=?) THEN 1 ELSE 0 END',owner,day.day,expectedVersion),
     query(this.db,'UPDATE schedule_days SET intervals_json=?,version=version+1 WHERE owner=? AND day=?',JSON.stringify({free,busy,estimates:tasks.filter(t=>t.remainingMinutes!==null).map(t=>({id:t.id,minutes:t.remainingMinutes})),unplanned:plan.unplanned}),owner,day.day),
     query(this.db,'DELETE FROM schedule_dialogs WHERE owner=?',owner),
+    query(this.db,"UPDATE outbox SET state='failed' WHERE id LIKE ? AND state='pending'",'nudge:'+owner+':%'),
+    query(this.db,"UPDATE nudge_cycles SET cycle=cycle+1,version=version+1,tasks_json='[]',attempts=0,next_at=?,blocked_json='[]',lease_until=0 WHERE owner=?",now,owner),
+    query(this.db,"UPDATE daily_plans SET signature='' WHERE owner=?",owner),
     query(this.db,"UPDATE reminders SET status='cancelled' WHERE owner=? AND status IN('pending','queued') AND session_id IN(SELECT id FROM sessions WHERE owner=? AND status='planned' AND start_at>=? AND start_at<?)",owner,owner,now,day.end_at),
     query(this.db,"UPDATE sessions SET status='skipped',version=version+1 WHERE owner=? AND status='planned' AND start_at>=? AND start_at<?",owner,now,day.end_at)
    ];

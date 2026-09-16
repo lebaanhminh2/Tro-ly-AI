@@ -61,7 +61,7 @@ function renderDailyPlan(ui,state){
  const plan=state.dailyPlan?.plan;
  if(!plan){root.append(el('p','Chưa có kế hoạch hôm nay. Tớ sẽ xếp khi có lịch sinh hoạt và công việc nhé.','hint'));return root;}
  const completed=plan.items.filter(item=>state.tasks.find(task=>task.id===item.taskId)?.done).length,actualTotal=plan.items.reduce((sum,item)=>sum+Number(item.actualMinutes??0),0);
- const summary=el('div',undefined,'section-heading plan-summary-head'),actions=el('div',undefined,'heading-actions');actions.append(button('Chỉnh việc hôm nay',()=>ui.openTodayPlan(),'primary'),button('Giờ bận/rảnh',()=>ui.openAvailability(),'text-button'));summary.append(el('p',`${plan.items.length} việc hôm nay · ${completed} đã xong${actualTotal?' · '+actualTotal+' phút đã làm':''} · ${plan.planned} phút dự kiến / ${plan.capacity} phút rảnh đã tính.`,'plan-summary'),actions);root.append(summary);
+ const summary=el('div',undefined,'section-heading plan-summary-head'),actions=el('div',undefined,'heading-actions plan-actions');actions.append(button('Chỉnh việc hôm nay',()=>ui.openTodayPlan(),'secondary plan-action plan-action-main'),button('Giờ bận/rảnh',()=>ui.openAvailability(),'secondary plan-action'));summary.append(el('p',`${plan.items.length} việc hôm nay · ${completed} đã xong${actualTotal?' · '+actualTotal+' phút đã làm':''} · ${plan.planned} phút dự kiến / ${plan.capacity} phút rảnh đã tính.`,'plan-summary'),actions);root.append(summary);
  const notices=[];
  if(plan.overflow>0)notices.push('Cậu đã chủ động thêm vượt sức chứa '+plan.overflow+' phút.');
  if(plan.unscheduled>0)notices.push(plan.unscheduled+' phút chưa có khung giờ thật nên Minh Anh chưa thể đặt mốc nhắc cho phần đó.');

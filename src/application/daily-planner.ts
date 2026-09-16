@@ -7,7 +7,9 @@ export function planDay(tasks:PlanningTask[],availability:TimeRange[],fixed:Time
  if(!Number.isInteger(breakMinutes)||breakMinutes<0||breakMinutes>60||!Number.isInteger(blockMinutes)||blockMinutes<5||blockMinutes>180)throw Error('INVALID_PLANNING_OPTIONS');
  const ranges=availableRanges(availability,fixed,now);
  const queue=tasks.filter(t=>!t.deleted&&t.status==='active').map(t=>{
-  if(t.remainingMinutes!==null&&(!Number.isInteger(t.remainingMinutes)||t.remainingMinutes<1||t.remainingMinutes>100000))throw Error('INVALID_ESTIMATE');
+  // Zero means the estimate is exhausted; the task still needs the user's
+  // explicit completion tick, but must not make a replan fail.
+  if(t.remainingMinutes!==null&&(!Number.isInteger(t.remainingMinutes)||t.remainingMinutes<0||t.remainingMinutes>100000))throw Error('INVALID_ESTIMATE');
   return {...t};
  }).sort((a,b)=>(a.deadline??Infinity)-(b.deadline??Infinity)||a.id.localeCompare(b.id));
  if(new Set(queue.map(t=>t.id)).size!==queue.length)throw Error('DUPLICATE_TASK');

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {planDay} from '../../src/application/daily-planner.ts';
 import {availableRanges} from '../../src/domain/availability.ts';
-import {chooseManualPlan} from '../../src/application/work-planner.ts';
+import {chooseDailyPlan,chooseManualPlan} from '../../src/application/work-planner.ts';
 const hour=3600000;
 test('availability patches subtract busy time without erasing other hours',()=>{
  assert.deepEqual(availableRanges([{start:14*hour,end:17*hour}],[{start:15*hour,end:16*hour}],0),[{start:14*hour,end:15*hour},{start:16*hour,end:17*hour}]);
@@ -26,6 +26,20 @@ test('completed/deleted work excluded; missing estimate or missed deadline not g
  assert.equal(result.blocks.length,1);
  assert.equal(result.blocks[0]!.taskId,'late');
  assert.deepEqual(new Set(result.unplanned.map(t=>t.reason)),new Set(['needs_estimate']));
+});
+
+test('automatic daily plan keeps a small sequential focus set and defers unknown work',()=>{
+ const start=Date.parse('2026-09-14T09:00:00+07:00');
+ const result=chooseDailyPlan([
+  {id:'urgent',title:'Urgent',deadline:start+8*3600000,remaining:180,priority:2,updated:0,created:0},
+  {id:'next',title:'Next',deadline:start+2*86400000,remaining:240,priority:1,updated:0,created:1},
+  {id:'steady',title:'Steady',deadline:null,remaining:240,priority:0,updated:0,created:2},
+  {id:'unknown',title:'Unknown',deadline:null,remaining:null,priority:0,updated:0,created:3},
+ ],[{day:1,ranges:[{start,end:start+10*3600000}],assumed:false}],start);
+ assert.ok(result.items.length<=3);
+ assert.ok(!result.items.some(item=>item.taskId==='unknown'));
+ assert.ok(result.later.some(item=>item.taskId==='unknown'&&item.reason==='needs_estimate'));
+ assert.ok(result.items.every(item=>item.minutes>=15));
 });
 
 test('manual Today may exceed calculated capacity but only real windows are nudged',()=>{
@@ -113,6 +127,7 @@ test('replan persists blocks and keeps omitted tasks visible as unplanned',async
   const store=new D1WorkStore(db),prepared=await store.prepareSchedule('123',now,1,[{start:now+3600000,end:now+7200000}],[],[{id:'late',minutes:25}],'test-schedule');
   await db.batch(prepared.statements);
   assert.equal((await store.sessions('123',now,now+86400000)).length,1);
+  assert.equal((await db.prepare("SELECT remaining_minutes FROM task_planning WHERE owner='123' AND task_id='late'").first<{remaining_minutes:number}>())!.remaining_minutes,25);
   assert.equal((await store.task('123','late'))!.deadline,'2026-09-12');
   assert.ok(JSON.stringify(prepared.plan.unplanned).includes('other'));
  }finally{await mf.dispose();}
