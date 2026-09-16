@@ -1,4 +1,11 @@
 # Tiếp tục từ đây
+## Today page redesign + task sheet footer — 2026-09-16 (đã deploy staging)
+- Commit `7e21087`; Worker `personal-assistant-staging` version `d6833fba-f62e-40b5-963a-f69292857205`.
+- Trang “Hôm nay” được sắp theo luồng việc tiếp theo → lịch hôm nay → chỉnh lịch → việc chưa chọn; cảnh báo được rút gọn và chỉ hiện khi cần. Task dài giới hạn hai dòng, không tràn ngang.
+- Modal chi tiết task tách vùng nội dung cuộn khỏi footer thao tác; bỏ sticky chồng nội dung và safe-area cộng trùng. Giữ nguyên lưu task, hoàn thành, tiến độ và thêm vào hôm nay.
+- Không có migration mới; kiểm tra remote báo không còn migration cần áp dụng. `check:web`, `typecheck`, `build:check`, full153/153 +25/25 đều đạt. Chưa gọi Gemini/Telegram thật trong kiểm thử.
+- Mở từ Telegram bằng `/kiemtra` → “Mở ứng dụng” để có initData thật; URL `/app/` trực tiếp ngoài Telegram chỉ dùng để xem asset.
+
 ## Daily work log + staged bedtime nudges — 2026-09-15 (đã deploy staging)
 - Commit `bafaa6f`. Migration `0022_task_work_logs.sql` đã áp dụng trên D1 `assistant-staging`; bảng `task_work_logs` tồn tại và `task_planning` cho phép remaining bằng 0.
 - Worker `personal-assistant-staging` version `145de8d2-c236-41af-af33-757ea033693d`; asset `today.js` live có hiển thị actual minutes. `/api/bootstrap` không có initData trả401 đúng.
