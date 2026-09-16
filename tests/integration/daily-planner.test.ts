@@ -81,7 +81,7 @@ test('manual Today preserves completed totals, supports removal and resets at ne
   saved=(await plans.ensure('123',now+1000))!;assert.equal(saved.plan.planned,1000);assert.equal(saved.plan.items.length,2);
   await plans.replace('123','remove_b_001',saved.version,[{taskId:'a',minutes:500}],now+2000);
   saved=(await plans.ensure('123',now+2000))!;assert.deepEqual(saved.plan.items.map(item=>item.taskId),['a']);assert.equal(saved.plan.planned,500);
-  const tomorrow=(await plans.ensure('123',now+86400000))!;assert.ok(!tomorrow.plan.items.some(item=>item.taskId==='a'));assert.ok(tomorrow.plan.items.some(item=>item.taskId==='b'));
+  const tomorrow=(await plans.ensure('123',now+86400000))!;assert.ok(!tomorrow.plan.items.some(item=>item.taskId==='a'));assert.ok(!tomorrow.plan.items.some(item=>item.taskId==='b'));assert.ok(tomorrow.plan.later.some(item=>item.taskId==='b'&&item.reason==='needs_estimate'));
  }finally{await mf.dispose();}
 });
 

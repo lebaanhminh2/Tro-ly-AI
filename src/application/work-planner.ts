@@ -35,13 +35,9 @@ export function chooseDailyPlan(tasks:Candidate[],days:DayCapacity[],now:number,
   const ranges=usable[d]!.map(r=>({...r}));
   const dayStart=days[d]!.ranges[0]?.start??now;
   const slack=(t:Candidate)=>t.deadline===null?Infinity:(t.deadline-dayStart)/MIN-(remaining.get(t.id)??0);
-  // Unknown estimates stay out of the normal queue. If no known task remains
-  // for a future day, allow one provisional task so the plan can still make
-  // progress without turning every unknown task into a fake 45-minute block.
-  const source=known.some(t=>(remaining.get(t.id)??0)>0)
-   ? known
-   : tasks.filter(t=>t.remaining===null);
-  const queue=source.filter(t=>(remaining.get(t.id)??45)>0).sort((a,b)=>{
+  // Unknown estimates stay out of automatic scheduling. They remain visible
+  // in “Để sau” until the user supplies a realistic remaining duration.
+  const queue=known.filter(t=>(remaining.get(t.id)??0)>0).sort((a,b)=>{
    // Explicit reordering applies to today; deadline-risk tasks still cannot be
    // scheduled after their deadline (risk is exposed rather than hidden).
    if(d===0&&preferred.length){const ai=preferred.indexOf(a.id),bi=preferred.indexOf(b.id);if(ai!==bi)return (ai<0?Infinity:ai)-(bi<0?Infinity:bi);}
@@ -50,7 +46,7 @@ export function chooseDailyPlan(tasks:Candidate[],days:DayCapacity[],now:number,
   let selected=0;
   for(const t of queue){
    if(selected>=DAILY_FOCUS_LIMIT)break;
-   const left=remaining.get(t.id)??45;
+   const left=remaining.get(t.id)!;
    const futureDays=Math.max(1,days.slice(d).filter((day,index)=>usable[d+index]!.some(r=>t.deadline===null||r.start<t.deadline)).length);
    // Finish urgent work first. Other tasks receive one meaningful focus block;
    // spare capacity remains a buffer instead of fragmenting every backlog item.
