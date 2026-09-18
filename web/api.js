@@ -3,7 +3,7 @@ export function createDemo(){
  return {
   tab:'today',mode:'tasks',reminderFilter:'recurring',screenState:'ready',selected:new Set(),selecting:false,
   historyOffset:0,historyHasMore:false,historyLoading:false,
-  start:'04:30',sleep:'22:30',resting:false,
+  start:'04:30',sleep:'22:30',autoPlanDelayMinutes:180,resting:false,
   cultivation:{qi:20,totalEarned:145,rank:1,highestRank:1,streak:3,tickets:3,rewardedTasks:[],failures:0,attemptDay:null,protectedUntil:0,inventory:{basic:3,middle:0,high:0,supreme:0,heart:1,peace:1,keepsake:0},active:{heart:false,peace:false},log:[]},
   tasks:[
    {code:24,title:'Báo cáo môn học',deadline:'2026-09-18',done:false,steps:[{code:'24.1',title:'Đọc yêu cầu',done:true},{code:'24.2',title:'Viết dàn ý',done:false},{code:'24.3',title:'Viết bản nháp',done:false}],nextStep:4},
@@ -152,7 +152,7 @@ export async function refreshLive(){
  for(const item of history.items)if(!baseTasks.some(task=>task.id===item.id))baseTasks.push(item);
  return {
   live:true,loaded:true,resting:data.resting,rest:data.rest,needsSetup:data.needsSetup,serverNow:data.now,settingsVersion:data.settings?.version??0,
-  start:clock(data.settings?.start_minutes??270),sleep:data.settings?.sleep_minutes===null||!data.settings?'':clock(data.settings.sleep_minutes),
+  start:clock(data.settings?.start_minutes??270),sleep:data.settings?.sleep_minutes===null||!data.settings?'':clock(data.settings.sleep_minutes),autoPlanDelayMinutes:Number(data.settings?.auto_plan_delay_minutes??180),
   tasks:baseTasks,historyOffset:history.offset+history.items.length,historyHasMore:history.hasMore,historyTotal:history.total,historyLoading:false,
   reminders:data.reminders.map(r=>({...r,times:r.times.join(', '),start:r.startDate,end:r.endDate??''})),
   cultivation:{...c,totalEarned:c.earned,active:{heart:c.heartDay===data.day?.day,peace:c.peaceDay===data.day?.day},log:[],rewardedTasks:[]},

@@ -26,8 +26,10 @@ function card(extra=''){return el('div',undefined,'card '+extra);}
 function heading(title,description){const box=el('div',undefined,'heading'),group=el('div');group.append(el('h1',title),el('p',description,'subtitle'));box.append(group);return box;}
 function toast(message){const inline=document.querySelector('#sheet-feedback');if(sheet.open&&inline){inline.textContent=message;inline.hidden=false;}const node=document.querySelector('#toast');clearTimeout(toastTimer);node.textContent=message;node.classList.add('visible');toastTimer=setTimeout(()=>node.classList.remove('visible'),3500);}
 function icon(name){const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('aria-hidden','true');svg.setAttribute('fill','none');svg.setAttribute('stroke','currentColor');svg.setAttribute('stroke-width','1.8');svg.setAttribute('stroke-linecap','round');const path=document.createElementNS(svg.namespaceURI,'path');path.setAttribute('d',name==='close'?'M6 6l12 12M18 6L6 18':'M9 3h6l1 3 3 1 2 5-2 5-3 1-1 3H9l-1-3-3-1-2-5 2-5 3-1z M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0');svg.append(path);return svg;}
-function closeSheet(){sheet.classList.remove('task-sheet-open');if(sheet.open)sheet.close();else render();}
-function openSheet(title){sheet.classList.remove('task-sheet-open');sheetContent.replaceChildren();const row=el('div',undefined,'sheet-title-row'),h=el('h2',title);h.id='sheet-title';h.tabIndex=-1;const close=button('',closeSheet,'icon-button');close.setAttribute('aria-label','Đóng');close.setAttribute('data-sheet-close','true');close.append(icon('close'));row.append(h,close);sheetContent.append(row);const feedback=el('p','','form-feedback');feedback.id='sheet-feedback';feedback.hidden=true;feedback.setAttribute('role','status');sheetContent.append(feedback);if(!sheet.open)sheet.showModal();h.focus({preventScroll:true});}
+function lockPageScroll(){document.documentElement.classList.add('sheet-open');document.body.classList.add('sheet-open');}
+function unlockPageScroll(){document.documentElement.classList.remove('sheet-open');document.body.classList.remove('sheet-open');}
+function closeSheet(){sheet.classList.remove('task-sheet-open','schedule-sheet-open');if(sheet.open)sheet.close();else{unlockPageScroll();render();}}
+function openSheet(title){sheet.classList.remove('task-sheet-open','schedule-sheet-open');sheetContent.replaceChildren();const row=el('div',undefined,'sheet-title-row'),h=el('h2',title);h.id='sheet-title';h.tabIndex=-1;const close=button('',closeSheet,'icon-button');close.setAttribute('aria-label','Đóng');close.setAttribute('data-sheet-close','true');close.append(icon('close'));row.append(h,close);sheetContent.append(row);const feedback=el('p','','form-feedback');feedback.id='sheet-feedback';feedback.hidden=true;feedback.setAttribute('role','status');sheetContent.append(feedback);if(!sheet.open){lockPageScroll();sheet.showModal();}h.focus({preventScroll:true});}
 function field(label,type,value='',required=true){const wrap=el('label',label,'form-field'),input=el('input');input.type=type;input.value=value;input.required=required;wrap.append(input);if(type==='time'){input.step='60';const hint=el('span','','clock-hint');const update=()=>{if(!input.value){hint.textContent='Chọn giờ · định dạng 24 giờ';return;}const [h,m]=input.value.split(':').map(Number);hint.textContent=input.value+' — '+(h%12||12)+' giờ'+(m?' '+m+' phút':'')+' '+(h<12?'sáng':h<18?'chiều':'tối');};input.addEventListener('input',update);update();wrap.append(hint);}return {wrap,input};}
 function noteField(value=''){const wrap=el('label','Ghi chú','form-field'),input=el('textarea');input.value=value;input.maxLength=2000;input.rows=5;input.placeholder='Thông tin quan trọng, đường dẫn, ý tưởng…';wrap.append(input,el('span','Chỉ lưu cùng task, không tự gửi cho Gemini.','clock-hint'));return {wrap,input};}
 function empty(title,text,action,label){const c=card('empty');c.append(el('span','✧','empty-symbol'),el('h2',title),el('p',text),button(label,action,'primary'));return c;}
@@ -44,7 +46,7 @@ function openTask(task){
  sheet.classList.add('task-sheet-open');
  const shell=el('div',undefined,'task-sheet'),body=el('div',undefined,'task-sheet-body'),form=el('form');
  form.id='task-sheet-form';
- const name=field('Tên công việc','text',task?.title??''),note=noteField(task?.note??''),deadline=field('Ngày hết hạn','date',task?.deadline?.slice(0,10)??'',false);name.input.maxLength=160;form.append(name.wrap,note.wrap,deadline.wrap);
+ const name=field('Tên công việc','text',task?.title??''),note=noteField(task?.note??''),deadline=field('Ngày hết hạn','date',task?.deadline?.slice(0,10)??'',false),deadlineTime=field('Giờ hết hạn · để trống là 23:59','time',task?.deadline?.includes('T')?task.deadline.slice(11,16):'',false);name.input.maxLength=160;form.append(name.wrap,note.wrap,deadline.wrap,deadlineTime.wrap);
  let progress=null;
  if(task&&state.live){
   const planned=state.dailyPlan?.plan?.items.find(item=>item.taskId===task.id),actual=Number(planned?.actualMinutes??task.actualMinutes??0);
@@ -76,7 +78,7 @@ function openTask(task){
  if(task)actions.append(button(task.done?'Mở lại':'Hoàn thành',()=>toggleTask(task),'secondary'));
  if(task&&state.live)actions.append(button(state.dailyPlan?.plan?.items.some(item=>item.taskId===task.id)?'Chỉnh trong hôm nay':'Thêm vào hôm nay',()=>openTodayPlan(task.id),'secondary'));
  shell.append(actions);
- form.addEventListener('submit',async event=>{event.preventDefault();const title=name.input.value.trim();if(!title)return;if(state.live){const taskChanged=!task||title!==task.title||note.input.value!==(task.note??'')||deadline.input.value!==(task.deadline?.slice(0,10)??'');if(!taskChanged&&!progress?.dirty){sheet.close();return;}if(taskChanged){const saved=await performLive('tasks',{operation:task?'edit':'create',...(task?{taskId:task.id,version:task.version}:{}),title,note:note.input.value,...(!task||deadline.input.value!==task.deadline?.slice(0,10)?{deadline:deadline.input.value||null}:{})},{keepSheet:true,silent:true});if(!saved)return;}if(task&&progress?.dirty){const saved=await performLive('task-work',{taskId:task.id,minutes:progress.minutes,note:null},{keepSheet:true,silent:true});if(!saved)return;}sheet.close();render();toast(progress?.dirty?'Đã lưu task và tiến độ hôm nay.':'Đã lưu thay đổi.');return;}if(task){task.title=title;task.note=note.input.value;task.deadline=deadline.input.value;}else state.tasks.push({code:state.nextTask++,title,note:note.input.value,deadline:deadline.input.value,done:false,steps:[],nextStep:1});sheet.close();render();toast('Đã đổi bản mẫu · Không lưu lên bot');});
+ form.addEventListener('submit',async event=>{event.preventDefault();const title=name.input.value.trim();if(!title)return;const deadlineValue=deadline.input.value?(deadlineTime.input.value?deadline.input.value+'T'+deadlineTime.input.value+':00+07:00':deadline.input.value):null;if(state.live){const taskChanged=!task||title!==task.title||note.input.value!==(task.note??'')||deadlineValue!==(task.deadline||null);if(!taskChanged&&!progress?.dirty){sheet.close();return;}if(taskChanged){const saved=await performLive('tasks',{operation:task?'edit':'create',...(task?{taskId:task.id,version:task.version}:{}),title,note:note.input.value,...(!task||deadlineValue!==(task.deadline||null)?{deadline:deadlineValue}:{})},{keepSheet:true,silent:true});if(!saved)return;}if(task&&progress?.dirty){const saved=await performLive('task-work',{taskId:task.id,minutes:progress.minutes,note:null},{keepSheet:true,silent:true});if(!saved)return;}sheet.close();render();toast(progress?.dirty?'Đã lưu task và tiến độ hôm nay.':'Đã lưu thay đổi.');return;}if(task){task.title=title;task.note=note.input.value;task.deadline=deadlineValue??'';}else state.tasks.push({code:state.nextTask++,title,note:note.input.value,deadline:deadlineValue??'',done:false,steps:[],nextStep:1});sheet.close();render();toast('Đã đổi bản mẫu · Không lưu lên bot');});
  sheetContent.append(shell);
 }
 
@@ -141,17 +143,17 @@ function openReminder(reminder){
  if(reminder?.origin==='appointment')sheetContent.append(button('Hủy lời nhắc',()=>confirm('Hủy lời nhắc này?','Không xóa công việc liên quan.',()=>performLive('reminders',{rule:{id:reminder.id,origin:'appointment',title:reminder.title,kind:'once',times:reminder.times.split(',').map(t=>t.trim()),weekdays:[],startDate:reminder.start,endDate:null,enabled:false,version:reminder.version}})),'danger'));
  if(reminder&&!reminder.origin){const actions=el('div',undefined,'actions');actions.style.marginTop='18px';actions.append(button('Dời lần kế tiếp',()=>{openSheet('Dời riêng lần kế tiếp');const f=el('form'),date=field('Ngày','date',new Date((state.serverNow??Date.now())+7*3600000).toISOString().slice(0,10)),time=field('Giờ Việt Nam','time','19:00');f.append(date.wrap,time.wrap,el('p','Những lần sau vẫn giữ quy tắc cũ.','hint'));const save=el('button','Lưu lần này','primary');save.type='submit';f.append(save);f.addEventListener('submit',e=>{e.preventDefault();const due=Date.parse(date.input.value+'T'+time.input.value+':00+07:00');if(due<=Date.now()){toast('Chọn giờ tương lai nhé.');return;}if(state.live)performLive('reminder-instance',{ruleId:reminder.id,operation:'move',due});else{toast('Demo: chỉ dời một lần, chưa lưu server.');sheet.close();}});sheetContent.append(f);},'secondary'),button('Bỏ lần kế tiếp',()=>{if(state.live){performLive('reminder-instance',{ruleId:reminder.id,operation:'skip'});return;}reminder.skipped=true;sheet.close();render();toast('Demo: bỏ một lần, không tắt lịch lặp.');},'secondary'),button(reminder.enabled?'Tắt cả lịch':'Bật cả lịch',()=>{if(state.live){performLive('reminders',{rule:{id:reminder.id,...(reminder.origin?{origin:reminder.origin}:{}),title:reminder.title,kind:reminder.kind,times:reminder.times.split(',').map(t=>t.trim()),weekdays:reminder.weekdays,startDate:reminder.start,endDate:reminder.end||null,enabled:!reminder.enabled,version:reminder.version}});return;}reminder.enabled=!reminder.enabled;sheet.close();render();},'secondary'));sheetContent.append(actions);}
 }
-function openHelp(){openSheet('Hướng dẫn nhanh');for(const [command,description] of [['Chat thường','Trò chuyện, không tự ghi công việc.'],['/ thêm bài toán hạn mai','Thực hiện yêu cầu. Thiếu thông tin thì tớ hỏi.'],['/ mai 7h nhắc tớ dậy','Đặt nhắc một lần; lời nhắc vẫn tuân theo chế độ nghỉ.'],['/lich hôm nay bận 14–16h, 17–18h','Lưu giờ bận; tự xếp lại task chưa xong nếu có ước lượng.'],['/ngu','Báo nghỉ, dừng nhắc chủ động; vẫn sửa dữ liệu được.'],['/huy','Thoát phiên /lich, không xóa việc đã lưu.']]){const box=el('section',undefined,'item-row');box.append(el('strong',command),el('p',description,'hint'));sheetContent.append(box);}}
+function openHelp(){openSheet('Hướng dẫn nhanh');for(const [command,description] of [['Chat thường','Trò chuyện, không tự ghi công việc.'],['/ thêm bài toán hạn mai','Thực hiện yêu cầu. Thiếu thông tin thì tớ hỏi.'],['/ mai 7h nhắc tớ dậy','Đặt nhắc một lần; lời nhắc vẫn tuân theo chế độ nghỉ.'],['/lich','Mở phần “Thời gian hôm nay” để cậu tự ghi giờ rảnh, giờ bận và thời lượng task cho chính xác.'],['/ngu','Báo nghỉ, dừng nhắc chủ động; vẫn sửa dữ liệu được.'],['/huy','Thoát phiên nhập đang mở.']]){const box=el('section',undefined,'item-row');box.append(el('strong',command),el('p',description,'hint'));sheetContent.append(box);}}
 function openSettings(){
- openSheet('Cài đặt');const form=el('form'),start=field('Bắt đầu ngày','time',state.start),sleep=field('Giờ nghỉ mục tiêu','time',state.sleep);form.append(start.wrap,sleep.wrap,el('p','Giờ nghỉ là mục tiêu. /ngu mới xác nhận cậu bắt đầu nghỉ; chat và chỉnh dữ liệu vẫn hoạt động.','hint'));
- const save=el('button',state.live?'Lưu giờ sinh hoạt':'Lưu trong bản mẫu','primary');save.type='submit';form.append(save);form.addEventListener('submit',e=>{e.preventDefault();if(start.input.value===sleep.input.value){toast('Giờ bắt đầu và giờ nghỉ cần khác nhau.');return;}if(state.live){performLive('settings',{start:start.input.value,sleep:sleep.input.value,version:state.settingsVersion});return;}state.start=start.input.value;state.sleep=sleep.input.value;sheet.close();render();toast('Demo: chưa đổi giờ sinh hoạt trên bot.');});const themeLabel=el('label','Giao diện','form-field'),theme=el('select');for(const [value,label] of [['auto','Theo Telegram'],['light','Sáng'],['dark','Tối']]){const option=el('option',label);option.value=value;theme.append(option);}theme.value=themePreference();theme.addEventListener('change',()=>setThemePreference(theme.value));themeLabel.append(theme);sheetContent.append(form,themeLabel,button('Hướng dẫn nhanh',openHelp,'secondary'));
+ openSheet('Cài đặt');const form=el('form'),start=field('Bắt đầu ngày','time',state.start),sleep=field('Giờ nghỉ mục tiêu','time',state.sleep),autoDelay=field('Tự xếp lịch nếu chưa cập nhật sau (phút)','number',String(state.autoPlanDelayMinutes??180));autoDelay.input.min='30';autoDelay.input.max='720';autoDelay.input.step='30';form.append(start.wrap,sleep.wrap,autoDelay.wrap,el('p','Thời gian chờ áp dụng từ ngày tiếp theo. Giờ nghỉ là mục tiêu; /ngu mới xác nhận cậu bắt đầu nghỉ.','hint'));
+ const save=el('button',state.live?'Lưu giờ sinh hoạt':'Lưu trong bản mẫu','primary');save.type='submit';form.append(save);form.addEventListener('submit',e=>{e.preventDefault();const delay=Number(autoDelay.input.value);if(start.input.value===sleep.input.value){toast('Giờ bắt đầu và giờ nghỉ cần khác nhau.');return;}if(!Number.isInteger(delay)||delay<30||delay>720||delay%30){toast('Chọn thời gian chờ từ 30 đến 720 phút, theo nấc 30 phút nhé.');return;}if(state.live){performLive('settings',{start:start.input.value,sleep:sleep.input.value,autoPlanDelayMinutes:delay,version:state.settingsVersion});return;}state.start=start.input.value;state.sleep=sleep.input.value;state.autoPlanDelayMinutes=delay;sheet.close();render();toast('Demo: chưa đổi giờ sinh hoạt trên bot.');});const themeLabel=el('label','Giao diện','form-field'),theme=el('select');for(const [value,label] of [['auto','Theo Telegram'],['light','Sáng'],['dark','Tối']]){const option=el('option',label);option.value=value;theme.append(option);}theme.value=themePreference();theme.addEventListener('change',()=>setThemePreference(theme.value));themeLabel.append(theme);sheetContent.append(form,themeLabel,button('Hướng dẫn nhanh',openHelp,'secondary'));
 }
 function openAvailability(){
  if(state.live){
-  openSheet('Thời gian hôm nay');
+  openSheet('Xếp lịch hôm nay');sheet.classList.add('schedule-sheet-open');
   if(!state.day){sheetContent.append(el('p',state.needsSetup?'Chọn giờ sinh hoạt trước nhé.':'Giờ sinh hoạt đã lưu. Chưa bắt đầu ngày hoạt động tiếp theo; cậu không cần cài lại.','hint'),button('Cài đặt',openSettings,'primary'));return;}
   let saved={};try{saved=JSON.parse(state.day.intervals_json??'{}');}catch{}
-  const form=el('form');
+  const form=el('form',undefined,'schedule-form');
   const ranges=(title,initial)=>{
    const box=el('fieldset',undefined,'time-slots');box.append(el('legend',title));const rows=el('div');box.append(rows);
    const add=(r={})=>{
@@ -162,12 +164,28 @@ function openAvailability(){
    };
    box.append(button('+ Thêm khoảng',()=>add(),'text-button'));for(const r of initial??[])add(r);form.append(box);return rows;
   };
-  form.append(el('p','Để trống giờ rảnh: tạm dùng khung sinh hoạt. Các khoảng bận được trừ ra. Không thay deadline hoặc việc đã hoàn thành.','hint'));
+  form.append(el('p','Chọn giờ cậu có thể làm và giờ bận. Kế hoạch mới chỉ tính từ lúc cậu bấm lưu.','schedule-intro'),el('h3','Thời gian','schedule-section-title'));
   const freeRows=ranges('Có thể làm việc',saved.free),busyRows=ranges('Bận',saved.busy);
-  form.append(el('p','Thời gian còn lại được giữ qua ngày mới và tự trừ khi cậu lưu “Đã làm hôm nay”. Chỉ nhập những task chưa có số hoặc khi cần sửa lại ước lượng.','estimate-help'));
+  form.append(el('h3','Task cần chỉnh thời lượng','schedule-section-title'),el('p','Không chọn thì task giữ nguyên thời lượng đã lưu. Task chưa có thời lượng sẽ chưa được xếp vào lịch.','estimate-help'));
+  const activeTasks=state.tasks.filter(t=>!t.done),picker=el('div',undefined,'duration-picker'),select=el('select'),addTask=button('Chọn task',()=>{},'secondary'),estimateList=el('div',undefined,'estimate-list');
   const estimates=[];
-  for(const task of state.tasks.filter(t=>!t.done)){const old=saved.estimates?.find(e=>e.id===task.id),remaining=task.remainingMinutes??old?.minutes??'';const f=field('#'+task.code+' · '+task.title+' — Còn cần làm (phút)','number',remaining===null?'':String(remaining),false);f.input.min='5';f.input.max='600';f.input.placeholder='Chưa biết — có thể để trống';form.append(f.wrap);estimates.push({task,f});}
-  const submit=el('button','Lưu thời gian và cập nhật kế hoạch','primary');submit.type='submit';form.append(submit);
+  const refreshPicker=()=>{
+   const selected=new Set(estimates.map(item=>item.task.id));select.replaceChildren();
+   const placeholder=el('option','Chọn một task…');placeholder.value='';select.append(placeholder);
+   for(const task of activeTasks.filter(task=>!selected.has(task.id))){const option=el('option','#'+task.code+' · '+task.title+(task.remainingMinutes==null?' · chưa có thời lượng':' · '+task.remainingMinutes+' phút'));option.value=task.id;select.append(option);}
+   addTask.disabled=!select.value;select.disabled=select.options.length===1;
+  };
+  const addEstimate=task=>{
+   const old=saved.estimates?.find(e=>e.id===task.id),remaining=task.remainingMinutes??old?.minutes??'';
+   const box=el('section',undefined,'estimate-editor'),title=el('div',undefined,'estimate-title'),f=field('Còn cần làm (phút)','number',remaining===null?'':String(remaining));
+   title.append(el('strong','#'+task.code+' · '+task.title),button('Bỏ',()=>{const index=estimates.findIndex(item=>item.task.id===task.id);if(index>=0)estimates.splice(index,1);box.remove();refreshPicker();},'text-button'));
+   f.input.min='5';f.input.max='100000';f.input.step='5';f.input.placeholder='Nhập ít nhất 5 phút';
+   const slider=el('input');slider.type='range';slider.min='5';slider.max=String(Math.max(600,Math.min(100000,Number(remaining)||600)));slider.step='5';slider.value=String(Math.max(5,Number(remaining)||60));slider.className='work-slider';slider.setAttribute('aria-label','Kéo thời lượng còn lại của '+task.title);
+   slider.addEventListener('input',()=>{f.input.value=slider.value;});f.input.addEventListener('input',()=>{const value=Number(f.input.value);if(Number.isFinite(value)&&value>=5){if(value>Number(slider.max))slider.max=String(value);slider.value=String(value);}});
+   box.append(title,f.wrap,slider);estimateList.append(box);estimates.push({task,f});refreshPicker();
+  };
+  select.addEventListener('change',()=>{addTask.disabled=!select.value;});addTask.addEventListener('click',()=>{const task=activeTasks.find(item=>item.id===select.value);if(task)addEstimate(task);});picker.append(select,addTask);form.append(picker,estimateList);refreshPicker();
+  const submit=el('button','Lưu và xếp lại kế hoạch','primary');submit.type='submit';const footer=el('div',undefined,'sheet-submit');footer.append(submit);form.append(footer);
   form.addEventListener('submit',e=>{
    e.preventDefault();
    const date=new Date(state.day.start_at+25200000).toISOString().slice(0,10);
@@ -176,10 +194,10 @@ function openAvailability(){
     if(start<state.day.start_at)start+=86400000;if(end<=start)end+=86400000;
     return {start,end};
    });
-   performLive('schedule',{version:state.day.version,free:convert(freeRows),busy:convert(busyRows),estimates:estimates.filter(({f})=>f.input.value!=='').map(({task,f})=>({id:task.id,minutes:Number(f.input.value)}))});
+   performLive('schedule',{version:state.day.version,free:convert(freeRows),busy:convert(busyRows),estimates:estimates.map(({task,f})=>({id:task.id,minutes:Number(f.input.value)}))});
   });sheetContent.append(form);return;
  }
- openSheet('Thời gian hôm nay');sheetContent.append(el('p','04:30–22:30 là khung mẫu, không có nghĩa cậu phải làm việc cả ngày.','hint'),el('h3','Điều chỉnh bằng trò chuyện'),el('p','/lich hôm nay 14–17h tớ có việc, xếp lại giúp tớ.','card'),el('p','Bản này chỉ minh họa. Editor giờ rảnh và planner sẽ được nối backend ở bước sau.','hint'));}
+ openSheet('Xếp lịch hôm nay');sheetContent.append(el('p','Bản mẫu không lưu dữ liệu. Mở Mini App từ Telegram để xếp lịch thật.','hint'));}
 function openShare(){openSheet(state.live?'Thẻ thành tích':'Thẻ thành tích mẫu');const c=el('div',undefined,'rank-card');c.append(el('div','✧','rank-seal'),el('p','TU LUYỆN KỶ LUẬT','eyebrow'),el('h2',realms[state.cultivation.rank].name),el('p','Tổng tích lũy: '+state.cultivation.totalEarned+' tu vi'),el('p',state.live?'MINH ANH · TRỢ LÝ CỦA CẬU':'MINH ANH · DEMO','eyebrow'));sheetContent.append(c,el('p','Không chứa tên task hoặc lịch cá nhân. Chỉ chia sẻ khi cậu chủ động chọn.','hint'),button('Lưu thẻ PNG',()=>{const canvas=document.createElement('canvas');canvas.width=800;canvas.height=1000;const ctx=canvas.getContext('2d');ctx.fillStyle='#242034';ctx.fillRect(0,0,800,1000);ctx.textAlign='center';ctx.fillStyle='#e6c382';ctx.font='28px sans-serif';ctx.fillText('TU LUYỆN KỶ LUẬT',400,220);ctx.font='64px serif';ctx.fillText(realms[state.cultivation.rank].name,400,440);ctx.fillStyle='#f4f0ff';ctx.font='30px sans-serif';ctx.fillText('Tổng tích lũy: '+state.cultivation.totalEarned+' tu vi',400,550);ctx.font='22px sans-serif';ctx.fillText(state.live?'MINH ANH · TRỢ LÝ CỦA CẬU':'MINH ANH · DEMO',400,830);canvas.toBlob(blob=>{if(!blob)return;const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='minh-anh-thanh-tich.png';link.click();setTimeout(()=>URL.revokeObjectURL(url),10000);},'image/png');},'primary'));}
 function demoDay(){if(state.live&&state.day)return state.day.day;return Math.floor((Date.now()+7*3600000-4.5*3600000)/86400000);}
 
@@ -255,22 +273,6 @@ function openBreakthrough(){
  },'primary');attempt.disabled=c.attemptDay===demoDay()||c.qi<target.qi||c.streak<target.days;
  sheetContent.append(info,attempt,result);
 }
-async function moveTimeline(block,at){
- if(!state.live){toast('Bản mẫu không lưu lên bot.');return;}
- const result=await performLive('timeline',{stamp:state.timeline.stamp,sessionId:block.id,at});
- if(result){state.timelineUndo=result.undoId;toast('Đã cập nhật lịch và giờ nhắc.');render();}
-}
-async function undoTimeline(){
- const result=await performLive('timeline',{stamp:state.timeline.stamp,undo:state.timelineUndo});
- if(result){state.timelineUndo=null;render();toast('Đã hoàn tác lịch và lời nhắc.');}
-}
-function editTimeline(block){
- const task=state.tasks.find(t=>t.id===block.task_id);openSheet(task?'#'+task.code+' · Đổi giờ':'Đổi giờ');
- const form=el('form'),time=field('Giờ bắt đầu','time',new Date(block.start_at+25200000).toISOString().slice(11,16));time.input.step='300';form.append(time.wrap,el('p','Thời lượng '+block.minutes+' phút. Các việc phía sau được dời nếu cần; không đổi deadline.','hint'));
- const submit=el('button','Lưu giờ mới','primary');submit.type='submit';form.append(submit);
- form.addEventListener('submit',e=>{e.preventDefault();const [h,m]=time.input.value.split(':').map(Number),day=new Date(state.timeline.window.start+25200000).toISOString().slice(0,10);let at=Date.parse(day+'T'+String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':00+07:00');if(at<state.timeline.window.start)at+=86400000;moveTimeline(block,at);});
- sheetContent.append(form);if(task)sheetContent.append(button('Chi tiết công việc',()=>openTask(task),'text-button'));
-}
 async function loadHistory(){
  if(!state.live||state.historyLoading||!state.historyHasMore)return;
  state.historyLoading=true;render();
@@ -282,7 +284,7 @@ async function loadHistory(){
  }catch(error){toast(error.message||'Chưa tải thêm lịch sử được.');}
  finally{state.historyLoading=false;render();}
 }
-const ui={moveTimeline,undoTimeline,editTimeline,loadHistory,state:()=>state,cultivation:()=>state.cultivation,demoDay,openDraw,openInventory,openBreakthrough,el,button,heading,card,toast,empty,render,openTask,openTodayPlan,toggleTask,confirmDelete,openReminder,openAvailability,openShare};
+const ui={loadHistory,state:()=>state,cultivation:()=>state.cultivation,demoDay,openDraw,openInventory,openBreakthrough,el,button,heading,card,toast,empty,render,openTask,openTodayPlan,toggleTask,confirmDelete,openReminder,openAvailability,openShare};
 function render(){
  const previousScroll=document.querySelector('.time-scroll');if(previousScroll)state.timelineScroll=previousScroll.scrollTop;
  content.removeAttribute('aria-busy');
@@ -313,7 +315,7 @@ document.querySelector('#settings').addEventListener('click',openSettings);
 for(const b of document.querySelectorAll('[data-tab]'))b.addEventListener('click',()=>{if(state.live&&!state.loaded){toast('Mở lại từ Telegram để tải dữ liệu thật.');return;}state.tab=b.dataset.tab;state.screenState='ready';render();refreshOnReturn();window.scrollTo(0,0);});
 sheet.addEventListener('click',event=>{const target=event.target?.closest?.('[data-sheet-close]');if(target){event.preventDefault();closeSheet();return;}if(event.target===sheet){const r=sheet.getBoundingClientRect();if(event.clientY<r.top)closeSheet();}});
 sheet.addEventListener('cancel',event=>{event.preventDefault();closeSheet();});
-sheet.addEventListener('close',()=>{sheet.classList.remove('task-sheet-open');render();});
+sheet.addEventListener('close',()=>{sheet.classList.remove('task-sheet-open','schedule-sheet-open');unlockPageScroll();render();});
 // Keep the live reward hint short; rest/sleep rules are shown elsewhere in the app.
 const rewardHintCleaner=new MutationObserver(()=>{for(const node of sheetContent.querySelectorAll('.hint')){if(node.textContent?.includes('/ngu không khóa quay thưởng'))node.textContent=node.textContent.replace(/\s*\/ngu không khóa quay thưởng\.?/,'');}});rewardHintCleaner.observe(sheetContent,{childList:true,subtree:true});
 if(state.live){

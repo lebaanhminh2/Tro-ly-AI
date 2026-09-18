@@ -28,8 +28,8 @@ export async function boardSelection(db:Database,owner:string):Promise<BoardSele
 export async function workPage(db:Database,owner:string,filter:WorkFilter,offset:number,now:number):Promise<WorkPage>{
  if(!['active','all','overdue','today','upcoming','undated','completed'].includes(filter)||!Number.isSafeInteger(offset)||offset<0||offset>100000)throw Error('INVALID_BOARD_QUERY');
  const start=Math.floor((now+25200000)/86400000)*86400000-25200000,end=start+86400000;
- const deadline="CAST((julianday(CASE WHEN deadline_precision='date' THEN deadline||'T00:00:00+07:00' ELSE deadline END)-2440587.5)*86400000 AS INTEGER)";
- const clauses={all:'1=1',active:"status='active'",completed:"status='completed'",undated:"status='active' AND deadline IS NULL",overdue:`status='active' AND deadline IS NOT NULL AND (CASE WHEN deadline_precision='date' THEN ${deadline}+86400000 ELSE ${deadline} END)<?`,today:`status='active' AND ${deadline}>=? AND ${deadline}<?`,upcoming:`status='active' AND ${deadline}>=?`};
+ const deadline="CAST((julianday(CASE WHEN deadline_precision='date' THEN deadline||'T23:59:00+07:00' ELSE deadline END)-2440587.5)*86400000 AS INTEGER)";
+ const clauses={all:'1=1',active:"status='active'",completed:"status='completed'",undated:"status='active' AND deadline IS NULL",overdue:`status='active' AND deadline IS NOT NULL AND ${deadline}<?`,today:`status='active' AND ${deadline}>=? AND ${deadline}<?`,upcoming:`status='active' AND ${deadline}>=?`};
  const values=filter==='overdue'?[now]:filter==='today'?[start,end]:filter==='upcoming'?[end]:[];
  const where='owner=? AND deleted_at IS NULL AND '+clauses[filter];
  const count=await query(db,'SELECT COUNT(*) AS n FROM tasks WHERE '+where,owner,...values).first<{n:number}>();

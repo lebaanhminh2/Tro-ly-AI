@@ -112,7 +112,7 @@ test('configured outside first active window is not misreported as missing setup
   await schedule.configure('123','04:30','22:30',0,now);
   await assert.rejects(schedule.openDialog('123',now),/NO_ACTIVE_DAY/);
   const response=await planCommand({owner:'123',chat:123,updateId:1,text:'/lich'},new D1WorkStore(db),now,async()=>{throw Error('should not call model');});
-  assert.match(response.view.text,/đã lưu/);assert.match(response.view.text,/không cần cài lại/);
+  assert.match(response.view.text,/Thời gian hôm nay/);assert.match(response.view.text,/ứng dụng/);
  }finally{await mf.dispose();}
 });
 
@@ -166,6 +166,10 @@ test('Mini App persists task notes and hides delivered one-time reminders next o
   assert.equal(updated.status,200);assert.equal((await db.prepare('SELECT note FROM tasks WHERE id=?').bind(taskId).first<{note:string}>())?.note,'Đổi sang trang 14');
   await db.prepare("INSERT INTO task_appointments(id,owner,task_id,due,status,subject) VALUES('delivered-once','123',NULL,?,'expired','Dậy thôi')").bind(Date.parse('2026-09-14T07:00:00+07:00')).run();
   await db.exec("INSERT INTO recurrence_rules(id,owner,title,kind,times_json,weekdays_json,start_date,end_date,enabled,version,created) VALUES('web-once','123','Nộp bài','once','[\"08:00\"]','[]','2026-09-14',NULL,1,1,0); INSERT INTO recurrence_occurrences(id,rule_id,owner,rule_version,slot,due,status) VALUES('web-once-slot','web-once','123',1,'2026-09-14T08:00',1789347600000,'sent')");
+  const initial=await miniAppApi(new Request('https://local/api/bootstrap',{headers:headers(now)}),env,now);
+  const initialBody=await initial.json() as {day:{version:number}};
+  const scheduled=await miniAppApi(new Request('https://local/api/schedule',{method:'POST',headers:headers(now),body:JSON.stringify({id:'schedule_first_001',version:initialBody.day.version,free:[],busy:[],estimates:[{id:taskId,minutes:35}]})}),env,now);
+  assert.equal(scheduled.status,200);
   const current=await miniAppApi(new Request('https://local/api/bootstrap',{headers:headers(now)}),env,now);
   const currentBody=await current.json() as {tasks:{id:string;note:string}[];reminders:{id:string;delivered?:boolean;past?:boolean}[];dailyPlan:{version:number}};
   assert.equal(currentBody.tasks.find(task=>task.id===taskId)?.note,'Đổi sang trang 14');

@@ -33,6 +33,7 @@ export async function handleTelegramWebhook(request:Request,env:Env,deps:{cardsE
  try{
   const store=new D1WorkStore(env.DB,cardsEnabled);
   const isNew=await store.accept(input,clock.now(),env.DELIVERY_MODE==='outbox');
+  if(isNew&&env.ASSETS&&input.text)try{await receiveNudgeReply(env,input.updateId,input.text,clock.now(),transport);}catch{/* A reply must not block normal chat. */}
   if(isNew&&env.ASSETS&&input.text)await new ScheduleStore(env.DB).chatActivity(input.owner,clock.now(),String(input.updateId));
   if(isNew&&env.ASSETS&&/^\/kiemtra(?:\s|$|@)/i.test(input.text??'')){
    const appUrl=new URL('/app/',request.url).toString();
@@ -53,7 +54,6 @@ export async function handleTelegramWebhook(request:Request,env:Env,deps:{cardsE
   if(env.ASSETS)await new HealthyStore(env.DB).syncTaskTickets(input.owner,clock.now());
   await flushOutbox(env,transport,clock.now());
   await flushCards();
-  if(env.ASSETS&&input.text)try{await receiveNudgeReply(env,input.updateId,input.text,clock.now(),transport);}catch{/* Keep prior reminder state on uncertainty. */}
   if(env.DELIVERY_MODE==='outbox'||!isNew)return new Response('OK');
   const result=await store.result(input.owner,input.updateId);
   return result?Response.json(message(input.chat,result.text,result.buttons)):new Response('OK');

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 
 const app=readFileSync('web/app.js','utf8');
+const styles=readFileSync('web/styles.css','utf8');
 const today=readFileSync('web/views/today.js','utf8');
 const api=readFileSync('web/api.js','utf8');
 const scripts=JSON.parse(readFileSync('package.json','utf8')).scripts as Record<string,string>;
@@ -26,5 +27,17 @@ test('task sheet has touch, backdrop and system-close escape paths',()=>{
  assert.ok(app.includes("data-sheet-close"));
  assert.ok(app.includes("sheet.addEventListener('cancel'"));
  assert.ok(app.includes('closeSheet()'));
- assert.ok(app.includes("sheet.classList.remove('task-sheet-open')"));
+ assert.ok(app.includes("sheet.classList.remove('task-sheet-open','schedule-sheet-open')"));
+});
+
+test('schedule sheet locks the page and only edits explicitly selected tasks',()=>{
+ assert.ok(app.includes("sheet.classList.add('schedule-sheet-open')"));
+ assert.ok(app.includes("document.body.classList.add('sheet-open')"));
+ assert.ok(app.includes("const estimates=[]"));
+ assert.ok(app.includes("button('Chọn task'"));
+ assert.ok(app.includes('Không chọn thì task giữ nguyên thời lượng đã lưu'));
+ assert.ok(!app.includes('document.body.style.top='));
+ assert.ok(styles.includes('dialog.schedule-sheet-open .schedule-form{flex:1 1 auto'));
+ assert.ok(styles.includes('dialog.schedule-sheet-open{display:flex;flex-direction:column;height:min(88dvh,760px)'));
+ assert.ok(styles.includes('dialog.schedule-sheet-open input[type=time]{position:relative;pointer-events:auto}'));
 });

@@ -14,6 +14,7 @@ import {HealthyStore} from './healthy-store.ts';
 import {localEvents,eventStatements} from './event-store.ts';
 import {conversationStatements} from './conversation-store.ts';
 import {historyPage as readHistoryPage,archiveCompleted as archiveCompletedHistory} from './work-history.ts';
+import {deadlineAt} from '../../domain/time.ts';
 
 export class D1WorkStore implements WorkStore {
   private db: Database;
@@ -39,7 +40,7 @@ export class D1WorkStore implements WorkStore {
     if(estimates.some(item=>!ids.has(item.id)))throw Error('STALE_TASK');
     const all:import('../../application/daily-planner.ts').PlanningTask[]=active.map(task=>({
       id:task.id,status:'active',deleted:false,
-      deadline:task.deadline?Date.parse(task.deadline.length===10?task.deadline+'T23:59:59+07:00':task.deadline):null,
+      deadline:deadlineAt(task.deadline),
       remainingMinutes:supplied.get(task.id)??task.remaining_minutes
     }));
     const prepared=await new ScheduleStore(this.db).prepareReplan(owner,now,version,free,busy,all,requestId);
@@ -88,8 +89,8 @@ export class D1WorkStore implements WorkStore {
     if(!['create','edit','complete','delete','add_step','step_status','edit_step','delete_step'].includes(operation))throw Error('INVALID_OPERATION');
     if(['create','edit','add_step','edit_step'].includes(operation)&&(!input.title?.trim()||input.title.length>160))throw Error('INVALID_TITLE');
     if(input.note!==undefined&&(typeof input.note!=='string'||input.note.length>2000))throw Error('INVALID_NOTE');
-    if(input.deadline!==undefined&&input.deadline!==null&&!/^\d{4}-\d{2}-\d{2}$/.test(input.deadline))throw Error('INVALID_DEADLINE');
-    if(input.deadline){const parsed=Date.parse(input.deadline+'T00:00:00Z');if(!Number.isFinite(parsed)||new Date(parsed).toISOString().slice(0,10)!==input.deadline)throw Error('INVALID_DEADLINE');}
+    if(input.deadline!==undefined&&input.deadline!==null&&!/^\d{4}-\d{2}-\d{2}$/.test(input.deadline)&&!/^\d{4}-\d{2}-\d{2}T(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?\+07:00$/.test(input.deadline))throw Error('INVALID_DEADLINE');
+    if(input.deadline){const parsed=Date.parse(input.deadline.length===10?input.deadline+'T00:00:00Z':input.deadline);if(!Number.isFinite(parsed)||new Date(parsed+(input.deadline.length===10?0:25200000)).toISOString().slice(0,10)!==input.deadline.slice(0,10))throw Error('INVALID_DEADLINE');}
     if(operation==='complete'||operation==='step_status'){if(typeof input.complete!=='boolean')throw Error('INVALID_STATUS');}
     const q=(sql:string,...args:(string|number|null)[])=>query(this.db,sql,...args);
     const task=operation==='create'?null:await this.task(owner,input.taskId??'');
@@ -100,13 +101,14 @@ export class D1WorkStore implements WorkStore {
     return new HealthyStore(this.db,defer).mutate<Record<string,unknown>>(owner,requestId,'task:'+operation,input,now,state=>{
       const statements:Statement[]=[];
       if(operation==='create'){
-        statements.push(q('INSERT INTO tasks(id,owner,title,note,deadline,deadline_precision,created) VALUES(?,?,?,?,?,?,?)',id,owner,input.title!.trim(),input.note?.trim()??'',input.deadline??null,input.deadline?'date':null,now));
+        statements.push(q('INSERT INTO tasks(id,owner,title,note,deadline,deadline_precision,created) VALUES(?,?,?,?,?,?,?)',id,owner,input.title!.trim(),input.note?.trim()??'',input.deadline??null,input.deadline?(input.deadline.length===10?'date':'datetime'):null,now));
         return {state,result:{id},statements};
       }
       if(!task||task.version!==input.version)throw Error('STALE_TASK');
       statements.push(q('INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM tasks WHERE owner=? AND id=? AND version=? AND deleted_at IS NULL) THEN 1 ELSE 0 END',owner,task.id,input.version!));
       if(operation==='edit'){
-        statements.push(q('UPDATE tasks SET title=?,note=?,deadline=?,version=version+1 WHERE owner=? AND id=?',input.title!.trim(),input.note===undefined?task.note??'':input.note.trim(),input.deadline===undefined?task.deadline:input.deadline,owner,task.id));
+        const deadline=input.deadline===undefined?task.deadline:input.deadline;
+        statements.push(q('UPDATE tasks SET title=?,note=?,deadline=?,deadline_precision=?,version=version+1 WHERE owner=? AND id=?',input.title!.trim(),input.note===undefined?task.note??'':input.note.trim(),deadline,deadline?(deadline.length===10?'date':'datetime'):null,owner,task.id));
       }else if(operation==='complete'){
         if(input.complete&&children.some(s=>s.status!=='completed')&&!input.confirm)throw Error('CONFIRM_CHILDREN');
         statements.push(q('UPDATE tasks SET status=?,version=version+1 WHERE owner=? AND id=?',input.complete?'completed':'active',owner,task.id));
@@ -155,7 +157,7 @@ export class D1WorkStore implements WorkStore {
   workPage(owner:string,filter:import('../../domain/progress.ts').WorkFilter,offset:number,now:number){return workPage(this.db,owner,filter,offset,now);}
   boardSelection(owner:string){return boardSelection(this.db,owner);}
   async priorityTasks(owner:string){
-    return (await query(this.db,"SELECT * FROM tasks WHERE owner=? AND deleted_at IS NULL AND status='active' ORDER BY deadline IS NULL, CASE WHEN deadline_precision='date' THEN julianday(deadline||'T00:00:00+07:00') ELSE julianday(deadline) END,created,id LIMIT 3",owner).all<Task>()).results;
+    return (await query(this.db,"SELECT * FROM tasks WHERE owner=? AND deleted_at IS NULL AND status='active' ORDER BY deadline IS NULL, CASE WHEN deadline_precision='date' THEN julianday(deadline||'T23:59:00+07:00') ELSE julianday(deadline) END,created,id LIMIT 3",owner).all<Task>()).results;
   }
   async findTasks(owner:string,text:string,status:'active'|'completed'|'all',cursor:number){
     if(text.length>160||!Number.isSafeInteger(cursor)||cursor<0||cursor>10000||!['active','completed','all'].includes(status))throw Error('INVALID_QUERY');
@@ -169,7 +171,7 @@ export class D1WorkStore implements WorkStore {
       SELECT 'session' AS kind,s.id,t.title,s.start_at AS at,s.status FROM sessions s JOIN tasks t ON t.id=s.task_id AND t.owner=s.owner WHERE s.owner=? AND s.start_at>=? AND s.start_at<? AND s.status!='draft'
       UNION ALL SELECT 'reminder',a.id,COALESCE(a.subject,t.title),a.due,a.status FROM task_appointments a LEFT JOIN tasks t ON t.id=a.task_id AND t.owner=a.owner WHERE a.owner=? AND a.due>=? AND a.due<? AND a.status='active'
       UNION ALL SELECT 'event',id,title,start_at,status FROM local_events WHERE owner=? AND status='scheduled'
-      UNION ALL SELECT 'deadline',id,title,CAST((julianday(CASE WHEN deadline_precision='date' THEN deadline||'T00:00:00+07:00' ELSE deadline END)-2440587.5)*86400000 AS INTEGER),status FROM tasks WHERE owner=? AND deleted_at IS NULL AND status='active' AND deadline IS NOT NULL
+      UNION ALL SELECT 'deadline',id,title,CAST((julianday(CASE WHEN deadline_precision='date' THEN deadline||'T23:59:00+07:00' ELSE deadline END)-2440587.5)*86400000 AS INTEGER),status FROM tasks WHERE owner=? AND deleted_at IS NULL AND status='active' AND deadline IS NOT NULL
     ) WHERE at>=? AND at<? ORDER BY at,kind,id LIMIT 11 OFFSET ?`,owner,from,to,owner,from,to,owner,owner,from,to,cursor).all<Record<string,unknown>>()).results;
     return {items:rows.slice(0,10),nextCursor:rows.length>10?cursor+10:null,source:'local',timezone:'Asia/Ho_Chi_Minh'};
   }

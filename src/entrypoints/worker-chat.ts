@@ -1,5 +1,4 @@
 import {boardCommand} from '../application/progress-renderer.ts';
-import {SCHEDULE_PROMPT} from '../application/schedule-command.ts';
 import {reserveAi} from '../adapters/d1/memory.ts';
 import {Gemini} from '../ai/gemini.ts';
 import {D1WorkStore} from '../adapters/d1/work-store.ts';
@@ -24,9 +23,8 @@ export function createRuntimeChat(env:Env,chat:ChatService|undefined,transport:t
    new ConversationStore(env.DB).pending(owner,clock.now())
   ]);
   if(confirmation&&(!pending||pending.id!==confirmation[2]))return 'Đề xuất này đã cũ hoặc đã được xử lý.';
-  const scheduling=/^\/lich(?:\s|$|@)/i.test(lease.input.text??'')||(env.ASSETS?await reader.isMorningReply?.(owner,input?.replyToMessageId,clock.now())??false:false);
   const action=/^\/\s+\S/.test(lease.input.text??'')||/^\/ngu(?:@[A-Za-z0-9_]+)?\s+\S/i.test(lease.input.text??'')||!!confirmation;
-  const mode=scheduling?'schedule':action?'action':'chat';
+  const mode=action?'action':'chat';
   const journal=new ConversationStore(env.DB,statements=>lease.pendingWrites!.push(...statements),mode);
   const hierarchy=env.ASSETS?await store.hierarchy(owner):[];
   const requestedCodes=new Set([...text.matchAll(/#(\d+)(?:\.(\d+))?/g)].map(match=>Number(match[1])));
@@ -48,7 +46,7 @@ export function createRuntimeChat(env:Env,chat:ChatService|undefined,transport:t
    if(env.AI_TRIAL_ENDS_AT&&(!Number.isFinite(Date.parse(env.AI_TRIAL_ENDS_AT))||clock.now()>=Date.parse(env.AI_TRIAL_ENDS_AT)))throw Error('AI_TRIAL_ENDED');
    if(!await reserveAi(env.DB,'runtime:gemini',`${owner}:${lease.input.updateId}:tool:${step}`,clock.now(),env.AI_DAILY_LIMIT===undefined?null:Number(env.AI_DAILY_LIMIT)))throw Error('AI_QUOTA');
    const client=new Gemini({apiKey:env.GEMINI_API_KEY!,model:env.GEMINI_MODEL!,transport:(url,options)=>transport(url,{...options,redirect:'manual'}),timeoutMs:8000});
-   return (await client.generateTools(contents,scheduling?SCHEDULE_PROMPT:TOOL_PERSONA+sleepPhase+(action?'\nYêu cầu hành động: gọi tool thật; thiếu thông tin dùng ask_user. Không respond báo đã làm khi chưa có action.':'\nChỉ trò chuyện hoặc đọc dữ liệu. Không ghi task/lịch. Muốn thay đổi thì nhắc user gửi / nội dung.'),allowTools,scheduling?['set_availability','ask_user']:action?undefined:['respond','find_tasks','get_agenda','show_work','ask_user'])).output;
+   return (await client.generateTools(contents,TOOL_PERSONA+sleepPhase+(action?'\nYêu cầu hành động: gọi tool thật; thiếu thông tin dùng ask_user. Không respond báo đã làm khi chưa có action.':'\nChỉ trò chuyện hoặc đọc dữ liệu. Không ghi task/lịch. Muốn đổi giờ rảnh/bận thì hướng user mở phần “Thời gian hôm nay” trong ứng dụng.'),allowTools,action?undefined:['respond','find_tasks','get_agenda','show_work','ask_user'])).output;
   },()=>clock.now());
   if(journal.requestedView){
    if(env.ASSETS)return 'Cậu mở nút “Mở ứng dụng” cạnh ô nhập tin nhắn nhé — lịch, lời nhắc và tu vi đều ở đó, không cần đọc danh sách dài trong chat.';

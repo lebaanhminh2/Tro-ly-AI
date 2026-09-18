@@ -69,19 +69,22 @@ test('manual Today preserves completed totals, supports removal and resets at ne
   const now=Date.parse('2026-09-14T08:00:00+07:00'),schedule=new ScheduleStore(db),work=new D1WorkStore(db),plans=new DayPlanStore(db);
   await schedule.configure('123','04:30','22:30',0,now);
   await db.exec("INSERT INTO tasks(id,owner,title,created) VALUES('a','123','A',0),('b','123','B',1)");
+  assert.equal(await plans.ensure('123',now),null,'a new day has no plan before save or timeout');
+  const prepared=await work.prepareSchedule('123',now,1,[],[],[{id:'a',minutes:500},{id:'b',minutes:500}],'first-save');
+  await db.batch(prepared.statements);
   const initial=(await plans.ensure('123',now))!;
-  await db.prepare("INSERT INTO nudge_cycles(owner,day,next_at) VALUES('123',?,0)").bind(initial.plan.day).run();
-  await db.prepare("INSERT INTO outbox(id,payload,available) VALUES('nudge:123:old','{}',0)").run();
   await plans.replace('123','manual_plan_001',initial.version,[{taskId:'a',minutes:500},{taskId:'b',minutes:500}],now);
   let saved=(await plans.ensure('123',now))!;assert.equal(saved.plan.planned,1000);assert.deepEqual(saved.plan.manualItems?.map(item=>item.taskId),['a','b']);
-  assert.equal((await db.prepare("SELECT state FROM outbox WHERE id='nudge:123:old'").first<{state:string}>())!.state,'failed');
-  await db.prepare("UPDATE nudge_cycles SET attempts=2,tasks_json='[\"a\"]' WHERE owner='123'").run();
   await work.mutateHierarchy('123','complete_a_001',{operation:'complete',taskId:'a',version:1,complete:true,confirm:true},now+1000);
-  const cycle=await db.prepare("SELECT attempts,tasks_json FROM nudge_cycles WHERE owner='123'").first<{attempts:number;tasks_json:string}>();assert.equal(cycle?.attempts,0);assert.equal(cycle?.tasks_json,'[]');
   saved=(await plans.ensure('123',now+1000))!;assert.equal(saved.plan.planned,1000);assert.equal(saved.plan.items.length,2);
   await plans.replace('123','remove_b_001',saved.version,[{taskId:'a',minutes:500}],now+2000);
   saved=(await plans.ensure('123',now+2000))!;assert.deepEqual(saved.plan.items.map(item=>item.taskId),['a']);assert.equal(saved.plan.planned,500);
-  const tomorrow=(await plans.ensure('123',now+86400000))!;assert.ok(!tomorrow.plan.items.some(item=>item.taskId==='a'));assert.ok(!tomorrow.plan.items.some(item=>item.taskId==='b'));assert.ok(tomorrow.plan.later.some(item=>item.taskId==='b'&&item.reason==='needs_estimate'));
+  const tomorrowAt=now+86400000;
+  assert.equal(await plans.ensure('123',tomorrowAt),null,'next day starts waiting again');
+  const {TaskDayStore}=await import('../../src/adapters/d1/task-day-store.ts');
+  const tomorrow=(await new TaskDayStore(db).activateAutomatic('123',tomorrowAt))!;
+  assert.ok(!tomorrow.plan.items.some(item=>item.taskId==='a'));
+  assert.ok(tomorrow.plan.items.some(item=>item.taskId==='b'),'remaining estimate carries into the new automatic plan');
  }finally{await mf.dispose();}
 });
 
@@ -97,6 +100,9 @@ test('daily work log replaces the same-day value and carries only remaining effo
   const now=Date.parse('2026-09-15T08:00:00+07:00'),plans=new DayPlanStore(db);
   await new ScheduleStore(db).configure('123','04:30','22:30',0,now);
   await db.exec("INSERT INTO tasks(id,owner,title,created) VALUES('a','123','A',0); INSERT INTO task_planning(owner,task_id,remaining_minutes,updated) VALUES('123','a',240,0)");
+  const {D1WorkStore}=await import('../../src/adapters/d1/work-store.ts');
+  const prepared=await new D1WorkStore(db).prepareSchedule('123',now,1,[],[],[],'activate-day');
+  await db.batch(prepared.statements);await plans.ensure('123',now);
   let result=await plans.logWork('123','work_log_001','a',30,null,now);
   assert.equal(result.remaining,210);
   result=await plans.logWork('123','work_log_001','a',30,null,now);
@@ -106,7 +112,8 @@ test('daily work log replaces the same-day value and carries only remaining effo
   let saved=(await plans.ensure('123',now+1000))!;
   assert.equal(saved.plan.items.find(item=>item.taskId==='a')?.actualMinutes,45);
   assert.equal((await db.prepare("SELECT remaining_minutes FROM task_planning WHERE owner='123' AND task_id='a'").first<{remaining_minutes:number}>())!.remaining_minutes,195);
-  saved=(await plans.ensure('123',now+86400000))!;
+  const {TaskDayStore}=await import('../../src/adapters/d1/task-day-store.ts');
+  saved=(await new TaskDayStore(db).activateAutomatic('123',now+86400000))!;
   assert.equal(saved.plan.items.find(item=>item.taskId==='a')?.actualMinutes,0,'new day starts a fresh actual-work field');
   assert.equal(saved.plan.items.find(item=>item.taskId==='a')?.remaining,195,'remaining estimate persists without re-entry');
  }finally{await mf.dispose();}
@@ -126,19 +133,23 @@ test('replan persists blocks and keeps omitted tasks visible as unplanned',async
   await db.exec("INSERT INTO tasks(id,owner,title,deadline,created) VALUES('late','123','late','2026-09-12',0),('other','123','other',NULL,0)");
   const store=new D1WorkStore(db),prepared=await store.prepareSchedule('123',now,1,[{start:now+3600000,end:now+7200000}],[],[{id:'late',minutes:25}],'test-schedule');
   await db.batch(prepared.statements);
-  assert.equal((await store.sessions('123',now,now+86400000)).length,1);
+  const {DayPlanStore}=await import('../../src/adapters/d1/day-plan-store.ts');
+  const saved=(await new DayPlanStore(db).ensure('123',now))!;
+  assert.equal((await store.sessions('123',now,now+86400000)).length,0,'canonical task plan does not create legacy sessions');
+  assert.equal(saved.plan.items.find(item=>item.taskId==='late')?.minutes,25);
   assert.equal((await db.prepare("SELECT remaining_minutes FROM task_planning WHERE owner='123' AND task_id='late'").first<{remaining_minutes:number}>())!.remaining_minutes,25);
   assert.equal((await store.task('123','late'))!.deadline,'2026-09-12');
   assert.ok(JSON.stringify(prepared.plan.unplanned).includes('other'));
  }finally{await mf.dispose();}
 });
 
-test('/lich tool commits through outer transaction, plain chat cannot silently replan',async()=>{
+test('/lich directs availability changes to the Mini App without calling the model or writing a plan',async()=>{
  const {readFileSync,readdirSync}=await import('node:fs');
  const {Miniflare}=await import('miniflare');
  const {ScheduleStore}=await import('../../src/adapters/d1/schedule-store.ts');
  const {D1WorkStore}=await import('../../src/adapters/d1/work-store.ts');
- const {ConversationStore}=await import('../../src/adapters/d1/conversation-store.ts');
+  const {planCommand}=await import('../../src/application/plan-command.ts');
+  const {DayPlanStore}=await import('../../src/adapters/d1/day-plan-store.ts');
  const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
  try{
   const db=await mf.getD1Database('DB') as unknown as import('../../src/adapters/d1/database.ts').Database&{exec(sql:string):Promise<unknown>};
@@ -147,20 +158,15 @@ test('/lich tool commits through outer transaction, plain chat cannot silently r
   await new ScheduleStore(db).configure('123','04:30','22:30',0,now);
   await db.exec("INSERT INTO tasks(id,owner,title,created) VALUES('t','123','report',0)");
   const store=new D1WorkStore(db);
-  const tool:import('../../src/ai/contracts.ts').ToolCall={name:'replan_day',args:{expected_version:1,free:[{start:'2026-09-13T09:00:00+07:00',end:'2026-09-13T10:00:00+07:00'}],busy:[],estimates:[{id:'t',minutes:25}]}};
-  for(const [updateId,text,allowed] of [[1,'tớ bận',false],[2,'/lich rảnh 9–10h',true]] as const){
-   await store.accept({owner:'123',chat:123,updateId,text},now,false);
-   const lease=(await store.claim('123',now))!;lease.pendingWrites=[];
-   const journal=new ConversationStore(db,s=>lease.pendingWrites!.push(...s));
-   const reply=await journal.turn(lease,[{role:'user',parts:[{text}]}],store,(c,t)=>store.mutationStatements('123',c,t,true),async()=>({content:{role:'model',parts:[{functionCall:tool}]},calls:[tool],text:''}),()=>now);
-   assert.equal((await store.sessions('123',now,now+86400000)).length,0);
-   await store.commit(lease,{view:{text:reply,buttons:[]},changes:[]},now);
-   assert.equal((await store.sessions('123',now,now+86400000)).length,allowed?1:0);
-  }
+  let calls=0;
+  const result=await planCommand({owner:'123',chat:123,updateId:1,text:'/lich rảnh 9–10h'},store,now,async()=>{calls++;return 'wrong';});
+  assert.equal(calls,0);assert.match(result.view.text,/ứng dụng/);
+  assert.equal((await store.sessions('123',now,now+86400000)).length,0);
+  assert.equal(await new DayPlanStore(db).ensure('123',now),null);
  }finally{await mf.dispose();}
 });
 
-test('morning reply permission is bound to owner, sent message and current operating day',async()=>{
+test('morning task-plan prompt is one per waiting day and expires at the automatic-plan deadline',async()=>{
  const {readFileSync,readdirSync}=await import('node:fs');
  const {Miniflare}=await import('miniflare');
  const {ScheduleStore}=await import('../../src/adapters/d1/schedule-store.ts');
@@ -170,18 +176,17 @@ test('morning reply permission is bound to owner, sent message and current opera
   for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
   const store=new ScheduleStore(db),now=Date.parse('2026-09-13T04:30:00+07:00');
   await store.configure('123','04:30','22:30',0,now);
-  await store.queueCheckIns('123',now);
-  await db.prepare("UPDATE outbox SET state='sent',message_id=77 WHERE id LIKE 'healthy:morning:123:%'").run();
-  assert.equal(await store.isMorningReply('123',77,now+3600000),true);
-  assert.equal(await store.isMorningReply('999',77,now+3600000),false);
-  assert.equal(await store.isMorningReply('123',78,now+3600000),false);
-  assert.equal(await store.isMorningReply('123',77,now+86400000),false);
-  await store.reportSleep('123',now+20*3600000);
-  assert.equal(await store.isMorningReply('123',77,now+20*3600000),false);
+  const {TaskDayStore}=await import('../../src/adapters/d1/task-day-store.ts'),taskDay=new TaskDayStore(db);
+  await taskDay.queuePrompt('123',now);await taskDay.queuePrompt('123',now+60000);
+  const prompts=(await db.prepare("SELECT id FROM outbox WHERE id LIKE 'task-plan:morning:123:%'").all<{id:string}>()).results;
+  assert.equal(prompts.length,1);
+  assert.equal(await taskDay.notificationAllowed('123',prompts[0]!.id,now+3600000),true);
+  assert.equal(await taskDay.notificationAllowed('999',prompts[0]!.id,now+3600000),false);
+  assert.equal(await taskDay.notificationAllowed('123',prompts[0]!.id,now+3*3600000),false);
  }finally{await mf.dispose();}
 });
 
-test('bare schedule command opens a bounded dialogue; cancel closes its authority',async()=>{
+test('bare schedule command only points to Today time and does not open chat authority',async()=>{
  const {readFileSync,readdirSync}=await import('node:fs');
  const {Miniflare}=await import('miniflare');
  const {ScheduleStore}=await import('../../src/adapters/d1/schedule-store.ts');
@@ -195,9 +200,8 @@ test('bare schedule command opens a bounded dialogue; cancel closes its authorit
   await schedule.configure('123','04:30','22:30',0,now);
   const noModel=async()=>{throw Error('bare command must not call model');};
   await planCommand({owner:'123',chat:123,updateId:1,text:'/lich'},store,now,noModel);
-  assert.equal(await schedule.isMorningReply('123',undefined,now+1000),true);
-  assert.equal(await schedule.isMorningReply('999',undefined,now+1000),false);
-  assert.equal(await schedule.isMorningReply('123',undefined,now+900001),false);
+  assert.equal(await schedule.isMorningReply('123',undefined,now+1000),false);
+  assert.equal(await db.prepare("SELECT owner FROM schedule_dialogs WHERE owner='123'").first(),null);
   await planCommand({owner:'123',chat:123,updateId:2,text:'/huy'},store,now,noModel);
   assert.equal(await schedule.isMorningReply('123',undefined,now+1000),false);
  }finally{await mf.dispose();}

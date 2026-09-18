@@ -5,6 +5,7 @@ import type { Env } from '../../config/env.ts';
 import { deliver } from '../telegram/api.ts';
 import { reminderAllowed } from './reminders.ts';
 import {nudgeAllowed} from './work-nudges.ts';
+import {TaskDayStore} from './task-day-store.ts';
 
 export async function flushOutbox(env: Env, transport: typeof fetch = fetch, now = Date.now(), clock:()=>number = Date.now, onlyId?:string) {
   const wallStart=clock();
@@ -14,7 +15,7 @@ export async function flushOutbox(env: Env, transport: typeof fetch = fetch, now
     .all<{ id: string; payload: string;reminder_id:string|null }>()).results;
   for (const row of rows) {
     const legacyWork=env.ASSETS&&row.reminder_id&&!row.reminder_id.startsWith('appointment:')&&!row.reminder_id.startsWith('recurring:');
-    if(legacyWork||row.id.startsWith('nudge:')&&!await nudgeAllowed(env.DB,env.TELEGRAM_USER_ID,row.id,currentTime())){
+    if(legacyWork||row.id.startsWith('nudge:')||row.id.startsWith('task-nudge:')&&!await nudgeAllowed(env.DB,env.TELEGRAM_USER_ID,row.id,currentTime())||row.id.startsWith('task-plan:')&&!await new TaskDayStore(env.DB).notificationAllowed(env.TELEGRAM_USER_ID,row.id,currentTime())){
       await query(env.DB,"UPDATE outbox SET state='failed' WHERE id=? AND state='pending'",row.id).run();continue;
     }
     const schedule=new ScheduleStore(env.DB);
@@ -41,10 +42,10 @@ export async function flushOutbox(env: Env, transport: typeof fetch = fetch, now
       await query(env.DB,"UPDATE outbox SET state='failed' WHERE id=? AND claim_token=?",row.id,token).run();continue;
     }
     let result;
-    if(row.id.startsWith('nudge:')&&!await nudgeAllowed(env.DB,env.TELEGRAM_USER_ID,row.id,currentTime())){
+    if(row.id.startsWith('nudge:')||row.id.startsWith('task-nudge:')&&!await nudgeAllowed(env.DB,env.TELEGRAM_USER_ID,row.id,currentTime())||row.id.startsWith('task-plan:')&&!await new TaskDayStore(env.DB).notificationAllowed(env.TELEGRAM_USER_ID,row.id,currentTime())){
       await query(env.DB,"UPDATE outbox SET state='failed' WHERE id=? AND claim_token=?",row.id,token).run();continue;
     }
-    const payload=JSON.parse(row.payload);delete payload._nudge;
+    const payload=JSON.parse(row.payload);delete payload._nudge;delete payload._taskNudge;
     try { result = await deliver(env.TELEGRAM_BOT_TOKEN!, payload, transport); }
     catch { result = { state: 'failed' as const }; }
     const completedAt=currentTime();

@@ -13,6 +13,7 @@ import {expireMemory} from '../adapters/d1/memory.ts';
 import {queueAppointments} from '../adapters/d1/conversation-store.ts';
 import {DayPlanStore} from '../adapters/d1/day-plan-store.ts';
 import {queueWorkNudge} from '../adapters/d1/work-nudges.ts';
+import {TaskDayStore} from '../adapters/d1/task-day-store.ts';
 import type {ChatService} from '../application/plan-command.ts';
 import type {Clock} from '../ports/work-store.ts';
 
@@ -23,6 +24,9 @@ export async function runScheduled(env:Env,deps:{cardsEnabled:boolean;transport:
  if(env.ASSETS){
   const schedule=new ScheduleStore(env.DB);
   await schedule.settleClosedDays(env.TELEGRAM_USER_ID,clock.now());
+  const taskDay=new TaskDayStore(env.DB);
+  await taskDay.queuePrompt(env.TELEGRAM_USER_ID,clock.now());
+  await taskDay.activateAutomatic(env.TELEGRAM_USER_ID,clock.now());
   await new DayPlanStore(env.DB).ensure(env.TELEGRAM_USER_ID,clock.now());
   await store.archiveCompleted(env.TELEGRAM_USER_ID,clock.now(),90,100);
   await new HealthyStore(env.DB).syncTaskTickets(env.TELEGRAM_USER_ID,clock.now());

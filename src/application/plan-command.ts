@@ -37,8 +37,8 @@ export async function planCommand(input: Input, store: WorkReader, now: number, 
     }
   }
   const entry=scheduleEntry(input.text??'');
-  if(entry?.kind==='open')return {view:{text:'Bấm nút “Mở ứng dụng” cạnh ô nhập tin nhắn để xem lịch, công việc và tu vi của cậu nhé.',buttons:[]},changes:[]};
-  if(entry?.kind==='help')return {view:{text:'/kiemtra · Mở ứng dụng\n/ nội dung · Thêm/sửa việc hoặc đặt nhắc\n/lich · Cập nhật giờ rảnh/bận\n/ngu · Báo nghỉ, dừng nhắc chủ động\n/huy · Thoát phiên đang nhập',buttons:[]},changes:[]};
+  if(entry?.kind==='open')return {view:{text:'Tớ vừa làm mới nút “Mở ứng dụng” cạnh ô nhập tin nhắn. /kiemtra chỉ cần dùng khi nút đó bị mất hoặc chưa hiện; nếu cậu đã thấy nút thì không cần dùng lại nhé.',buttons:[]},changes:[]};
+  if(entry?.kind==='help')return {view:{text:'/kiemtra · Khôi phục nút Mở ứng dụng nếu bị mất\n/ nội dung · Thêm/sửa việc hoặc đặt nhắc\n/lich · Cập nhật giờ rảnh/bận\n/ngu · Báo nghỉ, dừng nhắc chủ động\n/huy · Thoát phiên đang nhập',buttons:[]},changes:[]};
   if(entry?.kind==='cancel'){if(store.scheduleDialog)await store.scheduleDialog(input.owner,now,false);return {view:{text:'Đã thoát phiên nhập lịch.',buttons:[]},changes:[{type:'cancel',owner:input.owner}]};}
   if(entry?.kind==='action'){
     if(store.scheduleDialog)await store.scheduleDialog(input.owner,now,false);
@@ -47,11 +47,8 @@ export async function planCommand(input: Input, store: WorkReader, now: number, 
     return typeof result==='string'?{view:{text:result,buttons:[]},changes:[]}:result;
   }
   if(entry?.kind==='setup'){
-    if(!chat)return {view:{text:'Phần trao đổi lịch cần bật AI. Cậu vẫn sửa lịch trong ứng dụng được nhé.',buttons:[]},changes:[]};
-    if(store.scheduleDialog)try{await store.scheduleDialog(input.owner,now,true);}catch(error){const code=error instanceof Error?error.message:'';return {view:{text:code==='NO_ACTIVE_DAY'?'Giờ sinh hoạt của cậu đã lưu rồi. Hiện chưa bắt đầu ngày hoạt động tiếp theo nên chưa xếp lại hôm nay được; cậu không cần cài lại.':'Chọn giờ bắt đầu và giờ nghỉ trong ứng dụng trước nhé.',buttons:[]},changes:[]};}
-    if(!entry.message)return {view:{text:'Hôm nay cậu bận những khoảng nào? Cậu trả lời ngay ở đây, tớ đối chiếu lịch đã lưu nhé. /huy để thoát.',buttons:[]},changes:[]};
-    const result=await chat(input.owner,entry.message,[],input,store,now);
-    return typeof result==='string'?{view:{text:result,buttons:[]},changes:[]}:result;
+    if(store.scheduleDialog)await store.scheduleDialog(input.owner,now,false);
+    return {view:{text:'Cậu mở phần “Thời gian hôm nay” trong ứng dụng chỉnh giúp tớ nhé. Lưu xong tớ sẽ xếp lại từ lúc đó cho chuẩn.',buttons:[]},changes:[]};
   }
   const board=await boardCommand(input,store,now);if(board){board.changes.push({type:'cancel',owner:input.owner});return board;}
   if(input.callback?.startsWith('tool-confirm:')&&chat){

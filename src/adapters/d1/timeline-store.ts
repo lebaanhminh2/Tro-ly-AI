@@ -3,6 +3,8 @@ import {ScheduleStore} from './schedule-store.ts';
 import {HealthyStore} from './healthy-store.ts';
 import {dayWindow,operatingDay} from '../../domain/healthy.ts';
 import {availableRanges,type TimeRange} from '../../domain/availability.ts';
+import type {WorkPlan} from '../../application/work-planner.ts';
+import {deadlineAt} from '../../domain/time.ts';
 
 type Block={id:string;task_id:string;start_at:number;minutes:number;version:number;generation:number;status:string;task_version:number;deadline:string|null};
 type Position={id:string;start:number};
@@ -19,11 +21,21 @@ export class TimelineStore{
   const events=(await query(this.db,"SELECT id,title,start_at,end_at,version FROM local_events WHERE owner=? AND status='scheduled' AND start_at<? AND COALESCE(end_at,start_at+3600000)>?",owner,window.target,window.start).all<{id:string;title:string;start_at:number;end_at:number|null;version:number}>()).results;
   const busy:TimeRange[]=[...(intervals.busy??[]),...events.map(e=>({start:e.start_at,end:e.end_at??e.start_at+3600000}))];
   const free=availableRanges((intervals.free?.length?intervals.free:[{start:window.start,end:window.target}]).map((r:TimeRange)=>({start:Math.max(window.start,r.start),end:Math.min(window.target,r.end)})).filter((r:TimeRange)=>r.end>r.start),busy,window.start);
-  const blocks=(await query(this.db,"SELECT s.id,s.task_id,s.start_at,s.minutes,s.version,s.generation,s.status,t.version AS task_version,t.deadline FROM sessions s JOIN tasks t ON t.id=s.task_id AND t.owner=s.owner WHERE s.owner=? AND s.start_at>=? AND s.start_at<? AND s.status IN ('planned','unknown','running','paused') AND t.status='active' AND t.deleted_at IS NULL ORDER BY s.start_at,s.id",owner,window.start,window.target).all<Block>()).results;
-  const stamp=JSON.stringify([settings.version,day?.day,day?.version,blocks.map(b=>[b.id,b.version,b.task_version,b.status]),events.map(e=>[e.id,e.version])]);
+  const savedPlan=day?.task_plan_status==='active'?await query(this.db,'SELECT version,plan_json FROM daily_plans WHERE owner=? AND day=?',owner,day.day).first<{version:number;plan_json:string}>():null;
+  const plan=savedPlan?JSON.parse(savedPlan.plan_json) as WorkPlan:null;
+  const taskRows=(await query(this.db,"SELECT id,version,deadline FROM tasks WHERE owner=? AND status='active' AND deleted_at IS NULL",owner).all<{id:string;version:number;deadline:string|null}>()).results;
+  const taskMap=new Map(taskRows.map(task=>[task.id,task]));
+  const blocks:Block[]=[];
+  for(const item of plan?.items??[]){
+   const task=taskMap.get(item.taskId);if(!task)continue;
+   item.windows.forEach((slot,index)=>blocks.push({id:`taskplan_${day!.day}_${day!.task_plan_generation}_${item.taskId}_${index}`,task_id:item.taskId,start_at:slot.start,minutes:Math.round((slot.end-slot.start)/60000),version:savedPlan!.version,generation:day!.task_plan_generation,status:'planned',task_version:task.version,deadline:task.deadline}));
+  }
+  blocks.sort((a,b)=>a.start_at-b.start_at||a.id.localeCompare(b.id));
+  const stamp=JSON.stringify([settings.version,day?.day,day?.version,savedPlan?.version,blocks.map(b=>[b.id,b.task_version]),events.map(e=>[e.id,e.version])]);
   return {window,day:day?.day,dayVersion:day?.version,settingsVersion:settings.version,busy,free,blocks,events,stamp};
  }
  async change(owner:string,id:string,input:{stamp:string;sessionId?:string;at?:number;undo?:string},now:number){
+  if(input.sessionId?.startsWith('taskplan_'))throw Error('TIMELINE_READ_ONLY');
   const ledger=new HealthyStore(this.db);
   const replay=await query(this.db,'SELECT request_json,result_json FROM cultivation_receipts WHERE owner=? AND request_id=? AND operation=?',owner,id,'timeline').first<{request_json:string;result_json:string}>();
   if(replay){if(replay.request_json!==JSON.stringify(input))throw Error('REQUEST_ID_REUSED');return JSON.parse(replay.result_json);}
@@ -60,7 +72,7 @@ export class TimelineStore{
   for(const {block:b,start} of changes){
    if(start<now||['running','paused'].includes(b.status)||!timeline.free.some(r=>start>=r.start&&start+b.minutes*60000<=r.end))throw Error('TIMELINE_BLOCKED');
    const end=start+b.minutes*60000;
-   const deadline=b.deadline?Date.parse(b.deadline.length===10?b.deadline+'T23:59:59+07:00':b.deadline):null;
+   const deadline=deadlineAt(b.deadline);
    if(deadline!==null&&deadline>now&&end>deadline)throw Error('TIMELINE_DEADLINE');
    if(projected.some(other=>other.id!==b.id&&other.start_at<end&&other.start_at+other.minutes*60000>start))throw Error('TIMELINE_BLOCKED');
   }

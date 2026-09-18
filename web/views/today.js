@@ -6,6 +6,12 @@ function dayLabel(state){
   ? liveDate.toLocaleDateString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',weekday:'long',day:'numeric',month:'long'})
   : 'Chủ nhật, 13 tháng 9 · Dữ liệu mẫu';
 }
+function deadlineLabel(value,now){
+ if(!value)return null;const at=Date.parse(value.length===10?value+'T23:59:00+07:00':value);if(!Number.isFinite(at))return null;
+ const diff=at-now,past=diff<0,minutes=Math.ceil(Math.abs(diff)/60000);let amount;
+ if(minutes<60)amount=minutes+' phút';else if(minutes<48*60)amount=Math.ceil(minutes/60)+' giờ';else amount=Math.ceil(minutes/1440)+' ngày';
+ return past?'quá hạn '+amount:'còn '+amount;
+}
 
 export function renderToday(ui,state){
  const {el,button,heading,card,openTask,render}=ui;
@@ -96,8 +102,9 @@ function renderTaskList(ui,state,buckets,card,button,openTask,render){
     if(state.selecting){check.checked?state.selected.add(task.code):state.selected.delete(task.code);render();}
     else ui.toggleTask(task);
    });
-   const name=button('',()=>openTask(task),'task-open');
-   name.append(el('span','#'+task.code,'code'),el('strong',task.title),el('small',task.deadline?'Hạn '+(task.deadline.length===10?task.deadline.split('-').reverse().join('/'):new Date(task.deadline).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',dateStyle:'short',timeStyle:'short'})):'Chưa có hạn'));
+   const name=button('',()=>openTask(task),'task-open'),relative=deadlineLabel(task.deadline,(state.serverNow??Date.now())+Date.now()-(state.loadedAt??Date.now()));
+   const exact=task.deadline?(task.deadline.length===10?task.deadline.split('-').reverse().join('/'):new Date(task.deadline).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',dateStyle:'short',timeStyle:'short'})):null;
+   name.append(el('span','#'+task.code,'code'),el('strong',task.title),el('small',exact?'Hạn '+exact+(relative?' · '+relative:''):'Chưa có hạn'));
    row.append(check,name);list.append(row);
   }
   return list;
@@ -132,10 +139,13 @@ function renderDailyPlan(ui,state){
  const root=el('section',undefined,'daily-plan');
  const plan=state.dailyPlan?.plan;
  if(!plan){
-  const empty=el('div',undefined,'plan-empty');
-  empty.append(el('p','CHƯA CÓ LỊCH HÔM NAY','eyebrow'),el('h2','Cài giờ sinh hoạt để bắt đầu'),el('p','Khi biết giờ rảnh, Minh Anh sẽ chọn một vài việc phù hợp thay vì đưa cả danh sách vào hôm nay.','hint'));
-  root.append(empty);return root;
- }
+   const empty=el('div',undefined,'plan-empty');
+   if(state.day?.task_plan_status==='waiting'){
+    const now=(state.serverNow??Date.now())+Date.now()-(state.loadedAt??Date.now()),left=Math.max(0,Number(state.day.task_plan_due??now)-now),minutes=Math.ceil(left/60000),wait=minutes>=60?Math.floor(minutes/60)+' giờ '+(minutes%60?minutes%60+' phút':''):minutes+' phút';
+    empty.append(el('p','CHƯA XẾP LỊCH HÔM NAY','eyebrow'),el('h2','Cậu cập nhật thời gian hôm nay nhé'),el('p','Nếu chưa cập nhật, Minh Anh sẽ tự xếp sau '+wait+'.','hint'),button('Xếp thời gian hôm nay',()=>ui.openAvailability(),'primary'));
+   }else empty.append(el('p','CHƯA CÓ LỊCH HÔM NAY','eyebrow'),el('h2','Cài giờ sinh hoạt để bắt đầu'),el('p','Khi biết giờ rảnh, Minh Anh sẽ chọn một vài việc phù hợp thay vì đưa cả danh sách vào hôm nay.','hint'));
+   root.append(empty);return root;
+  }
 
  const completed=plan.items.filter(item=>state.tasks.find(task=>task.id===item.taskId)?.done).length;
  const actualTotal=plan.items.reduce((sum,item)=>sum+Number(item.actualMinutes??0),0);
@@ -174,7 +184,7 @@ function renderDailyPlan(ui,state){
   if(actual)details.push(`đã làm ${actual} phút`);
   if(remaining!==null&&remaining!==undefined)details.push(`còn ${Math.max(0,Number(remaining))} phút`);
   if((item.scheduledMinutes??item.minutes)<item.minutes)details.push(`${item.minutes-(item.scheduledMinutes??item.minutes)} phút chưa có giờ nhắc`);
-  if(task.deadline)details.push(`hạn ${task.deadline.slice(0,10)}`);
+  const deadline=deadlineLabel(task.deadline,(state.serverNow??Date.now())+Date.now()-(state.loadedAt??Date.now()));if(deadline)details.push(deadline);
   info.append(el('strong',(task.done?'✓ ':'')+'#'+task.code+' '+task.title),el('small',details.join(' · ')));
   row.append(check,info);list.append(row);
  }

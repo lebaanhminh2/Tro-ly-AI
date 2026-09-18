@@ -88,7 +88,7 @@ test('sleep state follows current wake setting, explicit pause is separate, and 
   assert.equal((await s.restStatus('123',at('2026-09-14T01:30:00'))).reason,'active');
   await s.queueCheckIns('123',at('2026-09-14T01:30:00'));
   await flushOutbox(env,transport,at('2026-09-14T01:30:00'),()=>at('2026-09-14T01:30:00'));
-  assert.equal(sent,2,'new wake setting drives morning delivery despite old scoring snapshot');
+  assert.equal(sent,1,'sleep check-ins do not emit the task-planning morning prompt');
   assert.deepEqual(await db.prepare("SELECT * FROM sleep_assessments WHERE owner='123'").first(),score);
   assert.equal(await db.prepare("SELECT * FROM reminder_preferences WHERE owner='123'").first(),null);
   // First setup after bedtime must not write an unexplained pause_until.

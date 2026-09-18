@@ -55,12 +55,13 @@ export function chooseDailyPlan(tasks:Candidate[],days:DayCapacity[],now:number,
    const allowance=urgent?left:Math.min(left,Math.max(45,Math.min(FOCUS_BLOCK_MINUTES,dailyNeed)));
    let wanted=allowance;const windows:TimeRange[]=[];
    for(const r of ranges){
-    if(wanted<=0)break;
     const end=t.deadline!==null&&t.deadline>now?Math.min(r.end,t.deadline):r.end;
-    const room=Math.floor((end-r.start)/MIN);
-    const minutes=Math.min(room,wanted);
-    if(minutes<Math.min(15,left))continue;
-    windows.push({start:r.start,end:r.start+minutes*MIN});r.start+=(minutes+10)*MIN;wanted-=minutes;
+    while(wanted>0){
+     const room=Math.floor((end-r.start)/MIN),minutes=Math.min(room,wanted,FOCUS_BLOCK_MINUTES);
+     if(minutes<Math.min(15,left))break;
+     windows.push({start:r.start,end:r.start+minutes*MIN});r.start+=(minutes+10)*MIN;wanted-=minutes;
+    }
+    if(wanted<=0)break;
    }
    const allocated=allowance-wanted;
    if(!allocated)continue;
@@ -87,11 +88,13 @@ export function chooseManualPlan(tasks:Candidate[],days:DayCapacity[],now:number
  const items:DayItem[]=[];
  for(const selected of manualItems){
   const task=byId.get(selected.taskId)!,windows:TimeRange[]=[];let wanted=selected.minutes;
-  for(const range of ranges){
+ for(const range of ranges){
+   while(wanted>0){
+    const room=Math.floor((range.end-range.start)/MIN);if(room<5)break;
+    const minutes=Math.min(room,wanted,FOCUS_BLOCK_MINUTES);windows.push({start:range.start,end:range.start+minutes*MIN});
+    range.start+=(minutes+10)*MIN;wanted-=minutes;
+   }
    if(wanted<=0)break;
-   const room=Math.floor((range.end-range.start)/MIN);if(room<5)continue;
-   const minutes=Math.min(room,wanted);windows.push({start:range.start,end:range.start+minutes*MIN});
-   range.start+=(minutes+10)*MIN;wanted-=minutes;
   }
   items.push({taskId:task.id,minutes:selected.minutes,remaining:task.remaining,provisional:task.remaining===null,reason:'manual_today',windows,scheduledMinutes:selected.minutes-wanted,manual:true});
  }

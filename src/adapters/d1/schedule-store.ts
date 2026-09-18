@@ -3,12 +3,14 @@ import {planDay,type PlanningTask} from '../../application/daily-planner.ts';
 import {query,type Database} from './database.ts';
 import {dayWindow,operatingDay,minutes,resumeHealthy} from '../../domain/healthy.ts';
 import {HealthyStore} from './healthy-store.ts';
-export type ScheduleSettings={start_minutes:number;sleep_minutes:number|null;version:number;updated:number};
-type DayRow={version:number;day:number;start_at:number;target_sleep:number;end_at:number;asleep_at:number|null;last_chat_at:number|null};
+import {ceilToMinutes} from '../../domain/time.ts';
+export type ScheduleSettings={start_minutes:number;sleep_minutes:number|null;auto_plan_delay_minutes:number;version:number;updated:number};
+export type DayRow={version:number;day:number;start_at:number;target_sleep:number;end_at:number;asleep_at:number|null;last_chat_at:number|null;task_plan_status:'waiting'|'active'|'closed';task_plan_due:number|null;task_plan_generation:number;task_plan_effective_from:number|null;task_plan_source:'manual'|'automatic'|'system'|null};
 export class ScheduleStore{
  private db:Database;
  constructor(db:Database){this.db=db;}
- settings(owner:string){return query(this.db,'SELECT start_minutes,sleep_minutes,version,updated FROM schedule_settings WHERE owner=?',owner).first<ScheduleSettings>();}
+ private async taskPlanSchema(){try{await query(this.db,'SELECT auto_plan_delay_minutes FROM schedule_settings LIMIT 1').first();return true;}catch{return false;}}
+ async settings(owner:string){const row=await query(this.db,'SELECT * FROM schedule_settings WHERE owner=?',owner).first<ScheduleSettings>();return row?{...row,auto_plan_delay_minutes:row.auto_plan_delay_minutes??180}:null;}
  async openDialog(owner:string,now:number){
   const day=await this.ensureDay(owner,now);if(!day){const settings=await this.settings(owner);throw Error(settings?.sleep_minutes!==null&&settings?'NO_ACTIVE_DAY':'SETUP_REQUIRED');}
   await query(this.db,'INSERT INTO schedule_dialogs(owner,day,expires) VALUES(?,?,?) ON CONFLICT(owner) DO UPDATE SET day=excluded.day,expires=excluded.expires',owner,day.day,Math.min(now+900000,day.end_at)).run();
@@ -19,12 +21,15 @@ export class ScheduleStore{
   if(!Number.isSafeInteger(messageId)||Number(messageId)<=0)return false;
   return !!await query(this.db,"SELECT d.day FROM schedule_days d JOIN outbox o ON o.id='healthy:morning:'||d.owner||':'||d.day WHERE d.owner=? AND d.start_at<=? AND d.end_at>? AND d.asleep_at IS NULL AND o.state='sent' AND o.message_id=?",owner,now,now,messageId!).first();
  }
- async configure(owner:string,start:string,sleep:string,version:number,now:number,requestId?:string){
-  const a=minutes(start),b=minutes(sleep);
-  if(a===b||!Number.isInteger(version)||version<0)throw Error('INVALID_SETTINGS');
-  const statements=[
-   query(this.db,'INSERT INTO transaction_guard SELECT CASE WHEN COALESCE((SELECT version FROM schedule_settings WHERE owner=?),0)=? THEN 1 ELSE 0 END',owner,version),
-   query(this.db,'INSERT INTO schedule_settings(owner,start_minutes,sleep_minutes,updated) VALUES(?,?,?,?) ON CONFLICT(owner) DO UPDATE SET start_minutes=excluded.start_minutes,sleep_minutes=excluded.sleep_minutes,version=version+1,updated=excluded.updated',owner,a,b,now),
+ async configure(owner:string,start:string,sleep:string,version:number,now:number,requestId?:string,autoPlanDelayMinutes?:number){
+   const a=minutes(start),b=minutes(sleep);
+   const current=await this.settings(owner),delay=autoPlanDelayMinutes??current?.auto_plan_delay_minutes??180;
+   if(a===b||!Number.isInteger(version)||version<0||!Number.isInteger(delay)||delay<30||delay>720||delay%30!==0)throw Error('INVALID_SETTINGS');
+   const modern=await this.taskPlanSchema();
+   const statements=[
+    query(this.db,'INSERT INTO transaction_guard SELECT CASE WHEN COALESCE((SELECT version FROM schedule_settings WHERE owner=?),0)=? THEN 1 ELSE 0 END',owner,version),
+    modern?query(this.db,'INSERT INTO schedule_settings(owner,start_minutes,sleep_minutes,auto_plan_delay_minutes,updated) VALUES(?,?,?,?,?) ON CONFLICT(owner) DO UPDATE SET start_minutes=excluded.start_minutes,sleep_minutes=excluded.sleep_minutes,auto_plan_delay_minutes=excluded.auto_plan_delay_minutes,version=version+1,updated=excluded.updated',owner,a,b,delay,now)
+      :query(this.db,'INSERT INTO schedule_settings(owner,start_minutes,sleep_minutes,updated) VALUES(?,?,?,?) ON CONFLICT(owner) DO UPDATE SET start_minutes=excluded.start_minutes,sleep_minutes=excluded.sleep_minutes,version=version+1,updated=excluded.updated',owner,a,b,now),
    query(this.db,'DELETE FROM transaction_guard')
   ];
   // Preserve finished/running work, but never leave future blocks outside the
@@ -37,7 +42,7 @@ export class ScheduleStore{
     statements.push(query(this.db,"UPDATE sessions SET status='skipped',version=version+1 WHERE owner=? AND id=? AND status='planned'",owner,session.id));
    }
   }
-  if(requestId)await new HealthyStore(this.db).mutate(owner,requestId,'settings',{start,sleep,version},now,state=>({state,result:{saved:true},statements}));
+   if(requestId)await new HealthyStore(this.db).mutate(owner,requestId,'settings',{start,sleep,version,autoPlanDelayMinutes:delay},now,state=>({state,result:{saved:true},statements}));
   else await this.db.batch(statements);
   // Today's existing snapshot is immutable: changing bedtime cannot erase a penalty.
   return this.ensureDay(owner,now);
@@ -58,7 +63,8 @@ export class ScheduleStore{
   const day=operatingDay(now,settings.start_minutes),window=dayWindow(day,settings.start_minutes,settings.sleep_minutes);
   if(previous&&window.start<previous.end_at)return null;
   if(!previous&&settings.updated>window.target)return null; // No retroactive first-day penalty.
-  await query(this.db,'INSERT OR IGNORE INTO schedule_days(owner,day,start_at,target_sleep,end_at) VALUES(?,?,?,?,?)',owner,day,window.start,window.target,window.end).run();
+   if(await this.taskPlanSchema())await query(this.db,"INSERT OR IGNORE INTO schedule_days(owner,day,start_at,target_sleep,end_at,task_plan_due,task_plan_status) VALUES(?,?,?,?,?,?,'waiting')",owner,day,window.start,window.target,window.end,window.start+settings.auto_plan_delay_minutes*60000).run();
+   else await query(this.db,'INSERT OR IGNORE INTO schedule_days(owner,day,start_at,target_sleep,end_at) VALUES(?,?,?,?,?)',owner,day,window.start,window.target,window.end).run();
   return query(this.db,'SELECT * FROM schedule_days WHERE owner=? AND day=?',owner,day).first<DayRow>();
  }
  async chatActivity(owner:string,now:number,requestId:string){
@@ -80,33 +86,25 @@ export class ScheduleStore{
   return new HealthyStore(this.db).score(owner,{day:day.day,target:day.target_sleep,end:day.end_at,reportedAt:saved!.asleep_at,chatActive:true,assessedAt:now});
  }
  async prepareReplan(owner:string,now:number,expectedVersion:number,free:TimeRange[],busy:TimeRange[],tasks:PlanningTask[],requestId:string){
-  const day=await this.ensureDay(owner,now);if(!day)throw Error('SETUP_REQUIRED');
-  const ranges=availableRanges(free.length?free:[{start:day.start_at,end:day.target_sleep}],busy,now);
-  if(ranges.some(r=>r.start<day.start_at||r.end>day.target_sleep))throw Error('OUTSIDE_ACTIVE_DAY');
+   const day=await this.ensureDay(owner,now);if(!day)throw Error('SETUP_REQUIRED');
+   const effective=ceilToMinutes(now);
+   const clip=(ranges:TimeRange[])=>ranges.map(r=>({start:Math.max(effective,r.start),end:Math.min(day.target_sleep,r.end)})).filter(r=>r.end>r.start);
+   const normalizedFree=clip(free),normalizedBusy=clip(busy);
+   const ranges=availableRanges(normalizedFree.length?normalizedFree:[{start:effective,end:day.target_sleep}],normalizedBusy,effective);
+   if(ranges.some(r=>r.start<day.start_at||r.end>day.target_sleep))throw Error('OUTSIDE_ACTIVE_DAY');
   const fixed=(await query(this.db,"SELECT start_at,end_at FROM local_events WHERE owner=? AND status='scheduled' AND start_at<? AND COALESCE(end_at,start_at+3600000)>?",owner,day.target_sleep,now).all<{start_at:number;end_at:number|null}>()).results.map(e=>({start:e.start_at,end:e.end_at??e.start_at+3600000}));
   const running=(await query(this.db,"SELECT start_at,minutes FROM sessions WHERE owner=? AND status IN ('running','paused')",owner).all<{start_at:number;minutes:number}>()).results;
   const plan=planDay(tasks,ranges,[...fixed,...running.map(s=>({start:s.start_at,end:Math.max(s.start_at+s.minutes*60000,now+5*60000)}))],now);
-   const statements=[
-    query(this.db,'INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM schedule_days WHERE owner=? AND day=? AND version=?) THEN 1 ELSE 0 END',owner,day.day,expectedVersion),
-    query(this.db,'UPDATE schedule_days SET intervals_json=?,version=version+1 WHERE owner=? AND day=?',JSON.stringify({free,busy,estimates:tasks.filter(t=>t.remainingMinutes!==null).map(t=>({id:t.id,minutes:t.remainingMinutes})),unplanned:plan.unplanned}),owner,day.day),
-    query(this.db,'DELETE FROM schedule_dialogs WHERE owner=?',owner),
-    query(this.db,"UPDATE outbox SET state='failed' WHERE id LIKE ? AND state='pending'",'nudge:'+owner+':%'),
-    query(this.db,"UPDATE nudge_cycles SET cycle=cycle+1,version=version+1,tasks_json='[]',attempts=0,next_at=?,blocked_json='[]',lease_until=0 WHERE owner=?",now,owner),
-    query(this.db,"UPDATE daily_plans SET signature='' WHERE owner=?",owner),
-    query(this.db,"UPDATE reminders SET status='cancelled' WHERE owner=? AND status IN('pending','queued') AND session_id IN(SELECT id FROM sessions WHERE owner=? AND status='planned' AND start_at>=? AND start_at<?)",owner,owner,now,day.end_at),
-    query(this.db,"UPDATE sessions SET status='skipped',version=version+1 WHERE owner=? AND status='planned' AND start_at>=? AND start_at<?",owner,now,day.end_at)
-   ];
-   for(const [index,block] of plan.blocks.entries()){
-    const task=tasks.find(t=>t.id===block.taskId)!;
-    const id='plan_'+requestId+'_'+index;
-    statements.push(
-     query(this.db,"INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM tasks WHERE owner=? AND id=? AND status='active' AND deleted_at IS NULL AND (deadline IS NULL OR (julianday(CASE WHEN deadline_precision='date' THEN deadline||'T23:59:59+07:00' ELSE deadline END)-2440587.5)*86400000>=? OR (julianday(CASE WHEN deadline_precision='date' THEN deadline||'T23:59:59+07:00' ELSE deadline END)-2440587.5)*86400000<=?)) THEN 1 ELSE 0 END",owner,task.id,block.end,now),
-     query(this.db,"INSERT INTO sessions(id,owner,task_id,start_at,minutes,status,expires) VALUES(?,?,?,?,?,'planned',?)",id,owner,block.taskId,block.start,(block.end-block.start)/60000,day.end_at),
-     query(this.db,"INSERT INTO reminders(id,owner,session_id,generation,ordinal,due) VALUES(?,?,?,1,1,?),(?,?,?,1,2,?)",id+':1:1',owner,id,block.start,id+':1:2',owner,id,block.start+900000)
-    );
-   }
-   statements.push(query(this.db,'INSERT OR IGNORE INTO reminder_preferences(owner,quiet_start,quiet_end) VALUES(?,0,0)',owner));
-   return {plan,statements,day:day.day};
+    const statements=[
+     query(this.db,'INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM schedule_days WHERE owner=? AND day=? AND version=?) THEN 1 ELSE 0 END',owner,day.day,expectedVersion),
+     query(this.db,"UPDATE schedule_days SET intervals_json=?,version=version+1,task_plan_status='active',task_plan_source='manual',task_plan_effective_from=? WHERE owner=? AND day=?",JSON.stringify({free:normalizedFree,busy:normalizedBusy,estimates:tasks.filter(t=>t.remainingMinutes!==null).map(t=>({id:t.id,minutes:t.remainingMinutes})),unplanned:plan.unplanned}),effective,owner,day.day),
+     query(this.db,'DELETE FROM schedule_dialogs WHERE owner=?',owner),
+     query(this.db,"UPDATE outbox SET state='failed' WHERE (id LIKE ? OR id=?) AND state='pending'",'task-nudge:'+owner+':%',`task-plan:morning:${owner}:${day.day}`),
+     query(this.db,"UPDATE daily_plans SET signature='' WHERE owner=?",owner),
+     query(this.db,"UPDATE reminders SET status='cancelled' WHERE owner=? AND status IN('pending','queued') AND session_id IN(SELECT id FROM sessions WHERE owner=? AND id LIKE 'plan_%' AND status='planned' AND start_at>=? AND start_at<?)",owner,owner,now,day.end_at),
+     query(this.db,"UPDATE sessions SET status='skipped',version=version+1 WHERE owner=? AND id LIKE 'plan_%' AND status='planned' AND start_at>=? AND start_at<?",owner,now,day.end_at)
+    ];
+    return {plan,statements,day:day.day};
  }
  async replan(owner:string,now:number,expectedVersion:number,free:TimeRange[],busy:TimeRange[],tasks:PlanningTask[],requestId:string){
   const prepared=await this.prepareReplan(owner,now,expectedVersion,free,busy,tasks,requestId);
@@ -157,11 +155,7 @@ export class ScheduleStore{
   if(!settings||settings.sleep_minutes===null||await this.notificationsPaused(owner,now))return;
   const currentDay=operatingDay(now,settings.start_minutes),window=dayWindow(currentDay,settings.start_minutes,settings.sleep_minutes);
   const day={day:currentDay,start_at:window.start,target_sleep:window.target,end_at:window.end};
-  const messages:{id:string;text:string;due:number}[]=[];
-  if(now>=day.start_at&&now<day.start_at+3600000)messages.push({
-   id:'healthy:morning:'+owner+':'+day.day,due:day.start_at,
-   text:'Chào buổi sáng cậu :> hôm nay cậu bận những khoảng nào? Trả lời trực tiếp tin này hoặc dùng /lich kèm lịch của cậu nhé.'
-  });
+   const messages:{id:string;text:string;due:number}[]=[];
   const bedtimePhases=[
    {key:'pre30',offset:-30,window:15,text:'Cậu ơi, còn 30 phút nữa là đến giờ nghỉ rồi. Thu bài lại dần nhé, để Minh Anh đưa cậu vào chế độ ngủ cho đúng giờ.'},
    {key:'pre15',offset:-15,window:15,text:'Còn 15 phút thôi nè. Cậu chuẩn bị đi ngủ nhé; nếu để qua ngày mà không báo /ngu thì sẽ bị trừ 20 tu vi đấy, tớ không muốn đâu :<'},
@@ -177,6 +171,7 @@ export class ScheduleStore{
  }
  async settleClosedDays(owner:string,now:number){
   const healthy=new HealthyStore(this.db);
+  if(await this.taskPlanSchema())await query(this.db,"UPDATE schedule_days SET task_plan_status='closed' WHERE owner=? AND end_at<=? AND task_plan_status!='closed'",owner,now).run();
   // At most three absent days are settled. No unbounded catch-up or retroactive
   // penalties before setup. A recorded active day can reset the absence count.
   let row=await query(this.db,'SELECT * FROM schedule_days WHERE owner=? ORDER BY start_at DESC LIMIT 1',owner).first<DayRow>();
@@ -193,7 +188,8 @@ export class ScheduleStore{
    if(row.end_at>now)return;
    const {day:nextDay,window}=this.followingDay(row,settings);
    if(window.start>now)return;
-   await query(this.db,'INSERT OR IGNORE INTO schedule_days(owner,day,start_at,target_sleep,end_at) VALUES(?,?,?,?,?)',owner,nextDay,window.start,window.target,window.end).run();
+    if(await this.taskPlanSchema())await query(this.db,"INSERT OR IGNORE INTO schedule_days(owner,day,start_at,target_sleep,end_at,task_plan_due,task_plan_status) VALUES(?,?,?,?,?,?,'waiting')",owner,nextDay,window.start,window.target,window.end,window.start+settings.auto_plan_delay_minutes*60000).run();
+    else await query(this.db,'INSERT OR IGNORE INTO schedule_days(owner,day,start_at,target_sleep,end_at) VALUES(?,?,?,?,?)',owner,nextDay,window.start,window.target,window.end).run();
   }
  }
 }
