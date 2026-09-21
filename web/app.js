@@ -208,7 +208,7 @@ async function playEffect(target,type,duration=720){
  target.classList.remove('effect-spin','effect-breakthrough');
 }
 function openDraw(){
- if(state.live){openSheet('Quay thưởng');const c=state.cultivation,blocked=c.suspended||c.tickets<1;const hint=c.suspended?'Tạm ngưng vì lâu không chat. Nhắn Minh Anh để hoạt động lại.':c.tickets<1?'Chưa có vé. Hoàn thành một task lần đầu để nhận 1 vé.':'Cậu có '+c.tickets+' vé. /ngu không khóa quay thưởng.';const reveal=el('div','?','loot-result mystery-card');reveal.setAttribute('aria-label','Phần thưởng bí ẩn');const draw=button('Dùng 1 vé',async()=>{if(state.cultivation.tickets<1||state.cultivation.suspended||draw.disabled)return;draw.disabled=true;draw.textContent='Đang mở…';await playEffect(reveal,'draw',620);const saved=await performLive('cultivation',{operation:'draw'},{keepSheet:true,silent:true});if(saved===null&&draw.isConnected){draw.disabled=false;draw.textContent='Dùng 1 vé';return;}if(!draw.isConnected)return;reveal.classList.add('mystery-revealed');reveal.textContent='✦ '+(rewardLabels[saved.reward]??saved.reward);const tickets=state.cultivation.tickets;draw.disabled=tickets<1;draw.textContent=tickets<1?'Hết vé':'Quay tiếp · '+tickets+' vé';},'primary reward-action');draw.disabled=blocked;sheetContent.append(el('p',hint,'hint'),reveal,draw);return;}
+ if(state.live){openSheet('Quay thưởng');const c=state.cultivation,blocked=c.suspended||c.tickets<1;const hint=c.suspended?'Tạm ngưng vì lâu không chat. Nhắn Minh Anh để hoạt động lại.':c.tickets<1?'Chưa có vé. Hoàn thành một task lần đầu để nhận 1 vé.':'Cậu có '+c.tickets+' vé. /ngu không khóa quay thưởng.';const reveal=el('div','?','loot-result mystery-card');reveal.setAttribute('aria-label','Phần thưởng bí ẩn');const draw=button('Dùng 1 vé',async()=>{if(state.cultivation.tickets<1||state.cultivation.suspended||draw.disabled)return;draw.disabled=true;draw.textContent='Đang mở…';await playEffect(reveal,'draw',620);const saved=await performLive('cultivation',{operation:'draw'},{keepSheet:true,silent:true});if(saved===null&&draw.isConnected){draw.disabled=false;draw.textContent='Dùng 1 vé';return;}if(!draw.isConnected)return;reveal.classList.add('mystery-revealed');reveal.textContent=rewardLabels[saved.reward]??saved.reward;const tickets=state.cultivation.tickets;draw.disabled=tickets<1;draw.textContent=tickets<1?'Hết vé':'Quay tiếp · '+tickets+' vé';},'primary reward-action');draw.disabled=blocked;sheetContent.append(el('p',hint,'hint'),reveal,draw);return;}
  openSheet('Linh bảo · Quay thưởng');
  sheetContent.append(el('p','1 vé / lần · Không mua bằng tiền · Kết quả demo','hint'));
  const result=el('div','?','loot-result mystery-card');result.setAttribute('role','status');result.setAttribute('aria-label','Phần thưởng bí ẩn');
@@ -218,7 +218,7 @@ function openDraw(){
   const reward=demoDraw(state.cultivation);
   if(!reward){draw.disabled=false;draw.textContent='Dùng 1 vé quay';return;}
   result.classList.add('mystery-revealed');
-  result.textContent='✦ '+reward.label+' · Còn '+state.cultivation.tickets+' vé';
+  result.textContent=reward.label+' · Còn '+state.cultivation.tickets+' vé';
   draw.disabled=state.cultivation.tickets===0;render();
   draw.textContent=state.cultivation.tickets===0?'Hết vé':'Quay tiếp';
  },'primary');draw.disabled=state.cultivation.tickets===0;sheetContent.append(result,draw);

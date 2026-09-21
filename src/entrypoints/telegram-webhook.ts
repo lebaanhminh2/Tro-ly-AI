@@ -47,13 +47,17 @@ export async function handleTelegramWebhook(request:Request,env:Env,deps:{cardsE
    await flushOutbox(env,transport,clock.now(),()=>clock.now(),ackId);
   }
   if(!cardsEnabled&&env.DELIVERY_MODE==='outbox'&&input.callbackId){
-   await query(env.DB,'INSERT OR IGNORE INTO outbox(id,payload,available) VALUES(?,?,?)',`ack:${input.owner}:${input.updateId}`,JSON.stringify({method:'answerCallbackQuery',callback_query_id:input.callbackId}),clock.now()).run();
-   await flushOutbox(env,transport,clock.now());
+   const ackId=`ack:${input.owner}:${input.updateId}`;
+   await query(env.DB,'INSERT OR IGNORE INTO outbox(id,payload,available) VALUES(?,?,?)',ackId,JSON.stringify({method:'answerCallbackQuery',callback_query_id:input.callbackId}),clock.now()).run();
+   await flushOutbox(env,transport,clock.now(),()=>clock.now(),ackId,1);
   }
   await processInbox(store,input.owner,clock,chat,4);
-  if(env.ASSETS)await new HealthyStore(env.DB).syncTaskTickets(input.owner,clock.now());
-  await flushOutbox(env,transport,clock.now());
+  // Deliver this update before optional bookkeeping. On the Workers Free CPU
+  // budget a later maintenance step may be interrupted, but a committed reply
+  // must not remain behind unrelated reminder jobs in the shared outbox.
+  await flushOutbox(env,transport,clock.now(),()=>clock.now(),`reply:${input.owner}:${input.updateId}`,1);
   await flushCards();
+  if(isNew&&env.ASSETS)await new HealthyStore(env.DB).syncTaskTickets(input.owner,clock.now());
   if(env.DELIVERY_MODE==='outbox'||!isNew)return new Response('OK');
   const result=await store.result(input.owner,input.updateId);
   return result?Response.json(message(input.chat,result.text,result.buttons)):new Response('OK');

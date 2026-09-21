@@ -7,11 +7,14 @@ import { reminderAllowed } from './reminders.ts';
 import {nudgeAllowed} from './work-nudges.ts';
 import {TaskDayStore} from './task-day-store.ts';
 
-export async function flushOutbox(env: Env, transport: typeof fetch = fetch, now = Date.now(), clock:()=>number = Date.now, onlyId?:string) {
+export async function flushOutbox(env: Env, transport: typeof fetch = fetch, now = Date.now(), clock:()=>number = Date.now, onlyId?:string, maxRows=4) {
   const wallStart=clock();
   const currentTime=()=>now+Math.max(0,clock()-wallStart);
   if (env.DELIVERY_MODE !== 'outbox' || !configured(env)) return;
-  const rows = (await query(env.DB, "SELECT id,payload,reminder_id FROM outbox WHERE state='pending' AND available<=? AND attempts<3 AND (? IS NULL OR id=?) ORDER BY available,id LIMIT 4", now,onlyId??null,onlyId??null)
+  const limit=Math.max(1,Math.min(4,Math.trunc(maxRows)));
+  const rows = (await query(env.DB, `SELECT id,payload,reminder_id FROM outbox
+    WHERE state='pending' AND available<=? AND attempts<3 AND (? IS NULL OR id=?)
+    ORDER BY CASE WHEN id LIKE 'ack:%' THEN 0 WHEN id LIKE 'reply:%' THEN 1 ELSE 2 END,available,id LIMIT ?`, now,onlyId??null,onlyId??null,limit)
     .all<{ id: string; payload: string;reminder_id:string|null }>()).results;
   for (const row of rows) {
     const legacyWork=env.ASSETS&&row.reminder_id&&!row.reminder_id.startsWith('appointment:')&&!row.reminder_id.startsWith('recurring:');

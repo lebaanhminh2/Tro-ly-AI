@@ -182,3 +182,40 @@ test('outbox persisted replies, callback ack, retry cap, restart recovery and co
     assert.equal((await db.prepare("SELECT state FROM outbox WHERE id='crashed'").first<any>()).state,'uncertain');
   } finally {await mf.dispose();}
 });
+
+test('webhook prioritizes its own reply over older outbox work',async()=>{
+  const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+  try{
+    const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+    for(const file of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync(`migrations/${file}`,'utf8').replace(/\r?\n/g,' '));
+    const now=Date.parse('2026-09-20T08:00:00+07:00');
+    const env:Env={DB:db,TELEGRAM_USER_ID:'123',TELEGRAM_WEBHOOK_SECRET:'synthetic-secret-long-enough',TELEGRAM_BOT_TOKEN:'123:fake',DELIVERY_MODE:'outbox',AI_MODE:'off',ASSETS:{fetch:async()=>new Response('')}};
+    await db.prepare("INSERT INTO outbox(id,payload,available) VALUES('older',?,?)").bind(JSON.stringify({method:'sendMessage',chat_id:123,text:'older'}),now-60000).run();
+    const sent:string[]=[];
+    const transport:typeof fetch=async(_url,init)=>{sent.push(JSON.parse(String(init?.body)).text);return Response.json({ok:true,result:{message_id:sent.length}});};
+    const request=new Request('https://local/telegram',{method:'POST',headers:{'X-Telegram-Bot-Api-Secret-Token':env.TELEGRAM_WEBHOOK_SECRET},body:JSON.stringify({update_id:7,message:{from:{id:123},chat:{id:123,type:'private'},text:'chào'}})});
+    assert.equal((await createWorker(undefined,transport,{now:()=>now},true).fetch(request,env)).status,200);
+    assert.equal(sent.length,1);assert.match(sent[0]!,/chưa bật/);
+    assert.equal((await db.prepare("SELECT state FROM outbox WHERE id='older'").first<{state:string}>())!.state,'pending');
+    assert.equal((await db.prepare("SELECT state FROM outbox WHERE id='reply:123:7'").first<{state:string}>())!.state,'sent');
+  }finally{await mf.dispose();}
+});
+
+test('scheduled delivery happens before later maintenance failure',async()=>{
+  const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+  try{
+    const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+    for(const file of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync(`migrations/${file}`,'utf8').replace(/\r?\n/g,' '));
+    const now=0;
+    await db.prepare("INSERT INTO outbox(id,payload,available) VALUES('older',?,0)").bind(JSON.stringify({method:'sendMessage',chat_id:123,text:'older'})).run();
+    await db.prepare("INSERT INTO outbox(id,payload,available) VALUES('reply:123:9',?,0)").bind(JSON.stringify({method:'sendMessage',chat_id:123,text:'ready'})).run();
+    await db.exec('DROP TABLE schedule_settings');
+    const env:Env={DB:db,TELEGRAM_USER_ID:'123',TELEGRAM_WEBHOOK_SECRET:'synthetic-secret-long-enough',TELEGRAM_BOT_TOKEN:'123:fake',DELIVERY_MODE:'outbox',AI_MODE:'off',ASSETS:{fetch:async()=>new Response('')}};
+    const sent:string[]=[];
+    const transport:typeof fetch=async(_url,init)=>{sent.push(JSON.parse(String(init?.body)).text);return Response.json({ok:true,result:{message_id:9}});};
+    await assert.rejects(createWorker(undefined,transport,{now:()=>now},true).scheduled({},env));
+    assert.deepEqual(sent,['ready']);
+    assert.equal((await db.prepare("SELECT state FROM outbox WHERE id='reply:123:9'").first<{state:string}>())!.state,'sent');
+    assert.equal((await db.prepare("SELECT state FROM outbox WHERE id='older'").first<{state:string}>())!.state,'pending');
+  }finally{await mf.dispose();}
+});

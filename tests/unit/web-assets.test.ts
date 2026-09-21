@@ -41,3 +41,10 @@ test('schedule sheet locks the page and only edits explicitly selected tasks',()
  assert.ok(styles.includes('dialog.schedule-sheet-open{display:flex;flex-direction:column;height:min(88dvh,760px)'));
  assert.ok(styles.includes('dialog.schedule-sheet-open input[type=time]{position:relative;pointer-events:auto}'));
 });
+
+test('reward result stays visually plain without a decorative star prefix',()=>{
+ assert.ok(app.includes('reveal.textContent=rewardLabels[saved.reward]??saved.reward'));
+ assert.ok(app.includes("result.textContent=reward.label+' · Còn '"));
+ assert.ok(!app.includes("textContent='✦ '+(rewardLabels"));
+ assert.ok(!app.includes("textContent='✦ '+reward.label"));
+});
