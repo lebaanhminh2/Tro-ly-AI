@@ -1,4 +1,4 @@
-import {realms} from '../api.js';
+import {realms,flameLevel} from '../api.js';
 export function renderAchievements(ui,state){
  const {el,button,heading,card}=ui,root=el('section',undefined,'achievements-page');
  root.append(heading('Tích lũy từng ngày.','Không cần hoàn hảo. Chỉ cần tiếp tục.'));
@@ -7,9 +7,8 @@ export function renderAchievements(ui,state){
  const weekly=completed.filter(c=>Math.floor((c.completed_at+7*3600000)/86400000)>=today-6);
  const amounts=state?.live?Array.from({length:7},(_,i)=>completed.filter(c=>Math.floor((c.completed_at+7*3600000)/86400000)===today-6+i).length):[1,2,0,1,1,2,1];
  const c=ui.cultivation(),streak=Math.max(0,Number(c.streak??0)),bestStreak=Math.max(streak,Number(c.bestStreak??0));
- const flameLevels=[{min:0,key:'ember',name:'Tàn Hỏa'},{min:1,key:'seed',name:'Hỏa Chủng'},{min:3,key:'spirit',name:'Linh Hỏa'},{min:7,key:'scarlet',name:'Xích Viêm'},{min:14,key:'heaven',name:'Thiên Hỏa'},{min:30,key:'true',name:'Chân Hỏa'}];
- const flame=flameLevels.slice().reverse().find(level=>streak>=level.min)??flameLevels[0];
- const flameCard=card();flameCard.classList.add('flame-card','flame-'+flame.key);flameCard.append(el('p','HỎA MẠCH','eyebrow'),el('div','🔥','flame-mark'),el('p',streak+' ngày liên tiếp','flame-count'),el('h2',flame.name,'flame-name'),el('p',bestStreak?'Kỷ lục của cậu: '+bestStreak+' ngày':'Bắt đầu một chuỗi mới nhé.','flame-best'));root.append(flameCard);
+ const flame=flameLevel(streak);
+ const flameCard=card();flameCard.style.setProperty('--flame',flame.color);flameCard.classList.add('flame-card','companion-flame','flame-'+flame.key);flameCard.append(el('p','HỎA MẠCH','eyebrow'),el('div','🔥','flame-mark'),el('p',streak+' ngày liên tiếp','flame-count'),el('h2',flame.name,'flame-name'),el('p',bestStreak?'Kỷ lục của cậu: '+bestStreak+' ngày':'Bắt đầu một chuỗi mới nhé.','flame-best'));root.append(flameCard);
  const stats=el('div',undefined,'stats achievement-metrics');
  for(const [value,label,suffix] of (state?.live?[[String(weekly.length),'Việc xong tuần này','việc'],[String(completed.length),'Tổng đã ghi nhận','việc']]:[['8','Hoàn thành tuần này','việc'],['3/4','Hoàn thành đúng hạn','việc có hạn']])){
   const c=card();const n=el('p',value,'stat-value');n.append(el('small',' '+suffix));c.append(el('p',label,'stat-label'),n);stats.append(c);
@@ -19,7 +18,7 @@ export function renderAchievements(ui,state){
  amounts.forEach((n,i)=>{const col=el('div',undefined,'chart-col'),bar=el('div',undefined,'chart-bar');bar.style.height=(n/Math.max(1,...amounts)*68+3)+'px';col.append(el('span',String(n)),bar,el('span',state?.live?new Date((today-6+i)*86400000).toLocaleDateString('vi-VN',{timeZone:'UTC',day:'2-digit',month:'2-digit'}):['T2','T3','T4','T5','T6','T7','CN'][i]));bars.append(col);});if(!state?.live||amounts.some(n=>n>0)){chart.append(bars);root.append(chart);}else {const empty=ui.empty('Chưa có dữ liệu tuần này','Hoàn thành công việc để thấy nhịp tiến bộ của cậu.',()=>{state.tab='today';state.mode='tasks';ui.render();},'Xem công việc');empty.classList.add('achievement-empty');root.append(empty);}
  const current=realms[c.rank],next=realms[c.rank+1];
  const title=el('div',undefined,'section-heading');title.append(el('h2','Tu luyện cùng Minh Anh'),el('span',state?.live?'TU LUYỆN':'DEMO','pill'));root.append(title);
- const rank=el('article',undefined,'rank-card');
+ const rank=el('article',undefined,'rank-card companion-rank');
  rank.append(el('div','✧','rank-seal'),el('p','CẢNH GIỚI HIỆN TẠI','eyebrow'),el('h2',current.name),el('p','Đỉnh cao từng đạt: '+realms[c.highestRank].name));
  if(c.protectedUntil>Date.now())rank.append(el('p','🛡 Miễn hạ bậc đến '+new Date(c.protectedUntil).toLocaleString('vi-VN'),'protection'));
  rank.append(button('Xem thẻ thành tích',()=>ui.openShare(),'text-button'));root.append(rank);
@@ -29,8 +28,13 @@ export function renderAchievements(ui,state){
  }root.append(balances);
  root.append(el('p','Tổng tích lũy không giảm khi bị phạt. Chỉ tu vi hiện tại dùng để xét đột phá.','footer-note'));
  if(next){
-  const target=card();target.append(el('p','ĐỘT PHÁ TIẾP THEO','eyebrow'),el('h2',next.name),el('p',c.qi+'/'+next.qi+' tu vi · '+c.streak+'/'+next.days+' ngày đúng giờ','subtitle'));
-  const track=el('div',undefined,'track'),fill=el('span');fill.style.width=Math.min(100,100*Math.min(c.qi/next.qi,c.streak/next.days))+'%';track.append(fill);target.append(track);
+  const qi=Math.max(0,Number(c.qi??0)),percent=next.qi>0?Math.round(100*qi/next.qi):100,surplus=Math.max(0,qi-next.qi);
+  const target=card('breakthrough-card');target.append(el('p','ĐỘT PHÁ TIẾP THEO','eyebrow'),el('h2',next.name));
+  const metric=el('div',undefined,'breakthrough-metric');metric.append(el('span','Tu vi'),el('strong',qi+' / '+next.qi));target.append(metric);
+  const track=el('div',undefined,'track breakthrough-track'),fill=el('span');fill.style.width=Math.min(100,percent)+'%';track.append(fill);if(surplus)track.classList.add('has-surplus');target.append(track);
+  target.append(el('p',percent+'%'+(surplus?' · dư '+surplus+' tu vi':''),'breakthrough-percent'));
+  const condition=el('div',undefined,'breakthrough-condition'+(c.streak>=next.days?' is-met':''));
+  condition.append(el('span','Điều kiện đột phá'),el('strong',c.streak+' / '+next.days+' ngày đúng giờ'));target.append(condition);
   const attempt=button('Đột phá',()=>ui.openBreakthrough(),'primary');attempt.disabled=c.qi<next.qi||c.streak<next.days||c.attemptDay===ui.demoDay();target.append(attempt);
   target.append(el('p',c.attemptDay===ui.demoDay()?'Đã thử hôm nay · ngày mới mới được thử tiếp.':'Mỗi ngày 1 lần · thất bại không mất tu vi.','hint'));root.append(target);
  }

@@ -11,7 +11,7 @@ import {sessionStatements} from '../adapters/d1/session-store.ts';
 import {query} from '../adapters/d1/database.ts';
 import {breakthrough,drawReward,fuseCharm,useProtection,operatingDay,REALMS,LOOT,CHARMS,type Charm} from '../domain/healthy.ts';
 import {deadlineAt} from '../domain/time.ts';
-import {queuePlanConfirmation,recordTaskNudgeActivity} from '../adapters/d1/work-nudges.ts';
+import {changeTaskFocus,currentTaskFocus,taskFocusTarget,queuePlanConfirmation,recordTaskNudgeActivity} from '../adapters/d1/work-nudges.ts';
 
 const headers={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'};
 const json=(value:unknown,status=200)=>new Response(JSON.stringify(value),{status,headers});
@@ -45,7 +45,8 @@ export async function miniAppApi(request:Request,env:Env,now=Date.now()):Promise
    const appointments=(await query(env.DB,"SELECT a.id,a.version,a.due,a.status,COALESCE(a.subject,t.title) AS title,EXISTS(SELECT 1 FROM outbox o WHERE o.reminder_id IN ('appointment:'||a.id||':1','appointment:'||a.id||':2') AND o.state='sent') AS delivered FROM task_appointments a LEFT JOIN tasks t ON t.id=a.task_id AND t.owner=a.owner WHERE a.owner=? AND a.status IN ('active','expired') AND a.due>=? AND (a.task_id IS NULL OR t.deleted_at IS NULL) ORDER BY a.due LIMIT 200",owner,visibleStart).all<{id:string;version:number;due:number;status:string;title:string;delivered:number}>()).results;
    const combined=[...visibleRules,...appointments.map(a=>{const local=new Date(a.due+25200000).toISOString();return {id:a.id,origin:'appointment',title:a.title,version:a.version,kind:'once',times:[local.slice(11,16)],weekdays:[],startDate:local.slice(0,10),endDate:null,enabled:a.status==='active',delivered:!!a.delivered,past:a.status==='expired'};})];
    const rest=await new ScheduleStore(env.DB).restStatus(owner,now);
-   return json({now,account,tasks,reminders:combined,settings,progress,sessions,events,day,timeline:await new TimelineStore(env.DB).read(owner,now),dailyPlan:await new DayPlanStore(env.DB).ensure(owner,now),rest,resting:rest.reason!=='active',realms:REALMS,loot:LOOT,charms:CHARMS,needsSetup:!settings});
+   const dailyPlan=await new DayPlanStore(env.DB).ensure(owner,now);
+   return json({now,account,tasks,reminders:combined,settings,progress,sessions,events,day,timeline:await new TimelineStore(env.DB).read(owner,now),dailyPlan,taskFocus:await currentTaskFocus(env.DB,owner,now),taskFocusTarget:await taskFocusTarget(env.DB,owner,now),rest,resting:rest.reason!=='active',realms:REALMS,loot:LOOT,charms:CHARMS,needsSetup:!settings});
   }
   if(request.method==='GET'&&url.pathname==='/api/history'){
    const rawOffset=url.searchParams.get('offset')??'0';
@@ -54,7 +55,7 @@ export async function miniAppApi(request:Request,env:Env,now=Date.now()):Promise
    const result=await new D1WorkStore(env.DB).historyPage(owner,offset,20);
    return json({result});
   }
-  if(request.method!=='POST'||!['/api/cultivation','/api/tasks','/api/settings','/api/reminders','/api/schedule','/api/reminder-instance','/api/tasks-delete','/api/day-plan','/api/task-work','/api/session','/api/timeline'].includes(url.pathname))return json({error:'NOT_FOUND'},404);
+  if(request.method!=='POST'||!['/api/cultivation','/api/tasks','/api/settings','/api/reminders','/api/schedule','/api/reminder-instance','/api/tasks-delete','/api/day-plan','/api/task-work','/api/task-focus','/api/session','/api/timeline'].includes(url.pathname))return json({error:'NOT_FOUND'},404);
   // Read a bounded body, including chunked requests.
   const reader=request.body?.getReader();if(!reader)return json({error:'INVALID_REQUEST'},400);
   const decoder=new TextDecoder('utf-8',{fatal:true});let raw='',bytes=0;
@@ -95,6 +96,10 @@ export async function miniAppApi(request:Request,env:Env,now=Date.now()):Promise
    if(Object.keys(input).some(k=>!['id','taskId','minutes','note'].includes(k))||typeof input.taskId!=='string'||!Number.isInteger(input.minutes)||Number(input.minutes)<0||Number(input.minutes)>1440||input.note!==undefined&&input.note!==null&&typeof input.note!=='string')return json({error:'INVALID_REQUEST'},400);
     const result=await new DayPlanStore(env.DB).logWork(owner,input.id,String(input.taskId),Number(input.minutes),input.note===undefined||input.note===null?null:String(input.note),now);
     await recordTaskNudgeActivity(env.DB,owner,`mini:${input.id}`,now);return json({result});
+  }
+  if(url.pathname==='/api/task-focus'){
+   if(Object.keys(input).some(k=>!['id','operation'].includes(k))||!['start','stop'].includes(String(input.operation)))return json({error:'INVALID_REQUEST'},400);
+   return json({result:await changeTaskFocus(env.DB,owner,input.id,String(input.operation) as 'start'|'stop',now)});
   }
   if(url.pathname==='/api/timeline'){
    if(Object.keys(input).some(k=>!['id','stamp','sessionId','at','undo'].includes(k))||typeof input.stamp!=='string'||input.stamp.length>3500||
@@ -191,7 +196,7 @@ export async function miniAppApi(request:Request,env:Env,now=Date.now()):Promise
  }catch(error){
   const code=error instanceof Error?error.message:'';
   if(code.startsWith('TIMELINE_'))return json({error:code},409);
-  if(['NO_ACTIVE_DAY','NO_TICKETS','ACCOUNT_SUSPENDED','DRAW_UNAVAILABLE','FUSION_UNAVAILABLE','ITEM_UNAVAILABLE','BREAKTHROUGH_UNAVAILABLE','ALREADY_PROTECTED','REQUEST_ID_REUSED','STALE_TASK','TASK_NOT_AVAILABLE','PLAN_CHANGED','CONFIRM_CHILDREN','CONFIRM_REOPEN_PARENT','CONFIRM_DELETE','STEP_NOT_FOUND','NO_NEXT_REMINDER','SESSION_CHANGED'].includes(code))return json({error:code},409);
+  if(['NO_ACTIVE_DAY','NO_ACTIVE_TASK_WINDOW','NO_TICKETS','ACCOUNT_SUSPENDED','DRAW_UNAVAILABLE','FUSION_UNAVAILABLE','ITEM_UNAVAILABLE','BREAKTHROUGH_UNAVAILABLE','ALREADY_PROTECTED','REQUEST_ID_REUSED','STALE_TASK','TASK_NOT_AVAILABLE','PLAN_CHANGED','CONFIRM_CHILDREN','CONFIRM_REOPEN_PARENT','CONFIRM_DELETE','STEP_NOT_FOUND','NO_NEXT_REMINDER','SESSION_CHANGED'].includes(code))return json({error:code},409);
   if(code.startsWith('INVALID_'))return json({error:'INVALID_REQUEST'},400);
   if(error instanceof SyntaxError)return json({error:'INVALID_REQUEST'},400);
   return json({error:'OPERATION_NOT_CONFIRMED',message:'Chưa xác nhận được kết quả. Kiểm tra lại trước khi thử hành động mới.'},503);

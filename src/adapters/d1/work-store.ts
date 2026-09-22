@@ -4,6 +4,7 @@ import type { WorkStore, Lease, ViewResult } from '../../ports/work-store.ts';
 import type { Input, Task, Proposal, Selection, Plan } from '../../domain/work.ts';
 import type { Session,Preferences } from '../../domain/session.ts';
 import { sessionStatements } from './session-store.ts';
+import {currentTaskFocus} from './work-nudges.ts';
 import {memoryStatements} from './memory.ts';
 import type {Memory,ConversationTurn} from '../../domain/memory.ts';
 import {renderView} from '../../application/ui-renderer.ts';
@@ -73,7 +74,8 @@ export class D1WorkStore implements WorkStore {
           query(this.db,"UPDATE task_appointments SET status='cancelled',version=version+1 WHERE owner=? AND task_id=? AND status='active'",owner,item.id),
           query(this.db,"UPDATE reminders SET status='cancelled' WHERE owner=? AND session_id IN(SELECT id FROM sessions WHERE owner=? AND task_id=?) AND status IN('pending','queued')",owner,owner,item.id),
           query(this.db,"UPDATE sessions SET status='skipped',active_since=NULL,version=version+1 WHERE owner=? AND task_id=? AND status NOT IN('completed','skipped')",owner,item.id),
-          query(this.db,"UPDATE conversation_clarifications SET status='cancelled' WHERE owner=? AND task_id=? AND status='waiting'",owner,item.id)
+          query(this.db,"UPDATE conversation_clarifications SET status='cancelled' WHERE owner=? AND task_id=? AND status='waiting'",owner,item.id),
+          query(this.db,'DELETE FROM task_focus_state WHERE owner=? AND task_id=?',owner,item.id)
         );
       }
       return {state,result:{deleted:items.length},statements};
@@ -115,6 +117,7 @@ export class D1WorkStore implements WorkStore {
         statements.push(q("UPDATE outbox SET state='failed' WHERE id LIKE ? AND state='pending'",'nudge:'+owner+':%'));
         statements.push(q("UPDATE nudge_cycles SET cycle=cycle+1,version=version+1,tasks_json='[]',attempts=0,next_at=?,blocked_json='[]',lease_until=0 WHERE owner=?",now,owner));
         if(input.complete){
+          statements.push(q('DELETE FROM task_focus_state WHERE owner=? AND task_id=?',owner,task.id));
           statements.push(q("UPDATE task_steps SET status='completed',completed_at=COALESCE(completed_at,?),version=version+1 WHERE owner=? AND task_id=? AND deleted_at IS NULL AND status='active'",now,owner,task.id));
           statements.push(q('UPDATE task_completions SET completed_at=? WHERE owner=? AND task_id=?',now,owner,task.id));
           statements.push(q("UPDATE task_appointments SET status='cancelled',version=version+1 WHERE owner=? AND task_id=? AND status='active'",owner,task.id));
@@ -131,6 +134,7 @@ export class D1WorkStore implements WorkStore {
         statements.push(q("UPDATE task_appointments SET status='cancelled',version=version+1 WHERE owner=? AND task_id=? AND status='active'",owner,task.id));
         statements.push(q("UPDATE reminders SET status='cancelled' WHERE owner=? AND session_id IN(SELECT id FROM sessions WHERE owner=? AND task_id=?) AND status IN('pending','queued')",owner,owner,task.id));
         statements.push(q("UPDATE sessions SET status='skipped',version=version+1,active_since=NULL WHERE owner=? AND task_id=? AND status NOT IN('completed','skipped')",owner,task.id));
+        statements.push(q('DELETE FROM task_focus_state WHERE owner=? AND task_id=?',owner,task.id));
       }else if(operation==='add_step'){
         if(task.status==='completed'&&!input.confirm)throw Error('CONFIRM_REOPEN_PARENT');
         statements.push(q('INSERT INTO task_steps(id,owner,task_id,step_code,title,created) SELECT ?,?,?,COALESCE(MAX(step_code),0)+1,?,? FROM task_steps WHERE task_id=?',id,owner,task.id,input.title!.trim(),now,task.id));
@@ -219,6 +223,7 @@ export class D1WorkStore implements WorkStore {
   }
   summary(owner:string){return query(this.db,'SELECT content,covered_through,version,updated FROM conversation_summaries WHERE owner=?',owner).first<import('../../domain/conversation.ts').Summary>();}
   runningSession(owner:string){return query(this.db,"SELECT * FROM sessions WHERE owner=? AND status='running' ORDER BY start_at LIMIT 1",owner).first<Session>();}
+  taskFocus(owner:string,now:number){return currentTaskFocus(this.db,owner,now);}
   memory(owner:string,id:string){return query(this.db,'SELECT * FROM memories WHERE owner=? AND id=?',owner,id).first<Memory>();}
   async memories(owner:string,now:number,offset=0,limit=30){
     if(!Number.isSafeInteger(offset)||offset<0||!Number.isInteger(limit)||limit<1||limit>30)throw Error('INVALID_PAGE');
@@ -309,6 +314,7 @@ export class D1WorkStore implements WorkStore {
         statements.push(q("UPDATE outbox SET state='failed' WHERE id LIKE ? AND state='pending'",'nudge:'+owner+':%'));
         statements.push(q("UPDATE nudge_cycles SET cycle=cycle+1,version=version+1,tasks_json='[]',attempts=0,next_at=?,blocked_json='[]',lease_until=0 WHERE owner=?",now,owner));
         if(change.operation==='complete'){
+          statements.push(q('DELETE FROM task_focus_state WHERE owner=? AND task_id=?',owner,change.taskId));
           statements.push(q("UPDATE task_steps SET status='completed',completed_at=COALESCE(completed_at,?),version=version+1 WHERE owner=? AND task_id=? AND status='active' AND deleted_at IS NULL",now,owner,change.taskId));
           statements.push(q('UPDATE task_completions SET completed_at=? WHERE owner=? AND task_id=?',now,owner,change.taskId));
           statements.push(q('INSERT INTO task_completion_undo(owner,task_id,expected_version,expires) VALUES(?,?,?,?) ON CONFLICT(owner,task_id) DO UPDATE SET expected_version=excluded.expected_version,expires=excluded.expires',owner,change.taskId,change.expectedVersion+1,now+900000));

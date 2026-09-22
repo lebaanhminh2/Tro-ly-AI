@@ -6,16 +6,24 @@ import {renderAchievements} from './views/achievements.js';
 
 const state=createDemo(),content=document.querySelector('#content'),sheet=document.querySelector('#sheet'),sheetContent=document.querySelector('#sheet-content');
 let toastTimer;
+let focusExpiryTimer;
 let saving=false;
+let focusAnimating=false;
 const rewardLabels={qi1:'+1 tu vi',qi2:'+2 tu vi',basic:'Phá Cảnh Phù sơ cấp',keepsake:'Tín vật Minh Anh',heart:'Hộ Tâm Phù',peace:'An Tâm Phù'};
 applyTheme();
 async function performLive(path,input,options={}){
  if(saving)return null;saving=true;
  const controls=[...document.querySelectorAll('button')].map(b=>({button:b,disabled:b.disabled}));
  const save=sheet.querySelector('button[type=submit]');const oldLabel=save?.textContent;if(save)save.textContent='Đang lưu…';controls.forEach(({button:b})=>b.disabled=true);
- try{const data=await liveMutation(path,input);Object.assign(state,data);if(!options.keepSheet)sheet.close();render();const result=data.result?.result??data.result;
+ try{let data;
+  if(options.effect){const request=liveMutation(path,input),effect=Promise.resolve().then(options.effect);try{data=await request;await effect;}catch(error){await effect.catch(()=>{});if(options.revertEffect)await options.revertEffect();throw error;}}
+  else data=await liveMutation(path,input);
+  Object.assign(state,data);if(!options.keepSheet)sheet.close();render();const result=data.result?.result??data.result;
   if(!options.silent)toast(result?.reward?'Nhận '+(rewardLabels[result.reward]??result.reward):typeof result?.success==='boolean'?(result.success?'Thành công ✦':'Chưa thành công. Kết quả đã lưu, không thử lại trong cùng lượt.'):result?.protected?'Đã kích hoạt bảo vệ cho hôm nay.':'Đã lưu.');return result;}
- catch(error){toast(error.message||'Chưa lưu được, kiểm tra lại nhé.');return null;}
+ catch(error){
+  if(path==='task-focus')try{Object.assign(state,await refreshLive());}catch{/* Keep the original action error. */}
+  toast(error.message||'Chưa lưu được, kiểm tra lại nhé.');return null;
+ }
  finally{if(save?.isConnected)save.textContent=oldLabel;saving=false;controls.forEach(({button:b,disabled})=>{if(b.isConnected)b.disabled=disabled;});render();}
 }
 state.live=location.pathname.startsWith('/app/');
@@ -40,6 +48,29 @@ function toggleTask(task){
  if(task.done){confirm('Mở lại #'+task.code,'Task sẽ trở lại danh sách đang làm. Các bước đã xong vẫn giữ.',()=>{task.done=false;render();toast('Demo: đã mở lại task.');});return;}
  const open=task.steps.filter(s=>!s.done).length;
  confirm('Hoàn thành #'+task.code,open?'Còn '+open+' bước chưa xong. Đánh dấu hoàn thành cả task và các bước còn lại?':'Xác nhận đã xong toàn bộ công việc này?',()=>{task.done=true;demoCompleteTask(state.cultivation,task.code);task.steps.forEach(s=>s.done=true);render();toast('Ui xong rồi này :> · Chỉ là thao tác demo');});
+}
+async function focusEffect(target){
+ if(!target?.isConnected)return;
+ target.classList.add('focus-activating');target.setAttribute('aria-busy','true');
+ await new Promise(resolve=>setTimeout(resolve,matchMedia('(prefers-reduced-motion: reduce)').matches?0:520));
+}
+async function revertFocusEffect(target){
+ if(!target?.isConnected)return;
+ target.classList.remove('focus-activating');target.classList.add('focus-reverting');
+ await new Promise(resolve=>setTimeout(resolve,360));
+ if(target.isConnected){target.classList.remove('focus-reverting');target.removeAttribute('aria-busy');}
+}
+function toggleTaskFocus(target){
+ if(saving||focusAnimating)return;
+ if(!state.live){const active=state.taskFocus?.endsAt>Date.now();focusAnimating=true;target.disabled=true;focusEffect(target).then(()=>{const localDay=Math.floor((Date.now()+7*3600000)/86400000);state.taskFocus=active?null:(state.taskFocusTarget??{taskId:null,endsAt:(localDay+1)*86400000-7*3600000});focusAnimating=false;render();});return;}
+ const now=(state.serverNow??Date.now())+Date.now()-(state.loadedAt??Date.now());
+ const active=state.taskFocus?.endsAt>now;
+ performLive('task-focus',{operation:active?'stop':'start'},{silent:true,effect:()=>focusEffect(target),revertEffect:()=>revertFocusEffect(target)}).then(result=>{
+  if(!result)return;
+  if(active){toast('Minh Anh có thể nhắc lại khi cần nhé.');return;}
+  const end=new Date(result.endsAt).toLocaleTimeString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit'});
+  toast('Minh Anh biết rồi · Cậu cứ tập trung đến '+end+' nhé.');
+ });
 }
 function openTask(task){
  openSheet(task?'#'+task.code+' · Chi tiết':'Thêm công việc');
@@ -284,8 +315,19 @@ async function loadHistory(){
  }catch(error){toast(error.message||'Chưa tải thêm lịch sử được.');}
  finally{state.historyLoading=false;render();}
 }
-const ui={loadHistory,state:()=>state,cultivation:()=>state.cultivation,demoDay,openDraw,openInventory,openBreakthrough,el,button,heading,card,toast,empty,render,openTask,openTodayPlan,toggleTask,confirmDelete,openReminder,openAvailability,openShare};
+const ui={loadHistory,state:()=>state,cultivation:()=>state.cultivation,demoDay,openDraw,openInventory,openBreakthrough,el,button,heading,card,toast,empty,render,openTask,openTodayPlan,toggleTask,toggleTaskFocus,confirmDelete,openReminder,openAvailability,openShare};
+async function expireTaskFocus(){
+ const now=(state.serverNow??Date.now())+Date.now()-(state.loadedAt??Date.now());
+ if(!state.taskFocus||state.taskFocus.endsAt>now){render();refreshOnReturn();return;}
+ if(saving||focusAnimating){focusExpiryTimer=setTimeout(expireTaskFocus,150);return;}
+ focusAnimating=true;
+ const target=document.querySelector('.focus-flip-card.is-focused');
+ if(target){target.disabled=true;await focusEffect(target);}
+ state.taskFocus=null;focusAnimating=false;render();refreshOnReturn();
+}
 function render(){
+ if(focusAnimating)return;
+ clearTimeout(focusExpiryTimer);
  const previousScroll=document.querySelector('.time-scroll');if(previousScroll)state.timelineScroll=previousScroll.scrollTop;
  content.removeAttribute('aria-busy');
  for(const b of document.querySelectorAll('[data-tab]')){if(b.dataset.tab===state.tab)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');}
@@ -295,6 +337,11 @@ function render(){
  else if(state.screenState==='error')content.append(heading('Chưa tải được dữ liệu','Đây là trạng thái lỗi giả lập.'),empty('Không có thay đổi nào được lưu','Trong bản thật, thử lại sẽ giữ nguyên thao tác đang làm.',()=>{state.screenState='ready';render();},'Thử lại'));
  else if(state.screenState==='loading'){content.append(heading('Minh Anh đang chuẩn bị…','Trạng thái tải giả lập'),el('div',undefined,'loading'));content.setAttribute('aria-busy','true');}
  else{content.removeAttribute('aria-busy');content.append(state.tab==='today'?renderToday(ui,state):state.tab==='reminders'?renderReminders(ui,state):renderAchievements(ui,state));}
+ const now=(state.serverNow??Date.now())+Date.now()-(state.loadedAt??Date.now());
+ const boundaries=(state.dailyPlan?.plan?.items??[]).flatMap(item=>(item.windows??[]).flatMap(slot=>[slot.start,slot.end]));
+ if(state.taskFocus)boundaries.push(state.taskFocus.endsAt);
+ const nextBoundary=Math.min(...boundaries.filter(at=>at>now));
+ if(Number.isFinite(nextBoundary))focusExpiryTimer=setTimeout(expireTaskFocus,Math.max(0,Math.min(2147483647,nextBoundary-now+20)));
  const controls=el('div',undefined,'demo-controls');
  for(const [mode,label] of [['ready','Có dữ liệu'],['empty','Trống'],['loading','Đang tải'],['error','Lỗi']])controls.append(button(label,()=>{state.screenState=mode;render();},'text-button'));
  controls.append(button('Sáng / tối',()=>{const dark=document.documentElement.dataset.theme==='dark';document.documentElement.dataset.theme=dark?'light':'dark';},'text-button'),button('Xem chế độ nghỉ',()=>{state.resting=!state.resting;state.tab='today';state.screenState='ready';render();},'text-button'));
@@ -302,7 +349,7 @@ function render(){
 }
 let refreshing=false,lastRefresh=0;
 async function refreshOnReturn(){
- if(!state.live||!state.loaded||saving||refreshing||sheet.open||state.timelineDragging||Date.now()-lastRefresh<2000)return;
+ if(!state.live||!state.loaded||saving||focusAnimating||refreshing||sheet.open||state.timelineDragging||Date.now()-lastRefresh<2000)return;
  refreshing=true;
  try{const latest=await refreshLive();Object.assign(state,latest);lastRefresh=Date.now();render();}catch(error){toast(error.message);}finally{refreshing=false;}
 }

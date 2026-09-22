@@ -45,6 +45,36 @@ test('settings retry is idempotent and keeps the current day snapshot unchanged'
  }finally{await mf.dispose();}
 });
 
+test('Mini App focus button persists the current plan-window end and bootstrap restores it',async()=>{
+ const {ScheduleStore}=await import('../../src/adapters/d1/schedule-store.ts');
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
+  const token='123:fake',now=Date.parse('2026-09-14T09:00:00+07:00'),schedule=new ScheduleStore(db);
+  const day=(await schedule.configure('123','04:30','22:30',0,now))!;
+  await db.exec("INSERT INTO tasks(id,owner,title,created) VALUES('focus-task','123','Tài liệu BA',0)");
+  const params=new URLSearchParams({auth_date:String(now/1000),user:JSON.stringify({id:123})});
+  params.set('hash',createHmac('sha256',createHmac('sha256','WebAppData').update(token).digest()).update([...params].sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>k+'='+v).join('\n')).digest('hex'));
+  const headers={'X-Telegram-Init-Data':params.toString(),'Content-Type':'application/json'},env={DB:db,TELEGRAM_USER_ID:'123',TELEGRAM_WEBHOOK_SECRET:'x'.repeat(32),TELEGRAM_BOT_TOKEN:token};
+  const post=(path:string,body:Record<string,unknown>)=>miniAppApi(new Request('https://local/api/'+path,{method:'POST',headers,body:JSON.stringify(body)}),env,now);
+  const scheduled=await post('schedule',{id:'focus_schedule_001',version:day.version,free:[{start:now,end:now+2*3600000}],busy:[],estimates:[{id:'focus-task',minutes:60}]});
+  assert.equal(scheduled.status,200);
+  const before=await miniAppApi(new Request('https://local/api/bootstrap',{headers}),env,now);
+  const plan=(await before.json() as {dailyPlan:{plan:{day:number;items:{taskId:string;windows:{start:number;end:number}[]}[]}}}).dailyPlan.plan;
+  const end=plan.items.find(item=>item.taskId==='focus-task')!.windows.find(slot=>slot.start<=now&&now<slot.end)!.end;
+  const taskSpecific=await post('task-focus',{id:'focus_legacy_001',operation:'start',taskId:'focus-task'});
+  assert.equal(taskSpecific.status,400,'the global focus action does not accept a client-selected task');
+  const started=await post('task-focus',{id:'focus_button_001',operation:'start'});
+  assert.equal(started.status,200);assert.equal(((await started.json()) as {result:{endsAt:number}}).result.endsAt,end);
+  const restored=await miniAppApi(new Request('https://local/api/bootstrap',{headers}),env,now+60000);
+  const body=await restored.json() as {taskFocus:{taskId:string;day:number;startedAt:number;endsAt:number}};
+  assert.equal(body.taskFocus.taskId,'focus-task');assert.equal(body.taskFocus.day,plan.day);assert.equal(body.taskFocus.startedAt,now);assert.equal(body.taskFocus.endsAt,end);
+  const stopped=await post('task-focus',{id:'focus_button_002',operation:'stop'});assert.equal(stopped.status,200);
+  assert.equal((await db.prepare("SELECT COUNT(*) AS n FROM task_focus_state WHERE owner='123'").first<{n:number}>())!.n,0);
+ }finally{await mf.dispose();}
+});
+
 test('Telegram menu registration uses a boolean API receipt and never needs a model',async()=>{
  const {deliver}=await import('../../src/adapters/telegram/api.ts');
  let count=0;

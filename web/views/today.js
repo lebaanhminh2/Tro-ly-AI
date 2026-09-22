@@ -1,4 +1,4 @@
-import {taskBuckets} from '../api.js';
+import {taskBuckets,flameLevel} from '../api.js';
 
 function dayLabel(state){
  const liveDate=state.live&&state.serverNow?new Date(state.serverNow):null;
@@ -12,21 +12,51 @@ function deadlineLabel(value,now){
  if(minutes<60)amount=minutes+' phút';else if(minutes<48*60)amount=Math.ceil(minutes/60)+' giờ';else amount=Math.ceil(minutes/1440)+' ngày';
  return past?'quá hạn '+amount:'còn '+amount;
 }
+const clock=value=>new Date(value).toLocaleTimeString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit'});
+export function renderWorkState(ui,state,plan,now){
+ const {el,button}=ui;
+ const focused=state.taskFocus?.endsAt>now;
+ const target=focused?state.taskFocus:state.taskFocusTarget;
+ const task=target?.taskId?state.tasks.find(task=>task.id===target.taskId&&!task.done):null;
+ const slots=(plan?.items??[]).flatMap(item=>(item.windows??[]).map(slot=>({...slot,task:state.tasks.find(t=>t.id===item.taskId&&!t.done)})))
+  .filter(slot=>slot.task&&slot.end>now).sort((a,b)=>a.start-b.start||a.end-b.end||a.task.id.localeCompare(b.task.id));
+ const current=slots.find(slot=>slot.start<=now),next=slots.find(slot=>slot.start>now);
+ const root=el('section',undefined,'work-state');
+ root.setAttribute('aria-label','Việc hiện tại và trạng thái làm việc');
+ const shown=slots.find(slot=>slot.task.id===task?.id)??current??next;
+ const flame=flameLevel(state.cultivation?.streak);
+ const card=button('',()=>ui.toggleTaskFocus(card),'focus-flip-card is-interactive'+(focused?' is-focused':''));
+ card.style.setProperty('--flame',flame.color);
+ card.setAttribute('aria-pressed',String(!!focused));
+ const until=target?.endsAt>now?clock(target.endsAt):'';
+ card.setAttribute('aria-label',focused?'Đang làm'+(task?': '+task.title:'')+' đến '+until+'. Minh Anh ngừng nhắc để cậu tập trung. Chạm để dừng.':'Bắt đầu nhé?'+(task?' '+task.title+'.':'')+' Chạm để bắt đầu. Minh Anh ngừng nhắc để cậu tập trung'+(until?' đến '+until:'')+'.');
+ const inner=el('span',undefined,'focus-flip-inner');card.append(inner);
+ const addFace=(side,mark,title,detail)=>{
+  const face=el('span',undefined,'focus-flip-face focus-flip-'+side+' '+(side==='front'?'companion-flame':'companion-rank'));
+  face.setAttribute('aria-hidden','true');
+  face.append(el('span',mark,'focus-flip-mark'),el('strong',title,'focus-flip-title'));
+  if(task||shown)face.append(el('span',task?.title??shown.task.title,'focus-flip-task'));
+  if(side==='back')face.append(el('span','Đang làm'+(until?' đến '+until:''),'focus-session-time'));
+  else if(shown)face.append(el('span',(shown.start>now?'Sắp tới · ':'Hiện tại · ')+clock(shown.start)+'–'+clock(shown.end),'focus-session-time'));
+  else face.append(el('span',plan?'Không còn phiên làm việc trong lịch':'Chưa có lịch làm việc','focus-session-time'));
+  face.append(el('span',detail,'focus-flip-detail'));inner.append(face);
+ };
+ addFace('front','🔥','Bắt đầu nhé?','Chạm để bắt đầu'+(!current&&task?' sớm':'')+' · Minh Anh ngừng nhắc để cậu tập trung');
+ addFace('back','✧','Cậu cứ tập trung nhé','Chạm để dừng');
+ root.append(card);
+ if(state.resting)root.append(el('p','Đang nghỉ · Lời nhắc vẫn tạm ngừng.','work-state-detail'));
+ if(next)root.append(el('p','Tiếp theo · '+clock(next.start)+'–'+clock(next.end)+' · '+next.task.title,'work-state-next'));
+ return root;
+}
 
 export function renderToday(ui,state){
  const {el,button,heading,card,openTask,render}=ui;
  const buckets=taskBuckets(state.tasks,state.operatingDay,state.start);
  const plan=state.dailyPlan?.plan;
- const planned=plan?.items??[];
- const next=plan
-  ? planned.map(item=>state.tasks.find(task=>task.id===item.taskId&&!task.done)).find(Boolean)
-  : buckets.active[0];
+ const now=(state.serverNow??Date.now())+Date.now()-(state.loadedAt??Date.now());
  const root=el('section',undefined,'today-page');
 
  root.append(heading('Một ngày, từng bước.',dayLabel(state)));
- const quickActions=el('div',undefined,'today-quick-actions');
- quickActions.append(button('+ Tạo task',()=>openTask(null),'primary'));
- root.append(quickActions);
 
  if(state.resting){
   const reason=state.rest?.reason;
@@ -45,17 +75,7 @@ export function renderToday(ui,state){
   root.append(rest);
  }
 
- if(next&&!state.resting){
-  const hero=el('article',undefined,'hero focus-hero');
-  hero.append(
-   el('p','VIỆC TIẾP THEO · #'+next.code,'eyebrow'),
-   el('h2',next.title),
-   el('p',next.steps.find(s=>!s.done)?.title??'Bắt đầu từ phần nhỏ nhất')
-  );
-  const heroActions=el('div',undefined,'actions');
-  heroActions.append(button('Mở việc',()=>openTask(next),'secondary'));
-  hero.append(heroActions);root.append(hero);
- }
+ if(state.mode==='timeline')root.append(renderWorkState(ui,state,plan,now));
 
  const toggle=el('div',undefined,'segment today-view-switch');
  for(const [value,label] of [['timeline','Lịch hôm nay'],['tasks','Danh sách việc']]){
@@ -79,7 +99,7 @@ function renderTaskList(ui,state,buckets,card,button,openTask,render){
  const actions=el('div',undefined,'heading-actions');
  const selectButton=button(state.selecting?'Thoát chọn':'Chọn nhiều',()=>{state.selecting=!state.selecting;state.selected.clear();render();},'text-button selection-toggle');
  selectButton.setAttribute('aria-pressed',String(state.selecting));
- actions.append(selectButton);
+ actions.append(button('+ Tạo task',()=>openTask(null),'primary task-create'),selectButton);
  copy.append(el('h2',buckets.active.length+' việc đang làm'),el('p','Các task chưa hoàn thành của cậu.','section-kicker'));
  headingRow.append(copy,actions);section.append(headingRow);
 
@@ -186,7 +206,8 @@ function renderDailyPlan(ui,state){
   if((item.scheduledMinutes??item.minutes)<item.minutes)details.push(`${item.minutes-(item.scheduledMinutes??item.minutes)} phút chưa có giờ nhắc`);
   const deadline=deadlineLabel(task.deadline,(state.serverNow??Date.now())+Date.now()-(state.loadedAt??Date.now()));if(deadline)details.push(deadline);
   info.append(el('strong',(task.done?'✓ ':'')+'#'+task.code+' '+task.title),el('small',details.join(' · ')));
-  row.append(check,info);list.append(row);
+  row.append(check,info);
+  list.append(row);
  }
  if(!list.children.length){
   const empty=el('div',undefined,'plan-empty-inline');

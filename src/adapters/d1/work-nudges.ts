@@ -3,9 +3,11 @@ import {ScheduleStore} from './schedule-store.ts';
 import type {WorkPlan} from '../../application/work-planner.ts';
 import type {Env} from '../../config/env.ts';
 import {Gemini} from '../../ai/gemini.ts';
+import {HealthyStore} from './healthy-store.ts';
 
 type State={version:number;consecutive_unanswered:number;task_counts_json:string;next_at:number;lease_until:number};
 type Task={id:string;title:string;public_code:number;deadline:string|null};
+export type TaskFocus={taskId:string|null;day:number;planGeneration:number;planVersion:number;startedAt:number;endsAt:number};
 const DELIVERY_GAP=5*60000;
 
 async function state(db:Database,owner:string,now:number){
@@ -14,6 +16,61 @@ async function state(db:Database,owner:string,now:number){
 }
 async function lastDelivery(db:Database,owner:string,exclude=''){
  return query(db,"SELECT MAX(COALESCE(sent_at,available)) AS at FROM outbox WHERE id!=? AND id LIKE ? AND state IN ('sent','sending','uncertain')",exclude,`task-nudge:${owner}:%`).first<{at:number|null}>();
+}
+
+// Both the card preview and the mutation resolve the same current-or-next session.
+export async function taskFocusTarget(db:Database,owner:string,now:number):Promise<TaskFocus>{
+ const day=await query(db,'SELECT day,end_at,task_plan_status,task_plan_generation FROM schedule_days WHERE owner=? AND start_at<=? AND end_at>? ORDER BY start_at DESC LIMIT 1',owner,now,now)
+  .first<{day:number;end_at:number;task_plan_status:string;task_plan_generation:number}>();
+ const saved=day?await query(db,'SELECT version,plan_json FROM daily_plans WHERE owner=? AND day=?',owner,day.day).first<{version:number;plan_json:string}>():null;
+ const tasks=(await query(db,"SELECT id FROM tasks WHERE owner=? AND status='active' AND deleted_at IS NULL",owner).all<{id:string}>()).results;
+ const active=new Set(tasks.map(task=>task.id));
+ const plan=saved&&day?.task_plan_status==='active'?JSON.parse(saved.plan_json) as WorkPlan:null;
+ const slots=(plan?.items??[]).flatMap(item=>item.windows.map(slot=>({taskId:item.taskId,...slot})))
+  .filter(slot=>active.has(slot.taskId)&&slot.end>now).sort((a,b)=>a.start-b.start||a.end-b.end||a.taskId.localeCompare(b.taskId));
+ const selected=slots.find(slot=>slot.start<=now)??slots[0];
+ const localDay=Math.floor((now+7*3600000)/86400000);
+ return {taskId:selected?.taskId??null,day:day?.day??localDay,planGeneration:day?.task_plan_generation??0,planVersion:saved?.version??0,startedAt:now,
+  endsAt:selected?.end??day?.end_at??((localDay+1)*86400000-7*3600000)};
+}
+
+export async function currentTaskFocus(db:Database,owner:string,now:number):Promise<TaskFocus|null>{
+ const row=await query(db,'SELECT task_id,day,plan_generation,plan_version,started_at,ends_at FROM task_focus_state WHERE owner=? AND ends_at>?',owner,now)
+  .first<{task_id:string|null;day:number;plan_generation:number;plan_version:number;started_at:number;ends_at:number}>();
+ if(!row)return null;
+ const target=await taskFocusTarget(db,owner,now);
+ if(row.day!==target.day||row.plan_generation!==target.planGeneration||row.plan_version!==target.planVersion)return null;
+ if(row.task_id!==target.taskId||row.ends_at!==target.endsAt)return null;
+ return {taskId:row.task_id,day:row.day,planGeneration:row.plan_generation,planVersion:row.plan_version,startedAt:row.started_at,endsAt:row.ends_at};
+}
+
+export async function changeTaskFocus(db:Database,owner:string,id:string,operation:'start'|'stop',now:number):Promise<{active:boolean;taskId?:string|null;startedAt?:number;endsAt?:number}>{
+ const request={operation},requestJson=JSON.stringify(request);
+ const replay=await query(db,'SELECT operation,request_json,result_json FROM cultivation_receipts WHERE owner=? AND request_id=?',owner,id).first<{operation:string;request_json:string;result_json:string}>();
+ if(replay){
+  if(replay.operation!=='task-focus'||replay.request_json!==requestJson)throw Error('REQUEST_ID_REUSED');
+  return JSON.parse(replay.result_json);
+ }
+ if(operation==='stop'){
+  return new HealthyStore(db).mutate(owner,id,'task-focus',request,now,state=>({state,result:{active:false},statements:[
+   query(db,'DELETE FROM task_focus_state WHERE owner=?',owner)
+  ]}));
+ }
+ const target=await taskFocusTarget(db,owner,now),{taskId,endsAt}=target;
+ const result={active:true,taskId,startedAt:now,endsAt};
+ const guards=[
+  query(db,'INSERT INTO transaction_guard SELECT CASE WHEN COALESCE((SELECT task_plan_generation FROM schedule_days WHERE owner=? AND day=?),0)=? THEN 1 ELSE 0 END',owner,target.day,target.planGeneration),
+  query(db,'INSERT INTO transaction_guard SELECT CASE WHEN COALESCE((SELECT version FROM daily_plans WHERE owner=? AND day=?),0)=? THEN 1 ELSE 0 END',owner,target.day,target.planVersion)
+ ];
+ if(taskId)guards.push(query(db,"INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM tasks WHERE owner=? AND id=? AND status='active' AND deleted_at IS NULL) THEN 1 ELSE 0 END",owner,taskId));
+ return new HealthyStore(db).mutate(owner,id,'task-focus',request,now,state=>({state,result,statements:[
+  ...guards,
+  query(db,`INSERT INTO task_focus_state(owner,task_id,day,plan_generation,plan_version,started_at,ends_at)
+    VALUES(?,?,?,?,?,?,?) ON CONFLICT(owner) DO UPDATE SET task_id=excluded.task_id,day=excluded.day,
+    plan_generation=excluded.plan_generation,plan_version=excluded.plan_version,started_at=excluded.started_at,
+    ends_at=excluded.ends_at,version=task_focus_state.version+1`,owner,taskId,target.day,target.planGeneration,target.planVersion,now,endsAt),
+  query(db,"UPDATE outbox SET state='failed' WHERE id LIKE ? AND state='pending'",`task-nudge:${owner}:%`)
+ ]}));
 }
 async function generate(env:Env,transport:typeof fetch,data:unknown){
  if(env.AI_MODE!=='on'||!env.GEMINI_API_KEY||!env.GEMINI_MODEL)return null;
@@ -29,6 +86,7 @@ async function generate(env:Env,transport:typeof fetch,data:unknown){
 
 export async function nudgeAllowed(db:Database,owner:string,id:string,now:number){
  if(await new ScheduleStore(db).isResting(owner,now))return false;
+ if(await currentTaskFocus(db,owner,now))return false;
  const record=await query(db,'SELECT payload FROM outbox WHERE id=?',id).first<{payload:string}>();if(!record)return false;
  const meta=JSON.parse(record.payload)._taskNudge as {day:number;generation:number;planVersion:number;taskId:string;end:number}|undefined;
  if(!meta||now>=meta.end)return false;
@@ -45,6 +103,7 @@ export async function nudgeAllowed(db:Database,owner:string,id:string,now:number
 export async function queueWorkNudge(env:Env,now:number,transport:typeof fetch){
  const db=env.DB,owner=env.TELEGRAM_USER_ID;
  if(await new ScheduleStore(db).isResting(owner,now))return;
+ if(await currentTaskFocus(db,owner,now))return;
  const day=await query(db,'SELECT day,target_sleep,task_plan_status,task_plan_generation FROM schedule_days WHERE owner=? AND start_at<=? AND end_at>? ORDER BY start_at DESC LIMIT 1',owner,now,now).first<{day:number;target_sleep:number;task_plan_status:string;task_plan_generation:number}>();
  if(!day||day.task_plan_status!=='active'||now>=day.target_sleep)return;
  const nudge=await state(db,owner,now);if(nudge.consecutive_unanswered>=3||now<nudge.next_at||nudge.lease_until>now)return;
@@ -82,7 +141,7 @@ export async function recordTaskNudgeActivity(db:Database,owner:string,activityI
  const receipt=await query(db,'INSERT OR IGNORE INTO task_nudge_receipts(owner,activity_id,created) VALUES(?,?,?)',owner,activityId,now).run();if(!receipt.meta.changes)return false;
  await db.batch([
   query(db,"UPDATE outbox SET state='failed' WHERE id LIKE ? AND state='pending'",`task-nudge:${owner}:%`),
-  query(db,"UPDATE task_nudge_state SET version=version+1,consecutive_unanswered=0,task_counts_json='{}',next_at=?,lease_until=0,updated=? WHERE owner=?",now,now,owner)
+  query(db,'UPDATE task_nudge_state SET version=version+1,consecutive_unanswered=0,next_at=MAX(next_at,?),lease_until=0,updated=? WHERE owner=?',now+15*60000,now,owner)
  ]);
  return true;
 }
