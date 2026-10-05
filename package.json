@@ -2,7 +2,9 @@
   "name": "telegram-assistant-ai-trial",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=24.0.0" },
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "scripts": {
     "test": "node --test tests/unit/*.test.ts tests/integration/*.test.ts",
     "test:experiments": "node --test experiments/ai-trial/*.test.ts",
@@ -15,8 +17,19 @@
     "db:staging": "node tests/unit/staging-config.test.ts --require-ready && wrangler d1 migrations apply DB --env staging --remote",
     "try:ai": "node experiments/ai-trial/try-ai.ts",
     "typecheck": "tsc --noEmit",
-    "check:web": "node --check web/api.js && node --check web/app.js && node --check web/views/achievements.js && node --check web/views/reminders.js && node --check web/views/timeline.js && node --check web/views/today.js"
+    "check:web": "node scripts/check-web.mjs",
+    "test:browser": "node --test tests/browser/*.test.mjs"
   },
-  "devDependencies": { "@types/node": "^24.0.0", "typescript": "~5.8.3", "wrangler": "^4.0.0", "miniflare": "^4.0.0" },
-  "overrides": { "miniflare": { "sharp": "0.35.4", "undici": "7.29.0" } }
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "~5.8.3",
+    "wrangler": "^4.0.0",
+    "miniflare": "^4.0.0"
+  },
+  "overrides": {
+    "miniflare": {
+      "sharp": "0.35.4",
+      "undici": "7.29.0"
+    }
+  }
 }

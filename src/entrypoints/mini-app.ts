@@ -1,221 +1,82 @@
-import type {Env} from '../config/env.ts';
-import {verifyMiniApp} from '../adapters/telegram/mini-app-auth.ts';
-import {browserAuthApi,browserOwner,browserWriteAllowed} from '../adapters/d1/browser-auth.ts';
-import {HealthyStore} from '../adapters/d1/healthy-store.ts';
-import {RecurrenceStore} from '../adapters/d1/recurrence-store.ts';
-import {ScheduleStore} from '../adapters/d1/schedule-store.ts';
-import {TimelineStore} from '../adapters/d1/timeline-store.ts';
-import {DayPlanStore} from '../adapters/d1/day-plan-store.ts';
-import {D1WorkStore} from '../adapters/d1/work-store.ts';
-import {canAct} from '../domain/session.ts';
-import {sessionStatements} from '../adapters/d1/session-store.ts';
-import {query} from '../adapters/d1/database.ts';
-import {breakthrough,drawReward,fuseCharm,useProtection,operatingDay,dailyCheckinProgress,BREAKTHROUGH_PENALTIES,REALMS,LOOT,CHARMS,type Charm} from '../domain/healthy.ts';
-import {deadlineAt} from '../domain/time.ts';
-import {changeTaskFocus,currentTaskFocus,taskFocusTarget,queuePlanConfirmation,recordTaskNudgeActivity} from '../adapters/d1/work-nudges.ts';
-
-const headers={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'};
-const json=(value:unknown,status=200)=>new Response(JSON.stringify(value),{status,headers});
-export async function miniAppApi(request:Request,env:Env,now=Date.now()):Promise<Response>{
- const url=new URL(request.url);
- if(!url.pathname.startsWith('/api/'))return json({error:'NOT_FOUND'},404);
- if(!['GET','POST'].includes(request.method))return json({error:'METHOD_NOT_ALLOWED'},405);
- const origin=request.headers.get('Origin');
- if(origin&&origin!==url.origin||request.headers.get('Sec-Fetch-Site')==='cross-site')return json({error:'FORBIDDEN'},403);
- if(url.pathname.startsWith('/api/browser-auth/')){
-  try{return await browserAuthApi(env.DB,request,env.TELEGRAM_USER_ID,now);}catch{return json({error:'LOGIN_UNAVAILABLE',message:'Chưa kết nối được. Cậu thử lại nhé.'},503);}
- }
- let owner:string;
- try{
-  const initData=request.headers.get('X-Telegram-Init-Data');
-  if(initData)owner=(await verifyMiniApp(initData,env.TELEGRAM_BOT_TOKEN??'',env.TELEGRAM_USER_ID,now)).owner;
-  else{
-   const authenticated=await browserOwner(env.DB,request,env.TELEGRAM_USER_ID,now);if(!authenticated)throw Error('AUTH_REQUIRED');
-   if(request.method==='POST'&&!browserWriteAllowed(request))return json({error:'FORBIDDEN'},403);
-   owner=authenticated;
-  }
- }catch{return json({error:'AUTH_REQUIRED',message:'Đăng nhập lại trên trình duyệt hoặc mở lại từ Telegram để tiếp tục.'},401);}
- try{
-  const healthy=new HealthyStore(env.DB);
-  if(request.method==='GET'&&url.pathname==='/api/bootstrap'){
-   const work=new D1WorkStore(env.DB),rules=new RecurrenceStore(env.DB);
-   const [account,tasks,reminders,settings,progress,sessions,events,day]=await Promise.all([
-    healthy.read(owner),work.hierarchy(owner),rules.rules(owner),
-    query(env.DB,'SELECT start_minutes,sleep_minutes,auto_plan_delay_minutes,version FROM schedule_settings WHERE owner=?',owner).first(),work.progress(owner),work.sessions(owner,Math.floor((now+25200000)/86400000)*86400000-25200000,Math.floor((now+25200000)/86400000)*86400000-25200000+86400000),work.events(owner,Math.floor((now+25200000)/86400000)*86400000-25200000,Math.floor((now+25200000)/86400000)*86400000-25200000+86400000),new ScheduleStore(env.DB).ensureDay(owner,now)
-   ]);
-   const [logged,planning]=await Promise.all([
-    day?query(env.DB,'SELECT task_id,minutes FROM task_work_logs WHERE owner=? AND day=?',owner,day.day).all<{task_id:string;minutes:number}>():Promise.resolve({results:[] as {task_id:string;minutes:number}[]}),
-    query(env.DB,'SELECT task_id,remaining_minutes FROM task_planning WHERE owner=?',owner).all<{task_id:string;remaining_minutes:number|null}>()
-   ]);
-   const byTask=new Map(logged.results.map(row=>[row.task_id,row.minutes])),remaining=new Map(planning.results.map(row=>[row.task_id,row.remaining_minutes]));
-   for(const task of tasks as Array<Record<string,unknown>>){task.actual_minutes=byTask.get(String(task.id))??0;task.remaining_minutes=remaining.get(String(task.id))??null;}
-   const visibleStart=day?.start_at??Math.floor((now+25200000)/86400000)*86400000-25200000;
-   const latest=(await query(env.DB,"SELECT o.rule_id,o.due,o.status FROM recurrence_occurrences o JOIN recurrence_rules r ON r.id=o.rule_id AND r.owner=o.owner AND r.version=o.rule_version WHERE o.owner=? AND NOT EXISTS(SELECT 1 FROM recurrence_occurrences newer WHERE newer.owner=o.owner AND newer.rule_id=o.rule_id AND newer.rule_version=o.rule_version AND newer.due>o.due)",owner).all<{rule_id:string;due:number;status:string}>()).results;
-   const occurrence=new Map(latest.map(row=>[row.rule_id,row]));
-   const visibleRules=reminders.filter(rule=>rule.kind!=='once'||Math.max(occurrence.get(rule.id)?.due??0,...rule.times.map(time=>Date.parse(rule.startDate+'T'+time+':00+07:00')))>=visibleStart).map(rule=>({...rule,...(rule.kind==='once'&&occurrence.get(rule.id)?{delivered:occurrence.get(rule.id)!.status==='sent',past:['sent','missed','skipped_rest','cancelled'].includes(occurrence.get(rule.id)!.status)}:{})}));
-   const appointments=(await query(env.DB,"SELECT a.id,a.version,a.due,a.status,COALESCE(a.subject,t.title) AS title,EXISTS(SELECT 1 FROM outbox o WHERE o.reminder_id IN ('appointment:'||a.id||':1','appointment:'||a.id||':2') AND o.state='sent') AS delivered FROM task_appointments a LEFT JOIN tasks t ON t.id=a.task_id AND t.owner=a.owner WHERE a.owner=? AND a.status IN ('active','expired') AND a.due>=? AND (a.task_id IS NULL OR t.deleted_at IS NULL) ORDER BY a.due LIMIT 200",owner,visibleStart).all<{id:string;version:number;due:number;status:string;title:string;delivered:number}>()).results;
-   const combined=[...visibleRules,...appointments.map(a=>{const local=new Date(a.due+25200000).toISOString();return {id:a.id,origin:'appointment',title:a.title,version:a.version,kind:'once',times:[local.slice(11,16)],weekdays:[],startDate:local.slice(0,10),endDate:null,enabled:a.status==='active',delivered:!!a.delivered,past:a.status==='expired'};})];
-   const rest=await new ScheduleStore(env.DB).restStatus(owner,now);
-   const dailyPlan=await new DayPlanStore(env.DB).ensure(owner,now);
-   return json({now,account,checkin:dailyCheckinProgress(account.state,now),breakthroughPenalties:BREAKTHROUGH_PENALTIES,tasks,reminders:combined,settings,progress,sessions,events,day,timeline:await new TimelineStore(env.DB).read(owner,now),dailyPlan,taskFocus:await currentTaskFocus(env.DB,owner,now),taskFocusTarget:await taskFocusTarget(env.DB,owner,now),rest,resting:rest.reason!=='active',realms:REALMS,loot:LOOT,charms:CHARMS,needsSetup:!settings});
-  }
-  if(request.method==='GET'&&url.pathname==='/api/history'){
-   const rawOffset=url.searchParams.get('offset')??'0';
-   const offset=Number(rawOffset);
-   if(!/^\d+$/.test(rawOffset)||!Number.isSafeInteger(offset)||offset>100000)return json({error:'INVALID_REQUEST'},400);
-   const result=await new D1WorkStore(env.DB).historyPage(owner,offset,20);
-   return json({result});
-  }
-  if(request.method!=='POST'||!['/api/cultivation','/api/tasks','/api/settings','/api/reminders','/api/schedule','/api/reminder-instance','/api/tasks-delete','/api/day-plan','/api/task-work','/api/task-focus','/api/session','/api/timeline'].includes(url.pathname))return json({error:'NOT_FOUND'},404);
-  // Read a bounded body, including chunked requests.
-  const reader=request.body?.getReader();if(!reader)return json({error:'INVALID_REQUEST'},400);
-  const decoder=new TextDecoder('utf-8',{fatal:true});let raw='',bytes=0;
-  while(true){const part=await reader.read();if(part.done)break;bytes+=part.value.byteLength;if(bytes>4096){await reader.cancel();return json({error:'TOO_LARGE'},413);}raw+=decoder.decode(part.value,{stream:true});}
-  raw+=decoder.decode();
-  const input=JSON.parse(raw) as Record<string,unknown>;
-  if(!input||Array.isArray(input)||typeof input.id!=='string'||!/^[a-zA-Z0-9_-]{8,100}$/.test(input.id))return json({error:'INVALID_REQUEST'},400);
-  if(url.pathname==='/api/reminder-instance'){
-   if(Object.keys(input).some(k=>!['id','ruleId','operation','due'].includes(k))||typeof input.ruleId!=='string'||!['skip','move'].includes(String(input.operation)))return json({error:'INVALID_REQUEST'},400);
-   if(input.operation==='move'&&(!Number.isFinite(input.due)||Number(input.due)<=now||Number(input.due)>now+32*86400000))return json({error:'INVALID_REQUEST'},400);
-   const next=await new RecurrenceStore(env.DB).next(owner,input.ruleId,now);
-   const result=await healthy.mutate(owner,input.id,'reminder-instance',input,now,state=>{
-    if(!next)throw Error('NO_NEXT_REMINDER');
-    const statements=[
-     query(env.DB,"INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM recurrence_occurrences o JOIN recurrence_rules r ON r.id=o.rule_id WHERE o.id=? AND o.owner=? AND o.rule_version=? AND o.status IN ('scheduled','queued') AND r.version=o.rule_version AND r.enabled=1 AND NOT EXISTS(SELECT 1 FROM outbox b WHERE b.id='recurring:'||o.id AND b.state IN('sending','sent','uncertain'))) THEN 1 ELSE 0 END",next.id,owner,next.rule_version),
-     query(env.DB,"UPDATE outbox SET state='failed' WHERE id=? AND state='pending'",'recurring:'+next.id),
-     query(env.DB,input.operation==='skip'?"UPDATE recurrence_occurrences SET status='cancelled' WHERE id=? AND owner=?":"UPDATE recurrence_occurrences SET status='scheduled',due=? WHERE id=? AND owner=?",...(input.operation==='skip'?[next.id,owner]:[Number(input.due),next.id,owner]))
-    ];
-    // A moved occurrence keeps its logical ID and rule slot; remove its unsent
-    // cancelled delivery so the dispatcher may queue the new due time.
-    if(input.operation==='move')statements.push(query(env.DB,"DELETE FROM outbox WHERE id=? AND state='failed' ",'recurring:'+next.id));
-    return {state,result:{changed:true,slot:next.slot},statements};
-   });
-   return json({result});
-  }
-  if(url.pathname==='/api/tasks-delete'){
-   if(Object.keys(input).some(k=>!['id','items','confirm'].includes(k))||input.confirm!==true||!Array.isArray(input.items)||input.items.some(t=>!t||typeof t!=='object'||Object.keys(t).some(k=>!['id','version'].includes(k))||typeof t.id!=='string'||!Number.isInteger(t.version)))return json({error:'INVALID_REQUEST'},400);
-   return json({result:await new D1WorkStore(env.DB).deleteHierarchyGroup(owner,input.id,input.items,now)});
-  }
-  if(url.pathname==='/api/day-plan'){
-   if(Object.keys(input).some(k=>!['id','version','items'].includes(k))||!Number.isInteger(input.version)||!Array.isArray(input.items)||input.items.length>50||input.items.some(item=>!item||typeof item!=='object'||Object.keys(item).some(k=>!['taskId','minutes'].includes(k))||typeof item.taskId!=='string'||!Number.isInteger(item.minutes)))return json({error:'INVALID_REQUEST'},400);
-    const result=await new DayPlanStore(env.DB).replace(owner,input.id,Number(input.version),input.items as {taskId:string;minutes:number}[],now);
-    await recordTaskNudgeActivity(env.DB,owner,`mini:${input.id}`,now);
-    const plan=await new DayPlanStore(env.DB).ensure(owner,now);if(plan)await queuePlanConfirmation(env.DB,owner,input.id,plan.plan,now);
-    return json({result});
-  }
-  if(url.pathname==='/api/task-work'){
-   if(Object.keys(input).some(k=>!['id','taskId','minutes','note'].includes(k))||typeof input.taskId!=='string'||!Number.isInteger(input.minutes)||Number(input.minutes)<0||Number(input.minutes)>1440||input.note!==undefined&&input.note!==null&&typeof input.note!=='string')return json({error:'INVALID_REQUEST'},400);
-    const result=await new DayPlanStore(env.DB).logWork(owner,input.id,String(input.taskId),Number(input.minutes),input.note===undefined||input.note===null?null:String(input.note),now);
-    await recordTaskNudgeActivity(env.DB,owner,`mini:${input.id}`,now);return json({result});
-  }
-  if(url.pathname==='/api/task-focus'){
-   if(Object.keys(input).some(k=>!['id','operation'].includes(k))||!['start','stop'].includes(String(input.operation)))return json({error:'INVALID_REQUEST'},400);
-   return json({result:await changeTaskFocus(env.DB,owner,input.id,String(input.operation) as 'start'|'stop',now)});
-  }
-  if(url.pathname==='/api/timeline'){
-   if(Object.keys(input).some(k=>!['id','stamp','sessionId','at','undo'].includes(k))||typeof input.stamp!=='string'||input.stamp.length>3500||
-    (input.undo!==undefined?typeof input.undo!=='string'||!input.undo||input.undo.length>120||input.sessionId!==undefined||input.at!==undefined:typeof input.sessionId!=='string'||!Number.isFinite(input.at)))return json({error:'INVALID_REQUEST'},400);
-   const {id,...move}=input;
-   return json({result:await new TimelineStore(env.DB).change(owner,String(id),move as {stamp:string;sessionId?:string;at?:number;undo?:string},now)});
-  }
-  if(url.pathname==='/api/schedule'){
-   if(Object.keys(input).some(k=>!['id','version','free','busy','estimates'].includes(k))||!Number.isInteger(input.version)||!Array.isArray(input.free)||!Array.isArray(input.busy)||!Array.isArray(input.estimates)||input.estimates.length>100)return json({error:'INVALID_REQUEST'},400);
-   for(const r of [...input.free,...input.busy])if(!r||typeof r!=='object'||Object.keys(r).some(k=>!['start','end'].includes(k))||!Number.isFinite(r.start)||!Number.isFinite(r.end))return json({error:'INVALID_REQUEST'},400);
-   const work=new D1WorkStore(env.DB);
-   const tasks=[];
-   for(const estimate of input.estimates){
-    if(!estimate||typeof estimate!=='object'||Object.keys(estimate).some(k=>!['id','minutes'].includes(k))||typeof estimate.id!=='string'||!Number.isInteger(estimate.minutes))return json({error:'INVALID_REQUEST'},400);
-    const task=await work.task(owner,estimate.id);
-    if(!task||task.status==='completed')return json({error:'STALE_TASK'},409);
-    tasks.push({id:task.id,status:'active' as const,deleted:false,deadline:deadlineAt(task.deadline),remainingMinutes:estimate.minutes as number});
-   }
-   const prepared=await work.prepareSchedule(owner,now,Number(input.version),input.free,input.busy,tasks.map(t=>({id:t.id,minutes:t.remainingMinutes})),input.id);
-    await healthy.mutate(owner,input.id,'schedule',input,now,state=>({state,result:prepared.plan,statements:prepared.statements}));
-    await recordTaskNudgeActivity(env.DB,owner,`mini:${input.id}`,now);
-    const saved=await new DayPlanStore(env.DB).ensure(owner,now);
-    if(saved)await queuePlanConfirmation(env.DB,owner,input.id,saved.plan,now);
-    return json({result:saved?.plan??prepared.plan});
-  }
-  if(url.pathname==='/api/session'){
-   if(Object.keys(input).some(k=>!['id','sessionId','version','action'].includes(k))||typeof input.sessionId!=='string'||!Number.isInteger(input.version)||!['start','pause','finish','skip','snooze'].includes(String(input.action)))return json({error:'INVALID_REQUEST'},400);
-   const session=await new D1WorkStore(env.DB).session(owner,input.sessionId);
-   const result=await healthy.mutate(owner,input.id,'session-action',input,now,state=>{
-    if(!session||session.version!==input.version||!canAct(session,String(input.action),now))throw Error('SESSION_CHANGED');
-    return {state,result:{updated:true},statements:sessionStatements(env.DB,owner,{type:'session-action',session,action:input.action as 'start'|'pause'|'finish'|'skip'|'snooze',now})};
-   });
-   return json({result});
-  }
-  if(url.pathname==='/api/settings'){
-   if(Object.keys(input).some(k=>!['id','start','sleep','autoPlanDelayMinutes','version'].includes(k))||typeof input.start!=='string'||typeof input.sleep!=='string'||!Number.isInteger(input.version)||input.autoPlanDelayMinutes!==undefined&&(!Number.isInteger(input.autoPlanDelayMinutes)||Number(input.autoPlanDelayMinutes)<30||Number(input.autoPlanDelayMinutes)>720))return json({error:'INVALID_REQUEST'},400);
-   await new ScheduleStore(env.DB).configure(owner,input.start,input.sleep,Number(input.version),now,input.id,input.autoPlanDelayMinutes===undefined?undefined:Number(input.autoPlanDelayMinutes));
-   return json({saved:true});
-  }
-  if(url.pathname==='/api/reminders'){
-   if(Object.keys(input).some(k=>!['id','rule'].includes(k))||!input.rule||typeof input.rule!=='object'||Array.isArray(input.rule))return json({error:'INVALID_REQUEST'},400);
-   const rule=input.rule as Record<string,unknown>;
-   if(Object.keys(rule).some(k=>!['id','origin','title','kind','times','weekdays','startDate','endDate','enabled','version'].includes(k))
-    ||typeof rule.title!=='string'||typeof rule.kind!=='string'||typeof rule.startDate!=='string'
-    ||!Array.isArray(rule.times)||rule.times.some(t=>typeof t!=='string')||!Array.isArray(rule.weekdays)||rule.weekdays.some(n=>!Number.isInteger(n))
-    ||typeof rule.enabled!=='boolean'||!Number.isInteger(rule.version)||Number(rule.version)<0
-    ||rule.endDate!==null&&typeof rule.endDate!=='string'||rule.id!==undefined&&typeof rule.id!=='string')return json({error:'INVALID_REQUEST'},400);
-   if(rule.origin==='appointment'){
-    if(typeof rule.id!=='string'||rule.kind!=='once'||rule.times.length!==1||!/^([01]\d|2[0-3]):[0-5]\d$/.test(String(rule.times[0]))||!/^\d{4}-\d{2}-\d{2}$/.test(rule.startDate))return json({error:'INVALID_REQUEST'},400);
-    const due=Date.parse(rule.startDate+'T'+rule.times[0]+':00+07:00');
-    if(!Number.isFinite(due)||rule.enabled&&due<=now||new Date(Date.parse(rule.startDate+'T00:00:00Z')).toISOString().slice(0,10)!==rule.startDate)return json({error:'INVALID_REQUEST'},400);
-    const result=await healthy.mutate(owner,input.id,'edit-chat-reminder',input,now,state=>({state,result:{updated:true},statements:[
-      query(env.DB,"INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM task_appointments WHERE owner=? AND id=? AND version=? AND status='active') THEN 1 ELSE 0 END",owner,rule.id as string,Number(rule.version)),
-      ...(rule.enabled?[query(env.DB,"INSERT INTO task_appointments(id,owner,task_id,due,subject,message,event_id) SELECT ?,owner,task_id,?,?,?,event_id FROM task_appointments WHERE owner=? AND id=?",'edited_'+input.id,due,String(rule.title),String(rule.title)+' · đến giờ cậu hẹn rồi nhé.',owner,rule.id as string)]:[]),
-      query(env.DB,"UPDATE task_appointments SET status='cancelled',version=version+1 WHERE owner=? AND id=?",owner,rule.id as string)
-    ]}));
-    return json({result});
-   }
-   if(rule.origin!==undefined)return json({error:'INVALID_REQUEST'},400);
-   const id=typeof rule.id==='string'?rule.id:crypto.randomUUID();
-   const normalized={id,owner,title:rule.title,kind:rule.kind as 'once'|'daily'|'weekdays',times:rule.times as string[],weekdays:rule.weekdays as number[],startDate:rule.startDate,endDate:rule.endDate as string|null,enabled:rule.enabled,version:Number(rule.version)+1};
-   const result=await healthy.mutate(owner,input.id,'save-rule',input,now,state=>({state,result:{id},statements:new RecurrenceStore(env.DB).saveStatements(normalized,Number(rule.version),now)}));
-   return json({result});
-  }
-  if(url.pathname==='/api/tasks'){
-   if(Object.keys(input).some(k=>!['id','operation','taskId','stepId','version','title','note','deadline','complete','confirm','remainingMinutes'].includes(k)))return json({error:'INVALID_REQUEST'},400);
-   for(const key of ['operation','taskId','stepId','title','note'])if(key in input&&typeof input[key]!=='string')return json({error:'INVALID_REQUEST'},400);
-   if('deadline' in input&&input.deadline!==null&&typeof input.deadline!=='string'||'version' in input&&!Number.isInteger(input.version)||'confirm' in input&&typeof input.confirm!=='boolean')return json({error:'INVALID_REQUEST'},400);
-   const {id,...args}=input;
-   const result=await new D1WorkStore(env.DB).mutateHierarchy(owner,String(id),args as Parameters<D1WorkStore['mutateHierarchy']>[2],now);
-   await recordTaskNudgeActivity(env.DB,owner,`mini:${input.id}`,now);
-   return json({result});
-  }
-  if(Object.keys(input).some(k=>!['id','operation','item'].includes(k)))return json({error:'INVALID_REQUEST'},400);
-  const operation=input.operation;
-  if(!['draw','fuse','protect','breakthrough','checkin'].includes(String(operation)))return json({error:'INVALID_OPERATION'},400);
-  if(operation==='checkin'){
-   if(input.item!==undefined)return json({error:'INVALID_REQUEST'},400);
-   // Opening/claiming in the app never resumes a suspended chat or reminders.
-   const result=await healthy.checkIn(owner,input.id,input,now);
-   return json({result,account:await healthy.read(owner)});
-  }
-  const settings=await query(env.DB,'SELECT start_minutes,sleep_minutes FROM schedule_settings WHERE owner=?',owner).first<{start_minutes:number;sleep_minutes:number|null}>();
-  if(!settings||settings.sleep_minutes===null)return json({error:'SETUP_REQUIRED'},409);
-  const activeDay=await new ScheduleStore(env.DB).ensureDay(owner,now);
-  const day=activeDay?.day??operatingDay(now,settings.start_minutes),random=()=>crypto.getRandomValues(new Uint32Array(1))[0]!/4294967296;
-  const item=input.item;
-  if(operation==='protect'&&!['heart','peace'].includes(String(item)))return json({error:'INVALID_ITEM'},400);
-  if(operation==='fuse'&&(!Object.hasOwn(CHARMS,String(item))||item==='supreme'))return json({error:'INVALID_ITEM'},400);
-  if(operation==='breakthrough'&&item!==undefined&&item!==null&&!Object.hasOwn(CHARMS,String(item)))return json({error:'INVALID_ITEM'},400);
-  const result=await healthy.mutate<Record<string,unknown>>(owner,input.id,String(operation),input,now,state=>{
-   if(state.suspended)throw Error('ACCOUNT_SUSPENDED');
-   if(operation==='draw'&&state.tickets<1)throw Error('NO_TICKETS');
-   if(operation==='draw'){const r=drawReward(state,random());return {state:r.state,result:{reward:r.reward}};}
-   if(operation==='fuse'){const r=fuseCharm(state,item as Charm,random());return {state:r.state,result:{success:r.success}};}
-   if(operation==='protect')return {state:useProtection(state,item as 'heart'|'peace',day),result:{protected:true}};
-   const r=breakthrough(state,day,now,item as Charm|null??null,random());return {state:r.state,result:{success:r.success,chance:r.chance,penalty:r.penalty}};
-  });
-  return json({result,account:await healthy.read(owner)});
- }catch(error){
-  const code=error instanceof Error?error.message:'';
-  if(code.startsWith('TIMELINE_'))return json({error:code},409);
-  if(['ALREADY_CHECKED_IN','CHECKIN_COMPLETE','NO_ACTIVE_DAY','NO_ACTIVE_TASK_WINDOW','NO_TICKETS','ACCOUNT_SUSPENDED','DRAW_UNAVAILABLE','FUSION_UNAVAILABLE','ITEM_UNAVAILABLE','BREAKTHROUGH_UNAVAILABLE','ALREADY_PROTECTED','REQUEST_ID_REUSED','STALE_TASK','TASK_NOT_AVAILABLE','PLAN_CHANGED','CONFIRM_CHILDREN','CONFIRM_REOPEN_PARENT','CONFIRM_DELETE','STEP_NOT_FOUND','NO_NEXT_REMINDER','SESSION_CHANGED'].includes(code))return json({error:code},409);
-  if(code.startsWith('INVALID_'))return json({error:'INVALID_REQUEST'},400);
-  if(error instanceof SyntaxError)return json({error:'INVALID_REQUEST'},400);
-  return json({error:'OPERATION_NOT_CONFIRMED',message:'Chưa xác nhận được kết quả. Kiểm tra lại trước khi thử hành động mới.'},503);
- }
+import { browserAuthApi, browserOwner, browserWriteAllowed } from '../adapters/d1/browser-auth.ts';
+import { HealthyStore } from '../adapters/d1/healthy-store.ts';
+import { verifyMiniApp } from '../adapters/telegram/mini-app-auth.ts';
+import type { Env } from '../config/env.ts';
+import { activeTasks, bootstrap, history } from './mini-app/bootstrap.ts';
+import { json, readInput } from './mini-app/context.ts';
+import { handleCultivation } from './mini-app/cultivation.ts';
+import { handleReminders } from './mini-app/reminders.ts';
+import { handleSchedule } from './mini-app/schedule.ts';
+import { handleTasks } from './mini-app/tasks.ts';
+const taskRoutes = new Set(['/api/tasks', '/api/tasks-delete']);
+const reminderRoutes = new Set(['/api/reminders', '/api/reminder-instance']);
+const scheduleRoutes = new Set(['/api/settings', '/api/schedule', '/api/day-plan', '/api/task-work', '/api/task-focus', '/api/session', '/api/timeline']);
+const writeRoutes = new Set([...taskRoutes, ...reminderRoutes, ...scheduleRoutes, '/api/cultivation']);
+export async function miniAppApi(request: Request, env: Env, now = Date.now()): Promise<Response> {
+    const url = new URL(request.url);
+    if (!url.pathname.startsWith('/api/'))
+        return json({ error: 'NOT_FOUND' }, 404);
+    if (!['GET', 'POST'].includes(request.method))
+        return json({ error: 'METHOD_NOT_ALLOWED' }, 405);
+    const origin = request.headers.get('Origin');
+    if (origin && origin !== url.origin || request.headers.get('Sec-Fetch-Site') === 'cross-site')
+        return json({ error: 'FORBIDDEN' }, 403);
+    if (url.pathname.startsWith('/api/browser-auth/')) {
+        try {
+            return await browserAuthApi(env.DB, request, env.TELEGRAM_USER_ID, now);
+        }
+        catch {
+            return json({ error: 'LOGIN_UNAVAILABLE', message: 'Chưa kết nối được. Cậu thử lại nhé.' }, 503);
+        }
+    }
+    let owner: string;
+    try {
+        const initData = request.headers.get('X-Telegram-Init-Data');
+        if (initData)
+            owner = (await verifyMiniApp(initData, env.TELEGRAM_BOT_TOKEN ?? '', env.TELEGRAM_USER_ID, now)).owner;
+        else {
+            const authenticated = await browserOwner(env.DB, request, env.TELEGRAM_USER_ID, now);
+            if (!authenticated)
+                throw Error('AUTH_REQUIRED');
+            if (request.method === 'POST' && !browserWriteAllowed(request))
+                return json({ error: 'FORBIDDEN' }, 403);
+            owner = authenticated;
+        }
+    }
+    catch {
+        return json({ error: 'AUTH_REQUIRED', message: 'Đăng nhập lại trên trình duyệt hoặc mở lại từ Telegram để tiếp tục.' }, 401);
+    }
+    try {
+        const context = { env, owner, now, healthy: new HealthyStore(env.DB) };
+        if (request.method === 'GET' && url.pathname === '/api/bootstrap')
+            return await bootstrap(context);
+        if (request.method === 'GET' && url.pathname === '/api/history')
+            return await history(context, url);
+        if (request.method === 'GET' && url.pathname === '/api/tasks-page')
+            return await activeTasks(context, url);
+        if (request.method !== 'POST' || !writeRoutes.has(url.pathname))
+            return json({ error: 'NOT_FOUND' }, 404);
+        const input = await readInput(request);
+        if (input instanceof Response)
+            return input;
+        if (taskRoutes.has(url.pathname))
+            return await handleTasks(context, input, url.pathname) ?? json({ error: 'NOT_FOUND' }, 404);
+        if (reminderRoutes.has(url.pathname))
+            return await handleReminders(context, input, url.pathname) ?? json({ error: 'NOT_FOUND' }, 404);
+        if (scheduleRoutes.has(url.pathname))
+            return await handleSchedule(context, input, url.pathname) ?? json({ error: 'NOT_FOUND' }, 404);
+        return await handleCultivation(context, input);
+    }
+    catch (error) {
+        const code = error instanceof Error ? error.message : '';
+        if (code.startsWith('TIMELINE_'))
+            return json({ error: code }, 409);
+        if (['ALREADY_CHECKED_IN', 'CHECKIN_COMPLETE', 'NO_ACTIVE_DAY', 'NO_ACTIVE_TASK_WINDOW', 'NO_TICKETS', 'ACCOUNT_SUSPENDED', 'DRAW_UNAVAILABLE', 'FUSION_UNAVAILABLE', 'ITEM_UNAVAILABLE', 'BREAKTHROUGH_UNAVAILABLE', 'ALREADY_PROTECTED', 'REQUEST_ID_REUSED', 'STALE_TASK', 'TASK_NOT_AVAILABLE', 'PLAN_CHANGED', 'CONFIRM_CHILDREN', 'CONFIRM_REOPEN_PARENT', 'CONFIRM_DELETE', 'STEP_NOT_FOUND', 'NO_NEXT_REMINDER', 'SESSION_CHANGED'].includes(code))
+            return json({ error: code }, 409);
+        if (code.startsWith('INVALID_'))
+            return json({ error: 'INVALID_REQUEST' }, 400);
+        if (error instanceof SyntaxError)
+            return json({ error: 'INVALID_REQUEST' }, 400);
+        return json({ error: 'OPERATION_NOT_CONFIRMED', message: 'Chưa xác nhận được kết quả. Kiểm tra lại trước khi thử hành động mới.' }, 503);
+    }
 }
