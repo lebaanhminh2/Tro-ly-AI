@@ -6,6 +6,7 @@ import { deliver } from '../telegram/api.ts';
 import { reminderAllowed } from './reminders.ts';
 import {nudgeAllowed} from './work-nudges.ts';
 import {TaskDayStore} from './task-day-store.ts';
+import {HealthyStore} from './healthy-store.ts';
 
 export async function flushOutbox(env: Env, transport: typeof fetch = fetch, now = Date.now(), clock:()=>number = Date.now, onlyId?:string, maxRows=4) {
   const wallStart=clock();
@@ -17,6 +18,11 @@ export async function flushOutbox(env: Env, transport: typeof fetch = fetch, now
     ORDER BY CASE WHEN id LIKE 'ack:%' THEN 0 WHEN id LIKE 'reply:%' THEN 1 ELSE 2 END,available,id LIMIT ?`, now,onlyId??null,onlyId??null,limit)
     .all<{ id: string; payload: string;reminder_id:string|null }>()).results;
   for (const row of rows) {
+    const proactive=!['reply:','ack:','menu:','browser-login:'].some(prefix=>row.id.startsWith(prefix));
+    const inactive=async()=>env.ASSETS&&proactive&&(await new HealthyStore(env.DB).read(env.TELEGRAM_USER_ID)).state.suspended;
+    if(await inactive()){
+      await query(env.DB,"UPDATE outbox SET state='failed' WHERE id=? AND state='pending'",row.id).run();continue;
+    }
     const legacyWork=env.ASSETS&&row.reminder_id&&!row.reminder_id.startsWith('appointment:')&&!row.reminder_id.startsWith('recurring:');
     if(legacyWork||row.id.startsWith('nudge:')||row.id.startsWith('task-nudge:')&&!await nudgeAllowed(env.DB,env.TELEGRAM_USER_ID,row.id,currentTime())||row.id.startsWith('task-plan:')&&!await new TaskDayStore(env.DB).notificationAllowed(env.TELEGRAM_USER_ID,row.id,currentTime())){
       await query(env.DB,"UPDATE outbox SET state='failed' WHERE id=? AND state='pending'",row.id).run();continue;
@@ -38,7 +44,10 @@ export async function flushOutbox(env: Env, transport: typeof fetch = fetch, now
     const claimed = await query(env.DB, `UPDATE outbox SET state='sending',attempts=attempts+1,lease=?,claim_token=?
       WHERE id=? AND state='pending' AND attempts<3 AND available<=?`, attemptAt + 30000, token,row.id,attemptAt).run();
     if (!claimed.meta.changes) continue;
-    if(env.ASSETS&&(row.reminder_id||row.id.startsWith('healthy:'))&&await blocked(currentTime())){
+    if(await inactive()){
+      await query(env.DB,"UPDATE outbox SET state='failed' WHERE id=? AND claim_token=?",row.id,token).run();continue;
+    }
+    if(env.ASSETS&&(row.reminder_id||row.id.startsWith('achievement:')||row.id.startsWith('healthy:'))&&await blocked(currentTime())){
       await query(env.DB,"UPDATE outbox SET state='failed' WHERE id=? AND claim_token=?",row.id,token).run();continue;
     }
     if(row.reminder_id&&!await reminderAllowed(env.DB,row.reminder_id,currentTime())){

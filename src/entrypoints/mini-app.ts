@@ -1,5 +1,6 @@
 import type {Env} from '../config/env.ts';
 import {verifyMiniApp} from '../adapters/telegram/mini-app-auth.ts';
+import {browserAuthApi,browserOwner,browserWriteAllowed} from '../adapters/d1/browser-auth.ts';
 import {HealthyStore} from '../adapters/d1/healthy-store.ts';
 import {RecurrenceStore} from '../adapters/d1/recurrence-store.ts';
 import {ScheduleStore} from '../adapters/d1/schedule-store.ts';
@@ -9,7 +10,7 @@ import {D1WorkStore} from '../adapters/d1/work-store.ts';
 import {canAct} from '../domain/session.ts';
 import {sessionStatements} from '../adapters/d1/session-store.ts';
 import {query} from '../adapters/d1/database.ts';
-import {breakthrough,drawReward,fuseCharm,useProtection,operatingDay,REALMS,LOOT,CHARMS,type Charm} from '../domain/healthy.ts';
+import {breakthrough,drawReward,fuseCharm,useProtection,operatingDay,dailyCheckinProgress,BREAKTHROUGH_PENALTIES,REALMS,LOOT,CHARMS,type Charm} from '../domain/healthy.ts';
 import {deadlineAt} from '../domain/time.ts';
 import {changeTaskFocus,currentTaskFocus,taskFocusTarget,queuePlanConfirmation,recordTaskNudgeActivity} from '../adapters/d1/work-nudges.ts';
 
@@ -21,9 +22,19 @@ export async function miniAppApi(request:Request,env:Env,now=Date.now()):Promise
  if(!['GET','POST'].includes(request.method))return json({error:'METHOD_NOT_ALLOWED'},405);
  const origin=request.headers.get('Origin');
  if(origin&&origin!==url.origin||request.headers.get('Sec-Fetch-Site')==='cross-site')return json({error:'FORBIDDEN'},403);
+ if(url.pathname.startsWith('/api/browser-auth/')){
+  try{return await browserAuthApi(env.DB,request,env.TELEGRAM_USER_ID,now);}catch{return json({error:'LOGIN_UNAVAILABLE',message:'Chưa kết nối được. Cậu thử lại nhé.'},503);}
+ }
  let owner:string;
- try{owner=(await verifyMiniApp(request.headers.get('X-Telegram-Init-Data')??'',env.TELEGRAM_BOT_TOKEN??'',env.TELEGRAM_USER_ID,now)).owner;}
- catch{return json({error:'AUTH_REQUIRED',message:'Mở lại từ Telegram để tiếp tục.'},401);}
+ try{
+  const initData=request.headers.get('X-Telegram-Init-Data');
+  if(initData)owner=(await verifyMiniApp(initData,env.TELEGRAM_BOT_TOKEN??'',env.TELEGRAM_USER_ID,now)).owner;
+  else{
+   const authenticated=await browserOwner(env.DB,request,env.TELEGRAM_USER_ID,now);if(!authenticated)throw Error('AUTH_REQUIRED');
+   if(request.method==='POST'&&!browserWriteAllowed(request))return json({error:'FORBIDDEN'},403);
+   owner=authenticated;
+  }
+ }catch{return json({error:'AUTH_REQUIRED',message:'Đăng nhập lại trên trình duyệt hoặc mở lại từ Telegram để tiếp tục.'},401);}
  try{
   const healthy=new HealthyStore(env.DB);
   if(request.method==='GET'&&url.pathname==='/api/bootstrap'){
@@ -46,7 +57,7 @@ export async function miniAppApi(request:Request,env:Env,now=Date.now()):Promise
    const combined=[...visibleRules,...appointments.map(a=>{const local=new Date(a.due+25200000).toISOString();return {id:a.id,origin:'appointment',title:a.title,version:a.version,kind:'once',times:[local.slice(11,16)],weekdays:[],startDate:local.slice(0,10),endDate:null,enabled:a.status==='active',delivered:!!a.delivered,past:a.status==='expired'};})];
    const rest=await new ScheduleStore(env.DB).restStatus(owner,now);
    const dailyPlan=await new DayPlanStore(env.DB).ensure(owner,now);
-   return json({now,account,tasks,reminders:combined,settings,progress,sessions,events,day,timeline:await new TimelineStore(env.DB).read(owner,now),dailyPlan,taskFocus:await currentTaskFocus(env.DB,owner,now),taskFocusTarget:await taskFocusTarget(env.DB,owner,now),rest,resting:rest.reason!=='active',realms:REALMS,loot:LOOT,charms:CHARMS,needsSetup:!settings});
+   return json({now,account,checkin:dailyCheckinProgress(account.state,now),breakthroughPenalties:BREAKTHROUGH_PENALTIES,tasks,reminders:combined,settings,progress,sessions,events,day,timeline:await new TimelineStore(env.DB).read(owner,now),dailyPlan,taskFocus:await currentTaskFocus(env.DB,owner,now),taskFocusTarget:await taskFocusTarget(env.DB,owner,now),rest,resting:rest.reason!=='active',realms:REALMS,loot:LOOT,charms:CHARMS,needsSetup:!settings});
   }
   if(request.method==='GET'&&url.pathname==='/api/history'){
    const rawOffset=url.searchParams.get('offset')??'0';
@@ -165,7 +176,7 @@ export async function miniAppApi(request:Request,env:Env,now=Date.now()):Promise
    return json({result});
   }
   if(url.pathname==='/api/tasks'){
-   if(Object.keys(input).some(k=>!['id','operation','taskId','stepId','version','title','note','deadline','complete','confirm'].includes(k)))return json({error:'INVALID_REQUEST'},400);
+   if(Object.keys(input).some(k=>!['id','operation','taskId','stepId','version','title','note','deadline','complete','confirm','remainingMinutes'].includes(k)))return json({error:'INVALID_REQUEST'},400);
    for(const key of ['operation','taskId','stepId','title','note'])if(key in input&&typeof input[key]!=='string')return json({error:'INVALID_REQUEST'},400);
    if('deadline' in input&&input.deadline!==null&&typeof input.deadline!=='string'||'version' in input&&!Number.isInteger(input.version)||'confirm' in input&&typeof input.confirm!=='boolean')return json({error:'INVALID_REQUEST'},400);
    const {id,...args}=input;
@@ -175,7 +186,13 @@ export async function miniAppApi(request:Request,env:Env,now=Date.now()):Promise
   }
   if(Object.keys(input).some(k=>!['id','operation','item'].includes(k)))return json({error:'INVALID_REQUEST'},400);
   const operation=input.operation;
-  if(!['draw','fuse','protect','breakthrough'].includes(String(operation)))return json({error:'INVALID_OPERATION'},400);
+  if(!['draw','fuse','protect','breakthrough','checkin'].includes(String(operation)))return json({error:'INVALID_OPERATION'},400);
+  if(operation==='checkin'){
+   if(input.item!==undefined)return json({error:'INVALID_REQUEST'},400);
+   // Opening/claiming in the app never resumes a suspended chat or reminders.
+   const result=await healthy.checkIn(owner,input.id,input,now);
+   return json({result,account:await healthy.read(owner)});
+  }
   const settings=await query(env.DB,'SELECT start_minutes,sleep_minutes FROM schedule_settings WHERE owner=?',owner).first<{start_minutes:number;sleep_minutes:number|null}>();
   if(!settings||settings.sleep_minutes===null)return json({error:'SETUP_REQUIRED'},409);
   const activeDay=await new ScheduleStore(env.DB).ensureDay(owner,now);
@@ -190,13 +207,13 @@ export async function miniAppApi(request:Request,env:Env,now=Date.now()):Promise
    if(operation==='draw'){const r=drawReward(state,random());return {state:r.state,result:{reward:r.reward}};}
    if(operation==='fuse'){const r=fuseCharm(state,item as Charm,random());return {state:r.state,result:{success:r.success}};}
    if(operation==='protect')return {state:useProtection(state,item as 'heart'|'peace',day),result:{protected:true}};
-   const r=breakthrough(state,day,now,item as Charm|null??null,random());return {state:r.state,result:{success:r.success,chance:r.chance}};
+   const r=breakthrough(state,day,now,item as Charm|null??null,random());return {state:r.state,result:{success:r.success,chance:r.chance,penalty:r.penalty}};
   });
   return json({result,account:await healthy.read(owner)});
  }catch(error){
   const code=error instanceof Error?error.message:'';
   if(code.startsWith('TIMELINE_'))return json({error:code},409);
-  if(['NO_ACTIVE_DAY','NO_ACTIVE_TASK_WINDOW','NO_TICKETS','ACCOUNT_SUSPENDED','DRAW_UNAVAILABLE','FUSION_UNAVAILABLE','ITEM_UNAVAILABLE','BREAKTHROUGH_UNAVAILABLE','ALREADY_PROTECTED','REQUEST_ID_REUSED','STALE_TASK','TASK_NOT_AVAILABLE','PLAN_CHANGED','CONFIRM_CHILDREN','CONFIRM_REOPEN_PARENT','CONFIRM_DELETE','STEP_NOT_FOUND','NO_NEXT_REMINDER','SESSION_CHANGED'].includes(code))return json({error:code},409);
+  if(['ALREADY_CHECKED_IN','CHECKIN_COMPLETE','NO_ACTIVE_DAY','NO_ACTIVE_TASK_WINDOW','NO_TICKETS','ACCOUNT_SUSPENDED','DRAW_UNAVAILABLE','FUSION_UNAVAILABLE','ITEM_UNAVAILABLE','BREAKTHROUGH_UNAVAILABLE','ALREADY_PROTECTED','REQUEST_ID_REUSED','STALE_TASK','TASK_NOT_AVAILABLE','PLAN_CHANGED','CONFIRM_CHILDREN','CONFIRM_REOPEN_PARENT','CONFIRM_DELETE','STEP_NOT_FOUND','NO_NEXT_REMINDER','SESSION_CHANGED'].includes(code))return json({error:code},409);
   if(code.startsWith('INVALID_'))return json({error:'INVALID_REQUEST'},400);
   if(error instanceof SyntaxError)return json({error:'INVALID_REQUEST'},400);
   return json({error:'OPERATION_NOT_CONFIRMED',message:'Chưa xác nhận được kết quả. Kiểm tra lại trước khi thử hành động mới.'},503);

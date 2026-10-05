@@ -19,18 +19,31 @@ export const CHARMS={
 } as const;
 export type Charm=keyof typeof CHARMS;
 export type Item=Charm|'heart'|'peace'|'keepsake';
+export const BREAKTHROUGH_PENALTIES=[3,5,8,10,12,15,18,20,22,25,30] as const;
+export const CHECKIN_CYCLE_DAYS=32;
+export type DailyCheckinState={cycleStartDay:number;count:number;lastDay:number};
+export type DailyReward={day:number;qi:number;tickets:number;items:Partial<Record<Item,number>>;milestone:boolean};
+// A published, deterministic calendar. Clients display it but never choose rewards.
+export const DAILY_REWARDS:DailyReward[]=[
+ {qi:1},{tickets:1},{qi:2},{tickets:1},{qi:2},{tickets:1},{tickets:2,items:{basic:3}},
+ {qi:2},{tickets:1},{qi:3},{tickets:1},{qi:2},{tickets:1},{items:{middle:3}},
+ {qi:2},{tickets:1},{qi:3},{tickets:1},{qi:2},{tickets:1},{items:{high:3}},
+ {qi:3},{tickets:1},{qi:2},{tickets:1},{qi:3},{tickets:1},{qi:3},{tickets:2},
+ {qi:30,tickets:5,items:{supreme:1}}
+].map((reward:Partial<DailyReward>,index)=>({day:index+1,qi:0,tickets:0,items:{},...reward,milestone:[7,14,21,30].includes(index+1)}));
 export type HealthyState={
  qi:number;earned:number;rank:number;highestRank:number;streak:number;bestStreak:number;
  protectedUntil:number;attemptDay:number|null;failures:number;tickets:number;
  inventory:Record<Item,number>;heartDay:number|null;peaceDay:number|null;
  lastScoredDay:number|null;inactiveDays:number;suspended:boolean;
+ checkin?:DailyCheckinState|null;
 };
 export function initialHealthy():HealthyState{
  return {qi:0,earned:0,rank:0,highestRank:0,streak:0,bestStreak:0,protectedUntil:0,
  attemptDay:null,failures:0,tickets:0,inventory:{basic:0,middle:0,high:0,supreme:0,heart:0,peace:0,keepsake:0},
- heartDay:null,peaceDay:null,lastScoredDay:null,inactiveDays:0,suspended:false};
+ heartDay:null,peaceDay:null,lastScoredDay:null,inactiveDays:0,suspended:false,checkin:null};
 }
-function copy(s:HealthyState){return {...s,inventory:{...s.inventory}};}
+function copy(s:HealthyState){return {...s,inventory:{...s.inventory},checkin:s.checkin?{...s.checkin}:null};}
 function roll(value:number){if(!Number.isFinite(value)||value<0||value>=1)throw Error('INVALID_RANDOM_SAMPLE');return value*100;}
 export function minutes(value:string){
  if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(value))throw Error('INVALID_CLOCK');
@@ -39,6 +52,31 @@ export function minutes(value:string){
 export function operatingDay(now:number,startMinutes:number){
  if(!Number.isFinite(now)||!Number.isInteger(startMinutes)||startMinutes<0||startMinutes>=1440)throw Error('INVALID_DAY');
  return Math.floor((now+7*3600000-startMinutes*60000)/DAY_MS);
+}
+export function dailyCheckinProgress(state:HealthyState,now:number){
+ const calendarDay=operatingDay(now,0),saved=state.checkin;
+ const expired=!!saved&&calendarDay>=saved.cycleStartDay+CHECKIN_CYCLE_DAYS;
+ const current=expired?null:saved,count=current?.count??0;
+ const daysLeft=current?Math.max(0,current.cycleStartDay+CHECKIN_CYCLE_DAYS-calendarDay):CHECKIN_CYCLE_DAYS;
+ const claimedToday=current?.lastDay===calendarDay;
+ const elapsed=current?Math.max(0,calendarDay-current.cycleStartDay):0;
+ return {calendarDay,cycleStartDay:current?.cycleStartDay??null,count,claimedToday,expired,
+  canClaim:count<DAILY_REWARDS.length&&!claimedToday&&(!current||calendarDay>=current.lastDay),
+  daysLeft,missedDays:Math.max(0,elapsed-(count-(claimedToday?1:0))),
+  canComplete:count+daysLeft-(claimedToday?1:0)>=DAILY_REWARDS.length,
+  endsAt:current?(current.cycleStartDay+CHECKIN_CYCLE_DAYS)*DAY_MS-7*3600000:null,
+  rewardDay:count<DAILY_REWARDS.length?count+1:null,rewards:DAILY_REWARDS};
+}
+export function claimDailyReward(state:HealthyState,now:number){
+ const progress=dailyCheckinProgress(state,now);
+ if(progress.claimedToday)throw Error('ALREADY_CHECKED_IN');
+ if(progress.count>=DAILY_REWARDS.length)throw Error('CHECKIN_COMPLETE');
+ if(!progress.canClaim)throw Error('INVALID_CHECKIN_DAY');
+ const reward=DAILY_REWARDS[progress.count]!,next=copy(state);
+ next.checkin={cycleStartDay:progress.cycleStartDay??progress.calendarDay,count:reward.day,lastDay:progress.calendarDay};
+ next.qi+=reward.qi;next.earned+=reward.qi;next.tickets+=reward.tickets;
+ for(const [item,amount] of Object.entries(reward.items))next.inventory[item as Item]+=amount;
+ return {state:next,reward,calendarDay:progress.calendarDay,cycleStartDay:next.checkin.cycleStartDay};
 }
 export function dayWindow(day:number,startMinutes:number,sleepMinutes:number){
  if(!Number.isInteger(day))throw Error('INVALID_DAY');
@@ -107,6 +145,6 @@ export function breakthrough(state:HealthyState,day:number,now:number,item:Charm
  const chance=Math.min(100,[70,85,100][Math.min(state.failures,2)]!+(charm?.boost??0));
  const success=roll(random)<chance,next=copy(state);next.attemptDay=day;if(item)next.inventory[item]--;
  if(success){next.rank++;next.highestRank=Math.max(next.highestRank,next.rank);next.failures=0;next.protectedUntil=now+3*DAY_MS;}
- else next.failures++;
- return {state:next,success,chance};
+ else {next.failures++;next.qi=Math.max(0,next.qi-BREAKTHROUGH_PENALTIES[state.rank]!);}
+ return {state:next,success,chance,penalty:state.qi-next.qi};
 }

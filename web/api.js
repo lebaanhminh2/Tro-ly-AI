@@ -4,10 +4,10 @@ export const flameLevel=streak=>flameLevels.slice().reverse().find(level=>Number
 // Prototype intentionally has no network/storage/auth. Reload restores the sample.
 export function createDemo(){
  return {
-  tab:'today',mode:'timeline',reminderFilter:'recurring',screenState:'ready',selected:new Set(),selecting:false,
+  tab:'today',mode:'timeline',reminderFilter:'all',screenState:'ready',selected:new Set(),selecting:false,
   historyOffset:0,historyHasMore:false,historyLoading:false,
   start:'04:30',sleep:'22:30',autoPlanDelayMinutes:180,resting:false,
-  cultivation:{qi:20,totalEarned:145,rank:1,highestRank:1,streak:3,tickets:3,rewardedTasks:[],failures:0,attemptDay:null,protectedUntil:0,inventory:{basic:3,middle:0,high:0,supreme:0,heart:1,peace:1,keepsake:0},active:{heart:false,peace:false},log:[]},
+  cultivation:{qi:20,totalEarned:145,rank:1,highestRank:1,streak:3,tickets:3,checkin:null,rewardedTasks:[],failures:0,attemptDay:null,protectedUntil:0,inventory:{basic:3,middle:0,high:0,supreme:0,heart:1,peace:1,keepsake:0},active:{heart:false,peace:false},log:[]},
   tasks:[
    {code:24,title:'Báo cáo môn học',deadline:'2026-09-18',done:false,steps:[{code:'24.1',title:'Đọc yêu cầu',done:true},{code:'24.2',title:'Viết dàn ý',done:false},{code:'24.3',title:'Viết bản nháp',done:false}],nextStep:4},
    {code:25,title:'Bài tập xác suất',deadline:'2026-09-19',done:false,steps:[],nextStep:1},
@@ -24,6 +24,42 @@ export function createDemo(){
 }
 
 const DAY_MS=86400000;
+export const breakthroughPenalties=[3,5,8,10,12,15,18,20,22,25,30];
+// Demo fallback only; authenticated views use the published server calendar.
+export const dailyRewards=[
+ {qi:1},{tickets:1},{qi:2},{tickets:1},{qi:2},{tickets:1},{tickets:2,items:{basic:3}},
+ {qi:2},{tickets:1},{qi:3},{tickets:1},{qi:2},{tickets:1},{items:{middle:3}},
+ {qi:2},{tickets:1},{qi:3},{tickets:1},{qi:2},{tickets:1},{items:{high:3}},
+ {qi:3},{tickets:1},{qi:2},{tickets:1},{qi:3},{tickets:1},{qi:3},{tickets:2},
+ {qi:30,tickets:5,items:{supreme:1}}
+].map((reward,index)=>({day:index+1,qi:0,tickets:0,items:{},...reward,milestone:[7,14,21,30].includes(index+1)}));
+export function checkinProgress(c,now=Date.now(),rewards=dailyRewards){
+ const calendarDay=Math.floor((now+7*3600000)/DAY_MS),saved=c.checkin;
+ const expired=!!saved&&calendarDay>=saved.cycleStartDay+32,current=expired?null:saved,count=current?.count??0;
+ const claimedToday=current?.lastDay===calendarDay,daysLeft=current?Math.max(0,current.cycleStartDay+32-calendarDay):32;
+ return {calendarDay,cycleStartDay:current?.cycleStartDay??null,count,claimedToday,expired,
+  canClaim:count<30&&!claimedToday&&(!current||calendarDay>=current.lastDay),daysLeft,
+  missedDays:Math.max(0,(current?Math.max(0,calendarDay-current.cycleStartDay):0)-(count-(claimedToday?1:0))),
+  canComplete:count+daysLeft-(claimedToday?1:0)>=30,
+  endsAt:current?(current.cycleStartDay+32)*DAY_MS-7*3600000:null,rewardDay:count<30?count+1:null,rewards};
+}
+export function dailyRewardLabel(reward){
+ if(!reward)return '';
+ const labels=[];
+ if(reward.qi)labels.push(reward.qi+' tu vi');
+ if(reward.tickets)labels.push(reward.tickets+' vé quay');
+ const names={basic:'Phá Cảnh Phù · Sơ cấp',middle:'Phá Cảnh Phù · Trung cấp',high:'Phá Cảnh Phù · Cao cấp',supreme:'Phá Cảnh Phù · Cực phẩm'};
+ for(const [key,amount] of Object.entries(reward.items??{}))labels.push(amount+' '+(names[key]??key));
+ return labels.join(' + ');
+}
+export function demoCheckin(c,now=Date.now()){
+ const progress=checkinProgress(c,now);if(!progress.canClaim)return null;
+ const reward=progress.rewards[progress.count];
+ c.checkin={cycleStartDay:progress.cycleStartDay??progress.calendarDay,count:reward.day,lastDay:progress.calendarDay};
+ c.qi+=reward.qi;c.totalEarned+=reward.qi;c.tickets+=reward.tickets;
+ for(const [item,amount] of Object.entries(reward.items))c.inventory[item]+=amount;
+ c.log.unshift('Điểm danh ngày '+reward.day+': '+dailyRewardLabel(reward));return reward;
+}
 export function taskBuckets(tasks,day,start='04:30'){
  const [hour,minute]=String(start).split(':').map(Number),startMinutes=hour*60+minute;
  const completionDay=at=>Math.floor((at+7*3600000-startMinutes*60000)/DAY_MS);
@@ -86,9 +122,10 @@ export function demoBreakthrough(c,day,key=null,now=Date.now(),random=Math.rando
  c.attemptDay=day;if(charm)c.inventory[charm.key]--;
  const success=random()*100<chance;
  if(success){c.rank++;c.highestRank=Math.max(c.highestRank,c.rank);c.failures=0;c.protectedUntil=now+72*3600000;}
- else c.failures++;
- c.log.unshift(success?'Đột phá '+target.name+' · bảo vệ 72 giờ':'Đột phá chưa thành · giữ nguyên tu vi');
- return {success,chance};
+ const penalty=success?0:Math.min(c.qi,breakthroughPenalties[c.rank]);
+ if(!success){c.failures++;c.qi-=penalty;}
+ c.log.unshift(success?'Đột phá '+target.name+' · bảo vệ 72 giờ':'Đột phá chưa thành · −'+penalty+' tu vi');
+ return {success,chance,penalty};
 }
 
 const pendingRequests=new Map();
@@ -103,35 +140,41 @@ export function setThemePreference(value){
  applyTheme(value);
 }
 export async function connectLive(){
- if(!globalThis.Telegram?.WebApp){
+ if(!globalThis.Telegram?.WebApp&&location.hash.includes('tgWebAppData')){
   await new Promise((resolve,reject)=>{
    const script=document.createElement('script');script.src='https://telegram.org/js/telegram-web-app.js';
    script.onload=resolve;script.onerror=()=>reject(Error('Không tải được Telegram SDK.'));document.head.append(script);
   });
  }
  const app=globalThis.Telegram?.WebApp;
- if(!app?.initData)throw Error('Hãy mở ứng dụng từ nút trong Telegram, không mở đường dẫn trực tiếp.');
  const theme=()=>applyTheme();
- theme();app.onEvent?.('themeChanged',theme);
- app.ready();app.expand();
+ theme();
+ if(app?.initData){app.onEvent?.('themeChanged',theme);app.ready();app.expand();}
  return refreshLive();
+}
+export async function browserAuthRequest(action){
+ const response=await fetch('/api/browser-auth/'+action,{method:'POST',credentials:'same-origin',headers:{'X-Minh-Anh-Request':'1'},signal:AbortSignal.timeout(15000)});
+ const data=await response.json();
+ if(!response.ok){const error=Error(data.message??(data.error==='LOGIN_EXPIRED'?'Mã đã hết hạn. Tạo mã mới nhé.':'Chưa đăng nhập được. Cậu thử lại nhé.'));error.code=data.error;throw error;}
+ if(action==='logout')pendingRequests.clear();
+ return data;
 }
 async function liveRequest(path,body){
  const initData=globalThis.Telegram?.WebApp?.initData;
- if(!initData)throw Error('Mở lại từ Telegram để tiếp tục.');
  const key=body?path+JSON.stringify(body):null;
  let request=body;
  if(key){
   if(!pendingRequests.has(key))pendingRequests.set(key,{...body,id:crypto.randomUUID()});
   request=pendingRequests.get(key);
  }
- const response=await fetch('/api/'+path,{method:body?'POST':'GET',headers:{'X-Telegram-Init-Data':initData,'Content-Type':'application/json'},body:body?JSON.stringify(request):undefined,signal:AbortSignal.timeout(15000)});
+ const response=await fetch('/api/'+path,{method:body?'POST':'GET',credentials:'same-origin',headers:{...(initData?{'X-Telegram-Init-Data':initData}:{'X-Minh-Anh-Request':'1'}),'Content-Type':'application/json'},body:body?JSON.stringify(request):undefined,signal:AbortSignal.timeout(15000)});
  const result=await response.json();
  if(!response.ok){
   if(response.status<500&&key)pendingRequests.delete(key);
-  const messages={AUTH_REQUIRED:'Phiên đã hết hạn. Đóng và mở lại từ Telegram nhé.',SETUP_REQUIRED:'Chọn giờ bắt đầu và giờ nghỉ trước nhé.',STALE_TASK:'Việc vừa thay đổi. Mở lại danh sách rồi thử lại.',TASK_NOT_AVAILABLE:'Task này không còn phù hợp để thêm vào hôm nay.',NO_ACTIVE_TASK_WINDOW:'Khung làm việc này vừa kết thúc hoặc lịch đã thay đổi rồi nhé.',PLAN_CHANGED:'Kế hoạch vừa thay đổi. Mở lại rồi chỉnh trên bản mới nhé.',CONFIRM_CHILDREN:'Task còn bước chưa xong. Hãy xác nhận hoàn thành cả nhóm.',CONFIRM_REOPEN_PARENT:'Cần xác nhận mở lại task cha.',DRAW_UNAVAILABLE:'Chưa thể quay lúc này.',NO_TICKETS:'Cậu chưa có vé. Hoàn thành một task lần đầu để nhận 1 vé.',ACCOUNT_SUSPENDED:'Tài khoản tạm ngưng do ba ngày không chat. Nhắn cho Minh Anh để hoạt động lại; đây không phải chế độ /ngu.',NO_ACTIVE_DAY:'Cậu đã lưu giờ sinh hoạt. Ngày hoạt động tiếp theo chưa bắt đầu; không cần thiết lập lại.',BREAKTHROUGH_UNAVAILABLE:'Chưa đủ điều kiện hoặc hôm nay đã thử đột phá.',FUSION_UNAVAILABLE:'Chưa đủ ba phù cùng cấp.',ITEM_UNAVAILABLE:'Vật phẩm chưa dùng được lúc này.',ALREADY_PROTECTED:'Hôm nay đã kích hoạt bảo vệ rồi.',NO_NEXT_REMINDER:'Không còn lần nhắc sắp tới để sửa.'};
+  const messages={AUTH_REQUIRED:'Phiên đã hết hạn. Đóng và mở lại từ Telegram nhé.',SETUP_REQUIRED:'Chọn giờ bắt đầu và giờ nghỉ trước nhé.',STALE_TASK:'Việc vừa thay đổi. Mở lại danh sách rồi thử lại.',TASK_NOT_AVAILABLE:'Task này không còn phù hợp để thêm vào hôm nay.',NO_ACTIVE_TASK_WINDOW:'Khung làm việc này vừa kết thúc hoặc lịch đã thay đổi rồi nhé.',PLAN_CHANGED:'Kế hoạch vừa thay đổi. Mở lại rồi chỉnh trên bản mới nhé.',CONFIRM_CHILDREN:'Task còn bước chưa xong. Hãy xác nhận hoàn thành cả nhóm.',CONFIRM_REOPEN_PARENT:'Cần xác nhận mở lại task cha.',DRAW_UNAVAILABLE:'Chưa thể quay lúc này.',NO_TICKETS:'Cậu chưa có vé. Hoàn thành task hoặc điểm danh để nhận vé nhé.',ACCOUNT_SUSPENDED:'Tài khoản tạm ngưng do ba ngày không chat. Nhắn cho Minh Anh để hoạt động lại; đây không phải chế độ /ngu.',NO_ACTIVE_DAY:'Cậu đã lưu giờ sinh hoạt. Ngày hoạt động tiếp theo chưa bắt đầu; không cần thiết lập lại.',BREAKTHROUGH_UNAVAILABLE:'Chưa đủ điều kiện hoặc hôm nay đã thử đột phá.',FUSION_UNAVAILABLE:'Chưa đủ ba phù cùng cấp.',ITEM_UNAVAILABLE:'Vật phẩm chưa dùng được lúc này.',ALREADY_PROTECTED:'Hôm nay đã kích hoạt bảo vệ rồi.',NO_NEXT_REMINDER:'Không còn lần nhắc sắp tới để sửa.'};
   const timelineErrors={TIMELINE_CHANGED:'Lịch vừa thay đổi. Đóng hộp và mở lại lịch trước khi kéo nhé.',TIMELINE_BLOCKED:'Giờ đó đã qua, đang bận hoặc ngoài khung làm việc. Chưa đổi lịch.',TIMELINE_NO_ROOM:'Không đủ chỗ cho các việc phía sau. Chưa lưu lần kéo này; hãy điều chỉnh khoảng rảnh hoặc thời lượng.',TIMELINE_DEADLINE:'Cách xếp này vượt deadline. Chưa đổi lịch.',TIMELINE_UNDO_EXPIRED:'Đã hết thời gian hoàn tác. Cậu vẫn có thể chỉnh giờ trực tiếp.',INVALID_TIMELINE_MOVE:'Chọn giờ tương lai theo nấc 5 phút nhé.'};
-  throw Error(result.message??timelineErrors[result.error]??messages[result.error]??'Chưa xác nhận được kết quả. Kiểm tra lại trước khi thao tác mới.');
+  const checkinErrors={ALREADY_CHECKED_IN:'Cậu đã nhận quà hôm nay rồi. Hẹn cậu ngày mai nhé.',CHECKIN_COMPLETE:'Đã nhận đủ 30 phần quà. Chu kỳ tiếp theo bắt đầu sau khi đủ 32 ngày.'};
+  const error=Error(result.message??checkinErrors[result.error]??timelineErrors[result.error]??messages[result.error]??'Chưa xác nhận được kết quả. Kiểm tra lại trước khi thao tác mới.');error.code=result.error;throw error;
  }
  return result;
 }
@@ -154,7 +197,7 @@ export async function refreshLive(){
  const baseTasks=data.tasks.map(t=>mapTask(t,completions));
  for(const item of history.items)if(!baseTasks.some(task=>task.id===item.id))baseTasks.push(item);
  return {
-  live:true,loaded:true,resting:data.resting,rest:data.rest,needsSetup:data.needsSetup,serverNow:data.now,settingsVersion:data.settings?.version??0,
+  live:true,loaded:true,checkin:data.checkin,breakthroughPenalties:data.breakthroughPenalties,resting:data.resting,rest:data.rest,needsSetup:data.needsSetup,serverNow:data.now,settingsVersion:data.settings?.version??0,
   start:clock(data.settings?.start_minutes??270),sleep:data.settings?.sleep_minutes===null||!data.settings?'':clock(data.settings.sleep_minutes),autoPlanDelayMinutes:Number(data.settings?.auto_plan_delay_minutes??180),
   tasks:baseTasks,historyOffset:history.offset+history.items.length,historyHasMore:history.hasMore,historyTotal:history.total,historyLoading:false,
   reminders:data.reminders.map(r=>({...r,times:r.times.join(', '),start:r.startDate,end:r.endDate??''})),

@@ -1,5 +1,5 @@
 import {query,type Database,type Statement} from './database.ts';
-import {initialHealthy,assessSleep,type SleepAssessment,type HealthyState} from '../../domain/healthy.ts';
+import {initialHealthy,assessSleep,claimDailyReward,type SleepAssessment,type HealthyState} from '../../domain/healthy.ts';
 
 type Account={state_json:string;version:number};
 // Every write has an immutable request receipt. Random samples must be supplied
@@ -10,7 +10,7 @@ export class HealthyStore {
  constructor(db:Database,defer?:(statements:Statement[])=>void){this.db=db;this.defer=defer;}
  async read(owner:string){
   const row=await query(this.db,'SELECT state_json,version FROM cultivation_accounts WHERE owner=?',owner).first<Account>();
-  return row?{state:JSON.parse(row.state_json) as HealthyState,version:row.version}:{state:initialHealthy(),version:0};
+  return row?{state:{...initialHealthy(),...JSON.parse(row.state_json)} as HealthyState,version:row.version}:{state:initialHealthy(),version:0};
  }
  async mutate<T>(owner:string,id:string,operation:string,input:unknown,now:number,
   apply:(state:HealthyState)=>{state:HealthyState;result:T;statements?:Statement[]}):Promise<T>{
@@ -43,6 +43,15 @@ export class HealthyStore {
     query(this.db,'INSERT INTO sleep_assessments(owner,day,target,reported_at,result,qi_delta,demoted,assessed_at) VALUES(?,?,?,?,?,?,?,?)',
      owner,input.day,input.target,input.reportedAt,outcome.onTime?'on_time':input.reportedAt===null?'unreported':'late',outcome.delta,Number(outcome.demoted),input.assessedAt)
    ]:[]};
+  });
+ }
+ async checkIn(owner:string,id:string,input:unknown,now:number){
+  return this.mutate(owner,id,'daily-checkin',input,now,state=>{
+   const r=claimDailyReward(state,now);
+   return {state:r.state,result:{dailyReward:r.reward,calendarDay:r.calendarDay},statements:[
+    query(this.db,'INSERT INTO daily_checkins(owner,day,cycle_start_day,reward_day,reward_json,created) VALUES(?,?,?,?,?,?)',
+     owner,r.calendarDay,r.cycleStartDay,r.reward.day,JSON.stringify(r.reward),now)
+   ]};
   });
  }
  async awardTask(owner:string,taskId:string,now:number){

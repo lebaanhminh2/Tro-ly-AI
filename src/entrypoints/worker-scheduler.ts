@@ -4,7 +4,7 @@ import {RecurrenceStore} from '../adapters/d1/recurrence-store.ts';
 import {unlockAchievements} from '../adapters/d1/progress-store.ts';
 import {configured} from '../config/env.ts';
 import type {Env} from '../config/env.ts';
-import {recoverInterrupted} from '../adapters/d1/database.ts';
+import {recoverInterrupted,query} from '../adapters/d1/database.ts';
 import {D1WorkStore} from '../adapters/d1/work-store.ts';
 import {flushOutbox} from '../adapters/d1/outbox.ts';
 import {processInbox} from '../application/process-inbox.ts';
@@ -22,6 +22,14 @@ export async function runScheduled(env:Env,deps:{cardsEnabled:boolean;transport:
  const {cardsEnabled,transport,clock,chat,flushCards}=deps;
  const now=clock.now();
  const store=new D1WorkStore(env.DB,cardsEnabled);
+ const schedule=new ScheduleStore(env.DB);
+ if(env.ASSETS){
+  // Replies to an explicit user action remain deliverable even if a later
+  // maintenance job fails. Proactive messages must wait for inactivity scoring.
+  const direct=await query(env.DB,"SELECT id FROM outbox WHERE state='pending' AND available<=? AND attempts<3 AND (id LIKE ? OR id LIKE ?) ORDER BY available,id LIMIT 1",now,`reply:${env.TELEGRAM_USER_ID}:%`,`ack:${env.TELEGRAM_USER_ID}:%`).first<{id:string}>();
+  if(direct)await flushOutbox(env,transport,now,()=>clock.now(),direct.id,1);
+  await schedule.settleClosedDays(env.TELEGRAM_USER_ID,clock.now());
+ }
  // A previous webhook or cron may already have committed a delivery. Send one
  // first so background maintenance cannot consume the entire 10 ms Free-plan
  // CPU allowance before Telegram is called.
@@ -42,9 +50,7 @@ export async function runScheduled(env:Env,deps:{cardsEnabled:boolean;transport:
  // Stagger independent jobs across four invocations. Due notifications may be
  // queued up to three minutes later, while outbox delivery remains every minute.
  const phase=Math.floor(now/60000)%4;
- const schedule=new ScheduleStore(env.DB);
  if(phase===0){
-  await schedule.settleClosedDays(env.TELEGRAM_USER_ID,clock.now());
   const taskDay=new TaskDayStore(env.DB);
   await taskDay.queuePrompt(env.TELEGRAM_USER_ID,clock.now());
   await taskDay.activateAutomatic(env.TELEGRAM_USER_ID,clock.now());

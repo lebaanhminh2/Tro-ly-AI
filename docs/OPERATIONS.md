@@ -54,6 +54,10 @@ Thống kê /progress dùng PNG native; sendPhoto/editMessageMedia multipart ch�
 Soft-delete không erase task: không tự phục hồi bằng cách bật lại reminder cũ; chỉ restore có chủ đích sau xác nhận user.
 
 Mini App live tại /app/; /api xác thực Telegram initData15phút, API401 thì mở lại từ Telegram. /kiemtra đăng ký menu cho owner. Không đưa initData/key/token vào log hoặc URL.
+
+Chrome cũng mở trực tiếp tại /app/. Chọn “Lấy mã đăng nhập”, gửi `/dangnhap MÃ` cho @Minh_Anh_cua_Minh_bot, rồi quay lại tab. Mã dùng một lần, hết hạn sau 10 phút và chỉ owner được xác nhận. Phiên Chrome có hiệu lực 30 ngày, lưu trong cookie Secure/HttpOnly/SameSite=Strict; Đăng xuất thu hồi phiên trên máy chủ. Migration0027 thêm bảng mã và phiên, chỉ lưu hash của các mã bí mật. Các lệnh ghi bằng phiên trình duyệt yêu cầu đúng Origin và header riêng. Màn desktop dùng điều hướng bên trái từ 900px; màn nhỏ giữ điều hướng dưới.
+
+Cron cập nhật các ngày không hoạt động trước lượt gửi. Khi tài khoản suspended, outbox hủy thông báo chủ động đang chờ, bao gồm tóm tắt lịch, thành tích và lời nhắc. Phản hồi lệnh người dùng vẫn được gửi; việc mở Chrome/xem dữ liệu không tự khôi phục trạng thái, nhắn lại cho Minh Anh để tiếp tục.
 Backup trước release Mini App: .wrangler/staging-before-miniapp.sql ignored, đã restore thử0013–15. Không rollback code về bản chưa hỗ trợ state/scheduler mới mà không xem migration compatibility.
 
 ## Khi có lỗi

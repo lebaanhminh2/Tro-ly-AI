@@ -6,6 +6,43 @@ import {Miniflare} from 'miniflare';
 import {miniAppApi} from '../../src/entrypoints/mini-app.ts';
 import {HealthyStore} from '../../src/adapters/d1/healthy-store.ts';
 import type {Database} from '../../src/adapters/d1/database.ts';
+
+test('checkin is owner-authenticated, server-chosen and shared by Chrome and Telegram without resuming reminders',async()=>{
+ const {approveBrowserCode}=await import('../../src/adapters/d1/browser-auth.ts');
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
+  const token='123:fake',now=Date.parse('2026-10-05T23:59:59+07:00'),env={DB:db,TELEGRAM_USER_ID:'123',TELEGRAM_WEBHOOK_SECRET:'x'.repeat(32),TELEGRAM_BOT_TOKEN:token};
+  const params=new URLSearchParams({auth_date:String(Math.floor(now/1000)),user:JSON.stringify({id:123})});
+  params.set('hash',createHmac('sha256',createHmac('sha256','WebAppData').update(token).digest()).update([...params].sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>k+'='+v).join('\n')).digest('hex'));
+  const telegram={'X-Telegram-Init-Data':params.toString()},cookies=(r:Response)=>r.headers.getSetCookie().map(c=>c.split(';')[0]).join('; ');
+  const post=(path:string,body:unknown,extra:Record<string,string>={},at=now)=>miniAppApi(new Request('https://local/api/'+path,{method:'POST',headers:{Origin:'https://local','X-Minh-Anh-Request':'1',...extra},body:JSON.stringify(body)}),env,at);
+  const started=await post('browser-auth/start',{}),pair=cookies(started),code=(await started.json() as {code:string}).code;
+  assert.equal(await approveBrowserCode(db,'123','123',code,now),true);
+  const session=cookies(await post('browser-auth/status',{}, {Cookie:pair})),browser={Cookie:session};
+  const store=new HealthyStore(db);await store.mutate('123','suspended-seed','seed',{},now,s=>({state:{...s,suspended:true,inactiveDays:3},result:{}}));
+  const input={id:'daily_api001',operation:'checkin'};
+  assert.equal((await post('cultivation',input)).status,401);
+  const first=await post('cultivation',input,browser);assert.equal(first.status,200);
+  const replay=await post('cultivation',input,telegram);assert.equal(replay.status,200);
+  assert.deepEqual(await first.json(),await replay.json());
+  assert.equal((await post('cultivation',{...input,id:'daily_api002'},telegram)).status,409);
+  assert.equal((await post('cultivation',{...input,id:'daily_forged',reward:{qi:999}},telegram)).status,400);
+  assert.equal((await post('cultivation',{...input,id:'daily_item001',item:'supreme'},telegram)).status,400);
+  const next=await post('cultivation',{...input,id:'daily_next001'},telegram,now+1000);assert.equal(next.status,200);
+  const account=(await store.read('123')).state;assert.equal(account.qi,1);assert.equal(account.tickets,1);
+  assert.equal(account.checkin!.count,2);assert.equal(account.suspended,true);assert.equal(account.inactiveDays,3);
+  assert.equal((await db.prepare("SELECT COUNT(*) AS n FROM daily_checkins WHERE owner='123'").first<{n:number}>())!.n,2);
+  const bootstrap=await miniAppApi(new Request('https://local/api/bootstrap',{headers:telegram}),env,now+1000);
+  assert.equal(bootstrap.status,200);const view=await bootstrap.json() as {checkin:{count:number;claimedToday:boolean;rewards:unknown[]}};
+  assert.equal(view.checkin.count,2);assert.equal(view.checkin.claimedToday,true);assert.equal(view.checkin.rewards.length,30);
+  assert.deepEqual((view.checkin.rewards[6] as {items:unknown}).items,{basic:3});
+  assert.deepEqual((view.checkin.rewards[13] as {items:unknown}).items,{middle:3});
+  assert.deepEqual((view.checkin.rewards[20] as {items:unknown}).items,{high:3});
+  assert.ok(view.checkin.rewards.slice(0,29).every(r=>!(r as {items:{supreme?:number}}).items.supreme));
+ }finally{await mf.dispose();}
+});
 test('Mini App rejects unauthenticated/cross-origin writes and retries one draw safely',async()=>{
  const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
  try{
@@ -27,6 +64,14 @@ test('Mini App rejects unauthenticated/cross-origin writes and retries one draw 
   const second=await miniAppApi(req(),env,now);assert.equal(second.status,200);
   assert.deepEqual(await first.json(),await second.json());
   assert.equal((await store.read('123')).state.tickets,0);
+  const postTask=(body:Record<string,unknown>)=>miniAppApi(new Request('https://local/api/tasks',{method:'POST',headers:{Origin:'https://local','X-Telegram-Init-Data':params.toString()},body:JSON.stringify(body)}),env,now);
+  const created=await postTask({id:'estimate_api_create',operation:'create',title:'Estimate via API',remainingMinutes:75});
+  assert.equal(created.status,200);
+  const taskId=(await created.json() as {result:{id:string}}).result.id;
+  assert.equal((await db.prepare('SELECT remaining_minutes FROM task_planning WHERE task_id=?').bind(taskId).first<{remaining_minutes:number}>())?.remaining_minutes,75);
+  assert.equal((await postTask({id:'estimate_api_invalid',operation:'edit',taskId,version:1,title:'Estimate via API',remainingMinutes:'60'})).status,400);
+  assert.equal((await postTask({id:'estimate_api_edit',operation:'edit',taskId,version:1,title:'Estimate via API',remainingMinutes:30})).status,200);
+  assert.equal((await db.prepare('SELECT remaining_minutes FROM task_planning WHERE task_id=?').bind(taskId).first<{remaining_minutes:number}>())?.remaining_minutes,30);
  }finally{await mf.dispose();}
 });
 

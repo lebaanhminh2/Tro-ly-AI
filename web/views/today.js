@@ -1,4 +1,4 @@
-import {taskBuckets,flameLevel} from '../api.js';
+import {taskBuckets,flameLevel,checkinProgress,dailyRewardLabel} from '../api.js';
 
 function dayLabel(state){
  const liveDate=state.live&&state.serverNow?new Date(state.serverNow):null;
@@ -13,6 +13,26 @@ function deadlineLabel(value,now){
  return past?'quá hạn '+amount:'còn '+amount;
 }
 const clock=value=>new Date(value).toLocaleTimeString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit'});
+const duration=value=>{const minutes=Math.max(0,Number(value)||0),hours=Math.floor(minutes/60),rest=minutes%60;return hours?hours+' giờ'+(rest?' '+rest+' phút':''):minutes+' phút';};
+function renderPlanNotice(ui,state){
+ const plan=state.dailyPlan?.plan;if(!plan)return null;
+ const notices=[],now=(state.serverNow??Date.now())+Date.now()-(state.loadedAt??Date.now());
+ if(plan.overflow>0)notices.push('Cậu đã thêm '+plan.overflow+' phút vượt thời gian rảnh hôm nay.');
+ if(plan.unscheduled>0)notices.push(plan.unscheduled+' phút chưa có khung giờ để đặt lời nhắc.');
+ const overdue=plan.items.filter(item=>{const task=state.tasks.find(t=>t.id===item.taskId);return task&&!task.done&&deadlineLabel(task.deadline,now)?.startsWith('quá hạn');}).length;
+ if(overdue)notices.push(overdue+' việc trong lịch đã quá hạn. Cậu có thể điều chỉnh hạn hoặc chia nhỏ để làm tiếp.');
+ else if(plan.risks?.length)notices.push('Một số việc trong lịch có nguy cơ không kịp hạn với thời gian hiện tại.');
+ if(!notices.length)return null;
+ const notice=ui.el('aside',undefined,'plan-notice');notice.setAttribute('aria-label','Điều cần chú ý trong lịch hôm nay');
+ const copy=ui.el('div',undefined,'notice-copy');copy.append(ui.el('strong','Điều cần chú ý'),ui.el('p',notices.slice(0,2).join(' ')));
+ notice.append(ui.el('span','!','notice-mark'),copy);return notice;
+}
+function renderSessionLabels(ui,windows,now,done){
+ const times=ui.el('span',undefined,'daily-item-windows');
+ for(const slot of [...windows].sort((a,b)=>a.start-b.start)){const active=!done&&slot.start<=now&&now<slot.end;times.append(ui.el('span',clock(slot.start)+'–'+clock(slot.end)+(active?' · Hiện tại':''),'session-window'+(active?' is-current':'')));}
+ if(!windows.length)times.append(ui.el('span','Chưa có giờ làm','session-window is-unscheduled'));
+ return times;
+}
 export function renderWorkState(ui,state,plan,now){
  const {el,button}=ui;
  const focused=state.taskFocus?.endsAt>now;
@@ -56,7 +76,10 @@ export function renderToday(ui,state){
  const now=(state.serverNow??Date.now())+Date.now()-(state.loadedAt??Date.now());
  const root=el('section',undefined,'today-page');
 
- root.append(heading('Một ngày, từng bước.',dayLabel(state)));
+ const top=heading('Một ngày, từng bước.',dayLabel(state)),attendance=checkinProgress(state.cultivation,now,state.checkin?.rewards);
+ const rewardLink=button(attendance.canClaim?'Quà hôm nay':'Quà hằng ngày',()=>ui.openRewardCalendar(),'secondary daily-reward-entry');
+ rewardLink.setAttribute('aria-label',attendance.canClaim?'Quà hôm nay: '+dailyRewardLabel(attendance.rewards[attendance.count])+'. Xem lịch quà.':'Xem lịch quà điểm danh 30 ngày');
+ top.append(rewardLink);root.append(top);
 
  if(state.resting){
   const reason=state.rest?.reason;
@@ -75,18 +98,24 @@ export function renderToday(ui,state){
   root.append(rest);
  }
 
- if(state.mode==='timeline')root.append(renderWorkState(ui,state,plan,now));
-
+ root.append(renderWorkState(ui,state,plan,now));
+ const main=el('div',undefined,'today-main'),panel=el('div',undefined,'today-view-panel');panel.id='today-view-panel';
  const toggle=el('div',undefined,'segment today-view-switch');
+ toggle.setAttribute('aria-label','Cách xem công việc');
+ const controls=[];
+ const updatePanel=()=>panel.replaceChildren(state.mode==='timeline'?renderDailyPlan(ui,state):renderTaskList(ui,state,buckets,card,button,openTask,render));
  for(const [value,label] of [['timeline','Lịch hôm nay'],['tasks','Danh sách việc']]){
-  const b=button(label,()=>{state.mode=value;render();});
+  const b=button(label,()=>{
+   if(state.mode===value)return;
+   const top=toggle.getBoundingClientRect?.().top;
+   state.mode=value;controls.forEach(([mode,control])=>control.setAttribute('aria-pressed',String(mode===value)));
+   updatePanel();ui.keepViewAnchor?.(toggle,top);
+  });
   b.setAttribute('aria-pressed',String(state.mode===value));
-  toggle.append(b);
+  b.setAttribute('aria-controls',panel.id);b.setAttribute('data-today-mode',value);
+  toggle.append(b);controls.push([value,b]);
  }
- root.append(toggle);
-
- if(state.mode==='timeline')root.append(renderDailyPlan(ui,state));
- else root.append(renderTaskList(ui,state,buckets,card,button,openTask,render));
+ updatePanel();main.append(toggle,panel);root.append(main);
 
  return root;
 }
@@ -94,14 +123,15 @@ export function renderToday(ui,state){
 function renderTaskList(ui,state,buckets,card,button,openTask,render){
  const {el}=ui;
  const section=el('section',undefined,'task-list-section');
- const headingRow=el('div',undefined,'section-heading task-list-heading');
+ const headingRow=el('div',undefined,'section-heading task-list-heading today-panel-heading');
  const copy=el('div',undefined,'section-heading-copy');
- const actions=el('div',undefined,'heading-actions');
+ const actions=el('div',undefined,'heading-actions today-panel-actions');
  const selectButton=button(state.selecting?'Thoát chọn':'Chọn nhiều',()=>{state.selecting=!state.selecting;state.selected.clear();render();},'text-button selection-toggle');
  selectButton.setAttribute('aria-pressed',String(state.selecting));
  actions.append(button('+ Tạo task',()=>openTask(null),'primary task-create'),selectButton);
- copy.append(el('h2',buckets.active.length+' việc đang làm'),el('p','Các task chưa hoàn thành của cậu.','section-kicker'));
+ copy.append(el('h2',buckets.active.length+' việc chưa xong'),el('p','Tất cả công việc · Bấm vào việc để điều chỉnh.','section-kicker'));
  headingRow.append(copy,actions);section.append(headingRow);
+ const notice=renderPlanNotice(ui,state);if(notice)section.append(notice);
 
  const taskList=(tasks,className='',groupHistory=false)=>{
   const list=card(('task-board '+className).trim());
@@ -124,14 +154,17 @@ function renderTaskList(ui,state,buckets,card,button,openTask,render){
    });
    const name=button('',()=>openTask(task),'task-open'),relative=deadlineLabel(task.deadline,(state.serverNow??Date.now())+Date.now()-(state.loadedAt??Date.now()));
    const exact=task.deadline?(task.deadline.length===10?task.deadline.split('-').reverse().join('/'):new Date(task.deadline).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',dateStyle:'short',timeStyle:'short'})):null;
-   name.append(el('span','#'+task.code,'code'),el('strong',task.title),el('small',exact?'Hạn '+exact+(relative?' · '+relative:''):'Chưa có hạn'));
+   const planned=state.dailyPlan?.plan?.items.find(item=>item.taskId===task.id),now=(state.serverNow??Date.now())+Date.now()-(state.loadedAt??Date.now());
+   name.append(renderSessionLabels(ui,planned?.windows??[],now,task.done),el('strong','#'+task.code+' '+task.title));
+   const details=[task.remainingMinutes!==null&&task.remainingMinutes!==undefined?'Còn '+duration(task.remainingMinutes):null,exact?'Hạn '+exact+(relative?' · '+relative:''):'Chưa có hạn'].filter(Boolean);
+   name.append(el('small',details.join(' · ')));
    row.append(check,name);list.append(row);
   }
   return list;
  };
 
  if(buckets.active.length)section.append(taskList(buckets.active));
- else{const empty=el('div',undefined,'task-empty');empty.append(el('p','Không còn việc đang làm. Ui giỏi ghê :>','hint'));section.append(empty);}
+ else{const empty=el('div',undefined,'task-empty');empty.append(el('p','Các việc đều đã hoàn thành. Ui giỏi ghê :>','hint'));section.append(empty);}
 
  if(buckets.completedToday.length){
   const done=el('details',undefined,'daily-later completed-today');done.open=true;
@@ -169,43 +202,37 @@ function renderDailyPlan(ui,state){
 
  const completed=plan.items.filter(item=>state.tasks.find(task=>task.id===item.taskId)?.done).length;
  const actualTotal=plan.items.reduce((sum,item)=>sum+Number(item.actualMinutes??0),0);
- const overview=el('section',undefined,'plan-overview');
+ const overview=el('section',undefined,'plan-overview today-panel-heading');
  const copy=el('div',undefined,'plan-overview-copy');
- copy.append(el('p','LỊCH HÔM NAY','eyebrow'),el('h2',plan.items.length?plan.items.length+' việc đã xếp':'Chưa có việc cho hôm nay'));
- const summaryParts=[completed+' đã xong',plan.planned+' phút đã xếp / '+plan.capacity+' phút rảnh đã tính'];
- if(actualTotal)summaryParts.unshift(actualTotal+' phút đã làm');
+ copy.append(el('h2',plan.items.length?plan.items.length+' việc trong lịch':'Chưa có việc cho hôm nay'));
+ const summaryParts=[completed+' đã xong',duration(plan.planned)+' đã xếp',duration(plan.capacity)+' rảnh'];
+ if(actualTotal)summaryParts.unshift(duration(actualTotal)+' đã làm');
  copy.append(el('p',summaryParts.join(' · '),'plan-summary'));
- const actions=el('div',undefined,'heading-actions plan-actions');
- actions.append(button('Chỉnh việc hôm nay',()=>ui.openTodayPlan(),'secondary plan-action plan-action-main'),button('Giờ bận/rảnh',()=>ui.openAvailability(),'secondary plan-action'));
+ const actions=el('div',undefined,'heading-actions plan-actions today-panel-actions');
+ actions.append(button('Chỉnh lịch',()=>ui.openTodayPlan(),'secondary plan-action plan-action-main'),button('Giờ bận/rảnh',()=>ui.openAvailability(),'secondary plan-action'));
  overview.append(copy,actions);root.append(overview);
 
- const notices=[];
- if(plan.overflow>0)notices.push('Cậu đã thêm '+plan.overflow+' phút vượt thời gian rảnh hôm nay.');
- if(plan.unscheduled>0)notices.push(plan.unscheduled+' phút chưa có khung giờ thật để Minh Anh đặt lời nhắc.');
- if(plan.risks?.length)notices.push('Có task gần deadline nên được ưu tiên trước.');
- if(notices.length){
-  const notice=el('aside',undefined,'plan-notice');
-  notice.setAttribute('aria-label','Điều cần chú ý');
-  notice.append(el('span','!','notice-mark'),el('div',undefined,'notice-copy'));
-  notice.lastChild.append(el('strong','Điều cần chú ý'),el('p',notices.slice(0,2).join(' ')));
-  root.append(notice);
- }
+ const now=(state.serverNow??Date.now())+Date.now()-(state.loadedAt??Date.now());
+ const notice=renderPlanNotice(ui,state);if(notice)root.append(notice);
 
  const list=el('div',undefined,'daily-list');
- for(const item of plan.items){
+ const ordered=[...plan.items].sort((a,b)=>Math.min(...(a.windows??[]).map(w=>w.start))-Math.min(...(b.windows??[]).map(w=>w.start)));
+ for(const item of ordered){
   const task=state.tasks.find(t=>t.id===item.taskId);if(!task)continue;
-  const row=el('article',undefined,'daily-item'+(task.done?' done':''));
+  const windows=[...(item.windows??[])].sort((a,b)=>a.start-b.start),current=!task.done&&windows.some(w=>w.start<=now&&now<w.end);
+  const row=el('article',undefined,'daily-item'+(task.done?' done':'')+(current?' is-current':''));
   const check=el('input');check.type='checkbox';check.className='check';check.checked=task.done;
   check.setAttribute('aria-label',(task.done?'Mở lại ':'Hoàn thành ')+task.title);
   check.addEventListener('change',()=>{check.checked=task.done;ui.toggleTask(task);});
   const info=button('',()=>openTask(task),'daily-item-open');
   const actual=Number(item.actualMinutes??task.actualMinutes??0),remaining=task.remainingMinutes??item.remaining;
-  const details=[`${item.minutes} phút hôm nay`];
-  if(actual)details.push(`đã làm ${actual} phút`);
-  if(remaining!==null&&remaining!==undefined)details.push(`còn ${Math.max(0,Number(remaining))} phút`);
+  const times=renderSessionLabels(ui,windows,now,task.done);
+  const details=[duration(item.minutes)+' hôm nay'];
+  if(actual)details.push('đã làm '+duration(actual));
+  if(remaining!==null&&remaining!==undefined)details.push('còn '+duration(remaining));
   if((item.scheduledMinutes??item.minutes)<item.minutes)details.push(`${item.minutes-(item.scheduledMinutes??item.minutes)} phút chưa có giờ nhắc`);
   const deadline=deadlineLabel(task.deadline,(state.serverNow??Date.now())+Date.now()-(state.loadedAt??Date.now()));if(deadline)details.push(deadline);
-  info.append(el('strong',(task.done?'✓ ':'')+'#'+task.code+' '+task.title),el('small',details.join(' · ')));
+  info.append(times,el('strong','#'+task.code+' '+task.title),el('small',details.join(' · ')));
   row.append(check,info);
   list.append(row);
  }

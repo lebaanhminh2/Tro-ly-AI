@@ -227,8 +227,13 @@ export async function appointmentAllowed(db:Database,reminderId:string,now:numbe
 
 export async function acknowledgeAppointments(db:Database,owner:string,messageId?:number){
  if(!Number.isSafeInteger(messageId)||Number(messageId)<=0)return;
- await query(db,`UPDATE task_appointments SET responded=1 WHERE owner=? AND responded=0 AND EXISTS(SELECT 1 FROM outbox o
-  WHERE o.reminder_id IN ('appointment:'||task_appointments.id||':1','appointment:'||task_appointments.id||':2') AND o.message_id=? AND o.state='sent')`,owner,messageId!).run();
+ await db.batch([
+  query(db,`UPDATE task_appointments SET responded=1 WHERE owner=? AND responded=0 AND EXISTS(SELECT 1 FROM outbox o
+   WHERE o.reminder_id IN ('appointment:'||task_appointments.id||':1','appointment:'||task_appointments.id||':2') AND o.message_id=? AND o.state='sent')`,owner,messageId!),
+  query(db,`UPDATE outbox SET state='failed' WHERE state='pending' AND reminder_id IN (
+   SELECT 'appointment:'||a.id||':2' FROM task_appointments a WHERE a.owner=? AND a.responded=1
+   AND EXISTS(SELECT 1 FROM outbox sent WHERE sent.reminder_id IN ('appointment:'||a.id||':1','appointment:'||a.id||':2') AND sent.message_id=? AND sent.state='sent'))`,owner,messageId!)
+ ]);
 }
 
 export async function queueAppointments(db:Database,owner:string,now:number){

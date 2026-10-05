@@ -86,8 +86,9 @@ export class D1WorkStore implements WorkStore {
     const result=await this.mutateHierarchy(owner,requestId,args,now,s=>statements.push(...s));
     return {result,statements};
   }
-  async mutateHierarchy(owner:string,requestId:string,input:{operation:string;taskId?:string;stepId?:string;version?:number;title?:string;note?:string;deadline?:string|null;complete?:boolean;confirm?:boolean},now:number,defer?:(statements:Statement[])=>void){
+  async mutateHierarchy(owner:string,requestId:string,input:{operation:string;taskId?:string;stepId?:string;version?:number;title?:string;note?:string;deadline?:string|null;complete?:boolean;confirm?:boolean;remainingMinutes?:number|null},now:number,defer?:(statements:Statement[])=>void){
     const operation=input.operation;
+    if(input.remainingMinutes!==undefined&&(!['create','edit'].includes(operation)||(input.remainingMinutes!==null&&(!Number.isInteger(input.remainingMinutes)||input.remainingMinutes<0||input.remainingMinutes>100000))))throw Error('INVALID_REQUEST');
     if(!['create','edit','complete','delete','add_step','step_status','edit_step','delete_step'].includes(operation))throw Error('INVALID_OPERATION');
     if(['create','edit','add_step','edit_step'].includes(operation)&&(!input.title?.trim()||input.title.length>160))throw Error('INVALID_TITLE');
     if(input.note!==undefined&&(typeof input.note!=='string'||input.note.length>2000))throw Error('INVALID_NOTE');
@@ -102,13 +103,16 @@ export class D1WorkStore implements WorkStore {
     const id=crypto.randomUUID();
     return new HealthyStore(this.db,defer).mutate<Record<string,unknown>>(owner,requestId,'task:'+operation,input,now,state=>{
       const statements:Statement[]=[];
+      const saveRemaining=(taskId:string)=>{if(input.remainingMinutes!==undefined)statements.push(q('INSERT INTO task_planning(owner,task_id,remaining_minutes,updated) VALUES(?,?,?,?) ON CONFLICT(owner,task_id) DO UPDATE SET remaining_minutes=excluded.remaining_minutes,updated=excluded.updated,version=task_planning.version+1',owner,taskId,input.remainingMinutes,now));};
       if(operation==='create'){
         statements.push(q('INSERT INTO tasks(id,owner,title,note,deadline,deadline_precision,created) VALUES(?,?,?,?,?,?,?)',id,owner,input.title!.trim(),input.note?.trim()??'',input.deadline??null,input.deadline?(input.deadline.length===10?'date':'datetime'):null,now));
+        saveRemaining(id);
         return {state,result:{id},statements};
       }
       if(!task||task.version!==input.version)throw Error('STALE_TASK');
       statements.push(q('INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM tasks WHERE owner=? AND id=? AND version=? AND deleted_at IS NULL) THEN 1 ELSE 0 END',owner,task.id,input.version!));
       if(operation==='edit'){
+        saveRemaining(task.id);
         const deadline=input.deadline===undefined?task.deadline:input.deadline;
         statements.push(q('UPDATE tasks SET title=?,note=?,deadline=?,deadline_precision=?,version=version+1 WHERE owner=? AND id=?',input.title!.trim(),input.note===undefined?task.note??'':input.note.trim(),deadline,deadline?(deadline.length===10?'date':'datetime'):null,owner,task.id));
       }else if(operation==='complete'){

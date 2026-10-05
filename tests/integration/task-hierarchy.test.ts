@@ -5,6 +5,33 @@ import {Miniflare} from 'miniflare';
 import {D1WorkStore} from '../../src/adapters/d1/work-store.ts';
 import {HealthyStore} from '../../src/adapters/d1/healthy-store.ts';
 import type {Database} from '../../src/adapters/d1/database.ts';
+test('remaining estimates save with tasks, replay safely and child deletion preserves parent',async()=>{
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
+  const store=new D1WorkStore(db),now=Date.now();
+  const create={operation:'create',title:'Estimate',remainingMinutes:90};
+  const first=await store.mutateHierarchy('123','estimate-create',create,now),id=String(first.id);
+  assert.deepEqual(await store.mutateHierarchy('123','estimate-create',create,now),first);
+  const remaining=()=>db.prepare('SELECT remaining_minutes FROM task_planning WHERE owner=? AND task_id=?').bind('123',id).first<{remaining_minutes:number|null}>();
+  assert.equal((await remaining())?.remaining_minutes,90);
+  await assert.rejects(store.mutateHierarchy('123','invalid-estimate',{operation:'edit',taskId:id,version:1,title:'Bad',remainingMinutes:-1},now),/INVALID_REQUEST/);
+  await store.mutateHierarchy('123','zero-estimate',{operation:'edit',taskId:id,version:1,title:'Estimate',remainingMinutes:0},now);
+  assert.equal((await remaining())?.remaining_minutes,0);assert.equal((await store.task('123',id))?.status,'active');
+  await assert.rejects(store.mutateHierarchy('123','stale-estimate',{operation:'edit',taskId:id,version:1,title:'Stale',remainingMinutes:500},now),/STALE_TASK/);
+  assert.equal((await remaining())?.remaining_minutes,0);
+  await store.mutateHierarchy('123','clear-estimate',{operation:'edit',taskId:id,version:2,title:'Estimate',remainingMinutes:null},now);
+  assert.equal((await remaining())?.remaining_minutes,null);
+  await store.mutateHierarchy('123','estimate-step',{operation:'add_step',taskId:id,version:3,title:'Small step'},now);
+  const task=(await store.hierarchy('123'))[0]!;
+  const remove={operation:'delete_step',taskId:id,stepId:task.steps[0]!.id,version:task.version};
+  await assert.rejects(store.mutateHierarchy('123','unconfirmed-delete',remove,now),/CONFIRM_DELETE/);
+  await store.mutateHierarchy('123','confirmed-delete',{...remove,confirm:true},now);
+  await store.mutateHierarchy('123','confirmed-delete',{...remove,confirm:true},now);
+  const after=(await store.hierarchy('123'))[0]!;assert.equal(after.steps.length,0);assert.equal(after.status,'active');
+ }finally{await mf.dispose();}
+});
 test('task steps use permanent codes, parent completion needs consent and awards one ticket',async()=>{
  const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
  try{

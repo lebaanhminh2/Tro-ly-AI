@@ -17,6 +17,25 @@ async function state(db:Database,owner:string,now:number){
 async function lastDelivery(db:Database,owner:string,exclude=''){
  return query(db,"SELECT MAX(COALESCE(sent_at,available)) AS at FROM outbox WHERE id!=? AND id LIKE ? AND state IN ('sent','sending','uncertain')",exclude,`task-nudge:${owner}:%`).first<{at:number|null}>();
 }
+async function windowAcknowledged(db:Database,owner:string,day:number,taskId:string,end:number){
+ return !!await query(db,'SELECT 1 FROM task_nudge_acknowledgments WHERE owner=? AND day=? AND task_id=? AND window_end=?',owner,day,taskId,end).first();
+}
+async function windowAttempts(db:Database,owner:string,day:number,taskId:string,end:number){
+ const row=await query(db,"SELECT COUNT(*) AS n FROM outbox WHERE id LIKE ? AND json_extract(payload,'$._taskNudge.day')=? AND json_extract(payload,'$._taskNudge.taskId')=? AND json_extract(payload,'$._taskNudge.end')=?",`task-nudge:${owner}:%`,day,taskId,end).first<{n:number}>();
+ return row?.n??0;
+}
+export async function acknowledgeTaskNudge(db:Database,owner:string,messageId:number|undefined,now:number){
+ if(!Number.isSafeInteger(messageId)||Number(messageId)<=0)return false;
+ const sent=await query(db,"SELECT payload FROM outbox WHERE id LIKE ? AND message_id=? AND state='sent' ORDER BY sent_at DESC LIMIT 1",`task-nudge:${owner}:%`,messageId!).first<{payload:string}>();
+ if(!sent)return false;
+ const meta=JSON.parse(sent.payload)._taskNudge as {day:number;taskId:string;end:number}|undefined;
+ if(!meta||!Number.isInteger(meta.day)||typeof meta.taskId!=='string'||!Number.isFinite(meta.end)||now>=meta.end)return false;
+ await db.batch([
+  query(db,'INSERT OR IGNORE INTO task_nudge_acknowledgments(owner,day,task_id,window_end,message_id,acknowledged_at) VALUES(?,?,?,?,?,?)',owner,meta.day,meta.taskId,meta.end,messageId!,now),
+  query(db,"UPDATE outbox SET state='failed' WHERE id LIKE ? AND state='pending' AND json_extract(payload,'$._taskNudge.day')=? AND json_extract(payload,'$._taskNudge.taskId')=? AND json_extract(payload,'$._taskNudge.end')=?",`task-nudge:${owner}:%`,meta.day,meta.taskId,meta.end)
+ ]);
+ return true;
+}
 
 // Both the card preview and the mutation resolve the same current-or-next session.
 export async function taskFocusTarget(db:Database,owner:string,now:number):Promise<TaskFocus>{
@@ -90,6 +109,7 @@ export async function nudgeAllowed(db:Database,owner:string,id:string,now:number
  const record=await query(db,'SELECT payload FROM outbox WHERE id=?',id).first<{payload:string}>();if(!record)return false;
  const meta=JSON.parse(record.payload)._taskNudge as {day:number;generation:number;planVersion:number;taskId:string;end:number}|undefined;
  if(!meta||now>=meta.end)return false;
+ if(await windowAcknowledged(db,owner,meta.day,meta.taskId,meta.end))return false;
  const day=await query(db,'SELECT task_plan_status,task_plan_generation FROM schedule_days WHERE owner=? AND day=?',owner,meta.day).first<{task_plan_status:string;task_plan_generation:number}>();
  if(!day||day.task_plan_status!=='active'||day.task_plan_generation!==meta.generation)return false;
  const saved=await query(db,'SELECT version,plan_json FROM daily_plans WHERE owner=? AND day=?',owner,meta.day).first<{version:number;plan_json:string}>();
@@ -110,21 +130,22 @@ export async function queueWorkNudge(env:Env,now:number,transport:typeof fetch){
  const last=await lastDelivery(db,owner);if(last?.at&&now-last.at<DELIVERY_GAP)return;
  const saved=await query(db,'SELECT version,plan_json FROM daily_plans WHERE owner=? AND day=?',owner,day.day).first<{version:number;plan_json:string}>();if(!saved)return;
  const plan=JSON.parse(saved.plan_json) as WorkPlan,counts=JSON.parse(nudge.task_counts_json||'{}') as Record<string,number>;
- let selected:{task:Task;end:number}|null=null;
+ let selected:{task:Task;end:number;attempt:number}|null=null;
  for(const item of plan.items){
-  if((counts[item.taskId]??0)>=2)continue;
   const slot=item.windows.find(window=>window.start<=now&&now<window.end);if(!slot)continue;
+  if(await windowAcknowledged(db,owner,day.day,item.taskId,slot.end))continue;
+  const attempt=await windowAttempts(db,owner,day.day,item.taskId,slot.end);if(attempt>=2)continue;
   const task=await query(db,"SELECT id,title,public_code,deadline FROM tasks WHERE owner=? AND id=? AND status='active' AND deleted_at IS NULL",owner,item.taskId).first<Task>();
-  if(task){selected={task,end:slot.end};break;}
+  if(task){selected={task,end:slot.end,attempt};break;}
  }
  if(!selected)return;
  const claimed=await query(db,'UPDATE task_nudge_state SET lease_until=? WHERE owner=? AND version=? AND lease_until<=?',now+20000,owner,nudge.version,now).run();if(!claimed.meta.changes)return;
- const attempt=counts[selected.task.id]??0;
+ const attempt=selected.attempt;
  const history=(await query(db,"SELECT json_extract(payload,'$.text') AS text FROM outbox WHERE id LIKE ? AND state='sent' ORDER BY sent_at DESC LIMIT 2",`task-nudge:${owner}:%`).all<{text:string}>()).results;
  const generated=await generate(env,transport,{task:selected.task,attempt:attempt+1,previous:history.map(row=>row.text),now:new Date(now).toISOString(),blockEnds:new Date(selected.end).toISOString()});
  const text=generated?.text??(attempt===0?`Cậu ơi, tới giờ làm “${selected.task.title}” rồi nè. Mình bắt đầu nhé? :>`:`Cậu quay lại với “${selected.task.title}” một chút nhé, tớ vẫn chờ cậu đây :>`);
  const nextAt=Math.min(selected.end,now+(generated?.next??30*60000));
- counts[selected.task.id]=attempt+1;
+ counts[selected.task.id]=(counts[selected.task.id]??0)+1;
  const version=nudge.version+1,id=`task-nudge:${owner}:${day.day}:${day.task_plan_generation}:${selected.task.id}:${attempt+1}:${version}`;
  const meta={day:day.day,generation:day.task_plan_generation,planVersion:saved.version,taskId:selected.task.id,end:selected.end};
  await db.batch([
@@ -158,7 +179,7 @@ export async function queuePlanConfirmation(db:Database,owner:string,requestId:s
  if(current){
   text=`Tớ cập nhật lịch rồi nhé. Bây giờ cậu làm “${names.get(current.taskId)??'task hiện tại'}” đến ${clock(current.end)}; xong khung này mình xem việc tiếp theo.`;
   const nudge=await state(db,owner,now),counts=JSON.parse(nudge.task_counts_json||'{}') as Record<string,number>;
-  if(nudge.consecutive_unanswered<3&&(counts[current.taskId]??0)<2){
+  if(!await windowAcknowledged(db,owner,day.day,current.taskId,current.end)&&nudge.consecutive_unanswered<3&&await windowAttempts(db,owner,day.day,current.taskId,current.end)<2){
    counts[current.taskId]=(counts[current.taskId]??0)+1;const version=nudge.version+1;
    id=`task-nudge:${owner}:${day.day}:${day.task_plan_generation}:${current.taskId}:summary:${version}`;
    meta={day:day.day,generation:day.task_plan_generation,planVersion:saved.version,taskId:current.taskId,end:current.end};
@@ -172,7 +193,10 @@ export async function queuePlanConfirmation(db:Database,owner:string,requestId:s
  await query(db,'INSERT OR IGNORE INTO outbox(id,payload,available) VALUES(?,?,?)',id,JSON.stringify({method:'sendMessage',chat_id:Number(owner),text,...(meta?{_taskNudge:meta}:{})}),now).run();
 }
 
-export async function receiveNudgeReply(env:Env,updateId:number,text:string,now:number,_transport:typeof fetch){
+export async function receiveNudgeReply(env:Env,updateId:number,text:string,now:number,_transport:typeof fetch,replyToMessageId?:number){
  if(!text.trim())return;
+ // Ordinary chat retains its short cooldown; only explicit Telegram Reply
+ // permanently acknowledges a particular reminder window.
+ await acknowledgeTaskNudge(env.DB,env.TELEGRAM_USER_ID,replyToMessageId,now);
  await recordTaskNudgeActivity(env.DB,env.TELEGRAM_USER_ID,`telegram:${updateId}`,now);
 }

@@ -1,14 +1,15 @@
-import {applyTheme,setThemePreference,themePreference,connectLive,liveMutation,refreshLive,historyPage,createDemo,realms,loot,talismans,demoDraw,demoFuse,demoBreakthrough,demoCompleteTask} from './api.js';
+import {applyTheme,setThemePreference,themePreference,connectLive,browserAuthRequest,liveMutation,refreshLive,historyPage,createDemo,realms,loot,talismans,demoDraw,demoFuse,demoBreakthrough,demoCompleteTask,checkinProgress,dailyRewardLabel,demoCheckin,breakthroughPenalties} from './api.js';
 import {renderToday} from './views/today.js';
 import {updateTimelineClock} from './views/timeline.js';
 import {renderReminders} from './views/reminders.js';
-import {renderAchievements} from './views/achievements.js';
+import {renderAchievements,renderRewardCalendar} from './views/achievements.js';
 
 const state=createDemo(),content=document.querySelector('#content'),sheet=document.querySelector('#sheet'),sheetContent=document.querySelector('#sheet-content');
 let toastTimer;
 let focusExpiryTimer;
 let saving=false;
 let focusAnimating=false;
+let loginTimer,loginGeneration=0;
 const rewardLabels={qi1:'+1 tu vi',qi2:'+2 tu vi',basic:'Phá Cảnh Phù sơ cấp',keepsake:'Tín vật Minh Anh',heart:'Hộ Tâm Phù',peace:'An Tâm Phù'};
 applyTheme();
 async function performLive(path,input,options={}){
@@ -21,7 +22,8 @@ async function performLive(path,input,options={}){
   Object.assign(state,data);if(!options.keepSheet)sheet.close();render();const result=data.result?.result??data.result;
   if(!options.silent)toast(result?.reward?'Nhận '+(rewardLabels[result.reward]??result.reward):typeof result?.success==='boolean'?(result.success?'Thành công ✦':'Chưa thành công. Kết quả đã lưu, không thử lại trong cùng lượt.'):result?.protected?'Đã kích hoạt bảo vệ cho hôm nay.':'Đã lưu.');return result;}
  catch(error){
-  if(path==='task-focus')try{Object.assign(state,await refreshLive());}catch{/* Keep the original action error. */}
+  if(error.code==='AUTH_REQUIRED'&&!globalThis.Telegram?.WebApp?.initData){showBrowserLogin();return null;}
+  if(path==='task-focus'||input.operation==='checkin')try{Object.assign(state,await refreshLive());}catch{/* Keep the original action error. */}
   toast(error.message||'Chưa lưu được, kiểm tra lại nhé.');return null;
  }
  finally{if(save?.isConnected)save.textContent=oldLabel;saving=false;controls.forEach(({button:b,disabled})=>{if(b.isConnected)b.disabled=disabled;});render();}
@@ -36,10 +38,11 @@ function toast(message){const inline=document.querySelector('#sheet-feedback');i
 function icon(name){const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('aria-hidden','true');svg.setAttribute('fill','none');svg.setAttribute('stroke','currentColor');svg.setAttribute('stroke-width','1.8');svg.setAttribute('stroke-linecap','round');const path=document.createElementNS(svg.namespaceURI,'path');path.setAttribute('d',name==='close'?'M6 6l12 12M18 6L6 18':'M9 3h6l1 3 3 1 2 5-2 5-3 1-1 3H9l-1-3-3-1-2-5 2-5 3-1z M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0');svg.append(path);return svg;}
 function lockPageScroll(){document.documentElement.classList.add('sheet-open');document.body.classList.add('sheet-open');}
 function unlockPageScroll(){document.documentElement.classList.remove('sheet-open');document.body.classList.remove('sheet-open');}
-function closeSheet(){sheet.classList.remove('task-sheet-open','schedule-sheet-open');if(sheet.open)sheet.close();else{unlockPageScroll();render();}}
-function openSheet(title){sheet.classList.remove('task-sheet-open','schedule-sheet-open');sheetContent.replaceChildren();const row=el('div',undefined,'sheet-title-row'),h=el('h2',title);h.id='sheet-title';h.tabIndex=-1;const close=button('',closeSheet,'icon-button');close.setAttribute('aria-label','Đóng');close.setAttribute('data-sheet-close','true');close.append(icon('close'));row.append(h,close);sheetContent.append(row);const feedback=el('p','','form-feedback');feedback.id='sheet-feedback';feedback.hidden=true;feedback.setAttribute('role','status');sheetContent.append(feedback);if(!sheet.open){lockPageScroll();sheet.showModal();}h.focus({preventScroll:true});}
+function resetSheetLayout(){sheet.classList.remove('task-sheet-open','schedule-sheet-open','reward-sheet-open');sheet.scrollTop=0;}
+function closeSheet(){resetSheetLayout();if(sheet.open)sheet.close();else{unlockPageScroll();render();}}
+function openSheet(title){resetSheetLayout();sheetContent.replaceChildren();const row=el('div',undefined,'sheet-title-row'),h=el('h2',title);h.id='sheet-title';h.tabIndex=-1;const close=button('',closeSheet,'icon-button');close.setAttribute('aria-label','Đóng');close.setAttribute('data-sheet-close','true');close.append(icon('close'));row.append(h,close);sheetContent.append(row);const feedback=el('p','','form-feedback');feedback.id='sheet-feedback';feedback.hidden=true;feedback.setAttribute('role','status');sheetContent.append(feedback);if(!sheet.open){lockPageScroll();sheet.showModal();}h.focus({preventScroll:true});}
 function field(label,type,value='',required=true){const wrap=el('label',label,'form-field'),input=el('input');input.type=type;input.value=value;input.required=required;wrap.append(input);if(type==='time'){input.step='60';const hint=el('span','','clock-hint');const update=()=>{if(!input.value){hint.textContent='Chọn giờ · định dạng 24 giờ';return;}const [h,m]=input.value.split(':').map(Number);hint.textContent=input.value+' — '+(h%12||12)+' giờ'+(m?' '+m+' phút':'')+' '+(h<12?'sáng':h<18?'chiều':'tối');};input.addEventListener('input',update);update();wrap.append(hint);}return {wrap,input};}
-function noteField(value=''){const wrap=el('label','Ghi chú','form-field'),input=el('textarea');input.value=value;input.maxLength=2000;input.rows=5;input.placeholder='Thông tin quan trọng, đường dẫn, ý tưởng…';wrap.append(input,el('span','Chỉ lưu cùng task, không tự gửi cho Gemini.','clock-hint'));return {wrap,input};}
+function noteField(value=''){const wrap=el('label','Ghi chú','form-field'),input=el('textarea');input.value=value;input.maxLength=2000;input.rows=3;input.placeholder='Thông tin quan trọng, đường dẫn, ý tưởng…';wrap.append(input,el('span','Ghi chú riêng của task, không tự gửi cho AI.','clock-hint'));return {wrap,input};}
 function empty(title,text,action,label){const c=card('empty');c.append(el('span','✧','empty-symbol'),el('h2',title),el('p',text),button(label,action,'primary'));return c;}
 function confirm(title,description,action){openSheet(title);sheetContent.append(el('p',description,'hint'));const actions=el('div',undefined,'actions');actions.append(button('Xác nhận',()=>{sheet.close();action();},'primary'),button('Quay lại',()=>sheet.close(),'secondary'));sheetContent.append(actions);}
 function toggleTask(task){
@@ -77,8 +80,19 @@ function openTask(task){
  sheet.classList.add('task-sheet-open');
  const shell=el('div',undefined,'task-sheet'),body=el('div',undefined,'task-sheet-body'),form=el('form');
  form.id='task-sheet-form';
- const name=field('Tên công việc','text',task?.title??''),note=noteField(task?.note??''),deadline=field('Ngày hết hạn','date',task?.deadline?.slice(0,10)??'',false),deadlineTime=field('Giờ hết hạn · để trống là 23:59','time',task?.deadline?.includes('T')?task.deadline.slice(11,16):'',false);name.input.maxLength=160;form.append(name.wrap,note.wrap,deadline.wrap,deadlineTime.wrap);
- let progress=null;
+ const name=field('Tên công việc','text',task?.title??''),note=noteField(task?.note??''),deadline=field('Ngày hết hạn','date',task?.deadline?.slice(0,10)??'',false),deadlineTime=field('Giờ hết hạn · để trống là 23:59','time',task?.deadline?.includes('T')?task.deadline.slice(11,16):'',false);name.input.maxLength=160;form.append(name.wrap);
+ let progress=null,timeMode='estimate',progressBox=null;
+ const timeEditor=el('section',undefined,'task-time-editor');form.append(timeEditor);
+ const originalRemaining=task?.remainingMinutes??null;
+ const remainingField=field('Thời gian còn cần làm (phút)','number',originalRemaining===null?'':String(originalRemaining),false);
+ remainingField.input.min='0';remainingField.input.max='100000';remainingField.input.step='1';remainingField.input.placeholder='Chưa ước lượng';
+ const remainingSlider=el('input');remainingSlider.type='range';remainingSlider.min='0';remainingSlider.max=String(Math.max(600,originalRemaining??0));remainingSlider.step='1';remainingSlider.value=String(originalRemaining??0);remainingSlider.className='work-slider';remainingSlider.setAttribute('aria-label','Thời gian còn cần làm (phút)');
+ const remainingBox=el('section',undefined,'remaining-editor');remainingBox.append(remainingField.wrap,remainingSlider,el('p','Ước lượng từ bây giờ đến khi xong. Để trống nếu chưa biết. Lịch đã xếp giữ nguyên cho đến khi cậu chỉnh lại.','hint'));timeEditor.append(remainingBox);
+ const remainingValue=()=>remainingField.input.value===''?null:Number(remainingField.input.value);
+ const remainingDirty=()=>timeMode==='estimate'&&remainingValue()!==originalRemaining;
+ const syncRemaining=()=>{const value=remainingValue();if(value!==null&&Number.isFinite(value)){remainingSlider.max=String(Math.max(600,Math.min(100000,value)));remainingSlider.value=String(value);}if(progress){progress.inputs.forEach(input=>input.disabled=timeMode!=='progress');}};
+ remainingField.input.addEventListener('input',syncRemaining);
+ remainingSlider.addEventListener('input',()=>{remainingField.input.value=remainingSlider.value;syncRemaining();});
  if(task&&state.live){
   const planned=state.dailyPlan?.plan?.items.find(item=>item.taskId===task.id),actual=Number(planned?.actualMinutes??task.actualMinutes??0);
   const remaining=task.remainingMinutes??planned?.remaining??null,baseRemaining=remaining===null?null:Number(remaining)+actual;
@@ -87,29 +101,49 @@ function openTask(task){
   const minutes=el('input');minutes.type='number';minutes.min='0';minutes.max='1440';minutes.step='5';minutes.value=String(actual);minutes.inputMode='numeric';minutes.className='work-minutes';minutes.setAttribute('aria-label','Số phút đã làm hôm nay');
   const slider=el('input');slider.type='range';slider.min='0';slider.max=String(sliderMax);slider.step='1';slider.value=String(Math.min(actual,sliderMax));slider.className='work-slider';slider.setAttribute('aria-label','Thanh trượt số phút đã làm hôm nay');
   const remainingText=el('p','','progress-remaining'),hint=el('p','Nhập tổng số phút cậu đã làm trong hôm nay, hoặc kéo thanh trượt. Lưu lại không bị cộng/trừ lặp.','hint');
-  const updateProgress=value=>{let next=Number(value);if(!Number.isInteger(next)||next<0)next=0;next=Math.min(1440,next);if(next>sliderMax){sliderMax=next;slider.max=String(next);}minutes.value=String(next);slider.value=String(next);remainingText.textContent=baseRemaining===null?'Chưa có ước lượng tổng cho task này':`Còn khoảng ${Math.max(0,baseRemaining-next)} phút`;progress.dirty=next!==actual;progress.minutes=next;};
+  const updateProgress=value=>{let next=Number(value);if(!Number.isInteger(next)||next<0)next=0;next=Math.min(1440,next);if(next>sliderMax){sliderMax=next;slider.max=String(next);}minutes.value=String(next);slider.value=String(next);remainingText.textContent=baseRemaining===null?'Chưa có ước lượng tổng cho task này':`Còn khoảng ${Math.max(0,baseRemaining-next)} phút`;progress.dirty=timeMode==='progress'&&next!==actual;progress.minutes=next;remainingField.input.disabled=timeMode==='progress';remainingSlider.disabled=timeMode==='progress';};
   minutes.addEventListener('input',()=>updateProgress(minutes.value));slider.addEventListener('input',()=>updateProgress(slider.value));
-  progress={dirty:false,minutes:actual};updateProgress(actual);minutesControl.append(minutes,el('span','phút'));head.append(label,minutesControl);box.append(head,slider,remainingText,hint);form.append(box);
+  progress={dirty:false,minutes:actual,inputs:[minutes,slider],refresh:()=>updateProgress(minutes.value)};updateProgress(actual);minutesControl.append(minutes,el('span','phút'));head.append(label,minutesControl);box.append(head,slider,remainingText,hint);progressBox=box;box.hidden=true;timeEditor.append(box);
+  const modes=el('div',undefined,'segment task-time-modes');
+  for(const [mode,text] of [['estimate','Còn cần làm'],['progress','Đã làm hôm nay']]){const control=button(text,()=>{timeMode=mode;for(const b of modes.children)b.setAttribute('aria-pressed',String(b===control));remainingBox.hidden=mode!=='estimate';progressBox.hidden=mode!=='progress';progress.refresh();syncRemaining();},'secondary');control.setAttribute('aria-pressed',String(mode===timeMode));modes.append(control);}
+  timeEditor.prepend(modes);syncRemaining();
  }
+ const extras=el('details',undefined,'task-extras'),extraSummary=el('summary','Ghi chú & hạn hoàn thành');
+ const extraHint=task?.deadline?'Hạn '+task.deadline.slice(0,10).split('-').reverse().join('/'):task?.note?'Có ghi chú':'Tùy chọn';extraSummary.append(el('span',extraHint,'task-extra-meta'));extras.append(extraSummary,note.wrap,deadline.wrap,deadlineTime.wrap);form.append(extras);
  if(task){
   form.append(el('h3','Các bước nhỏ'));
-  for(const step of task.steps){const row=el('label',undefined,'task-row'),check=el('input');check.type='checkbox';check.className='check';check.checked=step.done;const label=el('span','#'+step.code+' · '+step.title);
+  for(const step of task.steps){const row=el('div',undefined,'task-row task-step-row'+(step.done?' done':'')),check=el('input');check.type='checkbox';check.className='check';check.checked=step.done;check.setAttribute('aria-label','Hoàn thành bước '+step.title);const label=el('span','#'+step.code+' · '+step.title);
    check.addEventListener('change',()=>{
     if(state.live){const act=()=>performLive('tasks',{operation:'step_status',taskId:task.id,stepId:step.id,version:task.version,complete:check.checked,confirm:true});if(task.done&&!check.checked)confirm('Mở lại bước và task?','Task cha sẽ trở lại đang làm.',act);else act();return;}
 
     if(task.done&&!check.checked){confirm('Mở lại bước và task?','Mở lại #'+step.code+' cũng mở lại #'+task.code+'.',()=>{task.done=false;step.done=false;render();openTask(task);});return;}
     step.done=check.checked;
     if(task.steps.every(s=>s.done)&&!task.done){confirm('Các bước đều xong rồi','Cậu muốn đánh dấu hoàn thành cả #'+task.code+' không?',()=>{task.done=true;demoCompleteTask(state.cultivation,task.code);render();});}
-   });row.append(check,label);form.append(row);
+   });
+   const remove=button('Xóa',()=>confirm('Xóa bước nhỏ?','Chỉ xóa “'+step.title+'”, giữ nguyên task cha.',()=>{if(state.live){performLive('tasks',{operation:'delete_step',taskId:task.id,stepId:step.id,version:task.version,confirm:true});return;}task.steps=task.steps.filter(item=>item!==step);render();openTask(task);}), 'text-button step-delete');remove.setAttribute('aria-label','Xóa bước '+step.title);
+   row.append(check,label,remove);form.append(row);
   }
   form.append(button('+ Thêm bước',()=>{openSheet('Thêm bước cho #'+task.code);const f=el('form'),title=field('Tên bước','text');f.append(title.wrap);const save=el('button','Thêm bước','primary');save.type='submit';f.append(save);f.addEventListener('submit',e=>{e.preventDefault();const value=title.input.value.trim();if(!value)return;if(state.live){performLive('tasks',{operation:'add_step',taskId:task.id,version:task.version,title:value,confirm:false});return;}task.steps.push({code:task.code+'.'+task.nextStep++,title:value,done:false});task.done=false;render();openTask(task);});sheetContent.append(f);},'text-button'));
  }
- body.append(form,el('p','Mã không đổi khi sắp xếp. Trong bản thật cậu có thể nói “sửa task #24”.','hint'));shell.append(body);
- const actions=el('div',undefined,'actions task-actions'),save=el('button',state.live?(progress?'Lưu task và tiến độ':'Lưu thay đổi'):'Lưu thay đổi mẫu','primary');save.type='submit';save.setAttribute('form',form.id);actions.append(save);
+ body.append(form);if(task)body.append(el('p','Cậu cũng có thể nhắn Minh Anh “sửa task #'+task.code+'”.','hint'));shell.append(body);
+ const actions=el('div',undefined,'actions task-actions'),save=el('button',state.live?'Lưu thay đổi':'Lưu thay đổi mẫu','primary');save.type='submit';save.setAttribute('form',form.id);actions.append(save);
  if(task)actions.append(button(task.done?'Mở lại':'Hoàn thành',()=>toggleTask(task),'secondary'));
- if(task&&state.live)actions.append(button(state.dailyPlan?.plan?.items.some(item=>item.taskId===task.id)?'Chỉnh trong hôm nay':'Thêm vào hôm nay',()=>openTodayPlan(task.id),'secondary'));
+ if(task&&state.live)actions.append(button(state.dailyPlan?.plan?.items.some(item=>item.taskId===task.id)?'Chỉnh trong hôm nay':'Thêm vào hôm nay',()=>openTodayPlan(task.id),'text-button task-plan-action'));
  shell.append(actions);
- form.addEventListener('submit',async event=>{event.preventDefault();const title=name.input.value.trim();if(!title)return;const deadlineValue=deadline.input.value?(deadlineTime.input.value?deadline.input.value+'T'+deadlineTime.input.value+':00+07:00':deadline.input.value):null;if(state.live){const taskChanged=!task||title!==task.title||note.input.value!==(task.note??'')||deadlineValue!==(task.deadline||null);if(!taskChanged&&!progress?.dirty){sheet.close();return;}if(taskChanged){const saved=await performLive('tasks',{operation:task?'edit':'create',...(task?{taskId:task.id,version:task.version}:{}),title,note:note.input.value,...(!task||deadlineValue!==(task.deadline||null)?{deadline:deadlineValue}:{})},{keepSheet:true,silent:true});if(!saved)return;}if(task&&progress?.dirty){const saved=await performLive('task-work',{taskId:task.id,minutes:progress.minutes,note:null},{keepSheet:true,silent:true});if(!saved)return;}sheet.close();render();toast(progress?.dirty?'Đã lưu task và tiến độ hôm nay.':'Đã lưu thay đổi.');return;}if(task){task.title=title;task.note=note.input.value;task.deadline=deadlineValue??'';}else state.tasks.push({code:state.nextTask++,title,note:note.input.value,deadline:deadlineValue??'',done:false,steps:[],nextStep:1});sheet.close();render();toast('Đã đổi bản mẫu · Không lưu lên bot');});
+ form.addEventListener('submit',async event=>{
+  event.preventDefault();const title=name.input.value.trim();if(!title)return;
+  const deadlineValue=deadline.input.value?(deadlineTime.input.value?deadline.input.value+'T'+deadlineTime.input.value+':00+07:00':deadline.input.value):null;
+  if(state.live){
+   const taskChanged=!task||remainingDirty()||title!==task.title||note.input.value!==(task.note??'')||deadlineValue!==(task.deadline||null);
+   if(!taskChanged&&!progress?.dirty){sheet.close();return;}
+   if(taskChanged){const saved=await performLive('tasks',{operation:task?'edit':'create',...(task?{taskId:task.id,version:task.version}:{}),title,note:note.input.value,...(!task||remainingDirty()?{remainingMinutes:remainingValue()}:{}),...(!task||deadlineValue!==(task.deadline||null)?{deadline:deadlineValue}:{})},{keepSheet:true,silent:true});if(!saved)return;}
+   if(task&&progress?.dirty){const saved=await performLive('task-work',{taskId:task.id,minutes:progress.minutes,note:null},{keepSheet:true,silent:true});if(!saved)return;}
+   sheet.close();render();toast(progress?.dirty?'Đã lưu task và tiến độ hôm nay.':'Đã lưu thay đổi.');return;
+  }
+  if(task){task.title=title;task.note=note.input.value;task.deadline=deadlineValue??'';task.remainingMinutes=remainingValue();}
+  else state.tasks.push({code:state.nextTask++,title,note:note.input.value,deadline:deadlineValue??'',remainingMinutes:remainingValue(),done:false,steps:[],nextStep:1});
+  sheet.close();render();toast('Đã đổi bản mẫu · Không lưu lên bot');
+ });
  sheetContent.append(shell);
 }
 
@@ -177,7 +211,7 @@ function openReminder(reminder){
 function openHelp(){openSheet('Hướng dẫn nhanh');for(const [command,description] of [['Chat thường','Trò chuyện, không tự ghi công việc.'],['/ thêm bài toán hạn mai','Thực hiện yêu cầu. Thiếu thông tin thì tớ hỏi.'],['/ mai 7h nhắc tớ dậy','Đặt nhắc một lần; lời nhắc vẫn tuân theo chế độ nghỉ.'],['/lich','Mở phần “Thời gian hôm nay” để cậu tự ghi giờ rảnh, giờ bận và thời lượng task cho chính xác.'],['/ngu','Báo nghỉ, dừng nhắc chủ động; vẫn sửa dữ liệu được.'],['/huy','Thoát phiên nhập đang mở.']]){const box=el('section',undefined,'item-row');box.append(el('strong',command),el('p',description,'hint'));sheetContent.append(box);}}
 function openSettings(){
  openSheet('Cài đặt');const form=el('form'),start=field('Bắt đầu ngày','time',state.start),sleep=field('Giờ nghỉ mục tiêu','time',state.sleep),autoDelay=field('Tự xếp lịch nếu chưa cập nhật sau (phút)','number',String(state.autoPlanDelayMinutes??180));autoDelay.input.min='30';autoDelay.input.max='720';autoDelay.input.step='30';form.append(start.wrap,sleep.wrap,autoDelay.wrap,el('p','Thời gian chờ áp dụng từ ngày tiếp theo. Giờ nghỉ là mục tiêu; /ngu mới xác nhận cậu bắt đầu nghỉ.','hint'));
- const save=el('button',state.live?'Lưu giờ sinh hoạt':'Lưu trong bản mẫu','primary');save.type='submit';form.append(save);form.addEventListener('submit',e=>{e.preventDefault();const delay=Number(autoDelay.input.value);if(start.input.value===sleep.input.value){toast('Giờ bắt đầu và giờ nghỉ cần khác nhau.');return;}if(!Number.isInteger(delay)||delay<30||delay>720||delay%30){toast('Chọn thời gian chờ từ 30 đến 720 phút, theo nấc 30 phút nhé.');return;}if(state.live){performLive('settings',{start:start.input.value,sleep:sleep.input.value,autoPlanDelayMinutes:delay,version:state.settingsVersion});return;}state.start=start.input.value;state.sleep=sleep.input.value;state.autoPlanDelayMinutes=delay;sheet.close();render();toast('Demo: chưa đổi giờ sinh hoạt trên bot.');});const themeLabel=el('label','Giao diện','form-field'),theme=el('select');for(const [value,label] of [['auto','Theo Telegram'],['light','Sáng'],['dark','Tối']]){const option=el('option',label);option.value=value;theme.append(option);}theme.value=themePreference();theme.addEventListener('change',()=>setThemePreference(theme.value));themeLabel.append(theme);sheetContent.append(form,themeLabel,button('Hướng dẫn nhanh',openHelp,'secondary'));
+ const save=el('button',state.live?'Lưu giờ sinh hoạt':'Lưu trong bản mẫu','primary');save.type='submit';form.append(save);form.addEventListener('submit',e=>{e.preventDefault();const delay=Number(autoDelay.input.value);if(start.input.value===sleep.input.value){toast('Giờ bắt đầu và giờ nghỉ cần khác nhau.');return;}if(!Number.isInteger(delay)||delay<30||delay>720||delay%30){toast('Chọn thời gian chờ từ 30 đến 720 phút, theo nấc 30 phút nhé.');return;}if(state.live){performLive('settings',{start:start.input.value,sleep:sleep.input.value,autoPlanDelayMinutes:delay,version:state.settingsVersion});return;}state.start=start.input.value;state.sleep=sleep.input.value;state.autoPlanDelayMinutes=delay;sheet.close();render();toast('Demo: chưa đổi giờ sinh hoạt trên bot.');});const themeLabel=el('label','Giao diện','form-field'),theme=el('select');for(const [value,label] of [['auto',globalThis.Telegram?.WebApp?.initData?'Theo Telegram':'Theo hệ thống'],['light','Sáng'],['dark','Tối']]){const option=el('option',label);option.value=value;theme.append(option);}theme.value=themePreference();theme.addEventListener('change',()=>setThemePreference(theme.value));themeLabel.append(theme);sheetContent.append(form,themeLabel,button('Hướng dẫn nhanh',openHelp,'secondary'));
 }
 function openAvailability(){
  if(state.live){
@@ -232,6 +266,29 @@ function openAvailability(){
 function openShare(){openSheet(state.live?'Thẻ thành tích':'Thẻ thành tích mẫu');const c=el('div',undefined,'rank-card');c.append(el('div','✧','rank-seal'),el('p','TU LUYỆN KỶ LUẬT','eyebrow'),el('h2',realms[state.cultivation.rank].name),el('p','Tổng tích lũy: '+state.cultivation.totalEarned+' tu vi'),el('p',state.live?'MINH ANH · TRỢ LÝ CỦA CẬU':'MINH ANH · DEMO','eyebrow'));sheetContent.append(c,el('p','Không chứa tên task hoặc lịch cá nhân. Chỉ chia sẻ khi cậu chủ động chọn.','hint'),button('Lưu thẻ PNG',()=>{const canvas=document.createElement('canvas');canvas.width=800;canvas.height=1000;const ctx=canvas.getContext('2d');ctx.fillStyle='#242034';ctx.fillRect(0,0,800,1000);ctx.textAlign='center';ctx.fillStyle='#e6c382';ctx.font='28px sans-serif';ctx.fillText('TU LUYỆN KỶ LUẬT',400,220);ctx.font='64px serif';ctx.fillText(realms[state.cultivation.rank].name,400,440);ctx.fillStyle='#f4f0ff';ctx.font='30px sans-serif';ctx.fillText('Tổng tích lũy: '+state.cultivation.totalEarned+' tu vi',400,550);ctx.font='22px sans-serif';ctx.fillText(state.live?'MINH ANH · TRỢ LÝ CỦA CẬU':'MINH ANH · DEMO',400,830);canvas.toBlob(blob=>{if(!blob)return;const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='minh-anh-thanh-tich.png';link.click();setTimeout(()=>URL.revokeObjectURL(url),10000);},'image/png');},'primary'));}
 function demoDay(){if(state.live&&state.day)return state.day.day;return Math.floor((Date.now()+7*3600000-4.5*3600000)/86400000);}
 
+async function claimCheckin(){
+ if(saving)return;
+ if(state.live){const saved=await performLive('cultivation',{operation:'checkin'},{silent:true});if(saved?.dailyReward)toast('Quà ngày '+saved.dailyReward.day+' · '+dailyRewardLabel(saved.dailyReward));return;}
+ const reward=demoCheckin(state.cultivation);if(reward){sheet.close();render();toast('Bản mẫu · '+dailyRewardLabel(reward));}
+}
+function openRewardCalendar(){
+ openSheet('Lịch quà 30 ngày');
+ sheet.classList.add('reward-sheet-open');
+ const now=(state.serverNow??Date.now())+Date.now()-(state.loadedAt??Date.now());
+ const calendar=renderRewardCalendar(ui,state,now);calendar.tabIndex=0;calendar.setAttribute('role','region');
+ sheetContent.append(calendar);calendar.scrollTop=0;
+}
+function openDailyReward(reward){
+ openSheet('Quà ngày '+reward.day);
+ const now=(state.serverNow??Date.now())+Date.now()-(state.loadedAt??Date.now()),p=checkinProgress(state.cultivation,now,state.checkin?.rewards);
+ const reveal=el('div',dailyRewardLabel(reward),'daily-reward-detail'+(reward.milestone?' is-milestone':''));sheetContent.append(reveal);
+ for(const item of talismans){if(reward.items[item.key]){sheetContent.append(el('p','Phá Cảnh Phù · '+item.name+' tăng '+item.boost+' điểm % cơ hội thành công khi dùng trong một lần đột phá.','hint'));if(item.next)sheetContent.append(el('p','Có thể ghép 3 phù cùng cấp trong Túi vật phẩm để thử tạo một phù cấp cao hơn.','hint'));}}
+ const received=reward.day<=p.count,available=reward.day===p.rewardDay&&p.canClaim;
+ sheetContent.append(el('p',received?'Cậu đã nhận phần quà này.':available?'Phần quà này đã sẵn sàng cho hôm nay.':'Nhận khi điểm danh đủ '+reward.day+' lần trong chu kỳ này. Bỏ lỡ một ngày không mất các quà phía sau.','hint'));
+ if(available)sheetContent.append(button('Nhận quà hôm nay',claimCheckin,'primary'));
+ sheetContent.append(button('← Lịch quà 30 ngày',openRewardCalendar,'text-button'));
+}
+
 async function playEffect(target,type,duration=720){
  target.classList.remove('effect-spin','effect-breakthrough','effect-success','effect-failure');
  target.classList.add(type==='draw'?'effect-spin':'effect-breakthrough');
@@ -239,7 +296,7 @@ async function playEffect(target,type,duration=720){
  target.classList.remove('effect-spin','effect-breakthrough');
 }
 function openDraw(){
- if(state.live){openSheet('Quay thưởng');const c=state.cultivation,blocked=c.suspended||c.tickets<1;const hint=c.suspended?'Tạm ngưng vì lâu không chat. Nhắn Minh Anh để hoạt động lại.':c.tickets<1?'Chưa có vé. Hoàn thành một task lần đầu để nhận 1 vé.':'Cậu có '+c.tickets+' vé. /ngu không khóa quay thưởng.';const reveal=el('div','?','loot-result mystery-card');reveal.setAttribute('aria-label','Phần thưởng bí ẩn');const draw=button('Dùng 1 vé',async()=>{if(state.cultivation.tickets<1||state.cultivation.suspended||draw.disabled)return;draw.disabled=true;draw.textContent='Đang mở…';await playEffect(reveal,'draw',620);const saved=await performLive('cultivation',{operation:'draw'},{keepSheet:true,silent:true});if(saved===null&&draw.isConnected){draw.disabled=false;draw.textContent='Dùng 1 vé';return;}if(!draw.isConnected)return;reveal.classList.add('mystery-revealed');reveal.textContent=rewardLabels[saved.reward]??saved.reward;const tickets=state.cultivation.tickets;draw.disabled=tickets<1;draw.textContent=tickets<1?'Hết vé':'Quay tiếp · '+tickets+' vé';},'primary reward-action');draw.disabled=blocked;sheetContent.append(el('p',hint,'hint'),reveal,draw);return;}
+ if(state.live){openSheet('Quay thưởng');const c=state.cultivation,blocked=c.suspended||c.tickets<1;const hint=c.suspended?'Tạm ngưng vì lâu không chat. Nhắn Minh Anh để hoạt động lại.':c.tickets<1?'Chưa có vé. Hoàn thành task hoặc điểm danh để nhận vé nhé.':'Cậu có '+c.tickets+' vé. /ngu không khóa quay thưởng.';const reveal=el('div','?','loot-result mystery-card');reveal.setAttribute('aria-label','Phần thưởng bí ẩn');const draw=button('Dùng 1 vé',async()=>{if(state.cultivation.tickets<1||state.cultivation.suspended||draw.disabled)return;draw.disabled=true;draw.textContent='Đang mở…';await playEffect(reveal,'draw',620);const saved=await performLive('cultivation',{operation:'draw'},{keepSheet:true,silent:true});if(saved===null&&draw.isConnected){draw.disabled=false;draw.textContent='Dùng 1 vé';return;}if(!draw.isConnected)return;reveal.classList.add('mystery-revealed');reveal.textContent=rewardLabels[saved.reward]??saved.reward;const tickets=state.cultivation.tickets;draw.disabled=tickets<1;draw.textContent=tickets<1?'Hết vé':'Quay tiếp · '+tickets+' vé';},'primary reward-action');draw.disabled=blocked;sheetContent.append(el('p',hint,'hint'),reveal,draw);return;}
  openSheet('Linh bảo · Quay thưởng');
  sheetContent.append(el('p','1 vé / lần · Không mua bằng tiền · Kết quả demo','hint'));
  const result=el('div','?','loot-result mystery-card');result.setAttribute('role','status');result.setAttribute('aria-label','Phần thưởng bí ẩn');
@@ -284,24 +341,25 @@ function openInventory(){
 function openBreakthrough(){
  const c=state.cultivation,target=realms[c.rank+1];if(!target)return;
  openSheet('Đột phá · '+target.name);
- sheetContent.append(el('p','Cần '+target.qi+' tu vi và '+target.days+' ngày ngủ đúng giờ. Không tiêu hao tu vi.','hint'));
+ const penalty=(state.breakthroughPenalties??breakthroughPenalties)[c.rank];
+ sheetContent.append(el('p','Cần '+target.qi+' tu vi và '+target.days+' ngày ngủ đúng giờ. Thành công không tiêu hao tu vi; thất bại trừ '+penalty+' tu vi.','hint'));
  const select=el('select'),label=el('label','Dùng Phá Cảnh Phù','form-field'),none=el('option','Không dùng phù');none.value='';select.append(none);
  for(const t of talismans){if(c.inventory[t.key]>0){const option=el('option',t.name+' · +'+t.boost+' điểm %');option.value=t.key;select.append(option);}}
  label.append(select);sheetContent.append(label);
  const info=el('p',undefined,'hint'),result=el('div',undefined,'loot-result');result.hidden=true;result.setAttribute('role','status');
  const chance=()=>Math.min(100,[70,85,100][Math.min(c.failures,2)]+(talismans.find(t=>t.key===select.value)?.boost??0));
- const explain=()=>{info.textContent='Lần này có '+chance()+'% cơ hội thành công. Nếu thất bại, tu vi và chuỗi ngủ không mất; Phá Cảnh Phù đã chọn vẫn được dùng. Mỗi ngày chỉ thử 1 lần.';};select.addEventListener('change',explain);explain();
+ const explain=()=>{info.textContent='Lần này có '+chance()+'% cơ hội thành công. Thất bại −'+penalty+' tu vi, giữ cảnh giới và chuỗi ngủ. Phù đã chọn vẫn tiêu hao. Sau 2 lần thất bại, lần tiếp theo chắc chắn thành công nếu đủ điều kiện. Mỗi ngày sinh hoạt chỉ thử 1 lần.';};select.addEventListener('change',explain);explain();
  const attempt=button('Đột phá',async()=>{
   if(attempt.disabled)return;
   attempt.disabled=true;attempt.textContent='Đang đột phá…';await playEffect(attempt,'breakthrough',860);
-  if(state.live){const saved=await performLive('cultivation',{operation:'breakthrough',item:select.value||null},{keepSheet:true,silent:true});if(saved===null&&attempt.isConnected){attempt.disabled=false;attempt.textContent='Đột phá';return;}if(!attempt.isConnected)return;select.disabled=true;result.hidden=false;result.classList.add(saved.success?'effect-success':'effect-failure');result.textContent=saved.success?'Đột phá thành công ✦ '+target.name+' · Được bảo vệ hạ bậc 72 giờ.':'Chưa thành công · Tu vi và chuỗi vẫn giữ, mai mình thử lại nhé.';attempt.textContent='Đã thử hôm nay';return;}
+  if(state.live){const saved=await performLive('cultivation',{operation:'breakthrough',item:select.value||null},{keepSheet:true,silent:true});if(saved===null&&attempt.isConnected){attempt.disabled=false;attempt.textContent='Đột phá';return;}if(!attempt.isConnected)return;select.disabled=true;result.hidden=false;result.classList.add(saved.success?'effect-success':'effect-failure');result.textContent=saved.success?'Đột phá thành công ✦ '+target.name+' · Được bảo vệ hạ bậc 72 giờ.':'Chưa thành công · −'+saved.penalty+' tu vi. Cảnh giới và chuỗi vẫn giữ; mình thử lại khi đủ điều kiện nhé.';attempt.textContent='Đã thử hôm nay';return;}
   const r=demoBreakthrough(c,demoDay(),select.value||null);
   if(!r){attempt.disabled=false;attempt.textContent='Đột phá';return;}select.disabled=true;result.hidden=false;
   result.classList.add(r.success?'effect-success':'effect-failure');
-  result.textContent=r.success?'Đột phá thành công ✦ '+realms[c.rank].name+' · Được bảo vệ hạ bậc 72 giờ.':'Chưa thành công. Tu vi và chuỗi vẫn giữ, mai thử tiếp nhé.';
+  result.textContent=r.success?'Đột phá thành công ✦ '+realms[c.rank].name+' · Được bảo vệ hạ bậc 72 giờ.':'Chưa thành công · −'+r.penalty+' tu vi. Cảnh giới và chuỗi vẫn giữ.';
   attempt.textContent='Đã thử hôm nay';
   render();
- },'primary');attempt.disabled=c.attemptDay===demoDay()||c.qi<target.qi||c.streak<target.days;
+ },'primary');attempt.disabled=c.suspended||c.attemptDay===demoDay()||c.qi<target.qi||c.streak<target.days;
  sheetContent.append(info,attempt,result);
 }
 async function loadHistory(){
@@ -315,7 +373,61 @@ async function loadHistory(){
  }catch(error){toast(error.message||'Chưa tải thêm lịch sử được.');}
  finally{state.historyLoading=false;render();}
 }
-const ui={loadHistory,state:()=>state,cultivation:()=>state.cultivation,demoDay,openDraw,openInventory,openBreakthrough,el,button,heading,card,toast,empty,render,openTask,openTodayPlan,toggleTask,toggleTaskFocus,confirmDelete,openReminder,openAvailability,openShare};
+function keepViewAnchor(node,top){
+ if(Number.isFinite(top))window.scrollBy({top:node.getBoundingClientRect().top-top,behavior:'instant'});
+}
+const ui={loadHistory,state:()=>state,cultivation:()=>state.cultivation,demoDay,openDraw,openInventory,openBreakthrough,claimCheckin,openRewardCalendar,openDailyReward,keepViewAnchor,el,button,heading,card,toast,empty,render,openTask,openTodayPlan,toggleTask,toggleTaskFocus,confirmDelete,openReminder,openAvailability,openShare};
+function showBrowserLogin(){
+ clearTimeout(loginTimer);loginGeneration++;
+ state.loaded=false;state.tasks=[];state.reminders=[];state.authChallenge=null;state.loginError='';state.screenState='login';
+ if(sheet.open)closeSheet();render();
+}
+function connected(data){
+ clearTimeout(loginTimer);loginGeneration++;
+ Object.assign(state,data);state.screenState='ready';state.authChallenge=null;state.loginError='';render();if(state.needsSetup)openSettings();
+}
+async function pollBrowserLogin(generation){
+ if(generation!==loginGeneration||state.screenState!=='login')return;
+ try{
+  if(document.visibilityState==='visible'){
+   const result=await browserAuthRequest('status');if(generation!==loginGeneration)return;
+   if(result.authenticated){connected(await refreshLive());return;}
+  }
+ }catch(error){
+  if(generation!==loginGeneration)return;
+  if(error.code==='LOGIN_EXPIRED'){state.authChallenge=null;state.loginError=error.message;render();return;}
+  state.loginError='Chưa kết nối được. Minh Anh sẽ thử lại…';render();
+ }
+ loginTimer=setTimeout(()=>pollBrowserLogin(generation),3000);
+}
+async function beginBrowserLogin(){
+ clearTimeout(loginTimer);const generation=++loginGeneration;
+ state.loginError='';state.loginBusy=true;render();
+ try{
+  const result=await browserAuthRequest('start');if(generation!==loginGeneration)return;
+  if(result.authenticated){connected(await refreshLive());return;}
+  state.authChallenge=result;loginTimer=setTimeout(()=>pollBrowserLogin(generation),2000);
+ }catch(error){state.loginError=error.message;}
+ finally{state.loginBusy=false;render();}
+}
+function renderBrowserLogin(){
+ const root=el('section',undefined,'browser-login');
+ root.append(el('p','MINH ANH TRÊN MÁY TÍNH','eyebrow'),el('h1','Một góc riêng cho công việc của cậu.'),el('p','Đăng nhập bằng Telegram để mở task, lịch và thành tích của cậu trên trình duyệt.','subtitle'));
+ const box=card('login-card');
+ if(state.authChallenge){
+  box.append(el('h2','Xác nhận với Minh Anh'),el('p','Sao chép lệnh bên dưới và gửi trong cuộc trò chuyện với Minh Anh. Tab này sẽ tự đăng nhập.','subtitle'));
+  const command='/dangnhap '+state.authChallenge.code,code=el('code',command,'login-command');box.append(code);
+  const actions=el('div',undefined,'login-actions'),copy=button('Sao chép lệnh',async()=>{try{await navigator.clipboard.writeText(command);toast('Đã sao chép. Gửi lệnh cho Minh Anh trong Telegram nhé.');}catch{toast('Cậu chọn và sao chép lệnh trên màn hình nhé.');}},'primary');
+  const link=el('a','Mở Telegram','secondary');link.href='https://t.me/Minh_Anh_cua_Minh_bot';link.target='_blank';link.rel='noopener noreferrer';actions.append(copy,link);box.append(actions);
+  box.append(el('p','Đang chờ xác nhận · Mã có hiệu lực 10 phút. Chỉ gửi mã từ tab mà cậu vừa mở.','login-status'));
+  box.append(button('Tạo mã mới',beginBrowserLogin,'text-button'));
+ }else{
+  box.append(el('h2','Đăng nhập bằng Telegram'),el('p','Nhận mã dùng một lần, gửi cho Minh Anh rồi quay lại đây. Trình duyệt ghi nhớ đăng nhập trong 30 ngày.','subtitle'));
+  const start=button(state.loginBusy?'Đang tạo mã…':'Lấy mã đăng nhập',beginBrowserLogin,'primary');start.disabled=!!state.loginBusy;box.append(start);
+ }
+ if(state.loginError){const error=el('p',state.loginError,'login-error');error.setAttribute('role','status');box.append(error);}
+ root.append(box);return root;
+}
 async function expireTaskFocus(){
  const now=(state.serverNow??Date.now())+Date.now()-(state.loadedAt??Date.now());
  if(!state.taskFocus||state.taskFocus.endsAt>now){render();refreshOnReturn();return;}
@@ -332,7 +444,12 @@ function render(){
  content.removeAttribute('aria-busy');
  for(const b of document.querySelectorAll('[data-tab]')){if(b.dataset.tab===state.tab)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');}
  content.replaceChildren();
- if(state.live&&!state.loaded&&state.screenState==='error'){content.append(heading('Chưa kết nối được','Không hiển thị dữ liệu mẫu thay dữ liệu thật.'),el('p','Đóng và mở lại ứng dụng từ Telegram.','hint'));return;}
+ const login=state.live&&state.screenState==='login';
+ document.body.classList.toggle('login-screen',login);
+ document.querySelector('#settings').disabled=state.live&&!state.loaded;
+ document.querySelector('#logout').hidden=!state.live||!state.loaded||!!globalThis.Telegram?.WebApp?.initData;
+ if(login){content.append(renderBrowserLogin());return;}
+ if(state.live&&!state.loaded&&state.screenState==='error'){content.append(heading('Chưa kết nối được','Cậu kiểm tra kết nối rồi thử lại nhé.'),button('Thử lại',startConnection,'primary'));return;}
  if(state.screenState==='empty')content.append(heading('Bắt đầu nhẹ thôi.','Mọi thứ sẽ hiện ở đây khi cậu thêm dữ liệu.'),empty('Một khoảng mới cho cậu','Không có biểu đồ rỗng hay thành tích được bịa ra.',()=>{state.screenState='ready';render();},'Xem dữ liệu mẫu'));
  else if(state.screenState==='error')content.append(heading('Chưa tải được dữ liệu','Đây là trạng thái lỗi giả lập.'),empty('Không có thay đổi nào được lưu','Trong bản thật, thử lại sẽ giữ nguyên thao tác đang làm.',()=>{state.screenState='ready';render();},'Thử lại'));
  else if(state.screenState==='loading'){content.append(heading('Minh Anh đang chuẩn bị…','Trạng thái tải giả lập'),el('div',undefined,'loading'));content.setAttribute('aria-busy','true');}
@@ -351,7 +468,7 @@ let refreshing=false,lastRefresh=0;
 async function refreshOnReturn(){
  if(!state.live||!state.loaded||saving||focusAnimating||refreshing||sheet.open||state.timelineDragging||Date.now()-lastRefresh<2000)return;
  refreshing=true;
- try{const latest=await refreshLive();Object.assign(state,latest);lastRefresh=Date.now();render();}catch(error){toast(error.message);}finally{refreshing=false;}
+ try{const latest=await refreshLive();Object.assign(state,latest);lastRefresh=Date.now();render();}catch(error){if(error.code==='AUTH_REQUIRED'&&!globalThis.Telegram?.WebApp?.initData)showBrowserLogin();else toast(error.message);}finally{refreshing=false;}
 }
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshOnReturn();});
 setInterval(()=>{if(document.visibilityState==='visible')updateTimelineClock(state);},15000);
@@ -359,14 +476,19 @@ setInterval(()=>{if(document.visibilityState==='visible')refreshOnReturn();},600
 window.addEventListener('focus',refreshOnReturn);
 document.querySelector('#settings').replaceChildren(icon('settings'));
 document.querySelector('#settings').addEventListener('click',openSettings);
+document.querySelector('#logout').addEventListener('click',async()=>{
+ const control=document.querySelector('#logout');control.disabled=true;
+ try{await browserAuthRequest('logout');showBrowserLogin();}catch(error){toast(error.message);}finally{control.disabled=false;}
+});
 for(const b of document.querySelectorAll('[data-tab]'))b.addEventListener('click',()=>{if(state.live&&!state.loaded){toast('Mở lại từ Telegram để tải dữ liệu thật.');return;}state.tab=b.dataset.tab;state.screenState='ready';render();refreshOnReturn();window.scrollTo(0,0);});
 sheet.addEventListener('click',event=>{const target=event.target?.closest?.('[data-sheet-close]');if(target){event.preventDefault();closeSheet();return;}if(event.target===sheet){const r=sheet.getBoundingClientRect();if(event.clientY<r.top)closeSheet();}});
 sheet.addEventListener('cancel',event=>{event.preventDefault();closeSheet();});
-sheet.addEventListener('close',()=>{sheet.classList.remove('task-sheet-open','schedule-sheet-open');unlockPageScroll();render();});
+sheet.addEventListener('close',()=>{resetSheetLayout();unlockPageScroll();render();});
 // Keep the live reward hint short; rest/sleep rules are shown elsewhere in the app.
 const rewardHintCleaner=new MutationObserver(()=>{for(const node of sheetContent.querySelectorAll('.hint')){if(node.textContent?.includes('/ngu không khóa quay thưởng'))node.textContent=node.textContent.replace(/\s*\/ngu không khóa quay thưởng\.?/,'');}});rewardHintCleaner.observe(sheetContent,{childList:true,subtree:true});
-if(state.live){
+function startConnection(){
  document.querySelector('.demo-strip').textContent='MINH ANH · Dữ liệu của cậu';
  state.tasks=[];state.reminders=[];state.screenState='loading';render();
- connectLive().then(data=>{globalThis.Telegram?.WebApp?.onEvent?.('activated',refreshOnReturn);Object.assign(state,data);state.screenState='ready';render();if(state.needsSetup)openSettings();}).catch(error=>{state.screenState='error';render();toast(error.message);});
-}else render();
+ connectLive().then(data=>{globalThis.Telegram?.WebApp?.onEvent?.('activated',refreshOnReturn);connected(data);}).catch(error=>{if(error.code==='AUTH_REQUIRED'&&!globalThis.Telegram?.WebApp?.initData)showBrowserLogin();else{state.screenState='error';render();toast(error.message);}});
+}
+if(state.live)startConnection();else render();

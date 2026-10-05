@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync,readdirSync} from 'node:fs';
 import {Miniflare} from 'miniflare';
 import type {Database} from '../../src/adapters/d1/database.ts';
-import {changeTaskFocus,currentTaskFocus,taskFocusTarget,queuePlanConfirmation,queueWorkNudge,receiveNudgeReply} from '../../src/adapters/d1/work-nudges.ts';
+import {changeTaskFocus,currentTaskFocus,taskFocusTarget,queuePlanConfirmation,queueWorkNudge,receiveNudgeReply,acknowledgeTaskNudge} from '../../src/adapters/d1/work-nudges.ts';
 import {flushOutbox} from '../../src/adapters/d1/outbox.ts';
 import {ScheduleStore} from '../../src/adapters/d1/schedule-store.ts';
 
@@ -20,7 +20,44 @@ async function fixture(taskIds:string[]){
  return {mf,db,now,day,plan};
 }
 
-test('a task gets at most two nudges and unanswered task nudges stop globally after three',async()=>{
+test('explicit Telegram Reply cancels a queued repeat, preserves task/focus and allows the next window',async()=>{
+ const {mf,db,now}=await fixture(['a']);
+ try{
+  const end=now+3600000,later=now+2*3600000;
+  await db.prepare("UPDATE daily_plans SET plan_json=? WHERE owner='123'").bind(JSON.stringify({items:[{taskId:'a',windows:[{start:now,end},{start:later,end:later+3600000}]}]})).run();
+  const env={DB:db,TELEGRAM_USER_ID:'123',TELEGRAM_WEBHOOK_SECRET:'x'.repeat(24),TELEGRAM_BOT_TOKEN:'123:fake',DELIVERY_MODE:'outbox' as const,ASSETS:{fetch:async()=>new Response('')}};
+  let sends=0;const transport:typeof fetch=async()=>{sends++;return Response.json({ok:true,result:{message_id:100+sends}});};
+  const tick=async(at:number)=>{await queueWorkNudge(env,at,transport);await flushOutbox(env,transport,at,()=>at);};
+  await tick(now);assert.equal(sends,1);
+  await queueWorkNudge(env,now+30*60000,transport);
+  assert.equal((await db.prepare("SELECT COUNT(*) AS n FROM outbox WHERE state='pending' AND id LIKE 'task-nudge:%'").first<{n:number}>())!.n,1);
+  await receiveNudgeReply(env,500,'biết rồi nhé',now+31*60000,transport,101);
+  await receiveNudgeReply(env,500,'biết rồi nhé',now+31*60000,transport,101);
+  await flushOutbox(env,transport,now+32*60000,()=>now+32*60000);await tick(now+50*60000);assert.equal(sends,1);
+  assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM task_nudge_acknowledgments').first<{n:number}>())!.n,1);
+  assert.equal((await db.prepare("SELECT status FROM tasks WHERE id='a'").first<{status:string}>())!.status,'active');
+  assert.equal(await currentTaskFocus(db,'123',now+32*60000),null,'reply does not pretend the user is working');
+  await tick(later);assert.equal(sends,2,'same task can be reminded in its next distinct window');
+  assert.equal(await acknowledgeTaskNudge(db,'999',102,later+60000),false,'owners are isolated');
+  assert.equal(await acknowledgeTaskNudge(db,'123',101,later+60000),false,'replying to an expired older window does not silence the new one');
+  await tick(later+30*60000);assert.equal(sends,3);
+ }finally{await mf.dispose();}
+});
+
+test('ordinary chat or Reply to unrelated messages does not acknowledge a task reminder',async()=>{
+ const {mf,db,now}=await fixture(['a']);
+ try{
+  const env={DB:db,TELEGRAM_USER_ID:'123',TELEGRAM_WEBHOOK_SECRET:'x'.repeat(24),TELEGRAM_BOT_TOKEN:'123:fake',DELIVERY_MODE:'outbox' as const,ASSETS:{fetch:async()=>new Response('')}};
+  let sends=0;const transport:typeof fetch=async()=>{sends++;return Response.json({ok:true,result:{message_id:200+sends}});};
+  await queueWorkNudge(env,now,transport);await flushOutbox(env,transport,now,()=>now);
+  await receiveNudgeReply(env,501,'hello',now+60000,transport);
+  await receiveNudgeReply(env,502,'hello',now+2*60000,transport,999);
+  assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM task_nudge_acknowledgments').first<{n:number}>())!.n,0);
+  await queueWorkNudge(env,now+30*60000,transport);await flushOutbox(env,transport,now+30*60000,()=>now+30*60000);assert.equal(sends,2);
+ }finally{await mf.dispose();}
+});
+
+test('a schedule window gets at most two nudges and unanswered task nudges stop globally after three',async()=>{
  const {mf,db,now,day,plan}=await fixture(['a','b']);
  try{
   const env={DB:db,TELEGRAM_USER_ID:'123',TELEGRAM_WEBHOOK_SECRET:'x'.repeat(24),TELEGRAM_BOT_TOKEN:'123:fake',DELIVERY_MODE:'outbox' as const,AI_MODE:'on',GEMINI_API_KEY:'test',GEMINI_MODEL:'test',ASSETS:{fetch:async()=>new Response('')}};

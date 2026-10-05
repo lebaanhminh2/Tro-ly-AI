@@ -7,6 +7,81 @@ import {HealthyStore} from '../../src/adapters/d1/healthy-store.ts';
 import {drawReward} from '../../src/domain/healthy.ts';
 import type {Database} from '../../src/adapters/d1/database.ts';
 
+test('daily rewards atomically persist balances, audit and retry receipts across concurrent clients',async()=>{
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
+  const store=new HealthyStore(db),now=Date.parse('2026-10-05T09:00:00+07:00'),input={operation:'checkin'};
+  const first=await store.checkIn('123','checkin-001',input,now);
+  assert.deepEqual(await store.checkIn('123','checkin-001',input,now+32*86400000),first,'lost response replays its original reward, not a new cycle');
+  await assert.rejects(store.checkIn('123','checkin-002',input,now),/ALREADY_CHECKED_IN/);
+  await assert.rejects(store.checkIn('123','checkin-001',{different:true},now),/REQUEST_ID_REUSED/);
+  assert.equal((await store.read('123')).state.qi,1);
+  const race=await Promise.allSettled([store.checkIn('999','chrome-race',input,now),store.checkIn('999','telegram-race',input,now)]);
+  assert.equal(race.filter(r=>r.status==='fulfilled').length,1);
+  assert.equal((await store.read('999')).state.qi,1);assert.equal((await store.read('999')).state.checkin!.count,1);
+  const rows=await db.prepare('SELECT COUNT(*) AS n FROM daily_checkins').first<{n:number}>();assert.equal(rows!.n,2);
+  for(let i=1;i<32;i++){if(i===5||i===17)continue;await store.checkIn('123','day-'+i,input,now+i*86400000);}
+  const complete=(await store.read('123')).state;
+  assert.equal(complete.checkin!.count,30);assert.equal(complete.inventory.supreme,1);
+  assert.equal(complete.inventory.basic,3);assert.equal(complete.inventory.middle,3);assert.equal(complete.inventory.high,3);
+  assert.equal((await db.prepare("SELECT COUNT(*) AS n FROM daily_checkins WHERE owner='123'").first<{n:number}>())!.n,30);
+  await store.checkIn('123','new-cycle',input,now+32*86400000);
+  const reset=(await store.read('123')).state;assert.equal(reset.checkin!.count,1);assert.equal(reset.qi,complete.qi+1);assert.equal(reset.inventory.supreme,1);
+ }finally{await mf.dispose();}
+});
+test('inactive mode blocks all proactive outbox deliveries while replies still send',async()=>{
+ const {flushOutbox}=await import('../../src/adapters/d1/outbox.ts');
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
+  const now=Date.parse('2026-10-05T10:00:00+07:00'),healthy=new HealthyStore(db);
+  await healthy.mutate('123','suspend-fixture','fixture',{},now,s=>({state:{...s,suspended:true,inactiveDays:3},result:{}}));
+  const ids=['task-summary:123:old','achievement:123:new','reply:123:direct','unclassified:123:old'];
+  for(const id of ids)await db.prepare('INSERT INTO outbox(id,payload,available) VALUES(?,?,?)').bind(id,JSON.stringify({method:'sendMessage',chat_id:123,text:id}),now).run();
+  const sent:string[]=[];
+  const transport=(async(_url:unknown,init?:RequestInit)=>{sent.push(JSON.parse(String(init?.body)).text);return Response.json({ok:true,result:{message_id:42}});}) as typeof fetch;
+  const env={DB:db,TELEGRAM_USER_ID:'123',TELEGRAM_WEBHOOK_SECRET:'x'.repeat(32),TELEGRAM_BOT_TOKEN:'123:fake',AI_MODE:'off',DELIVERY_MODE:'outbox' as const,ASSETS:{fetch:async()=>new Response('asset')}};
+  await flushOutbox(env,transport,now,()=>now);
+  assert.deepEqual(sent,['reply:123:direct']);
+  for(const id of ids.filter(id=>!id.startsWith('reply:')))assert.equal((await db.prepare('SELECT state FROM outbox WHERE id=?').bind(id).first<{state:string}>())?.state,'failed');
+  await healthy.mutate('123','race-resume','fixture',{},now,s=>({state:{...s,suspended:false},result:{}}));
+  await db.prepare('INSERT INTO outbox(id,payload,available) VALUES(?,?,?)').bind('unclassified:123:race',JSON.stringify({method:'sendMessage',chat_id:123,text:'race'}),now).run();
+  const guarded:Database={batch:statements=>db.batch(statements),prepare:sql=>{
+   const statement=db.prepare(sql);
+   if(!sql.includes("SET state='sending',attempts"))return statement;
+   const wrap=(bound:typeof statement):typeof statement=>({bind:(...values)=>wrap(bound.bind(...values)),first:()=>bound.first(),all:()=>bound.all(),run:async()=>{
+    const result=await bound.run();
+    if(result.meta.changes)await healthy.mutate('123','race-suspend','fixture',{},now,s=>({state:{...s,suspended:true},result:{}}));
+    return result;
+   }});
+   return wrap(statement);
+  }};
+  await flushOutbox({...env,DB:guarded},transport,now,()=>now);
+  assert.deepEqual(sent,['reply:123:direct']);
+  assert.equal((await db.prepare("SELECT state FROM outbox WHERE id='unclassified:123:race'").first<{state:string}>())?.state,'failed');
+ }finally{await mf.dispose();}
+});
+
+test('cron settles inactive days before delivering previously queued notifications',async()=>{
+ const {runScheduled}=await import('../../src/entrypoints/worker-scheduler.ts');
+ const {ScheduleStore}=await import('../../src/adapters/d1/schedule-store.ts');
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
+  const start=Date.parse('2026-10-01T10:00:00+07:00'),now=start+4*86400000;
+  await new ScheduleStore(db).configure('123','04:30','22:30',0,start);
+  await db.prepare('INSERT INTO outbox(id,payload,available) VALUES(?,?,?)').bind('task-summary:123:queued',JSON.stringify({method:'sendMessage',chat_id:123,text:'Must not send'}),start).run();
+  let sends=0;const transport=(async()=>{sends++;return Response.json({ok:true,result:{message_id:42}});}) as typeof fetch;
+  const env={DB:db,TELEGRAM_USER_ID:'123',TELEGRAM_WEBHOOK_SECRET:'x'.repeat(32),TELEGRAM_BOT_TOKEN:'123:fake',AI_MODE:'off',DELIVERY_MODE:'outbox' as const,ASSETS:{fetch:async()=>new Response('asset')}};
+  await runScheduled(env,{cardsEnabled:false,transport,clock:{now:()=>now},chat:undefined,flushCards:async()=>{}});
+  assert.equal((await new HealthyStore(db).read('123')).state.suspended,true);assert.equal(sends,0);
+ }finally{await mf.dispose();}
+});
+
 test('task codes survive sorting and deletion; migration preserves old task IDs',()=>{
  const db=new DatabaseSync(':memory:');
  try{
