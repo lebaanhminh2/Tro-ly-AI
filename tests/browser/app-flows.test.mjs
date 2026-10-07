@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve, sep } from 'node:path';
@@ -285,6 +285,13 @@ async function chrome() {
         };
         return {
             errors, evaluate, wait,
+            async colorScheme(value) {
+                await call('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value }] });
+            },
+            async screenshot(path) {
+                const { data } = await call('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
+                await writeFile(path, Buffer.from(data, 'base64'));
+            },
             async navigate(url, width = 1440) {
                 errors.length = 0;
                 await call('Emulation.setDeviceMetricsOverride', { width, height: width < 900 ? 844 : 1000, deviceScaleFactor: 1, mobile: width < 900 });
@@ -308,6 +315,305 @@ async function chrome() {
 async function snapshot(browser) {
     return browser.evaluate(`(() => { const root=document.querySelector('#content');const rect=root.getBoundingClientRect();return {text:root.innerText,buttons:[...root.querySelectorAll('button')].map(b=>({text:b.innerText,disabled:b.disabled})),geometry:{x:Math.round(rect.x),y:Math.round(rect.y),width:Math.round(rect.width),height:Math.round(rect.height)},overflow:document.documentElement.scrollWidth>innerWidth+1};})()`);
 }
+test('waiting Today separates its setup button from the hint and respects the app theme on mobile', { skip: !browserBin, timeout: 60000 }, async () => {
+    const control = fixture();
+    control.state.dailyPlan = null;
+    control.state.taskFocusTarget = null;
+    Object.assign(control.state.day, { task_plan_status: 'waiting', task_plan_due: now + 91 * 60000 });
+    const server = await serve(control);
+    let browser;
+    try {
+        browser = await chrome();
+        for (const width of [390, 320])
+            for (const os of ['light', 'dark'])
+                for (const theme of ['light', 'dark']) {
+                    await browser.colorScheme(os);
+                    await browser.navigate(server.url, width);
+                    await browser.wait("!!document.querySelector('.plan-empty>.primary')");
+                    await browser.evaluate(`document.documentElement.dataset.theme=${JSON.stringify(theme)}`);
+                    await delay(180); // Allow the button's theme transition to finish before checking its colors.
+                    const layout = await browser.evaluate(`(() => {
+                        const button=document.querySelector('.plan-empty>.primary');
+                        const hint=document.querySelector('.plan-empty>.hint');
+                        const rect=button.getBoundingClientRect(),style=getComputedStyle(button);
+                        const probe=document.createElement('span');
+                        probe.style.backgroundColor=getComputedStyle(document.documentElement).getPropertyValue('--accent');
+                        document.body.append(probe);
+                        const accent=getComputedStyle(probe).backgroundColor;probe.remove();
+                        const luminance=color=>{
+                            const channels=color.match(/[0-9]+/g).slice(0,3).map(Number).map(v=>v/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4);
+                            return channels[0]*.2126+channels[1]*.7152+channels[2]*.0722;
+                        };
+                        const foreground=luminance(style.color),background=luminance(style.backgroundColor);
+                        return {gap:rect.top-hint.getBoundingClientRect().bottom,height:rect.height,color:style.color,
+                            background:style.backgroundColor,accent,contrast:(Math.max(foreground,background)+.05)/(Math.min(foreground,background)+.05),
+                            fits:rect.left>=0&&rect.right<=innerWidth,overflow:document.documentElement.scrollWidth>innerWidth+1};
+                    })()`);
+                    assert.ok(layout.gap >= 12, 'The button must have space above it');
+                    assert.ok(layout.height >= 44);
+                    assert.equal(layout.background, layout.accent, os + ' OS / ' + theme + ' app');
+                    assert.equal(layout.color, theme === 'light' ? 'rgb(255, 255, 255)' : 'rgb(23, 18, 34)');
+                    assert.ok(layout.contrast >= 4.5);
+                    assert.equal(layout.fits, true);
+                    assert.equal(layout.overflow, false);
+                    if (width === 390 && os === 'dark' && theme === 'light' && process.env.WEB_TEST_SCREENSHOT_PATH) {
+                        await browser.evaluate("document.querySelector('.today-main').scrollIntoView({block:'start'})");
+                        await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, '-waiting.png'));
+                    }
+                    await browser.click('Xếp thời gian hôm nay');
+                    await browser.wait("!!document.querySelector('.schedule-form')");
+                    await browser.evaluate("document.querySelector('[data-sheet-close]').click()");
+                    assert.deepEqual(browser.errors, []);
+                }
+        assert.deepEqual(control.posts, [], 'Opening the time editor must not save a schedule');
+    }
+    finally {
+        if (browser)
+            await browser.close();
+        await server.close();
+    }
+});
+
+test('breakthrough screen shows decreasing realm odds, delayed capped failure bonuses and every charm boost', { skip: !browserBin, timeout: 120000 }, async () => {
+    const control = fixture();
+    Object.assign(control.state.account.state, { qi: 3000, streak: 45 });
+    Object.assign(control.state.account.state.inventory, { basic: 1, middle: 1, high: 1, supreme: 1 });
+    const server = await serve(control);
+    let browser;
+    try {
+        browser = await chrome();
+        const cases = [65, 60, 55, 50, 45, 40, 35, 30, 25, 20, 15].map((base, rank) => ({ rank, failures: 0, base }));
+        cases.push(...[60, 60, 65, 70, 75, 75, 75].map((base, failures) => ({ rank: 1, failures, base })));
+        cases.push({ rank: 0, failures: 4, base: 80 }, { rank: 10, failures: 4, base: 30 });
+        for (const { rank, failures, base } of cases) {
+            Object.assign(control.state.account.state, { rank, highestRank: rank, failures });
+            await browser.navigate(server.url, 390);
+            await browser.wait("!!document.querySelector('.focus-flip-card')");
+            await browser.evaluate("document.querySelector('[data-tab=achievements]').click()");
+            await browser.click('Đột phá');
+            await browser.wait("!!document.querySelector('#sheet select')");
+            const options = await browser.evaluate("[...document.querySelectorAll('#sheet select option')].map(option=>option.textContent)");
+            assert.deepEqual(options, ['Không dùng phù', 'Sơ cấp · +5 điểm %', 'Trung cấp · +10 điểm %', 'Cao cấp · +20 điểm %', 'Cực phẩm · +25 điểm %']);
+            const description = () => browser.evaluate("[...document.querySelectorAll('#sheet .hint')].find(node=>node.textContent.startsWith('Lần này có ')).textContent");
+            assert.ok((await description()).startsWith('Lần này có ' + base + '%'));
+            assert.match(await description(), /Tỷ lệ cơ bản lên .+: (65|60|55|50|45|40|35|30|25|20|15)%/);
+            assert.match(await description(), /Thất bại 1 lần chưa cộng; 2\/3\/4 lần liên tiếp cộng 5\/10\/15 điểm %/);
+            assert.match(await description(), /tối đa \+15 điểm %/);
+            assert.doesNotMatch(await description(), /chắc chắn thành công/);
+            for (const [key, boost] of [['basic', 5], ['middle', 10], ['high', 20], ['supreme', 25]]) {
+                await browser.evaluate(`(() => { const select=document.querySelector('#sheet select');select.value=${JSON.stringify(key)};select.dispatchEvent(new Event('change')); })()`);
+                assert.ok((await description()).startsWith('Lần này có ' + Math.min(100, base + boost) + '%'));
+            }
+            assert.equal((await snapshot(browser)).overflow, false);
+            assert.deepEqual(browser.errors, []);
+        }
+        assert.deepEqual(control.posts, [], 'Reading odds must not attempt a breakthrough');
+    }
+    finally {
+        if (browser)
+            await browser.close();
+        await server.close();
+    }
+});
+
+test('Today keeps every session visible and distinguishes work remaining from the deadline', { skip: !browserBin, timeout: 60000 }, async () => {
+    const control = fixture();
+    const at = time => Date.parse('2026-10-05T' + time + ':00+07:00');
+    const windows = [
+        { start: at('07:10'), end: at('09:10') },
+        { start: at('09:20'), end: at('10:38') },
+        { start: at('12:30'), end: at('14:30') }
+    ];
+    Object.assign(control.state.tasks[0], { title: 'Ôn kiểm tra tài trợ khởi nghiệp', remaining_minutes: 360, actual_minutes: 0, deadline: '2026-10-05T13:00:00+07:00' });
+    Object.assign(control.state.tasks[1], { title: 'Ôn code quản trị rr', remaining_minutes: 240, actual_minutes: 0, deadline: '2026-10-06T09:00:00+07:00' });
+    Object.assign(control.state.tasks[2], { remaining_minutes: null, actual_minutes: 0, deadline: null });
+    control.state.dailyPlan.plan.items = [
+        { taskId: 'task-0', minutes: 318, remaining: 360, actualMinutes: 0, scheduledMinutes: 318, windows },
+        { taskId: 'task-1', minutes: 120, remaining: 240, actualMinutes: 0, scheduledMinutes: 120, windows: [{ start: at('20:00'), end: at('22:00') }] },
+        { taskId: 'task-2', minutes: 30, remaining: null, actualMinutes: 0, scheduledMinutes: 0, windows: [] }
+    ];
+    control.state.dailyPlan.plan.planned = 468;
+    const server = await serve(control);
+    let browser;
+    try {
+        browser = await chrome();
+        for (const width of [1440, 390, 320]) {
+            await browser.navigate(server.url, width);
+            await browser.wait("!!document.querySelector('.plan-position')");
+            const layout = await browser.evaluate(`(() => {
+                const row = document.querySelector('.daily-item');
+                const slots = [...row.querySelectorAll('.session-window')];
+                const active = row.querySelector('.session-window.is-current');
+                const rect = active.getBoundingClientRect();
+                return {
+                    windows: slots.map(slot => slot.textContent),
+                    visible: slots.every(slot => { const box=slot.getBoundingClientRect();return box.width>0 && box.left>=0 && box.right<=innerWidth; }),
+                    past: row.querySelectorAll('.session-window.is-past').length,
+                    current: row.querySelectorAll('.session-window.is-current').length,
+                    marked: active.getAttribute('aria-current') === 'time',
+                    highlighted: getComputedStyle(active).backgroundColor !== 'rgba(0, 0, 0, 0)' && rect.height>0,
+                    metrics: [...row.querySelectorAll('.task-metric')].map(line => line.textContent),
+                    today: row.innerText.includes('Hôm nay: 5 giờ 18 phút'),
+                    done: row.querySelector('.check').checked,
+                    position: document.querySelector('.plan-position').textContent
+                };
+            })()`);
+            assert.deepEqual(layout.windows, ['07:10–09:10', '▶09:20–10:38', '12:30–14:30']);
+            assert.equal(layout.visible, true, width + 'px: every session should fit without horizontal scrolling');
+            assert.equal(layout.past, 1);
+            assert.equal(layout.current, 1);
+            assert.equal(layout.marked, true);
+            assert.equal(layout.highlighted, true);
+            assert.deepEqual(layout.metrics, ['Khối lượng còn lại:6 giờ', 'Đến hạn còn:3 giờ']);
+            assert.equal(layout.today, true);
+            assert.equal(layout.done, false, 'Elapsed sessions must not complete the task');
+            assert.match(layout.position, /Bây giờ 10:00.*Đến giờ làm · Ôn kiểm tra tài trợ khởi nghiệp/);
+            assert.equal((await snapshot(browser)).overflow, false);
+            assert.equal(await browser.evaluate("document.querySelectorAll('.daily-item')[2].innerText.includes('Chưa có giờ làm') && document.querySelectorAll('.daily-item')[2].innerText.includes('Chưa có hạn')"), true);
+            if (width === 390 && process.env.WEB_TEST_SCREENSHOT_PATH) {
+                await browser.evaluate("document.querySelector('.today-main').scrollIntoView({block:'start'})");
+                await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH);
+            }
+            await browser.click('Danh sách việc');
+            assert.deepEqual(await browser.evaluate("[...document.querySelector('.task-row .task-metrics').children].map(line=>line.textContent)"), layout.metrics);
+            assert.equal(await browser.evaluate("document.querySelector('.task-row.is-current .session-window.is-current').getAttribute('aria-current')"), 'time');
+            assert.equal((await snapshot(browser)).overflow, false);
+        }
+        // The same plan moves from a gap into a later session, with no automatic completion.
+        for (const [time, current, past, next] of [
+            ['09:10', false, 1, 'Sắp tới 09:20'],
+            ['10:38', false, 2, 'Sắp tới 12:30'],
+            ['12:30', true, 2, 'Đến giờ làm'],
+            ['14:30', false, 3, 'Sắp tới 20:00']
+        ]) {
+            control.state.now = at(time);
+            await browser.navigate(server.url, 320);
+            await browser.wait("!!document.querySelector('.plan-position')");
+            assert.equal(await browser.evaluate("document.querySelector('.daily-item').classList.contains('is-current')"), current);
+            assert.equal(await browser.evaluate("document.querySelector('.daily-item').querySelectorAll('.session-window.is-past').length"), past);
+            assert.equal(await browser.evaluate("document.querySelector('.daily-item .check').checked"), false);
+            assert.ok((await browser.evaluate("document.querySelector('.plan-position').textContent")).includes(next));
+        }
+        assert.equal(await browser.evaluate("document.querySelector('.daily-item .task-deadline').textContent"), 'Quá hạn:2 giờ');
+        control.state.now = at('10:00');
+        control.state.tasks[0].status = 'completed';
+        control.state.tasks[0].completed_at = at('09:55');
+        for (const width of [390, 320]) {
+            await browser.navigate(server.url, width);
+            await browser.wait("!!document.querySelector('.plan-position')");
+            assert.equal(await browser.evaluate("document.querySelector('.daily-plan>.daily-list').querySelectorAll('.daily-item.done').length"), 0);
+            assert.equal(await browser.evaluate("document.querySelector('.completed-today').open"), false);
+            assert.equal(await browser.evaluate("document.querySelector('.completed-today .daily-item').checkVisibility()"), false);
+            assert.ok((await browser.evaluate("document.querySelector('.plan-position').textContent")).includes('Sắp tới 20:00'));
+            if (width === 390 && process.env.WEB_TEST_SCREENSHOT_PATH) {
+                await browser.evaluate("document.querySelector('.today-main').scrollIntoView({block:'start'})");
+                await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, '-completed.png'));
+            }
+            await browser.click('Xem việc đã xong (1)', 'summary');
+            assert.equal(await browser.evaluate("document.querySelector('.completed-today .check').checked"), true);
+            assert.equal(await browser.evaluate("document.querySelector('.completed-today').querySelectorAll('.session-window.is-current').length"), 0);
+            assert.equal(await browser.evaluate("document.querySelector('.completed-today .daily-item').checkVisibility()"), true);
+            await browser.evaluate("document.querySelector('.completed-today .daily-item-open').click()");
+            await browser.wait("!!document.querySelector('#task-sheet-form')");
+            await browser.evaluate("document.querySelector('[data-sheet-close]').click()");
+            assert.equal((await snapshot(browser)).overflow, false);
+            await browser.click('Danh sách việc');
+            assert.equal(await browser.evaluate("document.querySelector('.completed-today').open"), false);
+            assert.equal(await browser.evaluate("document.querySelector('.task-list-section>.task-board').querySelectorAll('.task-row.done').length"), 0);
+            await browser.click('Xem việc đã xong (1)', 'summary');
+            assert.equal(await browser.evaluate("document.querySelector('.completed-today .task-row').checkVisibility()"), true);
+            assert.equal((await snapshot(browser)).overflow, false);
+        }
+        assert.deepEqual(browser.errors, []);
+        assert.deepEqual(control.posts, [], 'Presentation must not write progress or completion');
+        // Reopening a completed task uses the existing confirmation and returns it to the plan.
+        await browser.evaluate("document.querySelector('.completed-today .check').click()");
+        await browser.click('Xác nhận');
+        await browser.wait("!document.querySelector('#sheet').open&&!document.querySelector('.completed-today')");
+        assert.equal(control.state.tasks[0].status, 'active');
+        await browser.click('Lịch hôm nay');
+        assert.equal(await browser.evaluate("document.querySelector('.daily-plan>.daily-list .daily-item.is-current .check').checked"), false);
+        assert.equal(control.posts.length, 1);
+        assert.equal(control.posts[0].input.complete, false);
+    }
+    finally {
+        if (browser)
+            await browser.close();
+        await server.close();
+    }
+});
+
+test('plan editor reorders only unfinished tasks and preserves completed minutes when saving', { skip: !browserBin, timeout: 60000 }, async () => {
+    const control = fixture();
+    Object.assign(control.state.tasks[1], { status: 'completed', completed_at: now - 60000 });
+    control.state.dailyPlan.plan.items = [
+        { taskId: 'task-0', minutes: 90, windows: [] },
+        { taskId: 'task-1', minutes: 80, windows: [] },
+        { taskId: 'task-2', minutes: 60, windows: [] }
+    ];
+    control.state.dailyPlan.plan.planned = 230;
+    const server = await serve(control);
+    let browser;
+    try {
+        browser = await chrome();
+        const order = () => browser.evaluate("[...document.querySelectorAll('#sheet .plan-edit-row')].map(row=>row.dataset.taskId)");
+        for (const width of [390, 320]) {
+            await browser.navigate(server.url, width);
+            await browser.wait("!!document.querySelector('.daily-plan')");
+            await browser.click('Chỉnh lịch');
+            assert.deepEqual(await order(), ['task-0', 'task-2']);
+            assert.equal(await browser.evaluate("document.querySelector('.plan-completed-summary').textContent"), 'Đã xong 1 việc');
+            assert.equal(await browser.evaluate("!!document.querySelector('#sheet [data-task-id=task-1]')"), false);
+            assert.equal(await browser.evaluate("document.querySelector('#sheet [aria-label=\"Đưa lên\"]').disabled"), true);
+            assert.equal(await browser.evaluate("[...document.querySelectorAll('#sheet [aria-label=\"Đưa xuống\"]')].at(-1).disabled"), true);
+            await browser.evaluate("document.querySelector('#sheet [data-task-id=task-0] input').value='45';document.querySelector('#sheet [data-task-id=task-0] [aria-label=\"Đưa xuống\"]').click()");
+            assert.deepEqual(await order(), ['task-2', 'task-0']);
+            assert.equal(await browser.evaluate("document.querySelector('#sheet [data-task-id=task-0] input').value"), '45');
+            await browser.evaluate("document.querySelector('#sheet [data-task-id=task-0] [aria-label=\"Đưa lên\"]').click()");
+            assert.deepEqual(await order(), ['task-0', 'task-2']);
+            assert.equal((await snapshot(browser)).overflow, false);
+            if (width === 390 && process.env.WEB_TEST_SCREENSHOT_PATH)
+                await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, '-plan-editor.png'));
+            await browser.evaluate("document.querySelector('[data-sheet-close]').click()");
+        }
+        await browser.click('Chỉnh lịch');
+        await browser.evaluate("[...document.querySelectorAll('#sheet [data-task-id=task-0] button')].find(button=>button.textContent==='Để hôm khác').click()");
+        assert.deepEqual(await order(), ['task-2']);
+        assert.equal(await browser.evaluate("document.querySelector('#sheet form').innerText.includes('140 phút đã chọn')"), true);
+        assert.deepEqual(await browser.evaluate("[...document.querySelectorAll('.plan-picker option')].map(option=>option.value)"), ['task-0']);
+        await browser.click('+ Thêm vào hôm nay');
+        assert.deepEqual(await order(), ['task-2', 'task-0']);
+        await browser.evaluate("document.querySelector('#sheet [data-task-id=task-0] input').value='70'");
+        await browser.click('Lưu kế hoạch hôm nay');
+        await browser.wait("!document.querySelector('#sheet').open&&!document.querySelector('[data-tab=today]').disabled");
+        assert.deepEqual(control.posts.at(-1).input.items, [
+            { taskId: 'task-1', minutes: 80 },
+            { taskId: 'task-2', minutes: 60 },
+            { taskId: 'task-0', minutes: 70 }
+        ]);
+        assert.equal(control.state.dailyPlan.plan.items.reduce((sum, item) => sum + item.minutes, 0), 210);
+        assert.equal(control.state.tasks[1].status, 'completed');
+        // An entirely completed plan has no editable fields and still saves its recorded totals.
+        control.state.tasks.forEach(task => Object.assign(task, { status: 'completed', completed_at: now }));
+        await browser.navigate(server.url, 320);
+        await browser.wait("!!document.querySelector('.daily-plan')");
+        await browser.click('Chỉnh lịch');
+        assert.deepEqual(await order(), []);
+        assert.equal(await browser.evaluate("document.querySelectorAll('#sheet [data-plan-minutes]').length"), 0);
+        assert.equal(await browser.evaluate("document.querySelector('.plan-completed-summary').textContent"), 'Đã xong 3 việc');
+        assert.equal(await browser.evaluate("document.querySelector('#sheet form').innerText.includes('210 phút đã chọn')"), true);
+        await browser.click('Lưu kế hoạch hôm nay');
+        await browser.wait("!document.querySelector('#sheet').open");
+        assert.equal(control.posts.at(-1).input.items.reduce((sum, item) => sum + item.minutes, 0), 210);
+        assert.deepEqual(browser.errors, []);
+    }
+    finally {
+        if (browser)
+            await browser.close();
+        await server.close();
+    }
+});
+
 test('real browser preserves desktop/mobile UI and feature flows', { skip: !browserBin, timeout: 120000 }, async (t) => {
     const control = fixture(), server = await serve(control);
     let browser;

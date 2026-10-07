@@ -57,11 +57,52 @@ function renderSessionLabels(ui, windows, now, done) {
     const times = ui.el('span', undefined, 'daily-item-windows');
     for (const slot of [...windows].sort((a, b) => a.start - b.start)) {
         const active = !done && slot.start <= now && now < slot.end;
-        times.append(ui.el('span', clock(slot.start) + '–' + clock(slot.end) + (active ? ' · Hiện tại' : ''), 'session-window' + (active ? ' is-current' : '')));
+        const past = slot.end <= now;
+        const label = clock(slot.start) + '–' + clock(slot.end);
+        const window = ui.el('span', undefined, 'session-window' + (active ? ' is-current' : past || done ? ' is-past' : ''));
+        window.setAttribute('aria-label', label + (done ? ' · Việc đã hoàn thành' : active ? ' · Phiên hiện tại' : past ? ' · Giờ đã qua' : ' · Sắp tới'));
+        if (active) {
+            const mark = ui.el('span', '▶', 'session-current-mark');
+            mark.setAttribute('aria-hidden', 'true');
+            window.append(mark);
+            window.setAttribute('aria-current', 'time');
+        }
+        window.append(ui.el('span', label));
+        times.append(window);
     }
     if (!windows.length)
         times.append(ui.el('span', 'Chưa có giờ làm', 'session-window is-unscheduled'));
     return times;
+}
+function renderTaskMetrics(ui, remaining, deadline, now) {
+    const metrics = ui.el('span', undefined, 'task-metrics');
+    const line = (label, value, extra = '') => {
+        const row = ui.el('small', undefined, 'task-metric ' + extra);
+        row.append(ui.el('span', label), ui.el('b', value));
+        metrics.append(row);
+    };
+    if (remaining !== null && remaining !== undefined)
+        line('Khối lượng còn lại:', duration(remaining));
+    const relative = deadlineLabel(deadline, now);
+    if (relative?.startsWith('còn '))
+        line('Đến hạn còn:', relative.slice(4), 'task-deadline');
+    else if (relative)
+        line('Quá hạn:', relative.slice('quá hạn '.length), 'task-deadline is-overdue');
+    else
+        line('Hạn:', 'Chưa có hạn');
+    return metrics;
+}
+function renderPlanPosition(ui, state, plan, now) {
+    const slots = plan.items.flatMap(item => {
+        const task = state.tasks.find(task => task.id === item.taskId && !task.done);
+        return task ? (item.windows ?? []).map(slot => ({ ...slot, task })) : [];
+    }).sort((a, b) => a.start - b.start || a.end - b.end);
+    const current = slots.find(slot => slot.start <= now && now < slot.end);
+    const next = slots.find(slot => slot.start > now);
+    const position = ui.el('p', undefined, 'plan-position' + (current ? ' is-current' : ''));
+    position.append(ui.el('span', 'Bây giờ ' + clock(now), 'plan-position-clock'));
+    position.append(ui.el('span', current ? 'Đến giờ làm · ' + current.task.title : next ? 'Sắp tới ' + clock(next.start) + ' · ' + next.task.title : slots.length ? 'Đã qua các khung giờ hôm nay' : 'Không còn phiên làm việc trong lịch', 'plan-position-copy'));
+    return position;
 }
 export function renderWorkState(ui, state, plan, now) {
     const { el, button } = ui;
@@ -197,12 +238,14 @@ function renderTaskList(ui, state, buckets, card, button, openTask, render) {
                     list.append(el('p', key, 'history-month'));
                 }
             }
-            const row = el('div', undefined, 'task-row' + (task.done ? ' done' : ''));
+            const planned = state.dailyPlan?.plan?.items.find(item => item.taskId === task.id), now = (state.serverNow ?? Date.now()) + Date.now() - (state.loadedAt ?? Date.now());
+            const current = !task.done && (planned?.windows ?? []).some(slot => slot.start <= now && now < slot.end);
+            const row = el('div', undefined, 'task-row' + (task.done ? ' done' : '') + (current ? ' is-current' : ''));
             const check = el('input');
             check.type = 'checkbox';
             check.className = 'check';
             check.checked = state.selecting ? state.selected.has(task.code) : task.done;
-            check.setAttribute('aria-label', (state.selecting ? 'Chọn ' : 'Hoàn thành ') + task.title);
+            check.setAttribute('aria-label', (state.selecting ? 'Chọn ' : task.done ? 'Mở lại ' : 'Hoàn thành ') + task.title);
             check.addEventListener('change', () => {
                 if (state.selecting) {
                     check.checked ? state.selected.add(task.code) : state.selected.delete(task.code);
@@ -211,12 +254,11 @@ function renderTaskList(ui, state, buckets, card, button, openTask, render) {
                 else
                     ui.toggleTask(task);
             });
-            const name = button('', () => openTask(task), 'task-open'), relative = deadlineLabel(task.deadline, (state.serverNow ?? Date.now()) + Date.now() - (state.loadedAt ?? Date.now()));
+            const name = button('', () => openTask(task), 'task-open');
             const exact = task.deadline ? (task.deadline.length === 10 ? task.deadline.split('-').reverse().join('/') : new Date(task.deadline).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', dateStyle: 'short', timeStyle: 'short' })) : null;
-            const planned = state.dailyPlan?.plan?.items.find(item => item.taskId === task.id), now = (state.serverNow ?? Date.now()) + Date.now() - (state.loadedAt ?? Date.now());
-            name.append(renderSessionLabels(ui, planned?.windows ?? [], now, task.done), el('strong', '#' + task.code + ' ' + task.title));
-            const details = [task.remainingMinutes !== null && task.remainingMinutes !== undefined ? 'Còn ' + duration(task.remainingMinutes) : null, exact ? 'Hạn ' + exact + (relative ? ' · ' + relative : '') : 'Chưa có hạn'].filter(Boolean);
-            name.append(el('small', details.join(' · ')));
+            name.append(el('strong', '#' + task.code + ' ' + task.title), renderSessionLabels(ui, planned?.windows ?? [], now, task.done), renderTaskMetrics(ui, task.remainingMinutes, task.deadline, now));
+            if (exact)
+                name.append(el('small', 'Hạn ' + exact));
             row.append(check, name);
             list.append(row);
         }
@@ -236,8 +278,8 @@ function renderTaskList(ui, state, buckets, card, button, openTask, render) {
     }
     if (buckets.completedToday.length) {
         const done = el('details', undefined, 'daily-later completed-today');
-        done.open = true;
-        done.append(el('summary', buckets.completedToday.length + ' việc xong hôm nay'), taskList(buckets.completedToday, 'completed-list'));
+        done.open = false;
+        done.append(el('summary', 'Xem việc đã xong (' + buckets.completedToday.length + ')'), taskList(buckets.completedToday, 'completed-list'));
         section.append(done);
     }
     if (buckets.history.length) {
@@ -286,10 +328,12 @@ function renderDailyPlan(ui, state) {
     overview.append(copy, actions);
     root.append(overview);
     const now = (state.serverNow ?? Date.now()) + Date.now() - (state.loadedAt ?? Date.now());
+    if (plan.items.length)
+        root.append(renderPlanPosition(ui, state, plan, now));
     const notice = renderPlanNotice(ui, state);
     if (notice)
         root.append(notice);
-    const list = el('div', undefined, 'daily-list');
+    const list = el('div', undefined, 'daily-list'), completedList = el('div', undefined, 'daily-list completed-list');
     const ordered = [...plan.items].sort((a, b) => Math.min(...(a.windows ?? []).map(w => w.start)) - Math.min(...(b.windows ?? []).map(w => w.start)));
     for (const item of ordered) {
         const task = state.tasks.find(t => t.id === item.taskId);
@@ -309,26 +353,27 @@ function renderDailyPlan(ui, state) {
         const info = button('', () => openTask(task), 'daily-item-open');
         const actual = Number(item.actualMinutes ?? task.actualMinutes ?? 0), remaining = task.remainingMinutes ?? item.remaining;
         const times = renderSessionLabels(ui, windows, now, task.done);
-        const details = [duration(item.minutes) + ' hôm nay'];
+        const details = ['Hôm nay: ' + duration(item.minutes)];
         if (actual)
-            details.push('đã làm ' + duration(actual));
-        if (remaining !== null && remaining !== undefined)
-            details.push('còn ' + duration(remaining));
+            details.push('Đã làm: ' + duration(actual));
         if ((item.scheduledMinutes ?? item.minutes) < item.minutes)
             details.push(`${item.minutes - (item.scheduledMinutes ?? item.minutes)} phút chưa có giờ nhắc`);
-        const deadline = deadlineLabel(task.deadline, (state.serverNow ?? Date.now()) + Date.now() - (state.loadedAt ?? Date.now()));
-        if (deadline)
-            details.push(deadline);
-        info.append(times, el('strong', '#' + task.code + ' ' + task.title), el('small', details.join(' · ')));
+        info.append(el('strong', '#' + task.code + ' ' + task.title), times, el('small', details.join(' · ')), renderTaskMetrics(ui, remaining, task.deadline, now));
         row.append(check, info);
-        list.append(row);
+        (task.done ? completedList : list).append(row);
     }
     if (!list.children.length) {
         const empty = el('div', undefined, 'plan-empty-inline');
-        empty.append(el('h3', 'Hôm nay chưa có việc'), el('p', 'Các task còn lại đang nằm trong danh sách việc.', 'hint'));
+        empty.append(el('h3', completedList.children.length ? 'Đã xong các việc trong lịch hôm nay' : 'Hôm nay chưa có việc'), el('p', completedList.children.length ? 'Cậu có thể xem lại các việc đã xong bên dưới.' : 'Các task còn lại đang nằm trong danh sách việc.', 'hint'));
         list.append(empty);
     }
     root.append(list);
+    if (completedList.children.length) {
+        const done = el('details', undefined, 'daily-later completed-today');
+        done.open = false;
+        done.append(el('summary', 'Xem việc đã xong (' + completedList.children.length + ')'), completedList);
+        root.append(done);
+    }
     const later = taskBuckets(state.tasks, state.operatingDay, state.start).active.filter(t => !plan.items.some(i => i.taskId === t.id));
     if (later.length) {
         const details = el('details', undefined, 'daily-later later-tasks');

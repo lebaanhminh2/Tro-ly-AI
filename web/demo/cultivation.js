@@ -61,7 +61,7 @@ export function demoBreakthrough(c, day, key = null, now = Date.now(), random = 
         return null;
     if (key && (!charm || c.inventory[key] < 1))
         return null;
-    const chance = Math.min(100, [70, 85, 100][Math.min(c.failures, 2)] + (charm?.boost ?? 0));
+    const chance = Math.min(100, target.chance + 5 * Math.min(Math.max(c.failures - 1, 0), 3) + (charm?.boost ?? 0));
     c.attemptDay = day;
     if (charm)
         c.inventory[charm.key]--;

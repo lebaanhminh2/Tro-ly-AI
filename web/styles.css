@@ -149,6 +149,9 @@ dialog .actions{background:var(--surface);border-top:1px solid var(--line);box-s
 .plan-empty,.plan-empty-inline,.task-empty{padding:18px 16px;border:1px dashed var(--line);border-radius:15px;background:color-mix(in srgb,var(--soft) 55%,var(--surface))}
 .plan-empty h2{font-size:18px;margin-top:7px}
 .plan-empty .hint,.plan-empty-inline .hint,.task-empty .hint{margin:7px 0 0}
+.plan-empty>.primary{display:block;max-width:100%;margin-top:14px;min-height:44px;background:var(--accent);color:#fff}
+:root[data-theme=dark] .plan-empty>.primary{color:#171222}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]) .plan-empty>.primary{color:#171222}}
 .plan-empty-inline h3{font-size:16px}
 .plan-empty-inline .hint{margin-bottom:0}
 .task-list-heading{margin:0;gap:12px;align-items:center}
@@ -405,17 +408,33 @@ html{scrollbar-gutter:stable}
 .today-panel-actions>.plan-action,.today-panel-actions>.task-create,.today-panel-actions>.selection-toggle{width:auto;min-height:40px;padding:8px 12px;font-size:12px;box-shadow:none}
 .today-panel-actions>.primary{flex:0 0 auto}
 .today-page .task-board{display:grid;gap:9px;padding:0;border:0;background:transparent}
-.today-page .task-board .task-row,.today-page .daily-item{min-height:100px;margin:0;padding:14px;border:1px solid var(--line);border-radius:15px;background:var(--surface);gap:11px}
-.today-page .task-board .task-row:last-child{border:1px solid var(--line)}
-.today-page .task-open,.today-page .daily-item-open{display:flex;flex-direction:column;gap:5px;min-width:0}
+.today-page .task-board .task-row,.today-page .daily-item{min-height:100px;margin:0;padding:16px;border:1px solid color-mix(in srgb,var(--line) 55%,var(--surface));border-radius:18px;background:var(--surface);gap:12px}
+.today-page .task-board .task-row:last-child{border:1px solid color-mix(in srgb,var(--line) 55%,var(--surface))}
+.today-page .task-open,.today-page .daily-item-open{display:flex;flex-direction:column;gap:0;min-width:0}
 .today-page .task-open strong,.today-page .daily-item-open strong{font-size:15px;line-height:1.4;overflow-wrap:anywhere;white-space:normal}
-.today-page .task-open small,.today-page .daily-item-open small{margin:0;font-size:11px;line-height:1.6;overflow-wrap:anywhere}
-.daily-item-windows{display:flex;flex-wrap:wrap;gap:4px 10px}
-.session-window{font-size:12px;line-height:1.5;font-weight:650;font-variant-numeric:tabular-nums;color:var(--accent)}
+.today-page .task-open small,.today-page .daily-item-open small{margin:0;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+.daily-item-windows{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;margin:4px 0 0}
+.session-window{display:inline-flex;align-items:center;gap:5px;padding:0;border:0;border-radius:6px;font-size:13px;line-height:1.5;font-weight:600;font-variant-numeric:tabular-nums;color:var(--text);white-space:nowrap}
 .session-window.is-unscheduled{color:var(--muted);font-weight:500}
-.session-window.is-current{color:var(--accent)}
-.today-page .daily-item.is-current{border-color:color-mix(in srgb,var(--accent) 45%,var(--line));background:color-mix(in srgb,var(--accent) 4%,var(--surface))}
+.session-window.is-past{color:var(--muted);font-weight:400}
+.session-window.is-current{padding:1px 5px;color:var(--accent);font-weight:700;background:var(--soft)}
+.session-current-mark{font-size:10px}
+.today-page .daily-item.is-current,.today-page .task-board .task-row.is-current{border-color:color-mix(in srgb,var(--line) 55%,var(--surface));box-shadow:none;background:color-mix(in srgb,var(--accent) 3%,var(--surface))}
+.plan-position{display:flex;flex-wrap:wrap;gap:3px 10px;align-items:baseline;margin:0;padding:1px 2px 3px;border:0;background:transparent;font-size:12px;line-height:1.6}
+.plan-position-clock{flex-shrink:0;font-weight:600;font-variant-numeric:tabular-nums}
+.plan-position-copy{min-width:0;overflow-wrap:anywhere;color:var(--muted)}
+.plan-position.is-current .plan-position-clock{color:var(--accent)}
+.plan-position.is-current .plan-position-copy{color:var(--text)}
+.task-metrics{display:grid;gap:2px;margin-top:2px;min-width:0;width:100%}
+.today-page .daily-item-open>.daily-item-windows+small,.today-page .task-open>.task-metrics{margin-top:8px}
+.today-page .task-open>.task-metrics+small{margin-top:2px}
+.today-page .task-metrics .task-metric{display:flex;flex-wrap:wrap;gap:0 5px;font-size:12px;line-height:1.5}
+.task-metric b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+.task-metric.is-overdue b{color:var(--gold)}
 .today-page .daily-item.done,.today-page .task-row.done{background:var(--bg)}
+.today-page .completed-today{padding:0 2px;border:0;border-radius:0;background:transparent}
+.today-page .completed-today>summary{min-height:44px;padding:11px 0;color:var(--muted);font-size:13px}
+.today-page .completed-today[open]>.completed-list{margin-top:5px}
 .today-page .task-board>.history-month{margin:6px 2px;font-size:12px;color:var(--muted)}
 
 /* Streak is the first achievement; the full reward calendar is opt-in. */

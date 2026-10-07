@@ -2,12 +2,12 @@
 // receipt; neither the model nor the browser chooses rewards or timestamps.
 export const DAY_MS=86400000;
 export const REALMS=[
- {name:'Phàm Nhân',qi:0,days:0},{name:'Luyện Khí',qi:6,days:2},
- {name:'Trúc Cơ',qi:18,days:3},{name:'Kết Đan',qi:40,days:5},
- {name:'Nguyên Anh',qi:75,days:7},{name:'Hóa Thần',qi:120,days:8},
- {name:'Luyện Hư',qi:180,days:11},{name:'Hợp Thể',qi:260,days:14},
- {name:'Đại Thừa',qi:360,days:17},{name:'Độ Kiếp',qi:500,days:24},
- {name:'Chân Tiên',qi:1000,days:35},{name:'Kim Tiên',qi:2000,days:45}
+ {name:'Phàm Nhân',qi:0,days:0,chance:0},{name:'Luyện Khí',qi:6,days:2,chance:65},
+ {name:'Trúc Cơ',qi:18,days:3,chance:60},{name:'Kết Đan',qi:40,days:5,chance:55},
+ {name:'Nguyên Anh',qi:75,days:7,chance:50},{name:'Hóa Thần',qi:120,days:8,chance:45},
+ {name:'Luyện Hư',qi:180,days:11,chance:40},{name:'Hợp Thể',qi:260,days:14,chance:35},
+ {name:'Đại Thừa',qi:360,days:17,chance:30},{name:'Độ Kiếp',qi:500,days:24,chance:25},
+ {name:'Chân Tiên',qi:1000,days:35,chance:20},{name:'Kim Tiên',qi:2000,days:45,chance:15}
 ] as const;
 export const LOOT=[
  {key:'qi1',weight:40},{key:'qi2',weight:15},{key:'basic',weight:35},
@@ -15,7 +15,7 @@ export const LOOT=[
 ] as const;
 export const CHARMS={
  basic:{boost:5,next:'middle',chance:80},middle:{boost:10,next:'high',chance:60},
- high:{boost:15,next:'supreme',chance:40},supreme:{boost:20,next:null,chance:0}
+ high:{boost:20,next:'supreme',chance:40},supreme:{boost:25,next:null,chance:0}
 } as const;
 export type Charm=keyof typeof CHARMS;
 export type Item=Charm|'heart'|'peace'|'keepsake';
@@ -142,7 +142,7 @@ export function fuseCharm(state:HealthyState,item:Charm,random:number){
 export function breakthrough(state:HealthyState,day:number,now:number,item:Charm|null,random:number){
  const target=REALMS[state.rank+1],charm=item?CHARMS[item]:null;
  if(state.suspended||!target||state.attemptDay===day||state.qi<target.qi||state.streak<target.days||item&&state.inventory[item]<1)throw Error('BREAKTHROUGH_UNAVAILABLE');
- const chance=Math.min(100,[70,85,100][Math.min(state.failures,2)]!+(charm?.boost??0));
+ const chance=Math.min(100,target.chance+5*Math.min(Math.max(state.failures-1,0),3)+(charm?.boost??0));
  const success=roll(random)<chance,next=copy(state);next.attemptDay=day;if(item)next.inventory[item]--;
  if(success){next.rank++;next.highestRank=Math.max(next.highestRank,next.rank);next.failures=0;next.protectedUntil=now+3*DAY_MS;}
  else {next.failures++;next.qi=Math.max(0,next.qi-BREAKTHROUGH_PENALTIES[state.rank]!);}

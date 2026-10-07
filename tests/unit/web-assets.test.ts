@@ -255,7 +255,12 @@ test('Today switches only its work panel while keeping the flame, controls and f
             anchors++;
         } }, state), work = root.children.find((n: any) => n.className === 'work-state'), main = root.children.find((n: any) => n.className === 'today-main');
     const [toggle, panel] = main.children, flame = work.children[0];
-    assert.match(flatten(panel), /11:15–13:15 · Hiện tại/);
+    const assertCurrentSession = () => {
+        const current = walk(panel).filter(n => n.className.includes('session-window') && n.attrs['aria-current'] === 'time');
+        assert.equal(current.length, 1);
+        assert.match(flatten(current[0]), /▶\s+11:15–13:15/);
+    };
+    assertCurrentSession();
     assert.match(flatten(panel), /2 việc trong lịch đã quá hạn/);
     const rows = walk(panel).filter(n => n.className.startsWith('daily-item') && !n.className.includes('open') && !n.className.includes('windows'));
     assert.match(flatten(rows[0]), /#24/);
@@ -269,7 +274,7 @@ test('Today switches only its work panel while keeping the flame, controls and f
     assert.equal(panel.children[0].className, 'task-list-section');
     assert.equal(renders, 0);
     assert.equal(anchors, 1);
-    assert.match(flatten(panel), /11:15–13:15 · Hiện tại/);
+    assertCurrentSession();
     assert.match(flatten(panel), /2 việc trong lịch đã quá hạn/);
     toggle.children[0].action();
     assert.equal(state.mode, 'timeline');
@@ -281,6 +286,45 @@ test('Today switches only its work panel while keeping the flame, controls and f
     state.mode = 'tasks';
     assert.ok(renderToday(ui, state).children.some((n: any) => n.className === 'work-state'));
 });
+test('Today collapses completed work in both modes while keeping unfinished sessions and daily totals', async () => {
+    const viewPath = '../../web/views/today.js', apiPath = '../../web/api.js';
+    const { renderToday } = await import(viewPath);
+    const { createDemo } = await import(apiPath);
+    const state: any = createDemo(), now = Date.parse('2026-10-05T11:30:00+07:00');
+    Object.assign(state, { serverNow: now, loadedAt: Date.now(), operatingDay: Math.floor((now + 25200000 - 270 * 60000) / 86400000) });
+    state.tasks.forEach((task: any, index: number) => task.id = 'task-' + index);
+    Object.assign(state.tasks[0], { done: true, completedAt: now });
+    Object.assign(state.tasks[2], { done: true, completedAt: now - 86400000 });
+    state.dailyPlan = { plan: { items: [
+        { taskId: 'task-0', minutes: 120, actualMinutes: 0, windows: [{ start: now - 14400000, end: now - 7200000 }] },
+        { taskId: 'task-1', minutes: 120, actualMinutes: 30, windows: [{ start: now - 3600000, end: now - 600000 }] }
+    ], planned: 240, capacity: 300, risks: [] } };
+    for (const mode of ['timeline', 'tasks']) {
+        state.mode = mode;
+        const root = renderToday(mockUi(state), state);
+        const section = walk(root).find(n => n.className === (mode === 'timeline' ? 'daily-plan' : 'task-list-section'));
+        const done = section.children.find((n: any) => n.className.includes('completed-today'));
+        assert.equal(done.open, false);
+        assert.equal(done.children[0].value, 'Xem việc đã xong (1)');
+        assert.match(flatten(done), /#24/);
+        const list = section.children.find((n: any) => n.className === (mode === 'timeline' ? 'daily-list' : 'card task-board'));
+        assert.match(flatten(list), /#25/);
+        assert.doesNotMatch(flatten(list), /#24|#26/);
+        assert.equal(walk(list).filter(n => n.className.split(' ').includes('done')).length, 0);
+        assert.equal(walk(list).some(n => n.attrs['aria-current'] === 'time'), false);
+        if (mode === 'timeline')
+            assert.match(flatten(section), /30 phút đã làm · 1 đã xong · 4 giờ đã xếp/);
+        else
+            assert.match(flatten(section.children.find((n: any) => n.className.includes('history-section'))), /#26/);
+    }
+    Object.assign(state.tasks[1], { done: true, completedAt: now });
+    state.mode = 'timeline';
+    const root = renderToday(mockUi(state), state);
+    assert.match(flatten(root), /Đã xong các việc trong lịch hôm nay/);
+    assert.match(flatten(root), /Xem việc đã xong \(2\)/);
+    assert.match(flatten(root), /2 đã xong · 4 giờ đã xếp/);
+});
+
 test('reminders defaults to all and offers a way out of empty filters', async () => {
     const viewPath = '../../web/views/reminders.js', apiPath = '../../web/api.js';
     const { renderReminders } = await import(viewPath), { createDemo } = await import(apiPath), state = createDemo(), ui = mockUi(state);

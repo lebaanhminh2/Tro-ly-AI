@@ -36,11 +36,11 @@ export function dailyRewardLabel(reward) {
     return labels.join(' + ');
 }
 export const realms = [
-    { name: 'Phàm Nhân', qi: 0, days: 0 }, { name: 'Luyện Khí', qi: 6, days: 2 },
-    { name: 'Trúc Cơ', qi: 18, days: 3 }, { name: 'Kết Đan', qi: 40, days: 5 },
-    { name: 'Nguyên Anh', qi: 75, days: 7 }, { name: 'Hóa Thần', qi: 120, days: 8 },
-    { name: 'Luyện Hư', qi: 180, days: 11 }, { name: 'Hợp Thể', qi: 260, days: 14 },
-    { name: 'Đại Thừa', qi: 360, days: 17 }, { name: 'Độ Kiếp', qi: 500, days: 24 }, { name: 'Chân Tiên', qi: 1000, days: 35 }, { name: 'Kim Tiên', qi: 2000, days: 45 }
+    { name: 'Phàm Nhân', qi: 0, days: 0, chance: 0 }, { name: 'Luyện Khí', qi: 6, days: 2, chance: 65 },
+    { name: 'Trúc Cơ', qi: 18, days: 3, chance: 60 }, { name: 'Kết Đan', qi: 40, days: 5, chance: 55 },
+    { name: 'Nguyên Anh', qi: 75, days: 7, chance: 50 }, { name: 'Hóa Thần', qi: 120, days: 8, chance: 45 },
+    { name: 'Luyện Hư', qi: 180, days: 11, chance: 40 }, { name: 'Hợp Thể', qi: 260, days: 14, chance: 35 },
+    { name: 'Đại Thừa', qi: 360, days: 17, chance: 30 }, { name: 'Độ Kiếp', qi: 500, days: 24, chance: 25 }, { name: 'Chân Tiên', qi: 1000, days: 35, chance: 20 }, { name: 'Kim Tiên', qi: 2000, days: 45, chance: 15 }
 ];
 export const loot = [
     { key: 'qi1', label: '+1 tu vi', weight: 40 }, { key: 'qi2', label: '+2 tu vi', weight: 15 },
@@ -51,7 +51,7 @@ export const loot = [
 export const talismans = [
     { key: 'basic', name: 'Sơ cấp', boost: 5, next: 'middle', chance: 80 },
     { key: 'middle', name: 'Trung cấp', boost: 10, next: 'high', chance: 60 },
-    { key: 'high', name: 'Cao cấp', boost: 15, next: 'supreme', chance: 40 },
-    { key: 'supreme', name: 'Cực phẩm', boost: 20, next: null, chance: 0 }
+    { key: 'high', name: 'Cao cấp', boost: 20, next: 'supreme', chance: 40 },
+    { key: 'supreme', name: 'Cực phẩm', boost: 25, next: null, chance: 0 }
 ];
 export const rewardLabels = { qi1: '+1 tu vi', qi2: '+2 tu vi', basic: 'Phá Cảnh Phù sơ cấp', keepsake: 'Tín vật Minh Anh', heart: 'Hộ Tâm Phù', peace: 'An Tâm Phù' };

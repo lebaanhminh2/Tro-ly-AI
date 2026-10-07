@@ -231,9 +231,9 @@ export function createCultivationActions(context) {
         const info = el('p', undefined, 'hint'), result = el('div', undefined, 'loot-result');
         result.hidden = true;
         result.setAttribute('role', 'status');
-        const chance = () => Math.min(100, [70, 85, 100][Math.min(c.failures, 2)] + (talismans.find(t => t.key === select.value)?.boost ?? 0));
+        const chance = () => Math.min(100, target.chance + 5 * Math.min(Math.max(c.failures - 1, 0), 3) + (talismans.find(t => t.key === select.value)?.boost ?? 0));
         const explain = () => {
-            info.textContent = 'Lần này có ' + chance() + '% cơ hội thành công. Thất bại −' + penalty + ' tu vi, giữ cảnh giới và chuỗi ngủ. Phù đã chọn vẫn tiêu hao. Sau 2 lần thất bại, lần tiếp theo chắc chắn thành công nếu đủ điều kiện. Mỗi ngày sinh hoạt chỉ thử 1 lần.';
+            info.textContent = 'Lần này có ' + chance() + '% cơ hội thành công. Tỷ lệ cơ bản lên ' + target.name + ': ' + target.chance + '%. Thất bại −' + penalty + ' tu vi, giữ cảnh giới và chuỗi ngủ. Phù đã chọn vẫn tiêu hao. Thất bại 1 lần chưa cộng; 2/3/4 lần liên tiếp cộng 5/10/15 điểm % cho lần sau, tối đa +15 điểm %. Thành công đặt lại chuỗi thất bại. Phù cộng thêm tỷ lệ, tổng tối đa 100%. Mỗi ngày sinh hoạt chỉ thử 1 lần.';
         };
         select.addEventListener('change', explain);
         explain();

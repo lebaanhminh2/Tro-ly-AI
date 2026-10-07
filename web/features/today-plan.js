@@ -39,8 +39,11 @@ export function createTodayPlanActions(context) {
             return;
         }
         const plan = state.dailyPlan.plan;
-        const entries = plan.items.map(item => ({ taskId: item.taskId, minutes: item.minutes }));
-        const totalMinutes = () => entries.reduce((sum, item) => sum + (Number.isInteger(item.minutes) ? item.minutes : 0), 0);
+        const completed = plan.items.filter(item => state.tasks.find(task => task.id === item.taskId)?.done)
+            .map(item => ({ taskId: item.taskId, minutes: item.minutes }));
+        const entries = plan.items.filter(item => !completed.some(done => done.taskId === item.taskId))
+            .map(item => ({ taskId: item.taskId, minutes: item.minutes }));
+        const totalMinutes = () => [...completed, ...entries].reduce((sum, item) => sum + (Number.isInteger(item.minutes) ? item.minutes : 0), 0);
         const suggestedMinutes = task => {
             const remaining = Number(task.remainingMinutes), spare = Math.max(0, (plan.capacity ?? 0) - totalMinutes());
             if (!Number.isFinite(remaining) || remaining <= 0)
@@ -52,7 +55,7 @@ export function createTodayPlanActions(context) {
             if (task && !task.done)
                 entries.push({ taskId: task.id, minutes: suggestedMinutes(task) });
         }
-        const intro = el('p', 'Đổi phút, sắp xếp hoặc để task sang hôm khác. Task đã hoàn thành được giữ nguyên để tổng hôm nay không bị giảm.', 'hint'), rows = el('div'), picker = el('div', undefined, 'plan-picker'), feedback = el('p', '', 'hint');
+        const intro = el('p', 'Đổi phút, sắp xếp hoặc để việc chưa xong sang hôm khác.', 'hint'), rows = el('div'), picker = el('div', undefined, 'plan-picker'), feedback = el('p', '', 'hint');
         const sync = () => {
             [...rows.querySelectorAll('[data-task-id]')].forEach(row => {
                 const item = entries.find(entry => entry.taskId === row.dataset.taskId), input = row.querySelector('[data-plan-minutes]');
@@ -66,17 +69,16 @@ export function createTodayPlanActions(context) {
                 const task = state.tasks.find(value => value.id === item.taskId);
                 if (!task)
                     continue;
-                const row = el('section', undefined, 'plan-edit-row' + (task.done ? ' plan-edit-done' : ''));
+                const row = el('section', undefined, 'plan-edit-row');
                 row.dataset.taskId = item.taskId;
                 const info = el('div', undefined, 'plan-edit-info');
-                info.append(el('strong', '#' + task.code + ' ' + task.title), el('small', task.done ? 'Đã xong · giữ trong tổng hôm nay' : 'Trong kế hoạch hôm nay'));
-                const minutes = field('Phút hôm nay', 'number', item.minutes === null ? '' : String(item.minutes), !task.done);
+                info.append(el('strong', '#' + task.code + ' ' + task.title), el('small', 'Trong kế hoạch hôm nay'));
+                const minutes = field('Phút hôm nay', 'number', item.minutes === null ? '' : String(item.minutes));
                 minutes.input.min = '5';
                 minutes.input.max = '960';
                 minutes.input.step = '5';
                 minutes.input.dataset.planMinutes = '';
                 minutes.input.placeholder = 'Nhập phút';
-                minutes.input.disabled = task.done;
                 const controls = el('div', undefined, 'plan-order');
                 const up = button('↑', () => {
                     sync();
@@ -93,17 +95,16 @@ export function createTodayPlanActions(context) {
                 down.disabled = index === entries.length - 1;
                 down.setAttribute('aria-label', 'Đưa xuống');
                 controls.append(up, down);
-                if (task.done)
-                    controls.append(el('span', 'Đã ghi nhận', 'plan-status'));
-                else
-                    controls.append(button('Để hôm khác', () => {
-                        sync();
-                        entries.splice(index, 1);
-                        draw();
-                    }, 'text-button'));
+                controls.append(button('Để hôm khác', () => {
+                    sync();
+                    entries.splice(index, 1);
+                    draw();
+                }, 'text-button'));
                 row.append(info, minutes.wrap, controls);
                 rows.append(row);
             }
+            if (!entries.length)
+                rows.append(el('p', 'Không còn việc chưa xong trong kế hoạch.', 'hint'));
             picker.replaceChildren();
             const available = state.tasks.filter(task => !task.done && !entries.some(item => item.taskId === task.id));
             if (available.length) {
@@ -132,7 +133,10 @@ export function createTodayPlanActions(context) {
         draw();
         const form = el('form'), save = el('button', 'Lưu kế hoạch hôm nay', 'primary');
         save.type = 'submit';
-        form.append(intro, rows, picker, feedback, save);
+        form.append(intro);
+        if (completed.length)
+            form.append(el('p', 'Đã xong ' + completed.length + ' việc', 'hint plan-completed-summary'));
+        form.append(rows, picker, feedback, save);
         form.addEventListener('submit', async (event) => {
             event.preventDefault();
             sync();
@@ -140,7 +144,7 @@ export function createTodayPlanActions(context) {
                 toast('Nhập từ 5 đến 960 phút cho mỗi task hôm nay nhé.');
                 return;
             }
-            const result = await performLive('day-plan', { version: state.dailyPlan.version, items: entries });
+            const result = await performLive('day-plan', { version: state.dailyPlan.version, items: [...completed, ...entries] });
             if (result?.unscheduled)
                 toast('Đã lưu, nhưng còn ' + result.unscheduled + ' phút chưa có khung giờ thật để nhắc.');
         });

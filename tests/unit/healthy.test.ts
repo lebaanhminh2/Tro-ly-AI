@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {initialHealthy,assessSleep,resumeHealthy,breakthrough,drawReward,fuseCharm,useProtection,dayWindow,operatingDay,minutes,DAY_MS,REALMS,LOOT,DAILY_REWARDS,BREAKTHROUGH_PENALTIES,claimDailyReward,dailyCheckinProgress} from '../../src/domain/healthy.ts';
+import {initialHealthy,assessSleep,resumeHealthy,breakthrough,drawReward,fuseCharm,useProtection,dayWindow,operatingDay,minutes,DAY_MS,REALMS,LOOT,CHARMS,DAILY_REWARDS,BREAKTHROUGH_PENALTIES,claimDailyReward,dailyCheckinProgress} from '../../src/domain/healthy.ts';
 import {healthyCommand} from '../../src/application/healthy-command.ts';
 import {scheduleEntry} from '../../src/application/schedule-command.ts';
 const window=dayWindow(20000,270,1350);
@@ -52,14 +52,50 @@ test('day crosses midnight; exact sleep target is on time',()=>{
 });
 test('odds, pity, daily attempts, fusion and lifetime rewards',()=>{
  assert.equal(LOOT.reduce((n,i)=>n+i.weight,0),100);
- let s={...initialHealthy(),qi:30,rank:1,streak:3,tickets:1};
+ let s={...initialHealthy(),qi:100,rank:1,streak:3,tickets:1};
  const draw=drawReward(s,.55);assert.equal(draw.reward,'basic');assert.equal(draw.state.tickets,0);
  s=breakthrough(s,1,1000,null,.99).state;
  assert.throws(()=>breakthrough(s,1,1001,null,0));
  s=breakthrough(s,2,2000,null,.99).state;
- const r=breakthrough(s,3,3000,null,.99);assert.equal(r.success,true);assert.equal(r.state.protectedUntil,3000+72*3600000);
+ const third=breakthrough(s,3,3000,null,.99);assert.equal(third.success,false);assert.equal(third.chance,65);s=third.state;
+ const fourth=breakthrough(s,4,4000,null,.99);assert.equal(fourth.success,false);assert.equal(fourth.chance,70);s=fourth.state;
+ const r=breakthrough(s,5,5000,null,.74);assert.equal(r.success,true);assert.equal(r.chance,75);assert.equal(r.state.failures,0);assert.equal(r.state.protectedUntil,5000+72*3600000);
  s.inventory.basic=3;const fused=fuseCharm(s,'basic',.99);assert.equal(fused.state.inventory.basic,2);
  assert.equal(REALMS.at(-1)!.qi,2000);assert.equal(REALMS.at(-1)!.days,45);
+});
+
+test('breakthrough gets harder by realm; failure bonuses start at two and cap at four, with matching charms in server and demo',async()=>{
+ const webPath='../../web/api.js',web=await import(webPath);
+ const realmChances=[65,60,55,50,45,40,35,30,25,20,15];
+ const failureBonuses=[0,0,5,10,15,15,15];
+ const charms=[['basic',5],['middle',10],['high',20],['supreme',25]] as const;
+ assert.deepEqual(REALMS.slice(1).map(realm=>realm.chance),realmChances);
+ assert.deepEqual(web.realms,REALMS);
+ for(const [key,boost] of charms){
+  assert.equal(CHARMS[key].boost,boost);
+  assert.equal(web.talismans.find((charm:any)=>charm.key===key).boost,boost);
+ }
+ for(const [rank,base] of realmChances.entries()){
+  for(const [failures,bonus] of [...failureBonuses.entries(),[100,15] as const]){
+   for(const [key,boost] of [[null,0],...charms] as const){
+    const chance=Math.min(100,base+bonus+boost);
+    for(const random of [chance/100-0.000001,Math.min(chance/100,0.999999)]){
+     const target=REALMS[rank+1]!;
+     const state={...initialHealthy(),qi:target.qi,rank,highestRank:rank,streak:target.days,failures};
+     if(key)state.inventory[key]=1;
+     const demo={...state,inventory:{...state.inventory},log:[]};
+     const result=breakthrough(state,1,1000,key,random);
+     const shown=web.demoBreakthrough(demo,1,key,1000,()=>random);
+     assert.equal(result.chance,chance);assert.equal(result.success,random*100<chance);
+     assert.deepEqual(shown,{success:result.success,chance:result.chance,penalty:result.penalty});
+     assert.equal(demo.qi,result.state.qi);assert.equal(demo.failures,result.state.failures);
+     assert.equal(demo.rank,result.state.rank);assert.deepEqual(demo.inventory,result.state.inventory);
+     assert.equal(result.state.failures,result.success?0:failures+1);
+     if(key)assert.equal(result.state.inventory[key],0,'The selected charm is consumed on success and failure');
+    }
+   }
+  }
+ }
 });
 
 test('published daily calendar varies rewards and preserves all four milestones',async()=>{
