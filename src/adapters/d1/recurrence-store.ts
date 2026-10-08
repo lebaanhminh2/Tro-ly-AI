@@ -33,8 +33,8 @@ export class RecurrenceStore{
   }
  }
  async queueDue(owner:string,now:number,resting:boolean){
-  // Bedtime stops work prompts, not explicitly requested personal reminders.
-  resting=resting||await new ScheduleStore(this.db).notificationsPaused(owner,now);
+  // Sleep stops work prompts, not explicitly requested personal reminders.
+  resting=resting||await new ScheduleStore(this.db).personalRemindersPaused(owner,now);
   // A short look-back tolerates cron jitter; old occurrences become missed,
   // never an accumulated notification debt after downtime.
   await this.materialize(owner,now-3600000,now+86400000);

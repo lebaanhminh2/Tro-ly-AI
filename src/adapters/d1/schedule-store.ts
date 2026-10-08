@@ -1,11 +1,13 @@
 import {availableRanges,type TimeRange} from '../../domain/availability.ts';
 import {planDay,type PlanningTask} from '../../application/daily-planner.ts';
 import {query,type Database} from './database.ts';
-import {dayWindow,operatingDay,minutes,resumeHealthy} from '../../domain/healthy.ts';
+import {dayWindow,operatingDay,minutes,resumeHealthy,undoSleepAssessment,type HealthyState} from '../../domain/healthy.ts';
 import {HealthyStore} from './healthy-store.ts';
 import {ceilToMinutes} from '../../domain/time.ts';
 export type ScheduleSettings={start_minutes:number;sleep_minutes:number|null;auto_plan_delay_minutes:number;version:number;updated:number};
 export type DayRow={version:number;day:number;start_at:number;target_sleep:number;end_at:number;asleep_at:number|null;last_chat_at:number|null;task_plan_status:'waiting'|'active'|'closed';task_plan_due:number|null;task_plan_generation:number;task_plan_effective_from:number|null;task_plan_source:'manual'|'automatic'|'system'|null};
+type SleepControl={generation:number;day:number|null;reported_at:number;undo_until:number;undone_at:number|null;previous_reported_at:number|null;previous_asleep_at:number|null;before_json:string;after_json:string};
+type SleepResult={applied:boolean;delta:number;demoted:boolean;reportedAt:number;generation:number|null};
 export class ScheduleStore{
  private db:Database;
  constructor(db:Database){this.db=db;}
@@ -76,14 +78,76 @@ export class ScheduleStore{
   await query(this.db,'UPDATE schedule_days SET last_chat_at=? WHERE owner=? AND day=?',now,owner,day.day).run();
   return day;
  }
- async reportSleep(owner:string,now:number){
-  await query(this.db,'INSERT INTO sleep_reports(owner,reported_at) VALUES(?,?) ON CONFLICT(owner) DO UPDATE SET reported_at=excluded.reported_at',owner,now).run();
-  const day=await this.ensureDay(owner,now);if(!day){
-   return {applied:true,delta:0,demoted:false};
+ private async sleepReceipt<T>(owner:string,id:string,operation:string,input:unknown):Promise<T|null>{
+  const receipt=await query(this.db,'SELECT operation,request_json,result_json FROM cultivation_receipts WHERE owner=? AND request_id=?',owner,id).first<{operation:string;request_json:string;result_json:string}>();
+  if(!receipt)return null;
+  if(receipt.operation!==operation||receipt.request_json!==JSON.stringify(input))throw Error('REQUEST_ID_REUSED');
+  return JSON.parse(receipt.result_json) as T;
+ }
+ private async sleepControl(owner:string){return query(this.db,'SELECT * FROM sleep_controls WHERE owner=?',owner).first<SleepControl>();}
+ private async sleepWindow(owner:string,now:number){
+  const settings=await this.settings(owner),start=settings?.start_minutes??270;
+  return {...dayWindow(operatingDay(now,start),start,settings?.sleep_minutes??1350),settingsVersion:settings?.version??0};
+ }
+ async sleepStatus(owner:string,now:number){
+  const [window,report,control]=await Promise.all([this.sleepWindow(owner,now),
+   query(this.db,'SELECT reported_at FROM sleep_reports WHERE owner=?',owner).first<{reported_at:number}>(),this.sleepControl(owner)]);
+  const asleep=!!report&&report.reported_at>=window.start&&report.reported_at<=now;
+  let canUndo=asleep&&!!control&&control.undone_at===null&&control.reported_at===report!.reported_at&&now<control.undo_until;
+  if(canUndo){
+   try{undoSleepAssessment((await new HealthyStore(this.db).read(owner)).state,JSON.parse(control!.before_json),JSON.parse(control!.after_json));}
+   catch{canUndo=false;}
   }
-  await query(this.db,'UPDATE schedule_days SET asleep_at=COALESCE(asleep_at,?),last_chat_at=? WHERE owner=? AND day=?',now,now,owner,day.day).run();
-  const saved=await query(this.db,'SELECT * FROM schedule_days WHERE owner=? AND day=?',owner,day.day).first<DayRow>();
-  return new HealthyStore(this.db).score(owner,{day:day.day,target:day.target_sleep,end:day.end_at,reportedAt:saved!.asleep_at,chatActive:true,assessedAt:now});
+  return {asleep,until:asleep?window.end:null,reportedAt:asleep?report!.reported_at:null,generation:asleep?control?.generation??null:null,
+   canUndo,undoUntil:canUndo?Math.min(control!.undo_until,window.end):null};
+ }
+ async reportSleep(owner:string,now:number,requestId?:string):Promise<SleepResult>{
+  const input={operation:'report'};
+  if(requestId){const receipt=await this.sleepReceipt<SleepResult>(owner,requestId,'sleep-report',input);if(receipt)return receipt;}
+  const [window,previous,control]=await Promise.all([this.sleepWindow(owner,now),
+   query(this.db,'SELECT reported_at FROM sleep_reports WHERE owner=?',owner).first<{reported_at:number}>(),this.sleepControl(owner)]);
+  const healthy=new HealthyStore(this.db);
+  if(previous&&previous.reported_at>=window.start&&previous.reported_at<=now){
+   const result={applied:false,delta:0,demoted:false,reportedAt:previous.reported_at,generation:control?.generation??null};
+   return requestId?healthy.mutate(owner,requestId,'sleep-report',input,now,state=>({state,result,statements:[
+    query(this.db,'INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM sleep_reports WHERE owner=? AND reported_at=?) THEN 1 ELSE 0 END',owner,previous.reported_at)
+   ]})):result;
+  }
+  const day=await this.ensureDay(owner,now),generation=(control?.generation??0)+1;
+  return healthy.mutate(owner,requestId??`sleep-report:${window.start}:${generation}`,'sleep-report',input,now,state=>{
+   const scored=day?healthy.prepareSleep(owner,state,{day:day.day,target:day.target_sleep,end:day.end_at,reportedAt:day.asleep_at??now,chatActive:true,assessedAt:now})
+    :{state,result:{applied:true,delta:0,demoted:false},statements:[]};
+   return {state:scored.state,result:{...scored.result,reportedAt:now,generation},statements:[
+    query(this.db,'INSERT INTO transaction_guard SELECT CASE WHEN COALESCE((SELECT version FROM schedule_settings WHERE owner=?),0)=? THEN 1 ELSE 0 END',owner,window.settingsVersion),
+    query(this.db,'INSERT INTO transaction_guard SELECT CASE WHEN COALESCE((SELECT generation FROM sleep_controls WHERE owner=?),0)=? AND (SELECT reported_at FROM sleep_reports WHERE owner=?) IS ? THEN 1 ELSE 0 END',owner,control?.generation??0,owner,previous?.reported_at??null),
+    ...(day?[
+     query(this.db,'INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM schedule_days WHERE owner=? AND day=? AND asleep_at IS ?) THEN 1 ELSE 0 END',owner,day.day,day.asleep_at),
+     query(this.db,'UPDATE schedule_days SET asleep_at=COALESCE(asleep_at,?),last_chat_at=? WHERE owner=? AND day=?',now,now,owner,day.day)
+    ]:[]),
+    ...scored.statements,
+    query(this.db,'INSERT INTO sleep_reports(owner,reported_at) VALUES(?,?) ON CONFLICT(owner) DO UPDATE SET reported_at=excluded.reported_at',owner,now),
+    query(this.db,'INSERT INTO sleep_controls(owner,generation,day,reported_at,undo_until,previous_reported_at,previous_asleep_at,before_json,after_json) VALUES(?,?,?,?,?,?,?,?,?) ON CONFLICT(owner) DO UPDATE SET generation=excluded.generation,day=excluded.day,reported_at=excluded.reported_at,undo_until=excluded.undo_until,undone_at=NULL,previous_reported_at=excluded.previous_reported_at,previous_asleep_at=excluded.previous_asleep_at,before_json=excluded.before_json,after_json=excluded.after_json',
+     owner,generation,day?.day??null,now,now+5*60000,previous?.reported_at??null,day?.asleep_at??null,JSON.stringify(state),JSON.stringify(scored.state))
+   ]};
+  });
+ }
+ async undoSleep(owner:string,now:number,id:string,generation:number){
+  const input={operation:'undo',generation};
+  const receipt=await this.sleepReceipt<{undone:boolean}>(owner,id,'sleep-undo',input);if(receipt)return receipt;
+  const [control,status]=await Promise.all([this.sleepControl(owner),this.sleepStatus(owner,now)]);
+  if(!control||control.generation!==generation||control.undone_at!==null||!status.asleep||status.reportedAt!==control.reported_at)throw Error('SLEEP_CHANGED');
+  if(now>=control.undo_until)throw Error('SLEEP_UNDO_EXPIRED');
+  const before=JSON.parse(control.before_json) as HealthyState,after=JSON.parse(control.after_json) as HealthyState;
+  return new HealthyStore(this.db).mutate(owner,id,'sleep-undo',input,now,state=>({state:undoSleepAssessment(state,before,after),result:{undone:true},statements:[
+   query(this.db,'INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM sleep_controls WHERE owner=? AND generation=? AND undone_at IS NULL) AND EXISTS(SELECT 1 FROM sleep_reports WHERE owner=? AND reported_at=?) THEN 1 ELSE 0 END',owner,generation,owner,control.reported_at),
+   query(this.db,'UPDATE sleep_controls SET undone_at=? WHERE owner=? AND generation=?',now,owner,generation),
+   ...(control.previous_reported_at===null?[query(this.db,'DELETE FROM sleep_reports WHERE owner=?',owner)]:[
+    query(this.db,'UPDATE sleep_reports SET reported_at=? WHERE owner=?',control.previous_reported_at,owner)
+   ]),
+   ...(control.day===null?[]:[query(this.db,'UPDATE schedule_days SET asleep_at=? WHERE owner=? AND day=?',control.previous_asleep_at,owner,control.day)]),
+   ...(before.lastScoredDay===after.lastScoredDay?[]:[query(this.db,'DELETE FROM sleep_assessments WHERE owner=? AND day=? AND reported_at=?',owner,control.day,control.reported_at)]),
+   query(this.db,"UPDATE outbox SET state='failed' WHERE state='pending' AND available<=? AND (id LIKE ? OR id LIKE ? OR id LIKE ?)",now,`task-nudge:${owner}:%`,`task-plan:%:${owner}:%`,`healthy:%:${owner}:%`)
+  ]}));
  }
  async prepareReplan(owner:string,now:number,expectedVersion:number,free:TimeRange[],busy:TimeRange[],tasks:PlanningTask[],requestId:string){
    const day=await this.ensureDay(owner,now);if(!day)throw Error('SETUP_REQUIRED');
@@ -117,16 +181,19 @@ export class ScheduleStore{
   const settings=await this.settings(owner);
   const start=settings?.start_minutes??270;
   const window=dayWindow(operatingDay(now,start),start,settings?.sleep_minutes??1350);
-  // A sleep report belongs to this operating day, but silences notifications
-  // only inside its rest interval. Settings, not a frozen timestamp, define it.
-  if(now<window.target)return {reason:'active',until:null};
+  // Sleep starts when reported; the current wake setting ends it next day.
   const sleep=await query(this.db,'SELECT reported_at FROM sleep_reports WHERE owner=?',owner).first<{reported_at:number}>();
-  if(sleep&&sleep.reported_at>=window.start&&sleep.reported_at<=now)return {reason:'asleep',until:window.end};
+  if(sleep&&sleep.reported_at>=window.start&&sleep.reported_at<=now)return {reason:'asleep',until:window.end,reportedAt:sleep.reported_at};
+  if(now<window.target)return {reason:'active',until:null};
   return {reason:'bedtime',until:window.end};
  }
  async isResting(owner:string,now:number){return (await this.restStatus(owner,now)).reason!=='active';}
  async notificationsPaused(owner:string,now:number){
   return !['active','bedtime'].includes((await this.restStatus(owner,now)).reason);
+ }
+ // Explicit reminders keep their schedule during sleep, like during focus.
+ async personalRemindersPaused(owner:string,now:number){
+  return ['paused','inactive'].includes((await this.restStatus(owner,now)).reason);
  }
  async notificationAllowed(owner:string,id:string,now:number){
   const prefix='healthy:';

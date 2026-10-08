@@ -19,7 +19,7 @@ export function createRuntimeChat(env:Env,chat:ChatService|undefined,transport:t
   const store=new D1WorkStore(env.DB,cardsEnabled);
   const confirmation=input?.callback?/^tool-confirm:([yn]):(.+)$/.exec(input.callback):null;
   const [context,pending]=await Promise.all([
-   buildContext(reader,owner,text||'Xác nhận bằng nút',lease.input.receivedAt??clock.now()),
+   buildContext(reader,owner,text||'Xác nhận bằng nút',clock.now()),
    new ConversationStore(env.DB).pending(owner,clock.now())
   ]);
   if(confirmation&&(!pending||pending.id!==confirmation[2]))return 'Đề xuất này đã cũ hoặc đã được xử lý.';
@@ -30,8 +30,11 @@ export function createRuntimeChat(env:Env,chat:ChatService|undefined,transport:t
   const requestedCodes=new Set([...text.matchAll(/#(\d+)(?:\.(\d+))?/g)].map(match=>Number(match[1])));
   const relevantHierarchy=hierarchy.filter(task=>requestedCodes.has(task.public_code)||context.tasks.some(candidate=>candidate.id===task.id));
   const schedule=env.ASSETS?await reader.scheduleContext?.(owner,clock.now())??null:null;
-  const sleepPhase=schedule&&Number(schedule.target_sleep)<=clock.now()? '\nĐã đến giờ nghỉ mục tiêu. Hãy hướng cuộc trò chuyện về kết thúc ngày và đi ngủ, không rủ làm thêm task. Nhắc /ngu nhẹ nhàng, không gây tội lỗi.':'';
-  const initial=[{role:'user' as const,parts:[{text:JSON.stringify({contextData:{...JSON.parse(context.context),schedule,task_codes:relevantHierarchy.map(task=>({id:task.id,code:'#'+task.public_code,title:task.title,version:task.version,status:task.status,steps:task.steps.map(step=>({id:step.id,code:'#'+task.public_code+'.'+step.step_code,title:step.title,status:step.status,version:step.version}))}))},pending,replyToMessageId:input?.replyToMessageId??null})}]},
+  const contextData=JSON.parse(context.context),rest=contextData.notificationState;
+  const sleepPhase=rest?.reason==='asleep'?
+   '\nServer xác nhận cậu đã báo /ngu và đang ở trạng thái ngủ. Không tự nhắc đi ngủ, gửi /ngu, cảnh báo phạt vì chưa báo ngủ, thúc làm task hoặc bật tập trung. Trả lời nội dung cậu chủ động nhắn; chỉ giải thích giờ ngủ hay task khi cậu hỏi. Các lời nhắc cậu chủ động đặt vẫn gửi theo lịch; không nói mọi lời nhắc đã bị tắt. Trạng thái server hiện tại ưu tiên hơn lịch sử trò chuyện.':
+   rest?.reason==='bedtime'?'\nĐã đến giờ nghỉ mục tiêu, chưa báo ngủ. Hãy hướng cuộc trò chuyện về kết thúc ngày và đi ngủ, không rủ làm thêm task. Nhắc /ngu nhẹ nhàng, không gây tội lỗi.':'';
+  const initial=[{role:'user' as const,parts:[{text:JSON.stringify({contextData:{...contextData,schedule,task_codes:relevantHierarchy.map(task=>({id:task.id,code:'#'+task.public_code,title:task.title,version:task.version,status:task.status,steps:task.steps.map(step=>({id:step.id,code:'#'+task.public_code+'.'+step.step_code,title:step.title,status:step.status,version:step.version}))}))},pending,replyToMessageId:input?.replyToMessageId??null})}]},
    ...context.turns.map(turn=>({role:turn.role,parts:[{text:turn.text}]}))];
   const snapshotReader=Object.create(reader) as typeof reader;
   const summaryRequest=JSON.parse(context.context).summary_request as {source_turns:{id:number;user:string;assistant:string}[]}|null;

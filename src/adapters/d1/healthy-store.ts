@@ -35,15 +35,16 @@ export class HealthyStore {
   if(this.defer)this.defer(statements);else await this.db.batch(statements);
   return outcome.result;
  }
- async score(owner:string,input:SleepAssessment){
-  return this.mutate(owner,'sleep:'+input.day,'sleep',{day:input.day},input.assessedAt,state=>{
+ prepareSleep(owner:string,state:HealthyState,input:SleepAssessment){
    const outcome=assessSleep(state,input);
    const result={applied:outcome.applied,delta:outcome.delta,demoted:outcome.demoted};
    return {state:outcome.state,result,statements:outcome.applied?[
     query(this.db,'INSERT INTO sleep_assessments(owner,day,target,reported_at,result,qi_delta,demoted,assessed_at) VALUES(?,?,?,?,?,?,?,?)',
      owner,input.day,input.target,input.reportedAt,outcome.onTime?'on_time':input.reportedAt===null?'unreported':'late',outcome.delta,Number(outcome.demoted),input.assessedAt)
    ]:[]};
-  });
+ }
+ async score(owner:string,input:SleepAssessment){
+  return this.mutate(owner,'sleep:'+input.day,'sleep',{day:input.day},input.assessedAt,state=>this.prepareSleep(owner,state,input));
  }
  async checkIn(owner:string,id:string,input:unknown,now:number){
   return this.mutate(owner,id,'daily-checkin',input,now,state=>{

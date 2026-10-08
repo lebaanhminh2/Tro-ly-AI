@@ -1,10 +1,10 @@
 import { setThemePreference, themePreference } from '../core/theme.js';
 import { button, el, field } from '../ui/dom.js';
 export function createScheduleActions(context) {
-    const { state, sheet, sheetContent, openSheet, performLive, render, toast } = context;
+    const { state, sheet, sheetContent, openSheet, performLive, render, toast, renderSleepControls } = context;
     function openHelp() {
         openSheet('Hướng dẫn nhanh');
-        for (const [command, description] of [['Chat thường', 'Trò chuyện, không tự ghi công việc.'], ['/ thêm bài toán hạn mai', 'Thực hiện yêu cầu. Thiếu thông tin thì tớ hỏi.'], ['/ mai 7h nhắc tớ dậy', 'Đặt nhắc một lần; lời nhắc vẫn tuân theo chế độ nghỉ.'], ['/lich', 'Mở phần “Thời gian hôm nay” để cậu tự ghi giờ rảnh, giờ bận và thời lượng task cho chính xác.'], ['/ngu', 'Báo nghỉ, dừng nhắc chủ động; vẫn sửa dữ liệu được.'], ['/huy', 'Thoát phiên nhập đang mở.']]) {
+        for (const [command, description] of [['Chat thường', 'Trò chuyện, không tự ghi công việc.'], ['/ thêm bài toán hạn mai', 'Thực hiện yêu cầu. Thiếu thông tin thì tớ hỏi.'], ['/ mai 7h nhắc tớ dậy', 'Đặt nhắc một lần; các lời nhắc đã đặt vẫn theo lịch khi ngủ.'], ['/lich', 'Mở phần “Thời gian hôm nay” để cậu tự ghi giờ rảnh, giờ bận và thời lượng task cho chính xác.'], ['/ngu', 'Báo ngủ, ngừng nhắc làm task. Các lời nhắc đã đặt vẫn theo lịch. Cậu cũng có thể bấm Đi ngủ trong Cài đặt.'], ['/huy', 'Thoát phiên nhập đang mở.']]) {
             const box = el('section', undefined, 'item-row');
             box.append(el('strong', command), el('p', description, 'hint'));
             sheetContent.append(box);
@@ -12,11 +12,12 @@ export function createScheduleActions(context) {
     }
     function openSettings() {
         openSheet('Cài đặt');
+        sheet.classList.add('settings-sheet-open');
         const form = el('form'), start = field('Bắt đầu ngày', 'time', state.start), sleep = field('Giờ nghỉ mục tiêu', 'time', state.sleep), autoDelay = field('Tự xếp lịch nếu chưa cập nhật sau (phút)', 'number', String(state.autoPlanDelayMinutes ?? 180));
         autoDelay.input.min = '30';
         autoDelay.input.max = '720';
         autoDelay.input.step = '30';
-        form.append(start.wrap, sleep.wrap, autoDelay.wrap, el('p', 'Thời gian chờ áp dụng từ ngày tiếp theo. Giờ nghỉ là mục tiêu; /ngu mới xác nhận cậu bắt đầu nghỉ.', 'hint'));
+        form.append(start.wrap, sleep.wrap, autoDelay.wrap, el('p', 'Thời gian chờ áp dụng từ ngày tiếp theo. Giờ nghỉ là mục tiêu; bấm Đi ngủ hoặc gửi /ngu khi cậu bắt đầu nghỉ.', 'hint'));
         const save = el('button', state.live ? 'Lưu giờ sinh hoạt' : 'Lưu trong bản mẫu', 'primary');
         save.type = 'submit';
         form.append(save);
@@ -51,7 +52,12 @@ export function createScheduleActions(context) {
         theme.value = themePreference();
         theme.addEventListener('change', () => setThemePreference(theme.value));
         themeLabel.append(theme);
-        sheetContent.append(form, themeLabel, button('Hướng dẫn nhanh', openHelp, 'secondary'));
+        const body = el('div', undefined, 'settings-sheet-body');
+        body.tabIndex = 0;
+        body.setAttribute('role', 'region');
+        body.setAttribute('aria-label', 'Nội dung cài đặt');
+        body.append(form, renderSleepControls(), themeLabel, button('Hướng dẫn nhanh', openHelp, 'secondary'));
+        sheetContent.append(body);
     }
     function openAvailability() {
         if (state.live) {

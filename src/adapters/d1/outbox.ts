@@ -28,8 +28,9 @@ export async function flushOutbox(env: Env, transport: typeof fetch = fetch, now
       await query(env.DB,"UPDATE outbox SET state='failed' WHERE id=? AND state='pending'",row.id).run();continue;
     }
     const schedule=new ScheduleStore(env.DB);
-    const blocked=async(at:number)=>row.reminder_id&&!row.reminder_id.startsWith('recurring:')&&!row.reminder_id.startsWith('appointment:')
-      ?schedule.isResting(env.TELEGRAM_USER_ID,at):schedule.notificationsPaused(env.TELEGRAM_USER_ID,at);
+    const personalReminder=row.reminder_id?.startsWith('recurring:')||row.reminder_id?.startsWith('appointment:');
+    const blocked=async(at:number)=>personalReminder?schedule.personalRemindersPaused(env.TELEGRAM_USER_ID,at):
+      row.reminder_id?schedule.isResting(env.TELEGRAM_USER_ID,at):schedule.notificationsPaused(env.TELEGRAM_USER_ID,at);
     const attemptAt=currentTime();
     if(env.ASSETS&&(row.reminder_id||row.id.startsWith('achievement:')||row.id.startsWith('healthy:'))&&await blocked(attemptAt)){
       await query(env.DB,"UPDATE outbox SET state='failed' WHERE id=? AND state='pending'",row.id).run();continue;

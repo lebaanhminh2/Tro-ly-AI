@@ -10,7 +10,7 @@ import { handleSchedule } from './mini-app/schedule.ts';
 import { handleTasks } from './mini-app/tasks.ts';
 const taskRoutes = new Set(['/api/tasks', '/api/tasks-delete']);
 const reminderRoutes = new Set(['/api/reminders', '/api/reminder-instance']);
-const scheduleRoutes = new Set(['/api/settings', '/api/schedule', '/api/day-plan', '/api/task-work', '/api/task-focus', '/api/session', '/api/timeline']);
+const scheduleRoutes = new Set(['/api/settings', '/api/schedule', '/api/day-plan', '/api/task-work', '/api/task-focus', '/api/session', '/api/timeline', '/api/sleep']);
 const writeRoutes = new Set([...taskRoutes, ...reminderRoutes, ...scheduleRoutes, '/api/cultivation']);
 export async function miniAppApi(request: Request, env: Env, now = Date.now()): Promise<Response> {
     const url = new URL(request.url);
@@ -69,6 +69,9 @@ export async function miniAppApi(request: Request, env: Env, now = Date.now()): 
     }
     catch (error) {
         const code = error instanceof Error ? error.message : '';
+        const sleepErrors:Record<string,string>={SLEEP_CHANGED:'Trạng thái ngủ vừa thay đổi. Đóng cài đặt rồi mở lại nhé.',SLEEP_UNDO_EXPIRED:'Đã hết 5 phút để hoàn tác báo ngủ.',SLEEP_UNDO_LOCKED:'Không thể hoàn tác vì kết quả tu luyện đã thay đổi sau khi báo ngủ.'};
+        if(sleepErrors[code])return json({error:code,message:sleepErrors[code]},409);
+        if(code==='SETUP_REQUIRED')return json({error:code},409);
         if (code.startsWith('TIMELINE_'))
             return json({ error: code }, 409);
         if (['ALREADY_CHECKED_IN', 'CHECKIN_COMPLETE', 'NO_ACTIVE_DAY', 'NO_ACTIVE_TASK_WINDOW', 'NO_TICKETS', 'ACCOUNT_SUSPENDED', 'DRAW_UNAVAILABLE', 'FUSION_UNAVAILABLE', 'ITEM_UNAVAILABLE', 'BREAKTHROUGH_UNAVAILABLE', 'ALREADY_PROTECTED', 'REQUEST_ID_REUSED', 'STALE_TASK', 'TASK_NOT_AVAILABLE', 'PLAN_CHANGED', 'CONFIRM_CHILDREN', 'CONFIRM_REOPEN_PARENT', 'CONFIRM_DELETE', 'STEP_NOT_FOUND', 'NO_NEXT_REMINDER', 'SESSION_CHANGED'].includes(code))

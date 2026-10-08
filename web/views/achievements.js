@@ -119,7 +119,10 @@ export function renderRewardCalendar(ui, state, now) {
 }
 export function renderAchievements(ui, state) {
     const { el, button, heading, card } = ui, root = el('section', undefined, 'achievements-page');
-    root.append(heading('Tích lũy từng ngày.', 'Không cần hoàn hảo. Chỉ cần tiếp tục.'));
+    const top = heading('Tích lũy từng ngày.', 'Không cần hoàn hảo. Chỉ cần tiếp tục.');
+    const sleepTime = Number.isFinite(state.day?.target_sleep) ? new Date(state.day.target_sleep).toLocaleTimeString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit' }) : state.sleep;
+    top.firstElementChild.append(el('p', sleepTime ? 'Giờ ngủ hôm nay · ' + sleepTime : 'Chọn giờ ngủ trong Cài đặt', 'achievement-bedtime'));
+    root.append(top);
     const now = (state?.serverNow ?? Date.now()) + Date.now() - (state?.loadedAt ?? Date.now());
     const today = Math.floor((now + 7 * 3600000) / 86400000), completed = state?.progress?.completions ?? [];
     const weekly = completed.filter(c => {
@@ -131,7 +134,7 @@ export function renderAchievements(ui, state) {
     const overview = el('div', undefined, 'achievement-overview'), flameCard = card();
     flameCard.style.setProperty('--flame', flame.color);
     flameCard.classList.add('flame-card', 'companion-flame', 'flame-' + flame.key);
-    flameCard.append(el('p', 'HỎA MẠCH', 'eyebrow'), el('div', '🔥', 'flame-mark'), el('p', streak + ' ngày liên tiếp', 'flame-count'), el('h2', flame.name, 'flame-name'), el('p', bestStreak ? 'Kỷ lục của cậu: ' + bestStreak + ' ngày' : 'Bắt đầu một chuỗi mới nhé.', 'flame-best'), el('p', 'Chuỗi ngủ đúng giờ · không phải chuỗi điểm danh', 'flame-streak-hint'));
+    flameCard.append(el('p', 'HỎA MẠCH', 'eyebrow'), el('div', '🔥', 'flame-mark'), el('p', streak + ' ngày liên tiếp', 'flame-count'), el('h2', flame.name, 'flame-name'), el('p', bestStreak ? 'Kỷ lục của cậu: ' + bestStreak + ' ngày' : 'Bắt đầu một chuỗi mới nhé.', 'flame-best'));
     overview.append(flameCard);
     const insights = el('div', undefined, 'achievement-insights'), stats = el('div', undefined, 'stats achievement-metrics');
     for (const [value, label] of (state?.live ? [[String(weekly.length), 'Việc xong tuần này'], [String(completed.length), 'Tổng đã ghi nhận']] : [['8', 'Việc xong tuần này'], ['24', 'Tổng đã ghi nhận']])) {
@@ -169,10 +172,12 @@ export function renderAchievements(ui, state) {
     root.append(title);
     const cultivation = el('div', undefined, 'cultivation-section'), summary = el('div', undefined, 'cultivation-summary'), rank = el('article', undefined, 'rank-card companion-rank');
     rank.append(el('div', '✧', 'rank-seal'), el('p', 'CẢNH GIỚI HIỆN TẠI', 'eyebrow'), el('h2', current.name), el('p', 'Đỉnh cao từng đạt: ' + realms[c.highestRank].name));
-    if (c.protectedUntil > now)
-        rank.append(el('p', '🛡 Miễn hạ bậc đến ' + new Date(c.protectedUntil).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }), 'protection'));
     rank.append(button('Xem thẻ thành tích', () => ui.openShare(), 'text-button'));
-    summary.append(rank);
+    const rankSummary = el('div', undefined, 'rank-summary');
+    rankSummary.append(rank);
+    if (c.protectedUntil > now)
+        rankSummary.append(el('p', '🛡 Miễn hạ bậc đến ' + new Date(c.protectedUntil).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }), 'protection'));
+    summary.append(rankSummary);
     const balances = el('div', undefined, 'stats cultivation-balances');
     for (const [value, label] of [[c.qi, 'Tu vi hiện tại'], [c.totalEarned, 'Tổng từng kiếm']]) {
         const box = card();

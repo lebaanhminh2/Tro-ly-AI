@@ -3,7 +3,9 @@ export function renderReminders(ui, state) {
     const top = heading('Nhớ việc, nhẹ đầu.', 'Chỉ những lời nhắc cậu chủ động đặt.');
     top.append(button('+ Tạo lời nhắc', () => ui.openReminder(null), 'primary top-create'));
     root.append(top);
-    if (['asleep', 'paused', 'inactive'].includes(state.rest?.reason))
+    if (state.rest?.reason === 'asleep')
+        root.append(el('p', 'Cậu đã báo ngủ. Các lời nhắc đã đặt ở đây vẫn gửi theo lịch.', 'footer-note'));
+    if (['paused', 'inactive'].includes(state.rest?.reason))
         root.append(el('p', 'Đang ngừng gửi nhắc chủ động. Cậu vẫn sửa được các lịch bên dưới; “đang bật” không có nghĩa sẽ gửi trong lúc nghỉ.', 'footer-note'));
     const filter = ['all', 'recurring', 'once'].includes(state.reminderFilter) ? state.reminderFilter : 'all';
     const matches = (r, value) => value === 'all' || (r.kind === 'once') === (value === 'once');

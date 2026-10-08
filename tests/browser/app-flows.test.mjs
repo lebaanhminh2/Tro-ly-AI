@@ -32,7 +32,7 @@ function fixture() {
         day: { day: operatingDay, version: 1, start_at: start, target_sleep: target, end_at: start + 86400000, intervals_json: '{}', task_plan_status: 'active', task_plan_generation: 1 },
         dailyPlan: { version: 1, plan: { items: [{ taskId: 'task-0', minutes: 90, remaining: 90, actualMinutes: 10, scheduledMinutes: 90, windows: [{ start: now - 600000, end: now + 4800000 }] }], planned: 90, capacity: 480, risks: [] } },
         timeline: { window: { start, target }, blocks: [{ id: 'block-1', task_id: 'task-0', start_at: now - 600000, minutes: 90, version: 1 }], busy: [], free: [{ start, end: target }], events: [], stamp: 'test-stamp' },
-        taskFocus: null, taskFocusTarget: { taskId: 'task-0', endsAt: now + 4800000 }, rest: { reason: 'active' }, resting: false, needsSetup: false,
+        taskFocus: null, taskFocusTarget: { taskId: 'task-0', endsAt: now + 4800000 }, rest: { reason: 'active' }, sleepStatus: { asleep: false, canUndo: false }, resting: false, needsSetup: false,
         progress: { completions: [], milestones: [], achievements: [] }, sessions: [], events: []
     };
     const control = { state, authenticated: true, failBootstrap: false, calls: [], posts: [], receipts: new Map() };
@@ -73,6 +73,26 @@ function fixture() {
         else if (path === 'task-focus') {
             state.taskFocus = input.operation === 'start' ? { ...state.taskFocusTarget, startedAt: now } : null;
             result = state.taskFocus ? { active: true, ...state.taskFocus } : { active: false };
+        }
+        else if (path === 'sleep') {
+            const c = state.account.state;
+            if (input.operation === 'report') {
+                const generation = (state.sleepStatus.generation ?? 0) + 1;
+                state.sleepStatus = { asleep: true, until: state.day.end_at, reportedAt: state.now, generation, canUndo: true, undoUntil: state.now + 300000 };
+                state.rest = { reason: 'asleep', reportedAt: state.now, until: state.day.end_at };
+                state.day.asleep_at = state.now;
+                c.qi += 5;
+                c.streak++;
+            }
+            else {
+                state.sleepStatus = { ...state.sleepStatus, asleep: false, canUndo: false, undoUntil: null };
+                state.rest = { reason: 'active' };
+                state.day.asleep_at = null;
+                c.qi -= 5;
+                c.streak--;
+            }
+            state.resting = state.sleepStatus.asleep;
+            result = { sleep: clone(state.sleepStatus), rest: clone(state.rest) };
         }
         else if (path === 'task-work') {
             task.actual_minutes = input.minutes;
@@ -131,7 +151,7 @@ function fixture() {
                 result = { success: true, penalty: 0 };
             }
         }
-        const response = clone({ result, ...(path === 'cultivation' ? { account: state.account } : {}) });
+        const response = clone({ result, ...(['cultivation', 'sleep'].includes(path) ? { account: state.account } : {}) });
         control.receipts.set(input.id, response);
         return response;
     };
@@ -175,6 +195,11 @@ async function serve(control, baseline) {
                     let body = '';
                     for await (const part of request)
                         body += part;
+                    if (endpoint === 'sleep' && control.sleepError) {
+                        response.statusCode = 409;
+                        response.end(JSON.stringify({ error: 'SLEEP_UNDO_LOCKED', message: 'Không thể hoàn tác sau khi đột phá.' }));
+                        return;
+                    }
                     response.end(JSON.stringify(control.mutate(endpoint, JSON.parse(body))));
                 }
                 return;
@@ -292,6 +317,15 @@ async function chrome() {
                 const { data } = await call('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
                 await writeFile(path, Buffer.from(data, 'base64'));
             },
+            async resize(width, height) {
+                await call('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: width < 900 });
+            },
+            async tap(selector) {
+                const point = await evaluate(`(() => { const node=document.querySelector(${JSON.stringify(selector)});if(!node)return null;const rect=node.getBoundingClientRect();return {x:rect.left+rect.width/2,y:rect.top+rect.height/2}; })()`);
+                assert.ok(point, 'Missing tap target: ' + selector);
+                await call('Input.dispatchMouseEvent', { type: 'mousePressed', ...point, button: 'left', clickCount: 1 });
+                await call('Input.dispatchMouseEvent', { type: 'mouseReleased', ...point, button: 'left', clickCount: 1 });
+            },
             async navigate(url, width = 1440) {
                 errors.length = 0;
                 await call('Emulation.setDeviceMetricsOverride', { width, height: width < 900 ? 844 : 1000, deviceScaleFactor: 1, mobile: width < 900 });
@@ -315,6 +349,288 @@ async function chrome() {
 async function snapshot(browser) {
     return browser.evaluate(`(() => { const root=document.querySelector('#content');const rect=root.getBoundingClientRect();return {text:root.innerText,buttons:[...root.querySelectorAll('button')].map(b=>({text:b.innerText,disabled:b.disabled})),geometry:{x:Math.round(rect.x),y:Math.round(rect.y),width:Math.round(rect.width),height:Math.round(rect.height)},overflow:document.documentElement.scrollWidth>innerWidth+1};})()`);
 }
+
+test('settings keep the title and close button visible when scrolling and when the viewport shrinks', { skip: !browserBin, timeout: 60000 }, async () => {
+    const control = fixture(), server = await serve(control);
+    let browser;
+    try {
+        browser = await chrome();
+        for (const width of [320, 390, 1440]) {
+            await browser.navigate(server.url, width);
+            await browser.wait("!!document.querySelector('.focus-flip-card')");
+            await browser.evaluate("document.querySelector('#settings').click()");
+            await browser.wait("!!document.querySelector('.settings-sheet-body')");
+            const layout = await browser.evaluate(`(async () => {
+                const sheet=document.querySelector('#sheet'),body=sheet.querySelector('.settings-sheet-body'),header=sheet.querySelector('.sheet-title-row'),close=sheet.querySelector('[data-sheet-close]');
+                const before=header.getBoundingClientRect().top;
+                body.scrollTop=body.scrollHeight;
+                await new Promise(requestAnimationFrame);
+                const rect=close.getBoundingClientRect(),sheetRect=sheet.getBoundingClientRect();
+                return {scrolled:body.scrollTop>0,headerStayed:Math.abs(before-header.getBoundingClientRect().top)<1,
+                    outerStayed:sheet.scrollTop===0,closeVisible:rect.top>=sheetRect.top&&rect.bottom<=sheetRect.bottom,
+                    closeReachable:document.elementFromPoint(rect.left+rect.width/2,rect.top+rect.height/2)?.closest('[data-sheet-close]')===close,
+                    bounded:sheetRect.top>=0&&sheetRect.bottom<=innerHeight+1,overflow:body.scrollWidth>body.clientWidth+1};
+            })()`);
+            assert.deepEqual(layout,{scrolled:true,headerStayed:true,outerStayed:true,closeVisible:true,closeReachable:true,bounded:true,overflow:false},width+'px');
+            if (width === 390 && process.env.WEB_TEST_SCREENSHOT_PATH)
+                await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, '-settings-scrolled.png'));
+            await browser.tap('[data-sheet-close]');
+            await browser.wait("!document.querySelector('#sheet').open");
+            assert.equal(await browser.evaluate("document.querySelector('#sheet').classList.contains('settings-sheet-open')"),false);
+            await browser.evaluate("document.querySelector('#settings').click()");
+            assert.equal(await browser.evaluate("document.querySelector('.settings-sheet-body').scrollTop"),0);
+            // Navigating to another sheet clears the settings layout before rendering it.
+            await browser.click('Hướng dẫn nhanh','#sheet button');
+            assert.equal(await browser.evaluate("document.querySelector('#sheet').classList.contains('settings-sheet-open')"),false);
+            assert.equal(await browser.evaluate("!!document.querySelector('.settings-sheet-body')"),false);
+            await browser.tap('[data-sheet-close]');
+            await browser.wait("!document.querySelector('#sheet').open");
+            if (width === 390) {
+                await browser.evaluate("document.querySelector('#settings').click()");
+                await browser.resize(width,430);
+                await browser.evaluate("document.querySelector('.settings-sheet-body input[type=number]').focus();document.querySelector('.settings-sheet-body').scrollTop=9999");
+                assert.equal(await browser.evaluate("(() => { const close=document.querySelector('[data-sheet-close]'),r=close.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight&&document.elementFromPoint(r.left+r.width/2,r.top+r.height/2)?.closest('[data-sheet-close]')===close; })()"),true);
+                await browser.tap('[data-sheet-close]');
+                await browser.wait("!document.querySelector('#sheet').open");
+            }
+            assert.deepEqual(browser.errors,[]);
+        }
+        assert.deepEqual(control.posts,[],'Scrolling and closing settings must not save drafts or mutate sleep');
+    }
+    finally {
+        if (browser)
+            await browser.close();
+        await server.close();
+    }
+});
+test('realm protection appears below the rank card before balances and hides when expired', { skip: !browserBin, timeout: 60000 }, async () => {
+    const control = fixture(), server = await serve(control);
+    const protectedUntil = now + 72 * 3600000;
+    control.state.account.state.protectedUntil = protectedUntil;
+    const account = clone(control.state.account);
+    let browser;
+    try {
+        browser = await chrome();
+        for (const width of [1440, 390, 320]) {
+            await browser.navigate(server.url, width);
+            await browser.wait("!!document.querySelector('.focus-flip-card')");
+            await browser.evaluate("document.querySelector('[data-tab=achievements]').click()");
+            const layout = await browser.evaluate(`(() => {
+                const card=document.querySelector('.rank-card'),note=document.querySelector('.rank-summary>.protection'),balances=document.querySelector('.cultivation-balances');
+                const r=card.getBoundingClientRect(),n=note.getBoundingClientRect(),b=balances.getBoundingClientRect();
+                return {text:note.textContent,outside:!card.contains(note),below:n.top>=r.bottom,beforeBalances:n.bottom<=b.top,
+                    gap:n.top-r.bottom,fits:n.left>=0&&n.right<=innerWidth,share:!!card.querySelector('button')};
+            })()`);
+            assert.equal(layout.text,'🛡 Miễn hạ bậc đến '+new Date(protectedUntil).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'}));
+            assert.equal(layout.outside,true);assert.equal(layout.below,true);assert.equal(layout.beforeBalances,true);
+            assert.equal(layout.gap,8);assert.equal(layout.fits,true);assert.equal(layout.share,true);
+            assert.equal((await snapshot(browser)).overflow,false);
+            if (width === 390 && process.env.WEB_TEST_SCREENSHOT_PATH) {
+                await browser.evaluate("document.querySelector('.rank-summary').scrollIntoView({block:'center'})");
+                await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/,'-protection.png'));
+            }
+        }
+        assert.deepEqual(control.state.account,account);assert.deepEqual(control.posts,[]);
+        control.state.account.state.protectedUntil = now - 60000;
+        await browser.navigate(server.url,390);
+        await browser.wait("!!document.querySelector('.focus-flip-card')");
+        await browser.evaluate("document.querySelector('[data-tab=achievements]').click()");
+        assert.equal(await browser.evaluate("document.querySelectorAll('.protection').length"),0);
+        assert.deepEqual(browser.errors,[]);
+    }
+    finally {
+        if (browser)
+            await browser.close();
+        await server.close();
+    }
+});
+
+test('settings report sleep and undo with preserved drafts; achievements heading shows the saved daily bedtime on mobile', { skip: !browserBin, timeout: 60000 }, async () => {
+    const control = fixture(), server = await serve(control);
+    const tasks = clone(control.state.tasks), plan = clone(control.state.dailyPlan), focus = { ...control.state.taskFocusTarget, startedAt: now - 1000 };
+    control.state.taskFocus = focus;
+    let browser;
+    try {
+        browser = await chrome();
+        for (const width of [390, 320]) {
+            const beforePosts = control.posts.filter(p=>p.path==='sleep').length;
+            await browser.navigate(server.url, width);
+            await browser.wait("!!document.querySelector('.focus-flip-card')");
+            await browser.evaluate("document.querySelector('[data-tab=achievements]').click()");
+            const flame = await browser.evaluate("document.querySelector('.flame-card').innerText");
+            assert.doesNotMatch(flame,/Giờ ngủ hôm nay|Chuỗi ngủ đúng giờ|không phải chuỗi điểm danh|chưa báo ngủ/);
+            const bedtime = await browser.evaluate(`(() => {
+                const header=document.querySelector('.achievements-page>.heading'),line=header.querySelector('.achievement-bedtime'),subtitle=header.querySelector('.subtitle'),rect=line.getBoundingClientRect(),sub=subtitle.getBoundingClientRect();
+                return {text:line.textContent,below:rect.top>=sub.bottom,aligned:Math.abs(rect.left-sub.left)<1,fits:rect.left>=0&&rect.right<=innerWidth,count:document.querySelectorAll('.achievement-bedtime').length};
+            })()`);
+            assert.deepEqual(bedtime,{text:'Giờ ngủ hôm nay · 22:30',below:true,aligned:true,fits:true,count:1});
+            if (width === 390 && process.env.WEB_TEST_SCREENSHOT_PATH)
+                await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, '-bedtime.png'));
+            await browser.evaluate("document.querySelector('[data-tab=today]').click();document.querySelector('#settings').click()");
+            await browser.wait("!!document.querySelector('.sleep-report')");
+            assert.equal((await snapshot(browser)).overflow,false);
+            const fits = await browser.evaluate("[...document.querySelectorAll('.settings-sleep-row>*')].every(n=>{const r=n.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth})");
+            assert.equal(fits,true);
+            await browser.evaluate("document.querySelector('#sheet input[type=time]').value='05:30'");
+            await browser.click('Đi ngủ','.settings-sleep-controls button');
+            assert.equal(control.posts.filter(p=>p.path==='sleep').length,beforePosts,'Opening confirmation is read-only');
+            assert.match(await browser.evaluate("document.querySelector('.settings-sleep-controls').innerText"),/Đi ngủ bây giờ\?/);
+            await browser.click('Để sau','.settings-sleep-controls button');
+            assert.equal(await browser.evaluate("document.querySelector('#sheet input[type=time]').value"),'05:30');
+            await browser.click('Đi ngủ','.settings-sleep-controls button');
+            await browser.click('Đi ngủ','.sleep-confirm-actions button');
+            await browser.wait("!!document.querySelector('.sleep-undo')");
+            assert.equal(await browser.evaluate("document.querySelector('#sheet input[type=time]').value"),'05:30','Reporting sleep preserves the unsaved settings draft');
+            assert.equal(control.posts.filter(p=>p.path==='settings').length,0);
+            assert.equal(control.state.settings.start_minutes,270);
+            const sleeping = await browser.evaluate("document.querySelector('.settings-sleep-controls').innerText");
+            assert.match(sleeping,/Đang ngủ · từ 10:00/);assert.match(sleeping,/Có thể hủy đến 10:05/);assert.doesNotMatch(sleeping,/1 lần|Bấm nhầm/);
+            assert.deepEqual(control.state.taskFocus,focus);assert.deepEqual(control.state.tasks,tasks);assert.deepEqual(control.state.dailyPlan,plan);
+            if (width === 390 && process.env.WEB_TEST_SCREENSHOT_PATH)
+                await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, '-settings-sleep.png'));
+            await browser.click('Hoàn tác','.settings-sleep-controls button');
+            await browser.click('Giữ nguyên','.settings-sleep-controls button');
+            assert.equal(control.state.sleepStatus.asleep,true);
+            await browser.click('Hoàn tác','.settings-sleep-controls button');
+            await browser.click('Hoàn tác','.sleep-confirm-actions button');
+            await browser.wait("!!document.querySelector('.sleep-report')");
+            assert.equal(control.state.sleepStatus.asleep,false);
+            assert.deepEqual(control.state.taskFocus,focus);
+            await browser.evaluate("document.querySelector('[data-sheet-close]').click()");
+            await browser.wait("document.querySelector('.focus-flip-card')?.getAttribute('aria-pressed')==='true'");
+            assert.deepEqual(browser.errors,[]);
+        }
+        assert.deepEqual(control.posts.filter(p=>p.path==='sleep').map(p=>p.input.operation),['report','undo','report','undo'],'Second correction is allowed on the same operating day');
+        // The heading uses the day's saved target, not an unsaved or future-day setting.
+        control.state.settings.sleep_minutes=1410;
+        await browser.navigate(server.url,390);
+        await browser.wait("!!document.querySelector('.focus-flip-card')");
+        await browser.evaluate("document.querySelector('[data-tab=achievements]').click()");
+        assert.match(await browser.evaluate("document.querySelector('.achievements-page>.heading').innerText"),/Giờ ngủ hôm nay · 22:30/);
+        // Sleep is independent of a separate pause, even when that pause expires.
+        Object.assign(control.state,{rest:{reason:'paused',until:now-1000},resting:true,
+            sleepStatus:{asleep:true,until:control.state.day.end_at,reportedAt:now,generation:9,canUndo:true,undoUntil:now+300000}});
+        await browser.navigate(server.url,320);
+        await browser.wait("!!document.querySelector('.rest-state')");
+        await browser.evaluate("document.querySelector('#settings').click()");
+        assert.match(await browser.evaluate("document.querySelector('.settings-sleep-controls').innerText"),/Đang ngủ/);
+        await browser.click('Hoàn tác','.settings-sleep-controls button');
+        control.state.sleepStatus.canUndo=false;
+        control.sleepError=true;
+        await browser.click('Hoàn tác','.sleep-confirm-actions button');
+        await browser.wait("!document.querySelector('.sleep-undo')&&!document.querySelector('.sleep-confirm-actions')");
+        assert.match(await browser.evaluate("document.querySelector('.settings-sleep-controls').innerText"),/Đang ngủ/);
+        control.sleepError=false;
+        await browser.evaluate("document.querySelector('[data-sheet-close]').click()");
+        // An open settings panel removes undo as its five-minute window expires.
+        Object.assign(control.state,{rest:{reason:'asleep',reportedAt:now-297500,until:control.state.day.end_at},resting:true,
+            sleepStatus:{asleep:true,reportedAt:now-297500,generation:10,canUndo:true,undoUntil:now+2500}});
+        await browser.navigate(server.url,320);
+        await browser.wait("!!document.querySelector('.sleep-card')");
+        assert.doesNotMatch(await browser.evaluate("document.querySelector('.sleep-card').innerText"),/10:00|Nghỉ đến|Đã ghi nhận/);
+        await browser.evaluate("document.querySelector('#settings').click()");
+        await browser.wait("!!document.querySelector('.sleep-undo')");
+        await browser.wait("!document.querySelector('.sleep-undo')");
+        assert.doesNotMatch(await browser.evaluate("document.querySelector('.settings-sleep-controls').innerText"),/Có thể hủy|Hoàn tác/);
+        await browser.evaluate("document.querySelector('[data-sheet-close]').click()");
+        // Acknowledged report remains visible even when the subsequent refresh fails.
+        Object.assign(control.state,{rest:{reason:'active'},resting:false,sleepStatus:{asleep:false,canUndo:false}});
+        await browser.navigate(server.url,390);
+        await browser.wait("!!document.querySelector('.focus-flip-card')");
+        await browser.evaluate("document.querySelector('#settings').click()");
+        await browser.click('Đi ngủ','.settings-sleep-controls button');
+        control.failBootstrap=true;
+        await browser.click('Đi ngủ','.sleep-confirm-actions button');
+        await browser.wait("document.querySelector('.settings-sleep-label')?.textContent.startsWith('Đang ngủ')");
+        assert.equal(await browser.evaluate("document.querySelector('.sleep-undo')?.disabled"),true,'No second mutation until the failed refresh is reconciled');
+        await browser.evaluate("document.querySelector('[data-sheet-close]').click()");
+        await browser.wait("!!document.querySelector('.sleep-card')");
+        assert.deepEqual(browser.errors,[]);
+    }
+    finally {
+        if (browser)
+            await browser.close();
+        await server.close();
+    }
+});
+
+test('sleep replaces the focus card without changing tasks or configured reminders and restores focus after wake', { skip: !browserBin, timeout: 60000 }, async () => {
+    const control = fixture(), recorded = now - 60000, until = now + 18.5 * 3600000;
+    Object.assign(control.state, { resting: true, rest: { reason: 'asleep', reportedAt: recorded, until } });
+    control.state.day.asleep_at = recorded;
+    control.state.taskFocus = { ...control.state.taskFocusTarget, startedAt: now - 120000 };
+    const tasks = clone(control.state.tasks), plan = clone(control.state.dailyPlan);
+    const server = await serve(control);
+    let browser;
+    try {
+        browser = await chrome();
+        for (const width of [1440, 390, 320]) {
+            await browser.navigate(server.url, width);
+            await browser.wait("!!document.querySelector('.sleep-card')");
+            const view = await browser.evaluate(`(() => {
+                const card=document.querySelector('.sleep-card'),rect=card.getBoundingClientRect();
+                return {text:card.innerText,interactive:card.querySelectorAll('button,input').length,
+                    focus:!!document.querySelector('.focus-flip-card'),rest:!!document.querySelector('.rest-state'),
+                    duplicate:[...document.querySelectorAll('#content h2')].filter(node=>node.textContent==='Ngủ ngon nhé').length,
+                    fits:rect.left>=0&&rect.right<=innerWidth,height:rect.height,
+                    alignment:getComputedStyle(card).textAlign,artHidden:card.querySelector('.sleep-card-seal')?.getAttribute('aria-hidden')==='true',
+                    moon:card.querySelector('.sleep-card-seal')?.textContent,role:card.getAttribute('role')};
+            })()`);
+            assert.match(view.text,/ĐANG NGỦ/);assert.match(view.text,/Ngủ ngon nhé/);assert.doesNotMatch(view.text,/Đã ghi nhận|Nghỉ đến|09:59|04:30/);
+            assert.match(view.text,/Lời nhắc đã đặt vẫn theo lịch/);
+            assert.equal(view.interactive,0);assert.equal(view.focus,false);assert.equal(view.rest,false);assert.equal(view.duplicate,1);assert.equal(view.fits,true);
+            assert.equal(view.alignment,'center');assert.equal(view.artHidden,true);assert.equal(view.moon,'☾');assert.equal(view.role,'status');
+            if (width < 900)
+                assert.ok(view.height>=176&&view.height<=184,'The mobile sleep card should match the focus card sizing');
+            else
+                assert.equal(view.height,240,'The desktop sleep card should match the focus card sizing');
+            assert.equal((await snapshot(browser)).overflow,false);
+            await browser.click('Danh sách việc');
+            assert.ok(await browser.evaluate("!!document.querySelector('.sleep-card')"));
+            await browser.click('Lịch hôm nay');
+            await browser.click('Chỉnh lịch');
+            await browser.wait("!!document.querySelector('.plan-edit-row')");
+            await browser.evaluate("document.querySelector('[data-sheet-close]').click()");
+            await browser.evaluate("document.querySelector('[data-tab=reminders]').click()");
+            assert.match((await snapshot(browser)).text,/lời nhắc đã đặt ở đây vẫn gửi theo lịch/);
+            assert.ok((await snapshot(browser)).buttons.some(button=>button.text==='+ Tạo lời nhắc'&&!button.disabled));
+            await browser.click('+ Tạo lời nhắc');
+            await browser.wait("!!document.querySelector('#sheet form')");
+            await browser.evaluate("document.querySelector('[data-sheet-close]').click();document.querySelector('[data-tab=today]').click()");
+            assert.deepEqual(browser.errors,[]);
+            if (width === 390) {
+                if (process.env.WEB_TEST_SCREENSHOT_PATH)
+                    await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, '-sleep.png'));
+                await browser.evaluate("(() => { document.querySelector('#settings').click();const theme=document.querySelector('#sheet .form-field select');theme.value='dark';theme.dispatchEvent(new Event('change',{bubbles:true}));document.querySelector('[data-sheet-close]').click(); })()");
+                await browser.wait("getComputedStyle(document.querySelector('.sleep-card')).color==='rgb(237, 218, 180)'");
+                if (process.env.WEB_TEST_SCREENSHOT_PATH)
+                    await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, '-sleep-dark.png'));
+                await browser.evaluate("(() => { document.querySelector('#settings').click();const theme=document.querySelector('#sheet .form-field select');theme.value='light';theme.dispatchEvent(new Event('change',{bubbles:true}));document.querySelector('[data-sheet-close]').click(); })()");
+                await browser.wait("getComputedStyle(document.querySelector('.sleep-card')).color==='rgb(103, 83, 47)'");
+            }
+            else if (process.env.WEB_TEST_SCREENSHOT_PATH)
+                await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, width === 320 ? '-sleep-small.png' : '-sleep-desktop.png'));
+        }
+        assert.deepEqual(control.posts,[],'Viewing sleep and opening editors must not mutate focus or reminders');
+        assert.deepEqual(control.state.tasks,tasks);assert.deepEqual(control.state.dailyPlan,plan);
+        Object.assign(control.state,{resting:false,rest:{reason:'active'},taskFocus:null});
+        control.state.day.asleep_at=null;
+        await browser.navigate(server.url,390);
+        await browser.wait("!!document.querySelector('.focus-flip-card')");
+        assert.equal(await browser.evaluate("!!document.querySelector('.sleep-card')"),false);
+        await browser.evaluate("document.querySelector('.focus-flip-card').click()");
+        await browser.wait("document.querySelector('.focus-flip-card')?.getAttribute('aria-pressed')==='true'");
+        assert.equal(control.posts.at(-1).path,'task-focus');
+        assert.equal(control.posts.at(-1).input.operation,'start');
+        assert.deepEqual(browser.errors,[]);
+    }
+    finally {
+        if (browser)
+            await browser.close();
+        await server.close();
+    }
+});
+
 test('waiting Today separates its setup button from the hint and respects the app theme on mobile', { skip: !browserBin, timeout: 60000 }, async () => {
     const control = fixture();
     control.state.dailyPlan = null;

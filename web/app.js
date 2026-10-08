@@ -7,6 +7,7 @@ import { createBrowserLoginActions } from './features/browser-login.js';
 import { createCultivationActions } from './features/cultivation.js';
 import { createReminderActions } from './features/reminders.js';
 import { createScheduleActions } from './features/schedule.js';
+import { createSleepActions } from './features/sleep.js';
 import { createTaskActions } from './features/tasks.js';
 import { createTodayPlanActions } from './features/today-plan.js';
 import * as dom from './ui/dom.js';
@@ -19,6 +20,7 @@ const content = document.querySelector('#content'), sheet = document.querySelect
 const actions = {};
 const forward = {};
 forward.loadActiveTasks = (...args) => actions.loadActiveTasks(...args);
+forward.renderSleepControls = (...args) => actions.renderSleepControls(...args);
 for (const name of ["render", "toast", "openSheet", "closeSheet", "confirm", "performLive", "toggleTask", "openTask", "confirmDelete", "loadHistory", "toggleTaskFocus", "openTodayPlan", "openReminder", "openSettings", "openAvailability", "openShare", "demoDay", "claimCheckin", "openRewardCalendar", "openDailyReward", "openDraw", "openInventory", "openBreakthrough", "showBrowserLogin", "connected", "renderBrowserLogin", "refreshOnReturn", "startConnection"])
     forward[name] = (...args) => actions[name](...args);
 const ui = { ...dom, ...forward, state: () => state, cultivation: () => state.cultivation, keepViewAnchor(node, top) {
@@ -33,6 +35,7 @@ Object.assign(actions, createTaskActions(context));
 Object.assign(actions, createTodayPlanActions(context));
 Object.assign(actions, createReminderActions(context));
 Object.assign(actions, createScheduleActions(context));
+Object.assign(actions, createSleepActions(context));
 Object.assign(actions, createCultivationActions(context));
 Object.assign(actions, createBrowserLoginActions(context));
 Object.assign(actions, createLifecycle(context));

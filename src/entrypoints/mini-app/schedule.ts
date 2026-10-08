@@ -8,6 +8,16 @@ import { canAct } from '../../domain/session.ts';
 import { deadlineAt } from '../../domain/time.ts';
 import { json, type MiniAppContext, type MiniAppInput } from './context.ts';
 export async function handleSchedule({ env, owner, now, healthy }: MiniAppContext, input: MiniAppInput, path: string): Promise<Response | undefined> {
+    if (path === '/api/sleep') {
+        if (Object.keys(input).some(k => !['id', 'operation', 'generation'].includes(k)) || !['report', 'undo'].includes(String(input.operation)) ||
+            (input.operation === 'report' ? input.generation !== undefined : !Number.isSafeInteger(input.generation) || Number(input.generation) < 1))
+            return json({ error: 'INVALID_REQUEST' }, 400);
+        const schedule = new ScheduleStore(env.DB), settings = await schedule.settings(owner);
+        if (!settings || settings.sleep_minutes === null)
+            return json({ error: 'SETUP_REQUIRED' }, 409);
+        const result = input.operation === 'report' ? await schedule.reportSleep(owner, now, input.id) : await schedule.undoSleep(owner, now, input.id, Number(input.generation));
+        return json({ result: { ...result, sleep: await schedule.sleepStatus(owner, now), rest: await schedule.restStatus(owner, now) }, account: await healthy.read(owner) });
+    }
     if (path === '/api/day-plan') {
         if (Object.keys(input).some(k => !['id', 'version', 'items'].includes(k)) || !Number.isInteger(input.version) || !Array.isArray(input.items) || input.items.length > 50 || input.items.some(item => !item || typeof item !== 'object' || Object.keys(item).some(k => !['taskId', 'minutes'].includes(k)) || typeof item.taskId !== 'string' || !Number.isInteger(item.minutes)))
             return json({ error: 'INVALID_REQUEST' }, 400);

@@ -6,6 +6,116 @@ import {Miniflare} from 'miniflare';
 import {HealthyStore} from '../../src/adapters/d1/healthy-store.ts';
 import {drawReward} from '../../src/domain/healthy.ts';
 import type {Database} from '../../src/adapters/d1/database.ts';
+import {ScheduleStore} from '../../src/adapters/d1/schedule-store.ts';
+import {breakthrough} from '../../src/domain/healthy.ts';
+
+test('sleep undo reverses its assessment only, preserves later rewards and allows repeated corrections with immutable retries',async()=>{
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
+  const schedule=new ScheduleStore(db),healthy=new HealthyStore(db),now=Date.parse('2026-10-07T22:29:00+07:00');
+  await schedule.configure('123','04:30','22:30',0,now);
+  const day=(await schedule.ensureDay('123',now))!;
+  await healthy.mutate('123','sleep-seed','seed',{},now,s=>({state:{...s,qi:50,earned:80,rank:3,highestRank:3,streak:5,bestStreak:8,failures:2,tickets:2,heartDay:day.day,peaceDay:day.day},result:{}}));
+  const before=(await healthy.read('123')).state;
+  const report=await schedule.reportSleep('123',now,'web-report-001');
+  assert.equal(report.delta,5);assert.equal((await healthy.read('123')).state.streak,6);
+  assert.equal((await schedule.sleepStatus('123',now)).undoUntil,now+300000);
+  const duplicate=await schedule.reportSleep('123',now+120000);
+  assert.equal(duplicate.applied,false);assert.equal(duplicate.reportedAt,now);
+  assert.equal((await schedule.sleepStatus('123',now+120000)).undoUntil,now+300000,'Repeated /ngu cannot extend undo');
+  await healthy.checkIn('123','sleep-checkin',{operation:'checkin'},now+1000);
+  await db.exec("INSERT INTO tasks(id,owner,title,status,created) VALUES('sleep-completed','123','done','completed',0)");
+  await healthy.awardTask('123','sleep-completed',now+2000);
+  await healthy.mutate('123','sleep-draw','draw',{},now+3000,s=>{const r=drawReward(s,0);return {state:r.state,result:r.reward};});
+  const undo=await schedule.undoSleep('123',now+4000,'web-undo-001',report.generation!);
+  const corrected=(await healthy.read('123')).state;
+  assert.deepEqual(corrected,{...before,qi:52,earned:82,checkin:corrected.checkin});
+  assert.equal(corrected.checkin!.count,1);
+  assert.equal((await db.prepare("SELECT COUNT(*) AS n FROM sleep_assessments WHERE owner='123'").first<{n:number}>())!.n,0);
+  assert.equal((await schedule.restStatus('123',now+4000)).reason,'active');
+  assert.deepEqual(await schedule.undoSleep('123',now+5000,'web-undo-001',report.generation!),undo);
+  assert.deepEqual(await schedule.reportSleep('123',now+5000,'web-report-001'),report,'Retry of an undone report must not put the user back to sleep');
+  assert.equal((await schedule.sleepStatus('123',now+5000)).asleep,false);
+  await assert.rejects(schedule.undoSleep('123',now+5000,'web-undo-stale',report.generation!),/SLEEP_CHANGED/);
+  // A new report after the target bedtime scores as late, not at the old timestamp.
+  const late=await schedule.reportSleep('123',now+120000,'web-report-002');
+  assert.equal(late.delta,0,'Restored peace protection is used by the new assessment');
+  assert.equal((await healthy.read('123')).state.streak,5,'Restored heart protection preserves the original streak');
+  assert.equal((await schedule.sleepStatus('123',now+120000)).undoUntil,now+420000);
+  await assert.rejects(schedule.undoSleep('123',now+120001,'undo-wrong-generation',report.generation!),/SLEEP_CHANGED/);
+  await schedule.undoSleep('123',now+121000,'web-undo-002',late.generation!);
+  for(let i=0;i<3;i++){
+   const result=await schedule.reportSleep('123',now+130000+i*2000,'repeat-report-'+i);
+   await schedule.undoSleep('123',now+131000+i*2000,'repeat-undo-'+i,result.generation!);
+  }
+  assert.deepEqual((await healthy.read('123')).state,corrected,'No daily limit and no reward duplication across repeated report/undo');
+  await assert.rejects(schedule.reportSleep('123',now+140000,'web-undo-001'),/REQUEST_ID_REUSED/);
+ }finally{await mf.dispose();}
+});
+
+test('sleep undo restores late penalties and demotion, expires at five minutes and locks after breakthrough',async()=>{
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
+  const schedule=new ScheduleStore(db),healthy=new HealthyStore(db),now=Date.parse('2026-10-07T22:31:00+07:00');
+  await schedule.configure('123','04:30','22:30',0,now-3600000);
+  await healthy.mutate('123','late-seed','seed',{},now,s=>({state:{...s,qi:41,earned:70,rank:3,highestRank:3,streak:5,bestStreak:7,failures:2},result:{}}));
+  const before=(await healthy.read('123')).state;
+  const late=await schedule.reportSleep('123',now,'late-report');
+  assert.equal(late.delta,-20);assert.equal(late.demoted,true);
+  await schedule.undoSleep('123',now+1000,'late-undo',late.generation!);
+  assert.deepEqual((await healthy.read('123')).state,before);
+  assert.equal((await schedule.restStatus('123',now+1000)).reason,'bedtime');
+  const last=await schedule.reportSleep('123',now+2000,'expired-report');
+  assert.equal((await schedule.sleepStatus('123',now+301999)).canUndo,true);
+  assert.equal((await schedule.sleepStatus('123',now+302000)).canUndo,false);
+  await assert.rejects(schedule.undoSleep('123',now+302000,'expired-undo',last.generation!),/SLEEP_UNDO_EXPIRED/);
+  assert.equal((await schedule.sleepStatus('123',now+86400000)).asleep,false);
+  await schedule.configure('456','04:30','22:30',0,now-3600000);
+  await healthy.mutate('456','breakthrough-seed','seed',{},now,s=>({state:{...s,qi:30,earned:30,streak:3},result:{}}));
+  const report=await schedule.reportSleep('456',now-120000,'before-breakthrough');
+  const day=(await schedule.ensureDay('456',now))!.day;
+  await healthy.mutate('456','after-sleep-breakthrough','breakthrough',{},now,s=>{const r=breakthrough(s,day,now,null,0);return {state:r.state,result:r};});
+  assert.equal((await schedule.sleepStatus('456',now)).canUndo,false);
+  await assert.rejects(schedule.undoSleep('456',now,'locked-undo',report.generation!),/SLEEP_UNDO_LOCKED/);
+  assert.equal((await healthy.read('456')).state.rank,1);
+  // Late penalties clipped at zero restore the actual loss, not a fixed +20.
+  await schedule.configure('789','04:30','22:30',0,now-3600000);
+  await healthy.mutate('789','clipped-seed','seed',{},now,s=>({state:{...s,qi:3,earned:10},result:{}}));
+  const clipped=await schedule.reportSleep('789',now,'clipped-report');assert.equal(clipped.delta,-3);
+  await schedule.undoSleep('789',now+1000,'clipped-undo',clipped.generation!);
+  assert.equal((await healthy.read('789')).state.qi,3);
+ }finally{await mf.dispose();}
+});
+
+test('sleep reports and undo commit atomically under concurrent clients and a failed transaction',async()=>{
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
+  const now=Date.parse('2026-10-07T20:00:00+07:00'),schedule=new ScheduleStore(db),healthy=new HealthyStore(db);
+  await schedule.configure('123','04:30','22:30',0,now);
+  await db.exec("CREATE TRIGGER fail_sleep_insert BEFORE INSERT ON sleep_controls BEGIN SELECT RAISE(ABORT,'injected sleep failure'); END");
+  await assert.rejects(schedule.reportSleep('123',now,'failed-sleep-report'));
+  assert.equal((await healthy.read('123')).state.qi,0);
+  assert.equal((await schedule.restStatus('123',now)).reason,'active');
+  assert.equal((await db.prepare("SELECT COUNT(*) AS n FROM sleep_assessments").first<{n:number}>())!.n,0);
+  assert.equal((await schedule.ensureDay('123',now))!.asleep_at,null);
+  await db.exec('DROP TRIGGER fail_sleep_insert');
+  const race=await Promise.allSettled([schedule.reportSleep('123',now,'sleep-race-web'),schedule.reportSleep('123',now,'sleep-race-bot')]);
+  assert.ok(race.some(r=>r.status==='fulfilled'));
+  assert.equal((await healthy.read('123')).state.qi,5);
+  const status=await schedule.sleepStatus('123',now);
+  assert.equal(status.generation,1);
+  const undos=await Promise.allSettled([schedule.undoSleep('123',now+1000,'undo-race-web',status.generation!),schedule.undoSleep('123',now+1000,'undo-race-other',status.generation!)]);
+  assert.equal(undos.filter(r=>r.status==='fulfilled').length,1);
+  assert.equal((await healthy.read('123')).state.qi,0);
+  assert.equal((await schedule.sleepStatus('123',now+1000)).asleep,false);
+ }finally{await mf.dispose();}
+});
 
 test('daily rewards atomically persist balances, audit and retry receipts across concurrent clients',async()=>{
  const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});

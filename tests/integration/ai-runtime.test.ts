@@ -6,6 +6,7 @@ import {createWorker} from '../../src/entrypoints/worker.ts';
 import {configured, type Env} from '../../src/config/env.ts';
 import {query, type Database} from '../../src/adapters/d1/database.ts';
 import {D1WorkStore} from '../../src/adapters/d1/work-store.ts';
+import {ScheduleStore} from '../../src/adapters/d1/schedule-store.ts';
 
 test('native Worker creates a pending card and its confirmation button commits without another model call',async()=>{
  const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
@@ -30,6 +31,70 @@ test('native Worker creates a pending card and its confirmation button commits w
   assert.equal(sent.at(-1)!.method,'editMessageText');assert.match(sent.at(-1)!.text,/đã thêm/);
   await run({...callback,update_id:3});assert.equal(modelCalls,1);
   assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM tasks').first<{n:number}>())!.n,2);
+ }finally{await mf.dispose();}
+});
+
+test('runtime sleep context suppresses unsolicited sleep and work prompts immediately, survives midnight and expires at wake',async()=>{
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
+  const env:Env={DB:db,TELEGRAM_USER_ID:'123',TELEGRAM_WEBHOOK_SECRET:'x'.repeat(32),AI_MODE:'on',GEMINI_API_KEY:'fake',GEMINI_MODEL:'test-model',ASSETS:{fetch:async()=>new Response('')}};
+  let now=Date.parse('2026-10-07T19:59:00+07:00'),seq=0;
+  const schedule=new ScheduleStore(db);
+  await schedule.configure('123','04:30','22:30',0,now);
+  const requests:any[]=[];
+  const transport:typeof fetch=async(_url,options)=>{
+   requests.push(JSON.parse(String(options?.body)));
+   return Response.json({candidates:[{finishReason:'STOP',content:{role:'model',parts:[{text:'Tớ đang nghe cậu đây.'}]}}]});
+  };
+  const send=async(text:string)=>{
+   const result=await createWorker(undefined,transport,{now:()=>now}).fetch(new Request('https://local/telegram',{
+    method:'POST',headers:{'X-Telegram-Bot-Api-Secret-Token':env.TELEGRAM_WEBHOOK_SECRET},body:JSON.stringify({update_id:++seq,message:{from:{id:123},chat:{id:123,type:'private'},text}})
+   }),env);
+   assert.equal(result.status,200);
+   return result.text();
+  };
+  const context=()=>JSON.parse(requests.at(-1).contents[0].parts[0].text).contextData;
+  const instruction=()=>requests.at(-1).systemInstruction.parts[0].text;
+  await send('Chào cậu');
+  assert.equal(context().notificationState.reason,'active');
+  assert.doesNotMatch(instruction(),/Server xác nhận cậu đã báo \/ngu/);
+  now=Date.parse('2026-10-07T20:00:00+07:00');
+  const calls=requests.length,report=await send('/ngu');
+  assert.equal(requests.length,calls,'Bare /ngu records sleep without an LLM call');
+  assert.match(report,/ngừng nhắc làm task/);assert.match(report,/lời nhắc cậu đã đặt vẫn theo lịch/);
+  now+=60000;
+  await send('Kể chuyện một chút nhé');
+  assert.equal(context().notificationState.reason,'asleep');
+  assert.equal(context().notificationState.reportedAt,Date.parse('2026-10-07T20:00:00+07:00'));
+  assert.match(instruction(),/Không tự nhắc đi ngủ/);assert.match(instruction(),/thúc làm task hoặc bật tập trung/);
+  assert.match(instruction(),/lời nhắc cậu chủ động đặt vẫn gửi theo lịch/);
+  assert.doesNotMatch(instruction(),/Nhắc \/ngu nhẹ nhàng/);
+  const sleeping=await schedule.sleepStatus('123',now);
+  await schedule.undoSleep('123',now,'runtime-sleep-undo',sleeping.generation!);
+  now+=1000;
+  await send('Tớ vừa hoàn tác trên web');
+  assert.equal(context().notificationState.reason,'active');
+  assert.doesNotMatch(instruction(),/Server xác nhận cậu đã báo \/ngu/,'Old /ngu in chat history must not override the server undo');
+  await schedule.reportSleep('123',now,'runtime-web-sleep');
+  now+=1000;
+  await send('Kể tiếp nhé');
+  assert.equal(context().notificationState.reason,'asleep');assert.match(instruction(),/Không tự nhắc đi ngủ/);
+  now=Date.parse('2026-10-07T23:00:00+07:00');
+  await send('/ngu mai mình nói tiếp nhé');
+  assert.equal(context().notificationState.reason,'asleep');assert.doesNotMatch(instruction(),/Nhắc \/ngu nhẹ nhàng/);
+  now=Date.parse('2026-10-08T00:30:00+07:00');
+  await send('Hôm nay đã báo ngủ chưa?');
+  assert.equal(context().notificationState.reason,'asleep');
+  now=Date.parse('2026-10-08T04:30:00+07:00');
+  await send('Chào buổi sáng');
+  assert.equal(context().notificationState.reason,'active');
+  assert.doesNotMatch(instruction(),/Server xác nhận cậu đã báo \/ngu/);
+  now=Date.parse('2026-10-08T22:35:00+07:00');
+  await send('Tớ vẫn chưa ngủ');
+  assert.equal(context().notificationState.reason,'bedtime');
+  assert.match(instruction(),/chưa báo ngủ/);assert.match(instruction(),/Nhắc \/ngu nhẹ nhàng/);
  }finally{await mf.dispose();}
 });
 

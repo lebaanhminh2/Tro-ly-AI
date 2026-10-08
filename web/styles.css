@@ -84,10 +84,28 @@ dialog .actions{background:var(--surface);border-top:1px solid var(--line);box-s
 .today-page .rest-state h2{font-size:18px;line-height:1.35}
 .today-page .rest-state .subtitle{margin-top:7px;line-height:1.5}
 .today-page .rest-state .secondary{margin-top:12px}
+.sleep-card{--sleep-start:#faf3e4;--sleep-end:#eee7f8;--sleep-glow:#dcc68a1f;--sleep-moon:#9d783c;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;min-height:184px;width:100%;padding:20px 18px;border-radius:18px;text-align:center}
+.sleep-card.companion-rank,:root[data-theme=dark] .sleep-card.companion-rank{background:radial-gradient(ellipse at 50% 32%,var(--sleep-glow),transparent 65%),linear-gradient(140deg,var(--sleep-start),var(--sleep-end))}
+.sleep-card-seal{flex-shrink:0;margin-bottom:9px;line-height:1.15}
+.sleep-card-label{font-size:10px;font-weight:750;line-height:1.5;letter-spacing:2px;color:inherit;opacity:.78}
+.sleep-card-title{margin:6px 0 0;font-family:Georgia,serif;font-size:24px;font-weight:600;line-height:1.25;letter-spacing:-.6px;color:inherit}
+.sleep-card-note{margin:10px 0 0;font-size:11px;line-height:1.5;color:inherit;opacity:.78}
+@media(max-width:390px){.sleep-card{min-height:176px;padding:18px 16px}.sleep-card-title{font-size:23px}}
+.settings-sleep-controls{margin:18px 0;padding:16px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.settings-sleep-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.settings-sleep-copy{min-width:0}
+.settings-sleep-label{margin:0;font-size:15px;font-weight:600;line-height:1.45;font-variant-numeric:tabular-nums}
+.settings-sleep-copy .hint{margin:4px 0 0;line-height:1.5}
+.settings-sleep-row button{flex-shrink:0;min-height:44px;white-space:nowrap}
+.sleep-undo-limit{margin:8px 0 0;font-variant-numeric:tabular-nums}
+.sleep-confirm-title{margin:0 0 8px;font-size:17px;line-height:1.4}
+.sleep-confirm-actions{margin-top:12px;justify-content:flex-end}
 /* Shared surfaces match the two achievement cards in either theme. */
 .companion-flame,.achievements-page .companion-flame{background:color-mix(in srgb,var(--flame) 8%,var(--surface));border:1px solid color-mix(in srgb,var(--flame) 28%,var(--line));color:var(--text);box-shadow:none}
 .companion-rank{background:linear-gradient(140deg,#fbf5e6,#efe9fa);border:1px solid #dfcda7;color:#67532f;box-shadow:none}
 :root[data-theme=dark] .companion-rank{background:linear-gradient(140deg,#3e3424,#30283e);border-color:#706044;color:#eddab4}
+:root[data-theme=dark] .sleep-card{--sleep-start:#3e3424;--sleep-end:#30283e;--sleep-glow:#dcb5740a;--sleep-moon:#e4c58f}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]) .sleep-card{--sleep-start:#3e3424;--sleep-end:#30283e;--sleep-glow:#dcb5740a;--sleep-moon:#e4c58f}:root:not([data-theme=light]) .sleep-card.companion-rank{border-color:#706044;color:#eddab4}}
 .focus-flip-card{display:block;width:100%;min-width:0;padding:0;border:0;border-radius:18px;background:transparent;text-align:center;perspective:1100px;-webkit-tap-highlight-color:transparent}
 .focus-flip-card:disabled{opacity:1;cursor:wait}
 .focus-flip-inner{display:grid;transform:rotateY(0);transform-style:preserve-3d}
@@ -95,7 +113,8 @@ dialog .actions{background:var(--surface);border-top:1px solid var(--line);box-s
 .focus-flip-face{grid-area:1/1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;min-height:184px;padding:20px 18px;border-radius:18px;backface-visibility:hidden;-webkit-backface-visibility:hidden}
 .focus-flip-back{transform:rotateY(180deg)}
 .focus-flip-mark{display:block;margin-bottom:9px;font-size:34px;line-height:1.15}
-.focus-flip-back .focus-flip-mark{display:grid;place-items:center;width:38px;height:38px;border:1px solid #baa274;border-radius:12px;background:#ffffff35;color:inherit;font-size:25px;transform:rotate(4deg)}
+.focus-flip-back .focus-flip-mark,.sleep-card-seal{display:grid;place-items:center;width:38px;height:38px;border:1px solid #baa274;border-radius:12px;background:#ffffff35;color:inherit;font-size:25px;transform:rotate(4deg)}
+.sleep-card-seal{width:42px;height:42px;font-size:28px;color:var(--sleep-moon);box-shadow:0 0 16px #c5a65f10}
 .focus-flip-title{color:inherit;font-size:23px;font-weight:750;line-height:1.25;letter-spacing:-.6px}
 .focus-flip-back .focus-flip-title{font-family:Georgia,serif;font-size:23px;font-weight:600}
 .focus-flip-task{display:block;max-width:100%;margin-top:7px;overflow-wrap:anywhere;white-space:normal;color:inherit;opacity:.85;font-size:12px;line-height:1.5}
@@ -192,6 +211,14 @@ dialog.task-sheet-open .task-sheet-body .work-progress{margin-top:14px}
 html.sheet-open,body.sheet-open{overflow:hidden;overscroll-behavior:none}
 
 /* Schedule sheet: fixed header/close control, one scroll surface and a fixed save action. */
+/* Settings keep their title outside the only scrolling region. */
+dialog.settings-sheet-open{display:flex;flex-direction:column;height:min(88dvh,760px);max-height:88dvh;overflow:hidden;padding-bottom:0}
+dialog.settings-sheet-open .sheet-handle{flex:0 0 auto;margin-bottom:14px}
+dialog.settings-sheet-open #sheet-content{display:flex;flex:1;flex-direction:column;min-height:0;overflow:hidden}
+dialog.settings-sheet-open .sheet-title-row{position:relative;z-index:4;flex:0 0 auto;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--line);background:var(--surface)}
+dialog.settings-sheet-open .sheet-title-row .icon-button{flex:0 0 auto;touch-action:manipulation}
+dialog.settings-sheet-open #sheet-feedback{flex:0 0 auto}
+dialog.settings-sheet-open .settings-sheet-body{flex:1 1 auto;min-height:0;width:100%;overflow-y:auto;padding:0 2px max(20px,env(safe-area-inset-bottom));scrollbar-gutter:stable;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 dialog.schedule-sheet-open{display:flex;flex-direction:column;height:min(88dvh,760px);max-height:88dvh;overflow:hidden;padding-bottom:0}
 dialog.schedule-sheet-open .sheet-handle{flex:0 0 auto;margin-bottom:14px}
 dialog.schedule-sheet-open #sheet-content{display:flex;flex:1;flex-direction:column;min-height:0;overflow:hidden}
@@ -249,9 +276,10 @@ dialog.schedule-sheet-open .sheet-submit .primary{width:100%;min-height:50px}
  .today-page .plan-actions{max-width:none}
  .today-page .focus-flip-face{min-height:240px;padding:24px 18px}
  .today-page .focus-flip-title{font-size:23px}
+ .today-page .sleep-card{min-height:240px;padding:24px 18px}
  .task-list-section{max-width:none}
- dialog,dialog.task-sheet-open,dialog.schedule-sheet-open{inset:0;margin:auto;width:min(640px,calc(100vw - 64px));max-width:640px;max-height:86dvh;border:1px solid var(--line);border-radius:22px;padding:24px;box-shadow:0 24px 80px #1a122c26}
- dialog:not(.task-sheet-open):not(.schedule-sheet-open):not(.reward-sheet-open){height:fit-content}
+ dialog,dialog.task-sheet-open,dialog.schedule-sheet-open,dialog.settings-sheet-open{inset:0;margin:auto;width:min(640px,calc(100vw - 64px));max-width:640px;max-height:86dvh;border:1px solid var(--line);border-radius:22px;padding:24px;box-shadow:0 24px 80px #1a122c26}
+ dialog:not(.task-sheet-open):not(.schedule-sheet-open):not(.reward-sheet-open):not(.settings-sheet-open){height:fit-content}
  dialog .sheet-handle{display:none}
  dialog.task-sheet-open .task-sheet-body{padding-bottom:12px}
  dialog.task-sheet-open .task-actions,dialog.schedule-sheet-open .sheet-submit{padding-bottom:0}
@@ -318,11 +346,17 @@ select:focus-visible,textarea:focus-visible,summary:focus-visible{outline:3px so
 .achievement-overview,.achievement-insights,.cultivation-section,.cultivation-summary,.achievement-details{display:grid;gap:16px}
 .achievement-insights .achievement-metrics,.cultivation-balances,.cultivation-summary .reward-tools{margin:0}
 .achievement-overview .flame-card{display:flex;flex-direction:column;justify-content:center}
-.flame-streak-hint{margin-top:12px;color:var(--muted);font-size:11px;line-height:1.5}
+.achievement-overview .flame-mark{margin:6px 0 8px;line-height:1.15}
+.achievement-overview .flame-count{line-height:1.2}
+.achievement-overview .flame-name{margin-top:6px;line-height:1.3}
+.achievement-overview .flame-best{margin-top:4px;line-height:1.5}
+.achievement-bedtime{margin-top:4px;color:var(--muted);font-size:12px;line-height:1.5;font-variant-numeric:tabular-nums}
 .achievement-chart>.hint{margin:12px 0 0}
 .achievement-chart .chart{margin-top:8px;height:100px}
 .cultivation-section .breakthrough-card{display:flex;flex-direction:column;justify-content:center}
 .cultivation-section .breakthrough-card>.primary{width:100%;margin-top:4px}
+.rank-summary{display:grid;gap:8px;min-width:0}
+.rank-summary>.protection{margin:0;padding:0 4px;color:var(--muted);font-size:12px;line-height:1.5;overflow-wrap:anywhere}
 .cultivation-summary .rank-card{padding:18px}
 .cultivation-summary .rank-seal{width:48px;height:48px;margin-bottom:10px;font-size:26px}
 .cultivation-balances>.card{padding:14px 16px}

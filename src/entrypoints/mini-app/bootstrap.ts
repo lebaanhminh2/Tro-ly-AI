@@ -58,7 +58,7 @@ export async function bootstrap({ env, owner, now, healthy }: MiniAppContext): P
     const known = new Set(tasks.map(task => task.id));
     const missing = [...new Set((dailyPlan?.plan.items ?? []).map(item => item.taskId))].filter(id => !known.has(id));
     tasks.push(...await work.planTaskDetails(owner, missing, day?.day ?? null));
-    return json({ now, account, checkin: dailyCheckinProgress(account.state, now), breakthroughPenalties: BREAKTHROUGH_PENALTIES, tasks, activeTasksPage: { offset: activeOffset, total: activeTotal, hasMore: activeOffset < activeTotal }, reminders: combined, settings, progress, sessions, events, day, timeline: await new TimelineStore(env.DB).read(owner, now), dailyPlan, taskFocus: await currentTaskFocus(env.DB, owner, now), taskFocusTarget: await taskFocusTarget(env.DB, owner, now), rest, resting: rest.reason !== 'active', realms: REALMS, loot: LOOT, charms: CHARMS, needsSetup: !settings });
+    return json({ now, account, sleepStatus: await new ScheduleStore(env.DB).sleepStatus(owner, now), checkin: dailyCheckinProgress(account.state, now), breakthroughPenalties: BREAKTHROUGH_PENALTIES, tasks, activeTasksPage: { offset: activeOffset, total: activeTotal, hasMore: activeOffset < activeTotal }, reminders: combined, settings, progress, sessions, events, day, timeline: await new TimelineStore(env.DB).read(owner, now), dailyPlan, taskFocus: await currentTaskFocus(env.DB, owner, now), taskFocusTarget: await taskFocusTarget(env.DB, owner, now), rest, resting: rest.reason !== 'active', realms: REALMS, loot: LOOT, charms: CHARMS, needsSetup: !settings });
 }
 export async function history({ env, owner }: MiniAppContext, url: URL): Promise<Response> {
     const rawOffset = url.searchParams.get('offset') ?? '0';

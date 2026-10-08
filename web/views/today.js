@@ -106,6 +106,17 @@ function renderPlanPosition(ui, state, plan, now) {
 }
 export function renderWorkState(ui, state, plan, now) {
     const { el, button } = ui;
+    if (state.rest?.reason === 'asleep') {
+        const root = el('section', undefined, 'work-state');
+        root.setAttribute('aria-label', 'Trạng thái ngủ');
+        const sleep = el('section', undefined, 'sleep-card companion-rank');
+        sleep.setAttribute('role', 'status');
+        const seal = el('span', '☾', 'sleep-card-seal');
+        seal.setAttribute('aria-hidden', 'true');
+        sleep.append(seal, el('span', 'ĐANG NGỦ', 'sleep-card-label'), el('h2', 'Ngủ ngon nhé', 'sleep-card-title'), el('p', 'Lời nhắc đã đặt vẫn theo lịch.', 'sleep-card-note'));
+        root.append(sleep);
+        return root;
+    }
     const focused = state.taskFocus?.endsAt > now;
     const target = focused ? state.taskFocus : state.taskFocusTarget;
     const task = target?.taskId ? state.tasks.find(task => task.id === target.taskId && !task.done) : null;
@@ -158,7 +169,7 @@ export function renderToday(ui, state) {
     rewardLink.setAttribute('aria-label', attendance.canClaim ? 'Quà hôm nay: ' + dailyRewardLabel(attendance.rewards[attendance.count]) + '. Xem lịch quà.' : 'Xem lịch quà điểm danh 30 ngày');
     top.append(rewardLink);
     root.append(top);
-    if (state.resting) {
+    if (state.resting && state.rest?.reason !== 'asleep') {
         const reason = state.rest?.reason;
         const until = state.rest?.until
             ? new Date(state.rest.until).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })

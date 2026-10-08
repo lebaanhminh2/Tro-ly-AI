@@ -57,7 +57,7 @@ export async function runScheduled(env:Env,deps:{cardsEnabled:boolean;transport:
   await new DayPlanStore(env.DB).ensure(env.TELEGRAM_USER_ID,clock.now());
  }else if(phase===1){
   await schedule.queueCheckIns(env.TELEGRAM_USER_ID,clock.now());
-  await new RecurrenceStore(env.DB).queueDue(env.TELEGRAM_USER_ID,clock.now(),await schedule.notificationsPaused(env.TELEGRAM_USER_ID,clock.now()));
+  await new RecurrenceStore(env.DB).queueDue(env.TELEGRAM_USER_ID,clock.now(),await schedule.personalRemindersPaused(env.TELEGRAM_USER_ID,clock.now()));
  }else if(phase===2){
   await queueWorkNudge(env,clock.now(),transport);
   if(cardsEnabled)await queueAppointments(env.DB,env.TELEGRAM_USER_ID,clock.now());

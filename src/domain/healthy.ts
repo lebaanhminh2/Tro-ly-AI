@@ -111,6 +111,17 @@ export function assessSleep(state:HealthyState,input:SleepAssessment){
  if(next.inactiveDays>=3)next.suspended=true;
  return {state:next,applied:true,delta:next.qi-state.qi,demoted,onTime};
 }
+// Reverse only sleep's effects; tickets, inventory and unrelated rewards survive.
+export function undoSleepAssessment(state:HealthyState,before:HealthyState,after:HealthyState){
+ if(state.attemptDay!==after.attemptDay)throw Error('SLEEP_UNDO_LOCKED');
+ const fields=['rank','failures','streak','bestStreak','heartDay','peaceDay','lastScoredDay','inactiveDays','suspended'] as const;
+ for(const key of fields)if(state[key]!==after[key])throw Error('SLEEP_UNDO_LOCKED');
+ const qi=state.qi-(after.qi-before.qi),earned=state.earned-(after.earned-before.earned);
+ if(qi<0||earned<0)throw Error('SLEEP_UNDO_LOCKED');
+ return {...copy(state),qi,earned,rank:before.rank,failures:before.failures,streak:before.streak,
+  bestStreak:before.bestStreak,heartDay:before.heartDay,peaceDay:before.peaceDay,
+  lastScoredDay:before.lastScoredDay,inactiveDays:before.inactiveDays,suspended:before.suspended};
+}
 // On resumption skip absent closed days, never back-charge them.
 export function resumeHealthy(state:HealthyState,currentDay:number){
  const next=copy(state);

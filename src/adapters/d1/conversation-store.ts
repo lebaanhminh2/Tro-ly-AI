@@ -222,7 +222,8 @@ export async function appointmentAllowed(db:Database,reminderId:string,now:numbe
  const row=await query(db,`SELECT a.*,COALESCE(p.pause_until,0) AS pause_until FROM task_appointments a LEFT JOIN reminder_preferences p ON p.owner=a.owner WHERE a.id=?`,match[1]!).first<{owner:string;task_id:string|null;due:number;status:string;responded:number;pause_until:number}>();
  if(!row||row.status!=='active'||row.due>now||now>=row.due+3600000||row.pause_until>now||match[2]==='2'&&row.responded)return false;
  const schedule=new ScheduleStore(db);
- return !(row.task_id?await schedule.isResting(row.owner,now):await schedule.notificationsPaused(row.owner,now));
+ // These appointments were explicitly requested, even when linked to a task.
+ return !await schedule.personalRemindersPaused(row.owner,now);
 }
 
 export async function acknowledgeAppointments(db:Database,owner:string,messageId?:number){
@@ -238,7 +239,7 @@ export async function acknowledgeAppointments(db:Database,owner:string,messageId
 
 export async function queueAppointments(db:Database,owner:string,now:number){
  await query(db,"UPDATE task_appointments SET status='expired' WHERE owner=? AND status='active' AND due+3600000<=?",owner,now).run();
- if(await new ScheduleStore(db).notificationsPaused(owner,now))return;
+ if(await new ScheduleStore(db).personalRemindersPaused(owner,now))return;
  const appointments=(await query(db,`SELECT a.id,a.due,COALESCE(a.subject,t.title) AS title,a.message FROM task_appointments a LEFT JOIN tasks t ON t.id=a.task_id AND t.owner=a.owner WHERE a.owner=? AND a.status='active' AND a.due<=? ORDER BY a.due LIMIT 10`,owner,now).all<{id:string;due:number;title:string;message:string|null}>()).results;
  for(const a of appointments){
   if(!await appointmentAllowed(db,`appointment:${a.id}:1`,now)){

@@ -74,7 +74,7 @@ export async function refreshLive({ includeHistory = true, activeOffset = 0 } = 
         activeTasksTotal = page.total;
     }
     return {
-        live: true, loaded: true, checkin: data.checkin, breakthroughPenalties: data.breakthroughPenalties, resting: data.resting, rest: data.rest, needsSetup: data.needsSetup, serverNow: data.now, settingsVersion: data.settings?.version ?? 0,
+        live: true, loaded: true, checkin: data.checkin, breakthroughPenalties: data.breakthroughPenalties, resting: data.resting, rest: data.rest, sleepStatus: data.sleepStatus, needsSetup: data.needsSetup, serverNow: data.now, settingsVersion: data.settings?.version ?? 0,
         start: clock(data.settings?.start_minutes ?? 270), sleep: data.settings?.sleep_minutes === null || !data.settings ? '' : clock(data.settings.sleep_minutes), autoPlanDelayMinutes: Number(data.settings?.auto_plan_delay_minutes ?? 180),
         tasks: baseTasks, activeTasksOffset, activeTasksTotal, activeTasksHasMore, activeTasksLoading: false, historyRefreshed: includeHistory, ...(includeHistory ? { historyOffset: history.offset + history.items.length, historyHasMore: history.hasMore, historyTotal: history.total, historyLoading: false } : {}),
         reminders: data.reminders.map(r => ({ ...r, times: r.times.join(', '), start: r.startDate, end: r.endDate ?? '' })),
