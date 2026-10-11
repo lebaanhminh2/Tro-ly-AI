@@ -1,44 +1,45 @@
 # Tài liệu dự án
 
-## Đọc có chọn lọc
+Cập nhật 2026-10-12. Docs tách **source đang có**, **sản phẩm đích** và **bằng chứng đã chạy**; có tài liệu trên ổ đĩa không có nghĩa feature đã triển khai.
 
-Bắt đầu bằng [HANDOFF.md](HANDOFF.md). Chỉ mở tài liệu liên quan nhiệm vụ, không đọc toàn bộ docs.
+## Bắt đầu đúng nhiệm vụ
 
-Riêng mở rộng Habit/Thần Lộ: bắt đầu bằng [HABIT_GAME_IMPLEMENTATION.md](HABIT_GAME_IMPLEMENTATION.md), rồi mở các mục luật/nội dung liên quan. Đã chốt AI tự thiết kế/triển khai tới nghiệm thu cuối qua /goal: một phái, chương 3–5 boss, ảnh cục bộ, ngân sách bổ sung 0đ và quyền commit/push/migration/deploy staging. Chưa bắt đầu goal/chưa có code tính năng mới.
+- Tiếp tục công việc chung: [HANDOFF](HANDOFF.md), kiểm git status/HEAD rồi đọc phần liên quan.
+- Triển khai toàn Habit/Thần Lộ: [HABIT_GAME_IMPLEMENTATION](HABIT_GAME_IMPLEMENTATION.md), prompt `/goal` ở mục 8. Sau đó REVIEW/PRODUCT/PROGRESS và docs chuyên đề theo bước.
+- Phạm vi mới: habit/theo dõi, luyện/chiến đấu, **5 phái/39 môn/15 chương**, truyện/nhân vật/ảnh thật, UX và vận hành. Ngân sách bổ sung 0đ, ảnh local, quyền staging đã trao đổi; **chưa bắt đầu goal/chưa có code mới**.
 
-| Tài liệu | Nguồn chính cho |
+## Nguồn sở hữu từng chủ đề
+
+| Tài liệu | Vai trò |
 | --- | --- |
-| [HANDOFF.md](HANDOFF.md) | Trạng thái hiện tại, quyền, việc tiếp theo |
-| [PRODUCT_BRIEF.md](PRODUCT_BRIEF.md) | Mục tiêu và trải nghiệm đã chốt |
-| [TOOL_CALLING_PLAN.md](TOOL_CALLING_PLAN.md) | Phạm vi thay thế runtime hội thoại, chờ duyệt code |
-| [OPERATIONS.md](OPERATIONS.md) | Stack, kiểm thử, bảo mật và vận hành |
-| [HABIT_GAME_IMPLEMENTATION.md](HABIT_GAME_IMPLEMENTATION.md) | Giao việc agent, kiến trúc, nghiệm thu và prompt khởi động |
-| [HABIT_GAME_REVIEW.md](HABIT_GAME_REVIEW.md) | Quyết định habit/game, đối chiếu source và các điểm còn mở |
-| [HABIT_GAME_BUSINESS_DRAFT.md](HABIT_GAME_BUSINESS_DRAFT.md) | Bản nháp nghiệp vụ/nội dung gốc; không phải toàn bộ luật đã duyệt |
-| [HABIT_GAME_CREATIVE_BRIEF.md](HABIT_GAME_CREATIVE_BRIEF.md) | Trải nghiệm, nhân vật gốc, hướng nghệ thuật, tạo ảnh thật và tự nghiệm thu |
-| [HABIT_GAME_LOCAL_ART.md](HABIT_GAME_LOCAL_ART.md) | Thiết lập model ảnh cục bộ đã được phép, preflight và workflow tạo/tích hợp ảnh |
+| [HANDOFF](HANDOFF.md) | Trạng thái hiện tại, quyền, next action, issue nền |
+| [PRODUCT_BRIEF](PRODUCT_BRIEF.md) | Minh Anh và trải nghiệm nền cần giữ, ranh giới mở rộng |
+| [OPERATIONS](OPERATIONS.md) | Stack, commands, config/secrets, staging/data recovery |
+| [TOOL_CALLING_PLAN](TOOL_CALLING_PLAN.md) | Tool/context boundaries, luồng chat/web và kiểm chứng AI |
+| [HABIT_GAME_IMPLEMENTATION](HABIT_GAME_IMPLEMENTATION.md) | Nhiệm vụ đầy đủ, quyền goal, các chặng và một prompt khởi động |
+| [HABIT_GAME_REVIEW](HABIT_GAME_REVIEW.md) | Luật user đã chốt, facts source và vai trò bản nháp |
+| [HABIT_GAME_PRODUCT](HABIT_GAME_PRODUCT.md) | Full scope, bổ sung có ích, hành trình/UI và độ mở |
+| [HABIT_GAME_HABITS](HABIT_GAME_HABITS.md) | Ghi nhận, tuần linh hoạt, quyền sửa, lifecycle/tracking/lịch |
+| [HABIT_GAME_GAMEPLAY](HABIT_GAME_GAMEPLAY.md) | Luyện, battle/cost/effects, catalog 39 và truyện 15 chương |
+| [HABIT_GAME_ARCHITECTURE](HABIT_GAME_ARCHITECTURE.md) | Layers, persistence/API/time/replay/version/performance |
+| [HABIT_GAME_CREATIVE_BRIEF](HABIT_GAME_CREATIVE_BRIEF.md) | Trải nghiệm/cast/lore/style và asset inventory standards |
+| [HABIT_GAME_LOCAL_ART](HABIT_GAME_LOCAL_ART.md) | Preflight, model/backend local miễn phí, production/manifest/QA |
+| [HABIT_GAME_ACCEPTANCE](HABIT_GAME_ACCEPTANCE.md) | Test/simulation/visual/data/release gates và điều kiện complete |
+| [HABIT_GAME_PROGRESS](HABIT_GAME_PROGRESS.md) | Checkpoint, quyết định AI, evidence và cách resume |
+| [HABIT_GAME_BUSINESS_DRAFT](HABIT_GAME_BUSINESS_DRAFT.md) | Nháp nguồn lịch sử, tham khảo có chọn lọc; không là lệnh cấp quyền |
 
-STAGING_SETUP.md chỉ là link chuyển hướng cho công cụ cũ, không cần đọc thêm.
+[STAGING_SETUP](STAGING_SETUP.md) là redirect cho công cụ cũ, không phải một nguồn config khác.
 
-## Quy tắc cập nhật
+## Cách cập nhật để agent đọc hiệu quả
 
-- Mỗi thông tin có một nơi sở hữu; nơi khác dẫn link, không sao chép.
-- HANDOFF thay trạng thái cũ, không nối nhật ký. Lịch sử thay đổi ở Git.
-- Phân biệt: đã chốt / đang chạy / đề xuất / đã kiểm thử. Test giả không chứng minh model hoặc cloud thật.
-- Mục tiêu biên tập: HANDOFF dưới 50 dòng, mỗi tài liệu chủ đề khoảng 40–100 dòng. Đây không phải chuẩn token.
-- Ưu tiên tiêu đề dễ tìm, đoạn ngắn, ví dụ có mục đích. Không tạo file cho mỗi lượt hay mỗi lỗi.
-- Không đưa secrets, transcript, log dài, toàn schema hoặc toàn source vào docs.
-- Ngân sách đọc mặc định: HANDOFF; sau đó một tài liệu liên quan nếu cần. Không cố rút gọn bằng cách bỏ quyền hoặc rủi ro quan trọng.
+- Một thông tin có một nơi sở hữu; nơi khác chỉ tóm tắt/link. Không chép toàn schema/source/log/transcript vào docs.
+- Luật user, default AI, đề xuất, quyết định AI đã chọn và bằng chứng triển khai phải phân biệt. Nếu thay quyết định, cập nhật đúng doc chủ đề/tests thay vì để ở chat.
+- HANDOFF/PROGRESS giữ trạng thái hiện tại; lịch sử ở Git. Không tạo một file cho mỗi lượt/lỗi.
+- Đọc theo use case/mốc, không nạp cả kho mỗi phiên. Docs chuyên đề có thể dài khi nội dung cần; ưu tiên headings/tables/examples tra được, không rút gọn bằng bỏ quyền/rủi ro quan trọng.
+- Không secrets hoặc dữ liệu cá nhân thật. Artifact/test/model/ảnh nháp ở nơi có giới hạn và phù hợp Git ignore; docs chỉ dẫn vị trí evidence.
 
-## Docs khác prompt sản phẩm
+## Docs khác prompt runtime
 
-Gemini runtime nhận prompt trong `src/ai/gemini.ts` / `persona.ts` và context từ database qua `context-builder.ts`. Source hiện tại không tự đọc các file Markdown.
-Tài liệu chỉ tốn context của coding agent khi được đọc/đính kèm; có file trên ổ đĩa không đồng nghĩa gửi file đó vào mọi request.
+Gemini lấy prompt/context từ code và DB (`src/ai`, application context builder), không tự đọc Markdown. Coding agent dùng docs khi đọc/đính kèm; file trên đĩa không tự tăng token cho mọi request người dùng.
 
-## Lịch sử
-
-Không giữ bản sao lịch sử trong workspace. 27 file Markdown archive đã được xóa theo duyệt của người dùng; vẫn có tại Git commit `7d568f1`.
-Đọc một file cũ khi cần bằng `git show 7d568f1:docs/archive/2026-09-12/TEN_FILE.md`. Hai tài liệu thử ban đầu nằm trực tiếp dưới `docs/archive/` ở commit đó.
-Không tự khôi phục cả kho hoặc mở lại ngân sách/quyết định cũ. Lịch sử không thay yêu cầu hiện tại.
-
-Prompt tiếp tục ngắn: “Đọc docs/HANDOFF.md, kiểm tra git status và tiếp tục nhiệm vụ hiện tại trong phạm vi đã duyệt. Chỉ đọc thêm tài liệu cần thiết.”
+Lịch sử tài liệu có trong Git, gồm bộ archive ở `7d568f1` và bản trước đợt cải thiện này tại `23a1808`. Dùng `git show COMMIT:PATH` để xem mục cần, không tự khôi phục cả kho hoặc áp quyền/luật cũ.

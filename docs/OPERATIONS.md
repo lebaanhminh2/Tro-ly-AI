@@ -1,70 +1,63 @@
 # Vận hành và ranh giới kỹ thuật
 
-## Stack và nguồn dữ liệu
+Cập nhật 2026-10-12. Source/commands đã đọc local; không audit/deploy cloud trong phiên docs. Trạng thái goal/release tại [HANDOFF](HANDOFF.md) và [HABIT_GAME_PROGRESS](HABIT_GAME_PROGRESS.md).
 
-- TypeScript strict, Cloudflare Workers/D1/Cron; Telegram là giao diện. Gemini dùng adapter trực tiếp; Google runtime đã gỡ ở source mới.
-- entrypoints nối application/domain/ports/adapters. Không domain SQL/fetch, không runtime import experiments/tests.
-- Schema thực tế: migrations; interface: src/ports; không chép lại toàn schema trong docs.
-- D1 lưu tasks, sessions, appointments, memory, pending, receipts, inbox/outbox, UI revisions;0012 thêm completion/progress/achievement/board selection và deleted_at.
-- Source production hiện dùng Gemini native tools, AI_MODE off/on; legacy harness chỉ experiments. Cloud giữ bản cũ cho tới checkpoint deploy ghi trong HANDOFF. Mini App/healthy cần0015; cloud hiện đã áp, xem HANDOFF cho version/ngân sách. Production staged mutations được outer commit lưu cùng receipt/history/outbox.
+## Stack và nguồn chuẩn
 
-## Kiểm tra local
+TypeScript strict, Cloudflare Workers/D1/Cron, Telegram và web modules hiện có; Gemini direct adapter. Domain/application/ports không SQL/fetch/config, adapters triển khai persistence/provider. Schema từ migrations, interfaces từ source; không dùng bảng prototype trong docs cũ để thay state thật.
 
-Chạy tại D:\Tro-ly-AI bằng PowerShell:
-- `npm.cmd run test:all`: test chính và experiments, provider giả.
-- `npm.cmd run typecheck`.
-- `npm.cmd run staging:check`: kiểm cấu hình + dry-run, không deploy.
-- `npm.cmd run db:local`: migration local; không dùng cho cloud.
+Source migrations hiện tới 0030; số migration đã áp cloud phải kiểm lại bằng listing đúng target, không suy từ số file. Runtime các feature mới chưa có ở bước chuẩn bị. Kiến trúc mở rộng tại [HABIT_GAME_ARCHITECTURE](HABIT_GAME_ARCHITECTURE.md).
 
-Không đọc/in secrets chỉ để kiểm tra repo. Không gọi try:ai/live hoặc tự cài dependency khi chạy test.
-Kiểm kết quả theo hành vi, không lấy số test/audit=0 làm chứng nhận an toàn.
+## Commands local
 
-## Cloud hiện có — không tạo lại
+Chạy PowerShell tại `D:\Tro-ly-AI`, dùng `npm.cmd`; kiểm `package.json` khi bắt đầu:
 
-- Worker personal-assistant-staging; DB assistant-staging. UUID/flags trong wrangler.jsonc.
-- Origin: https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev
-- Bot @Minh_Anh_cua_Minh_bot; private owner allowlist. Telegram webhook đã đăng ký.
-- Migration0001–0015 đã áp; migration tiếp theo phải mới, không sửa lịch sử.
-- Cloud có Telegram secrets và Gemini key. Không tải/in giá trị cloud secret.
-- Local .dev.vars.webhook-secret.dpapi là bản webhook secret mã hóa cho user Windows hiện tại, ignored Git; không phải token bot.
-- `scripts/telegram-setup.ps1`: -SelfTest offline; -RegisterWebhook thay kết nối thật, chỉ dùng khi có quyền, không chạy để “kiểm tra cho chắc”.
+```powershell
+npm.cmd run typecheck
+npm.cmd run check:web
+npm.cmd run test:all
+npm.cmd run test:browser
+npm.cmd run build:check
+npm.cmd run staging:check
+```
 
-## Deploy chỉ khi được duyệt
+`test:all` gồm tests chính/experiments với provider fixture; không chứng minh Gemini/Telegram thật. `build:check`/`staging:check` là dry-run/gate, không deploy. `db:local` áp migration DB local, không cloud. Browser/gate discovery cần phủ files mới nếu tổ chức lại thư mục; xanh bộ cũ chưa đủ.
 
-1. Kiểm git diff, test/typecheck/dry-run, migration và account/DB đích.
-2. `npm.cmd run db:staging` ghi schema remote; `npm.cmd run deploy:staging` phát hành Worker.
-3. Kiểm migration list và endpoint; trang gốc404 bình thường, POST webhook thiếu secret phải bị từ chối.
-4. Không giả deploy thành công = người dùng đã nhận tin/AI hiểu đúng.
-5. Rollback code/config có chủ đích; không rollback schema hoặc xóa DB tùy tiện.
+Không chạy `try:ai`, thay webhook, live messages hoặc cài model chỉ để kiểm tài liệu. Trong goal đã cấp quyền, dependency/art setup được dùng khi cần thực thi feature; kết quả/chi phí phải đúng điều kiện 0đ.
 
-User đã duyệt bỏ quota pilot trong production: không AI_DAILY_LIMIT/AI_TRIAL_ENDS_AT trong wrangler. Request vẫn ghi receipt để chống trùng; không bỏ counters/dedupe. Nếu cấu hình AI_DAILY_LIMIT riêng ở môi trường thử thì limiter cũ vẫn áp dụng. Google429 không được coi là app quota. Source mới vẫn chạy hẹn đã lưu khi AI off; không phụ thuộc lựa chọn model.
-Source mới không có Google/OAuth. Migration lịch sử vẫn giữ để nâng cấp dữ liệu.
+## Staging hiện có
 
-## Checklist bảo mật bắt buộc
+- Worker `personal-assistant-staging`; DB `assistant-staging`, bindings/account/IDs theo `wrangler.jsonc` thực tế.
+- Origin đang được tài liệu dự án dùng: `https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev`; xác minh target/config trước release.
+- Bot `@Minh_Anh_cua_Minh_bot`, owner allowlist; không đăng ký lại webhook/menu hoặc tạo tài nguyên mới chỉ để “cho chắc”.
+- Web `/app/`, API cùng origin. Telegram initData hoặc Chrome flow lấy mã → `/dangnhap MÃ` → cookie session theo source hiện tại; auth expired thì mở lại/đăng nhập lại.
+- Secrets local/cloud không tải/in ra. `.env`/private vars/DPAPI/SQL backups ignored; `.env.example` chỉ có biến thật và cách điền, không giá trị.
 
-- Webhook secret, private owner, body cap, callback owner/message/version/TTL và replay guard.
-- Bind SQL, validate DTO, không mass assignment. Tool model không có arbitrary SQL/network/code.
-- Atomic mutation+receipt+delivery intent; lease fencing chặn worker cũ. External request đã rời hệ thống không thu hồi chắc chắn.
-- Credentials chỉ secrets/ignored local; manual redirects + fixed API hosts; log mã lỗi/timing, không token/URL chứa token/chat/raw provider errors.
-- Quota bền vững theo request, retries giới hạn; không paid fallback. ACK nhanh không bỏ xác thực lúc commit.
-- Không coi prompt là bảo mật. Test injection, owner sai, stale, crash, 429, timeout và kết quả gửi không rõ.
-- Trước release: kiểm dependency/secrets, backup-restore vào DB riêng, TTL/export/forget, iPhone và nhắc khi tắt máy.
+## Migration và publish theo quyền
 
-Thống kê /progress dùng PNG native; sendPhoto/editMessageMedia multipart chỉ gọi Telegram host cố định. Chuyển ảnh/chữ tạo card mới, không sửa kiểu message không tương thích.
-Soft-delete không erase task: không tự phục hồi bằng cách bật lại reminder cũ; chỉ restore có chủ đích sau xác nhận user.
+User đã cho tự commit/push/migrate/deploy staging cho nhiệm vụ Habit/Thần Lộ; quyền code theo lệnh goal, ngoài phạm vi theo user mới nhất. [IMPLEMENTATION](HABIT_GAME_IMPLEMENTATION.md) sở hữu phạm vi. Production/phá dữ liệu/force-push/dịch vụ trả phí không suy từ quyền này.
 
-Mini App live tại /app/; /api xác thực Telegram initData15phút, API401 thì mở lại từ Telegram. /kiemtra đăng ký menu cho owner. Không đưa initData/key/token vào log hoặc URL.
+1. Kiểm workspace/diff/staged files, đúng target/account/DB, gates local và data upgrade compatibility.
+2. Backup staging vào nơi riêng ngoài Git; test restore vào DB riêng không dispatch. Xem pending migrations/index/constraints và khả năng rollback code sau schema mới.
+3. `npm.cmd run db:staging` áp schema remote; `npm.cmd run deploy:staging` publish Worker, chỉ sau gates/readiness đúng. Không sửa migration cũ hoặc làm destructive reset để chữa apply failure.
+4. Kiểm migration listing/version/assets/API/auth và read-only smoke của bản publish. Trang gốc 404 có thể bình thường, thiếu auth 401 đúng; không lấy asset 200 làm chứng minh mutation đã đúng.
+5. Ghi commit/migration/Worker version/target/backup/commands/evidence. Nếu fail, xác định đã commit/applied phần nào trước retry; không phát lại thưởng/tin uncertain.
 
-Chrome cũng mở trực tiếp tại /app/. Chọn “Lấy mã đăng nhập”, gửi `/dangnhap MÃ` cho @Minh_Anh_cua_Minh_bot, rồi quay lại tab. Mã dùng một lần, hết hạn sau 10 phút và chỉ owner được xác nhận. Phiên Chrome có hiệu lực 30 ngày, lưu trong cookie Secure/HttpOnly/SameSite=Strict; Đăng xuất thu hồi phiên trên máy chủ. Migration0027 thêm bảng mã và phiên, chỉ lưu hash của các mã bí mật. Các lệnh ghi bằng phiên trình duyệt yêu cầu đúng Origin và header riêng. Màn desktop dùng điều hướng bên trái từ 900px; màn nhỏ giữ điều hướng dưới.
+Rollback code/config hoặc feature off có chủ đích, tương thích schema/data/jobs đang có. Không rollback schema bằng xóa dữ liệu hoặc deploy binary không hiểu state mới. Backup phục vụ phục hồi có kiểm chứng, không là nút ghi đè tự động vào data thật.
 
-Cron cập nhật các ngày không hoạt động trước lượt gửi. Khi tài khoản suspended, outbox hủy thông báo chủ động đang chờ, bao gồm tóm tắt lịch, thành tích và lời nhắc. Phản hồi lệnh người dùng vẫn được gửi; việc mở Chrome/xem dữ liệu không tự khôi phục trạng thái, nhắn lại cho Minh Anh để tiếp tục.
-Backup trước release Mini App: .wrangler/staging-before-miniapp.sql ignored, đã restore thử0013–15. Không rollback code về bản chưa hỗ trợ state/scheduler mới mà không xem migration compatibility.
+## Ranh giới bảo mật và giao dịch
+
+- Owner từ auth context, initData HMAC/TTL hoặc browser cookies/Origin theo source; input/body cap, bind SQL, whitelist DTO, expected version/day, receipts.
+- Mutation + receipt + delta kinh tế + intent delivery cần atomic boundary đúng; lease/fencing/dedupe bảo vệ job. Không bảo đảm exactly-once mạng ngoài hệ thống.
+- Không secret/initData/token/chat/raw provider errors trong URL/log/browser bundle; không arbitrary code/SQL/network qua tool model. Prompt không là security boundary.
+- Budget/retry/calls có giới hạn; hết quota provider không làm tắt luật deterministic, user-configured reminders hay UI. Không tự thêm paid fallback hoặc áp lại quota pilot cũ.
+- `/ngu`/focus chặn lời chủ động phù hợp; nhắc user đã đặt vẫn theo lịch trừ pause/inactive. ACK/recurrence delivery khác hoàn thành habit/task.
+- Export dữ liệu khác backup DB. Restore/import không reissue reward hoặc mở ngày cũ; soft-delete/archive giữ history/entitlements theo luật.
 
 ## Khi có lỗi
 
-- Xác định inbound → command → DB → outbox/provider. Query trạng thái/count trước nội dung.
-- Sent/failed/uncertain khác nhau; không reset uncertain để gửi lại hàng loạt.
-- Sửa card mất kết quả: phục hồi trên card mới khi có tương tác đã xác minh, không thực thi lại nghiệp vụ.
-- /rest chỉ dừng nhắc theo phạm vi, không phải tắt toàn hệ thống. Dừng webhook và cron là hai việc độc lập cần quyền.
-- Nếu lộ key: thu hồi/rotate ở provider; Git ignore không thu hồi secret đã lộ.
-- Backup/restore và pilot dài ngày chưa được nghiệm thu. Bản sao trước0011 nằm trong .wrangler/staging-before-0011.sql, không commit hoặc in nội dung.
+Đi từ inbound/auth → application → DB/receipt → job/outbox → provider; ưu tiên status/count/version trước đọc nội dung. Phân biệt chưa commit/đã commit, sent/failed/uncertain. Không reset uncertain rồi gửi lại hàng loạt; replay kết quả khác thực thi lại nghiệp vụ.
+
+Issue ngủ sớm vẫn bị nudge còn chưa xác định nguyên nhân ở bước docs; xem sleep day/generation/suppression/final-send/context trước sửa, giữ regression đúng nguyên nhân. Checkpoint nêu việc còn và evidence, không ghi “đã sửa” từ giả thuyết.
+
+Release gates/bảo toàn dữ liệu/hiệu năng/visual/bàn giao xem [HABIT_GAME_ACCEPTANCE](HABIT_GAME_ACCEPTANCE.md). Local art/model không runtime dependency; vận hành pipeline tại [HABIT_GAME_LOCAL_ART](HABIT_GAME_LOCAL_ART.md).

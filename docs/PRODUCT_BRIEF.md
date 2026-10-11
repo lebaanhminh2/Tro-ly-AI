@@ -1,69 +1,42 @@
-# Minh Anh — sản phẩm đã chốt
-Thiết kế đích2026-09-13; trạng thái triển khai xem HANDOFF. Mini App/healthy/lịch lặp/task con chưa có trong bản đang chạy.
+# Minh Anh — sản phẩm nền và hướng mở rộng
 
-## Mục tiêu và tương tác
-- Một người dùng nam, tiếng Việt, iPhone XS Max/iOS18.3.2. Múi giờ Asia/Ho_Chi_Minh.
-- Tăng năng suất trong sức tải thực tế, giảm quyết định, bắt đầu sớm; không giới hạn số task/ngày tùy tiện.
-- Telegram dành cho trò chuyện và nhận nhắc; Mini App dành cho quản lý, không gọi Gemini khi lọc/tick/sửa form.
-- Minh Anh là bạn gái-trợ lý hư cấu trưởng thành, tớ–cậu, Bắc tự nhiên, cute, biết trêu/nài nỉ nhẹ. Không đe dọa hay dùng tình cảm gây tội lỗi.
-- Gemini free duy nhất, không paid fallback. Không máy cá nhân chạy liên tục, không Google integration.
-- Một lượt model có thể vừa làm nhiều phần rõ vừa hỏi phần thiếu; backend kiểm dữ liệu, owner, version, transaction và chống lặp. Không regex whitelist ý định.
+Cập nhật 2026-10-12. Brief này giữ trải nghiệm nền; source khảo sát `51f5ffd`, trạng thái thực tế xem [HANDOFF](HANDOFF.md). Đây không phải bảng cân bằng hoặc lời khẳng định tất cả luồng đã được audit live.
 
-## Mini App: ba tab
-- **Hôm nay:** việc nên làm tiếp; hai chế độ Lịch/Danh sách cho cùng dữ liệu; task chưa xếp và lý do; thêm/sửa/tick/xóa nhiều; thời gian có thể làm việc.
-- **Lời nhắc:** chỉ lời user đặt (một lần hoặc định kỳ), lần tiếp theo, sửa lần này/cả chuỗi; không lặp lại các lời thúc task tự động. Nhắc ngủ do giờ nghỉ trong cài đặt quản lý.
-- **Thành tích:** dashboard hiệu suất và báo ngủ, không “vừa làm được”; thành tựu chỉ mở một lần. Không ảnh biểu đồ trống hoặc chuỗi số0/0.
-- Cài đặt chỉ giờ bắt đầu ngày (mặc định04:30) và giờ nghỉ (user chọn khi thiết lập, không tự coi22:30 đã chốt).
-- Sáng/tối theo Telegram; tím–xanh chủ đạo, vàng cho thành tựu, nút≥44px, safe-area, số liệu lớn, hạn giờ địa phương. Không bảng nhiều cột ép ngang điện thoại.
-- Trạng thái loading/rỗng/lỗi/đang lưu/đã lưu/phiên hết hạn rõ; không báo thành công trước commit. Hiệu ứng ngắn, tôn trọng giảm chuyển động.
+## Mục tiêu
 
-## Task cha–con
-- Mã task cố định #24, con #24.1; cấp server-side, không đổi do sắp xếp, không tái sử dụng mã đã xóa.
-- Bản đầu một tầng con. Con kế thừa hạn cha; có trạng thái và ID riêng. “Xong dàn ý” không phải “xong cả task”.
-- Hoàn thành tất cả con → hỏi đóng cha. Đóng cha còn con mở → xác nhận đóng cả nhóm. Mở lại con của cha đã xong → xác nhận mở lại cha.
-- Chat dùng mã để giảm nhầm; Mini App luôn có thao tác tay tương đương. Bóc bước do LLM đề xuất phải được user yêu cầu/đồng ý trước lưu.
-- Xong hôm nay vẫn thấy kết quả; ngày mới ẩn khỏi danh sách hoạt động, không xóa lịch sử.
-- Việc dở giữ ID/deadline, planner xếp phần còn lại; không sao chép task hay tự đổi deadline.
+- Trợ lý cá nhân tiếng Việt, tăng năng suất trong sức tải thực tế, giúp bắt đầu sớm và giảm quyết định. Không hard-cap số task/ngày tùy tiện.
+- Telegram cho trò chuyện/nhận nhắc; web cho quản lý và thao tác rõ. Web cơ bản không cần Gemini khi lọc/tick/form.
+- Minh Anh là bạn gái-trợ lý hư cấu trưởng thành, tớ–cậu, giọng Bắc tự nhiên, trêu/động viên nhẹ; không đe dọa hoặc dùng tình cảm gây tội lỗi.
+- Múi giờ sinh hoạt hiện tại UTC+7; mobile ưu tiên iPhone, desktop dùng được. Không đòi máy cá nhân chạy liên tục để task/nhắc/game runtime hoạt động.
+- Gemini free theo cấu hình được xác minh, không paid fallback/ngân sách mới. Model đề xuất/diễn giải, server quyết định quyền và trạng thái.
 
-## Lịch và nhắc
-- /lich bắt đầu phiên riêng: lịch DB hiện tại + lời mới + thời điểm → thay đổi cụ thể → validate/commit → đổi nhắc chưa gửi.
-- Câu trả lời trực tiếp câu hỏi đầu ngày dùng cùng phiên; có ngày/expiry, không áp lời trả lời cũ vào ngày mới.
-- Khung hoạt động bắt đầu04:30 đến giờ nghỉ; trừ lịch cố định và khoảng bận; “chưa biết” tạm coi có thể xếp, không coi rảnh24h.
-- Nói “bận” trong chat thường không tự dời kế hoạch. Cô ấy động viên; /lich hoặc sửa Mini App mới đổi lịch. Yêu cầu ngừng nhắc rõ phải được tôn trọng.
-- Lịch lặp một lần/hằng ngày/các thứ, một hoặc nhiều giờ; có ngày bắt đầu/kết thúc tùy chọn, next occurrence rõ. Không cần setup lại mỗi ngày.
-- Mỗi occurrence có ID duy nhất; dời/bỏ lần này không sửa chuỗi; sửa chuỗi vô hiệu job cũ theo revision. Không gửi bù dồn sau nghỉ/outage.
-- Task đã xong/xóa không vào planner; kiểm lại khi gửi. Buổi làm sinh nhắc riêng, không tạo thêm reminder trùng.
-- Task: một nhắc chính + một follow-up sau15 phút từ gửi thành công nếu chưa phản hồi; reply chỉ tác động đúng item.
+## Task, kế hoạch và lời nhắc
 
-## Healthy và thành tích ngủ
-- Giờ nghỉ là mục tiêu: đến giờ chuyển sang khuyến khích ngủ, không tự nhận user đã ngủ; không lập thêm buổi vượt giờ nghỉ.
-- /ngu bật nghỉ bằng backend ngay cả khi model lỗi; lời kèm vẫn được xử lý, chat/form vẫn mở, chỉ ngừng outbound chủ động.
-- Ngày bắt đầu mới tự kết thúc nghỉ, hỏi lịch. Dừng nhắc ngủ ngay khi /ngu; khi im lặng tối đa3 tin cách khoảng20 phút, không loop vô hạn.
-- Một ngày sinh hoạt có start/target_sleep/wake_next đã snapshot, hỗ trợ giờ ngủ sau00h. Thay cài đặt không sửa lịch sử/không bật dậy giữa kỳ nghỉ.
-- Chuỗi tính báo /ngu không muộn hơn mục tiêu, không tuyên bố đo giấc ngủ. Không đóng băng chuỗi, không “ngày hoàn hảo”.
-- 3 ngày **Luyện Khí**,7 **Trúc Cơ**,14 **Kết Đan**,30 **Nguyên Anh**. Đã mở giữ nguyên; chỉ mốc kế tiếp hiện x/y.
-- Thẻ chia sẻ chỉ có huy hiệu/chuỗi/ngày đạt, user chủ động lưu/chia sẻ; không task cá nhân. Không đếm số lần mở huy hiệu.
-- Chuỗi công việc cũ không chuyển thành chuỗi ngủ; lịch sử cũ giữ riêng, không bịa dữ liệu ngủ.
+- Task có ID/mã ổn định, cha–con, deadline/estimate/work log/ghi chú theo source hiện tại. Task dở giữ identity và deadline; không nhân bản để xếp lại.
+- Cha–con có confirmation rõ ở thao tác ảnh hưởng cả nhóm; không suy “xong một bước” là xong cha. Thưởng task hợp lệ lần đầu theo source gốc, không nhân khi mở lại.
+- Hôm nay giúp thấy việc tiếp theo và toàn cảnh/thời gian tới deadline. Task đã xong không vào chỉnh xếp thời gian, history vẫn giữ.
+- `/lich` hoặc web chỉnh lịch là ý định thay đổi kế hoạch rõ; câu chat “bận” không tự dời task. Planner giữ free/busy/fixed/capacity/buffer, không giả mọi khoảng trống là sức tải 100%.
+- Lời nhắc riêng do user đặt khác lời thúc task tự động. Nhắc một lần/định kỳ có occurrence/version riêng; sửa/bỏ lần này khác sửa chuỗi, không send bù dồn sau outage.
+- ACK nhắc không tự hoàn thành task; chat thường đọc/trò chuyện theo policy hiện có, không âm thầm mutation.
 
-## Lệnh và trí nhớ
-- /kiemtra mở Mini App; /lich thiết lập lịch; /ngu báo nghỉ; /huongdan hướng dẫn ngắn; /huy thoát phiên nhập.
-- Context là snapshot từ DB, summary + history gần + phiên đang dở + dữ liệu liên quan; facts nghiệp vụ không lấy từ summary.
-- Ngân sách agent thử API tách khỏi quyền user chat. Không tái áp trần pilot đã bị user yêu cầu bỏ.
+## Ngủ, tập trung và tiến trình nền
 
-## Cập nhật tu luyện đã thống nhất (prototype, chưa backend)
-- Minh Anh là “Trợ lý của cậu”, không phải “không gian làm việc”.
-- Báo ngủ đúng giờ +5 tu vi; muộn −20. Ngoài bảo vệ, số dư sau trừ âm hạ ngay1 bậc; đúng0 không hạ. Đột phá thành công miễn hạ72 giờ (3 ngày), không miễn trừ tu vi.
-- Tu vi hiện tại tách tổng tu vi từng kiếm (chỉ tăng khi nhận thưởng hợp lệ); cảnh giới cao nhất giữ làm kỷ lục.
-- Hoàn thành task cha lần đầu nhận1 vé; task con/mở lại–hoàn thành lại không phát thêm vé. Không tiền thật.
-- Quay: +1 tu vi40%, +2 tu vi15%, Phá Cảnh Phù sơ cấp35%, tín vật6%, Hộ Tâm Phù2%, An Tâm Phù2%. Tổng100%, không lượt trắng.
-- Túi đồ: dùng phù chủ động. Hộ Tâm giữ chuỗi một ngày lỡ nhưng không cộng ngày đúng giờ/không miễn phạt; An Tâm miễn một lần−20 nhưng không giữ chuỗi. Không tự dùng.
-- Phá Cảnh sơ/trung/cao/cực phẩm: +5/10/15/20 điểm % cho1 đột phá, tối đa1 lá/lần. Ghép3 cùng cấp:80%/60%/40%; thất bại mất1 trả2, thành công tiêu3 nhận1 cấp cao.
-- Đột phá đủ tu vi và chuỗi, một lần/ngày sinh hoạt; tỷ lệ70%,85%,100% sau thất bại liên tiếp cùng bậc; thất bại không mất tu vi/chuỗi, phù chọn vẫn tiêu hao. Thành công không tiêu/reset tu vi/chuỗi.
-- Mốc demo qi/ngày: Luyện Khí6/2,Trúc Cơ18/3,Kết Đan40/5,Nguyên Anh75/7,Hóa Thần120/10,Luyện Hư180/14,Hợp Thể260/18,Đại Thừa360/21,Độ Kiếp500/30. Cần cân lại trước release do thưởng ngủ đã đổi+5.
-- ĐÃ CHỐT: tu vi floor0; sau trừ dưới ngưỡng cảnh giới hạ1 bậc (không đòi số âm), giữ số dư và highest rank. Bảo vệ72h ngăn hạ nhưng vẫn trừ; hết bảo vệ chỉ xét hạ lần phạt tiếp theo.
-- Không báo /ngu khi hết ngày cũng−20. Sau3 ngày liên tục không chat, tối đa3 lần phạt rồi dừng mọi cơ chế tới khi user nhắn; không backcharge ngày vắng khi quay lại.
-- Bảng mới qi/chuỗi:6/2,18/3,40/5,75/7,120/8,180/11,260/14,360/17,500/24,Chân Tiên1000/35,Kim Tiên2000/45. Thay bảng demo cũ.
-## Điều chỉnh luồng đã duyệt2026-09-14
-- Chat thường chỉ trò chuyện/đọc; `/ nội dung` yêu cầu ghi task/nhắc; `/lich` chỉ cập nhật free/busy, backend xếp lại task mở từ ước lượng đã lưu. Không thiếu estimate mà từ chối lưu lịch bận.
-- Action không có mutation thì không xác nhận đã thực hiện. Kết quả lưu là căn cứ cho xác nhận; LLM hỏi thiếu dữ liệu bằng ask_user.
-- MiniApp thống nhất nhắc từ chat và rules, refresh khi quay lại; hướng dẫn trong settings. Không alias lệnh tùy chỉnh ở bản này.
+- `/ngu` và web sleep báo trạng thái do user tự khai, không đo giấc ngủ. Sau đó ngừng lời thúc ngủ/task, context model biết state chuẩn; focus dùng ranh giới tương đương.
+- Lời nhắc user cấu hình vẫn chạy khi ngủ/focus, trừ manual pause/inactive theo source. Không chặn toàn outbox bằng sleep flag.
+- Ngủ không đóng ngày sinh hoạt. Undo 5 phút ghi “Hoàn tác”, giữ guards và đảo delta ngủ; không rewind đột phá/inventory/account. Không thêm giới hạn 1 lần/ngày.
+- Giờ ngủ hôm nay ở vùng Hỏa Mạch/Thành tích; điều khiển ngủ ở cài đặt. Hôm nay hiện thẻ sleep state theo cơ chế đã chốt.
+- Healthy, streak ngủ, rewards/checkin/gacha/items/rank/breakthrough hiện có tiếp tục theo domain/backend. Không sao chép bảng prototype cũ thành luật mới; `src/domain/healthy.ts` là nguồn hằng số hiện tại.
+- Ngày sinh hoạt tùy start/target/end snapshot; checkin theo ngày lịch Việt Nam. Đổi giờ không sửa lịch sử hoặc mở lại kỳ đã khóa.
+
+## UI và UX cần giữ
+
+- Màn chính ngắn/gọn, thứ bậc chữ rõ, spacing theo nhóm thông tin, few accent colors, cả dark/light. Điều hướng có thể phát triển khi tính năng mới cần, có bằng chứng từ flow thật.
+- Touch targets khoảng≥44 px, safe-area, không overflow ngang hoặc chỉ dùng hover/màu để phân biệt. Header/nút đóng sheet luôn tiếp cận khi cuộn; focus/labels/reduced motion rõ.
+- Loading/empty/error/saving/read-only/conflict/auth expired có hướng xử lý. Success chỉ sau commit; POST đã lưu nhưng refresh lỗi phải reconcile, không retry nhân tác dụng.
+- Lore/trang trí không cản ghi task/habit. Không đặt thuật ngữ receipt/SQL/version trong luồng user nếu không giúp quyết định.
+
+## Mở rộng đã giao AI
+
+Toàn Habit/Thần Lộ tại [HABIT_GAME_PRODUCT](HABIT_GAME_PRODUCT.md): habit độc lập/lịch tùy chọn, tracking, luyện và battle, đủ 5 phái/39 môn/15 chương, các tuyến phụ và art nguyên bản. [IMPLEMENTATION](HABIT_GAME_IMPLEMENTATION.md) sở hữu quyền/mốc/prompt goal, [REVIEW](HABIT_GAME_REVIEW.md) giữ lựa chọn user.
+
+Phần game có không gian riêng và có thể thu gọn; người không chơi vẫn quản lý task/habit/ngủ tốt. Không thay persona trợ lý bằng NPC game hoặc tạo currency/tích hợp nền tảng mới chưa cần thiết. AI tự chọn chi tiết thiết kế trong khung, tự test/review/sửa để user nghiệm thu cuối.
