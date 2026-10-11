@@ -31,15 +31,30 @@ export function createHabitActions(context) {
         if (!more) state.habitHistory = null;
         render();
         const to = state.habitData.day.day;
-        const params = new URLSearchParams({ from: String(to - 29), to: String(to), limit: '50' });
+        const span = state.habitReportSpan ?? 30;
+        const params = new URLSearchParams({ from: String(to - span + 1), to: String(to), limit: '50' });
         if (habitId) params.set('habitId', habitId);
+        if (state.habitHistoryStatus && state.habitHistoryStatus !== 'all') params.set('status', state.habitHistoryStatus);
         if (more && state.habitHistory?.next) params.set('before', state.habitHistory.next);
         try {
-            const result = state.live ? await liveRequest('habit-history?' + params) : { rows: [], next: null };
+            const [result, report] = state.live ? await Promise.all([
+                liveRequest('habit-history?' + params), more ? Promise.resolve(state.habitReport) : liveRequest('habit-report?' + params),
+            ]) : [{ rows: [], next: null }, null];
             if (revision !== runtime.revision) return;
             state.habitHistory = { ...result, rows: more ? [...state.habitHistory.rows, ...result.rows] : result.rows };
+            state.habitReport = report;
         } catch (error) { toast(error.message); }
         finally { state.habitHistoryLoading = false; render(); }
+    }
+    function setHabitReportSpan(span) {
+        if (state.habitHistoryLoading) return;
+        state.habitReportSpan = span;
+        loadHabitHistory(state.habitHistoryId ?? '');
+    }
+    function setHabitHistoryStatus(status) {
+        if (state.habitHistoryLoading) return;
+        state.habitHistoryStatus = status;
+        loadHabitHistory(state.habitHistoryId ?? '');
     }
     async function save(input, options) {
         if (!state.live) { toast('Bản mẫu không lưu dữ liệu. Mở app đã đăng nhập để theo dõi nhé.'); return null; }
@@ -70,6 +85,36 @@ export function createHabitActions(context) {
         });
         sheetContent.append(form);
     }
+    function openHabitSlot(view) {
+        const day = { ...state.habitData.day };
+        openSheet('Thời gian cho ' + view.definition.name); sheet.classList.add('settings-sheet-open');
+        const form = el('form', undefined, 'settings-sheet-body habit-form');
+        const clock = at => new Date(at).toLocaleTimeString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit' });
+        const now = (state.serverNow ?? Date.now()) + Date.now() - (state.loadedAt ?? Date.now());
+        const start = field('Bắt đầu · ' + habitDate(day.day), 'time', clock(view.slot?.startAt ?? Math.ceil(now / 300000) * 300000));
+        start.input.step = '300';
+        const duration = field('Dành bao nhiêu phút?', 'number', String(view.slot?.minutes ?? (view.definition.metric === 'duration' ? Math.min(240, Math.max(5, Math.ceil(view.definition.target / 500) * 5)) : 20)));
+        duration.input.min = '5'; duration.input.max = '240'; duration.input.step = '5';
+        form.append(start.wrap, duration.wrap, el('p', 'Chỉ xếp vào khoảng còn trống, giữ nguyên lịch công việc. Xếp giờ không tự ghi nhận đã làm và không bật thêm lời nhắc.', 'hint'));
+        const controls = el('div', undefined, 'actions'), submit = el('button', 'Lưu thời gian', 'primary'); submit.type = 'submit'; controls.append(submit);
+        if (view.slot) controls.append(button('Bỏ khỏi lịch hôm nay', () => save({ operation: 'remove_slot', habitId: view.habit.id, version: view.habit.version, day: day.day }), 'text-button'));
+        form.append(controls);
+        form.addEventListener('submit', event => {
+            event.preventDefault();
+            const [hour, minute] = start.input.value.split(':').map(Number);
+            const base = Math.floor((day.startAt + 25200000) / 86400000) * 86400000 - 25200000;
+            let startAt = base + (hour * 60 + minute) * 60000;
+            if (startAt < day.startAt) startAt += 86400000;
+            save({ operation: 'slot', habitId: view.habit.id, version: view.habit.version, day: day.day, startAt, minutes: duration.input.valueAsNumber });
+        });
+        sheetContent.append(form);
+    }
+    async function showHabitInList(habitId) {
+        state.tab = 'habits'; state.habitPanel = 'today'; state.habitFilter = 'active'; render();
+        await loadHabits();
+        document.querySelector('[data-habit-id="' + CSS.escape(habitId) + '"]')?.scrollIntoView({
+            block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+    }
     function openHabit(view) {
         const initial = view?.pending?.definition ?? view?.definition;
         openSheet(view ? 'Chỉnh thói quen' : 'Thêm thói quen'); sheet.classList.add('settings-sheet-open');
@@ -97,6 +142,7 @@ export function createHabitActions(context) {
             control.setAttribute('aria-label', label); control.setAttribute('aria-pressed', String(weekdaySet.has(index))); days.append(control);
         });
         const note = field('Ghi chú', 'text', initial?.note ?? '', false); note.input.maxLength = 300;
+        const remind = field('Giờ nhắc (tùy chọn)', 'time', view?.reminderTime ?? '', false);
         const explanation = el('p', '', 'hint habit-form-explanation');
         const update = () => {
             target.wrap.hidden = metric.input.value === 'check'; target.input.required = metric.input.value !== 'check';
@@ -106,7 +152,8 @@ export function createHabitActions(context) {
             explanation.textContent = cadence.input.value === 'weekly' ? 'Làm vào bất kỳ ngày nào, mỗi ngày tính một lần. Cam kết mới áp dụng từ thứ Hai kế tiếp; hôm nay vẫn có thể theo dõi.' : 'Cam kết mới áp dụng từ ngày sinh hoạt kế tiếp. Mục tiêu hôm nay giữ nguyên.';
         };
         metric.input.addEventListener('change', update); cadence.input.addEventListener('change', update); update();
-        form.append(name.wrap, metric.wrap, target.wrap, unit.wrap, cadence.wrap, days, quota.wrap, note.wrap, explanation);
+        form.append(name.wrap, metric.wrap, target.wrap, unit.wrap, cadence.wrap, days, quota.wrap, note.wrap, remind.wrap,
+            el('p', 'Để trống nếu không cần nhắc. Lịch nhắc cập nhật ngay theo lựa chọn này và vẫn gửi khi đang ngủ hoặc tập trung. Cậu có thể chỉnh riêng ở Lời nhắc.', 'hint'), explanation);
         const controls = el('div', undefined, 'actions'), submit = el('button', view ? 'Lưu thay đổi' : 'Thêm thói quen', 'primary'); submit.type = 'submit';
         const archived = view && view.habit.archivedFrom !== null;
         if (!archived) controls.append(submit);
@@ -125,17 +172,19 @@ export function createHabitActions(context) {
                 unit: metric.input.value === 'duration' ? 'phút' : unit.input.value,
                 cadence: cadence.input.value === 'weekly' ? { kind: 'weekly', quota: quota.input.valueAsNumber }
                     : cadence.input.value === 'weekdays' ? { kind: 'weekdays', weekdays: [...weekdaySet].sort() } : { kind: 'daily' }, note: note.input.value };
-            await save(view ? { operation: 'update', habitId: view.habit.id, version: view.habit.version, definition } : { operation: 'create', definition });
+            const reminderTime = remind.input.value || null;
+            await save(view ? { operation: 'update', habitId: view.habit.id, version: view.habit.version, definition, reminderTime } : { operation: 'create', definition, reminderTime });
         });
         sheetContent.append(form);
     }
     async function exportHabits() {
         if (!state.live || !state.habitData) return;
-        const to = state.habitData.day.day, rows = []; let before = null;
+        const to = state.habitData.day.day, span = state.habitReportSpan ?? 30, rows = []; let before = null;
         try {
             do {
-                const params = new URLSearchParams({ from: String(to - 29), to: String(to), limit: '100' });
+                const params = new URLSearchParams({ from: String(to - span + 1), to: String(to), limit: '100' });
                 if (state.habitHistoryId) params.set('habitId', state.habitHistoryId);
+                if (state.habitHistoryStatus && state.habitHistoryStatus !== 'all') params.set('status', state.habitHistoryStatus);
                 if (before) params.set('before', before);
                 const page = await liveRequest('habit-history?' + params); rows.push(...page.rows); before = page.next;
             } while (before && rows.length < 3000);
@@ -144,10 +193,10 @@ export function createHabitActions(context) {
                 row.value / 100, row.definition.target / 100, row.definition.unit, row.status, row.note])]
                 .map(row => row.map(safeCsvCell).join(',')).join('\r\n');
             const url = URL.createObjectURL(new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8' })), link = el('a');
-            link.href = url; link.download = 'thoi-quen-30-ngay.csv'; document.body.append(link); link.click(); link.remove();
+            link.href = url; link.download = 'thoi-quen-' + span + '-ngay.csv'; document.body.append(link); link.click(); link.remove();
             setTimeout(() => URL.revokeObjectURL(url), 10000);
-            toast('Đã xuất lịch sử 30 ngày.');
+            toast('Đã xuất lịch sử ' + span + ' ngày.');
         } catch (error) { toast(error.message); }
     }
-    return { loadHabits, openHabit, openHabitLog, toggleHabit, setHabitFilter, showHabitPanel, loadHabitHistory, exportHabits };
+    return { loadHabits, openHabit, openHabitLog, openHabitSlot, showHabitInList, toggleHabit, setHabitFilter, showHabitPanel, loadHabitHistory, setHabitReportSpan, setHabitHistoryStatus, exportHabits };
 }

@@ -158,8 +158,11 @@ export class ScheduleStore{
    if(ranges.some(r=>r.start<day.start_at||r.end>day.target_sleep))throw Error('OUTSIDE_ACTIVE_DAY');
   const fixed=(await query(this.db,"SELECT start_at,end_at FROM local_events WHERE owner=? AND status='scheduled' AND start_at<? AND COALESCE(end_at,start_at+3600000)>?",owner,day.target_sleep,now).all<{start_at:number;end_at:number|null}>()).results.map(e=>({start:e.start_at,end:e.end_at??e.start_at+3600000}));
   const running=(await query(this.db,"SELECT start_at,minutes FROM sessions WHERE owner=? AND status IN ('running','paused')",owner).all<{start_at:number;minutes:number}>()).results;
-  const plan=planDay(tasks,ranges,[...fixed,...running.map(s=>({start:s.start_at,end:Math.max(s.start_at+s.minutes*60000,now+5*60000)}))],now);
+  const habitVersion=await query(this.db,'SELECT version FROM habit_accounts WHERE owner=?',owner).first<{version:number}>();
+  const habitSlots=(await query(this.db,'SELECT start_at,minutes FROM habit_slots WHERE owner=? AND day=?',owner,day.day).all<{start_at:number;minutes:number}>()).results;
+  const plan=planDay(tasks,ranges,[...fixed,...running.map(s=>({start:s.start_at,end:Math.max(s.start_at+s.minutes*60000,now+5*60000)})),...habitSlots.map(slot=>({start:slot.start_at,end:slot.start_at+slot.minutes*60000}))],now);
     const statements=[
+     query(this.db,'INSERT INTO transaction_guard SELECT CASE WHEN COALESCE((SELECT version FROM habit_accounts WHERE owner=?),0)=? THEN 1 ELSE 0 END',owner,habitVersion?.version??0),
      query(this.db,'INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM schedule_days WHERE owner=? AND day=? AND version=?) THEN 1 ELSE 0 END',owner,day.day,expectedVersion),
      query(this.db,"UPDATE schedule_days SET intervals_json=?,version=version+1,task_plan_status='active',task_plan_source='manual',task_plan_effective_from=? WHERE owner=? AND day=?",JSON.stringify({free:normalizedFree,busy:normalizedBusy,estimates:tasks.filter(t=>t.remainingMinutes!==null).map(t=>({id:t.id,minutes:t.remainingMinutes})),unplanned:plan.unplanned}),effective,owner,day.day),
      query(this.db,'DELETE FROM schedule_dialogs WHERE owner=?',owner),

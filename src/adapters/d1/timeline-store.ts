@@ -25,12 +25,13 @@ export class TimelineStore {
     constructor(db: Database) {
         this.db = db;
     }
-    async read(owner: string, now: number) {
+    async read(owner: string, now: number, ignoreHabitId: string | null = null) {
         const schedule = new ScheduleStore(this.db), settings = await schedule.settings(owner);
         if (!settings || settings.sleep_minutes === null)
             return null;
-        const window = dayWindow(operatingDay(now, settings.start_minutes), settings.start_minutes, settings.sleep_minutes);
         const day = await schedule.ensureDay(owner, now);
+        const window = day ? { start: day.start_at, target: day.target_sleep, end: day.end_at }
+            : dayWindow(operatingDay(now, settings.start_minutes), settings.start_minutes, settings.sleep_minutes);
         const saved = day ? await query(this.db, 'SELECT intervals_json FROM schedule_days WHERE owner=? AND day=?', owner, day.day).first<{
             intervals_json: string;
         }>() : null;
@@ -42,7 +43,15 @@ export class TimelineStore {
             end_at: number | null;
             version: number;
         }>()).results;
-        const busy: TimeRange[] = [...(intervals.busy ?? []), ...events.map(e => ({ start: e.start_at, end: e.end_at ?? e.start_at + 3600000 }))];
+        const habitSlots = (await query(this.db, `SELECT s.habit_id AS habitId,s.day,s.start_at AS startAt,s.minutes,s.version,
+            json_extract(r.definition_json,'$.name') AS name FROM habit_slots s JOIN habit_revisions r
+            ON r.owner=s.owner AND r.habit_id=s.habit_id AND r.from_day=(SELECT MAX(from_day) FROM habit_revisions
+              WHERE owner=s.owner AND habit_id=s.habit_id AND from_day<=s.day)
+            WHERE s.owner=? AND s.start_at<? AND s.start_at+s.minutes*60000>? AND (? IS NULL OR s.habit_id<>?) ORDER BY s.start_at,s.habit_id`,
+            owner, window.target, window.start, ignoreHabitId, ignoreHabitId)
+            .all<{ habitId: string; day: number; startAt: number; minutes: number; version: number; name: string }>()).results;
+        const busy: TimeRange[] = [...(intervals.busy ?? []), ...events.map(e => ({ start: e.start_at, end: e.end_at ?? e.start_at + 3600000 })),
+            ...habitSlots.map(slot => ({ start: slot.startAt, end: slot.startAt + slot.minutes * 60000 }))];
         const free = availableRanges((intervals.free?.length ? intervals.free : [{ start: window.start, end: window.target }]).map((r: TimeRange) => ({ start: Math.max(window.start, r.start), end: Math.min(window.target, r.end) })).filter((r: TimeRange) => r.end > r.start), busy, window.start);
         const savedPlan = day?.task_plan_status === 'active' ? await query(this.db, 'SELECT version,plan_json FROM daily_plans WHERE owner=? AND day=?', owner, day.day).first<{
             version: number;
@@ -64,8 +73,9 @@ export class TimelineStore {
             item.windows.forEach((slot, index) => blocks.push({ id: `taskplan_${day!.day}_${day!.task_plan_generation}_${item.taskId}_${index}`, task_id: item.taskId, start_at: slot.start, minutes: Math.round((slot.end - slot.start) / 60000), version: savedPlan!.version, generation: day!.task_plan_generation, status: 'planned', task_version: task.version, deadline: task.deadline }));
         }
         blocks.sort((a, b) => a.start_at - b.start_at || a.id.localeCompare(b.id));
-        const stamp = JSON.stringify([settings.version, day?.day, day?.version, savedPlan?.version, blocks.map(b => [b.id, b.task_version]), events.map(e => [e.id, e.version])]);
-        return { window, day: day?.day, dayVersion: day?.version, settingsVersion: settings.version, busy, free, blocks, events, stamp };
+        const stamp = JSON.stringify([settings.version, day?.day, day?.version, savedPlan?.version, blocks.map(b => [b.id, b.task_version]), events.map(e => [e.id, e.version]),
+            habitSlots.map(slot => [slot.habitId, slot.day, slot.version])]);
+        return { window, day: day?.day, dayVersion: day?.version, settingsVersion: settings.version, busy, free, blocks, events, habitSlots, stamp };
     }
     async change(owner: string, id: string, input: {
         stamp: string;

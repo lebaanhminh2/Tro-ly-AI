@@ -52,7 +52,7 @@ function fixture() {
                 const definition = { ...input.definition, target: input.definition.target * 100, unit: input.definition.metric === 'check' ? 'lần' : input.definition.metric === 'duration' ? 'phút' : input.definition.unit,
                     commitmentFrom: day + (input.definition.cadence.kind === 'weekly' ? 7 - ((day + 3) % 7) : 1) };
                 view = { habit: { id: 'h_' + input.id, version: 1, createdDay: day, archivedFrom: null, revisions: [{ fromDay: day, definition }] },
-                    definition, pending: null, log: { value: 0, note: '', version: 0 }, preview: null };
+                    definition, pending: null, log: { value: 0, note: '', version: 0 }, preview: null, slot: null, reminderTime: input.reminderTime ?? null };
                 control.habits.habits.push(view); result = { saved: true, habitId: view.habit.id, version: 1 };
             } else if (input.operation === 'log') {
                 view.log = { value: input.value * 100, note: input.note, version: view.log.version + 1 };
@@ -62,6 +62,11 @@ function fixture() {
                 view.pending = { fromDay: day + 1, definition: { ...input.definition, target: input.definition.target * 100, commitmentFrom: day + 1 } };
             } else if (input.operation === 'archive') {
                 view.habit.version++; view.habit.archivedFrom = day + 1;
+            } else if (input.operation === 'slot' || input.operation === 'remove_slot') {
+                view.habit.version++;
+                view.slot = input.operation === 'slot' ? { startAt: input.startAt, minutes: input.minutes, version: 1 } : null;
+                state.timeline.habitSlots = control.habits.habits.filter(item => item.slot).map(item => ({ ...item.slot, habitId: item.habit.id, day, name: item.definition.name }));
+                result = { saved: true, version: view.habit.version };
             }
             if (view) {
                 const period = newHabitPeriod(view.definition, day); period.closedThrough = day - 1;
@@ -214,6 +219,8 @@ async function serve(control, baseline) {
                     response.end(JSON.stringify(control.habits));
                 else if (endpoint === 'habit-history')
                     response.end(JSON.stringify({ rows: [], next: null }));
+                else if (endpoint === 'habit-report')
+                    response.end(JSON.stringify({ from: control.habits.day.day - 29, to: control.habits.day.day, successes: 0, misses: 0, neutral: 0, rate: null, days: [], totals: [] }));
                 else if (endpoint === 'history')
                     response.end(JSON.stringify({ result: { items: [], offset: 0, total: 0, hasMore: false } }));
                 else if (endpoint === 'tasks-page') {
@@ -408,6 +415,23 @@ test('habit mobile flow creates three cadences, edits quantity without duplicate
         assert.equal(control.habits.habits[1].log.value, 1500);
         assert.equal(control.habits.habits[1].preview.successes, 0);
         assert.equal(await browser.evaluate("document.querySelectorAll('.habit-note img').length"), 0);
+        await browser.click('Xếp thời gian', '.habit-card button');
+        await browser.evaluate("document.querySelector('.habit-form input[type=time]').value='12:00';document.querySelector('.habit-form input[type=number]').value='20';document.querySelector('.habit-form').requestSubmit()");
+        await browser.wait("!document.querySelector('#sheet').open");
+        assert.equal(control.habits.habits[1].slot.minutes, 20);
+        assert.equal(control.habits.habits[1].slot.startAt, Date.parse('2026-10-05T12:00:00+07:00'));
+        await browser.tap('[data-tab=today]');
+        await browser.wait("!!document.querySelector('.plan-habit')");
+        assert.match((await snapshot(browser)).text, /Thói quen đã xếp giờ/);
+        assert.equal(await browser.evaluate("document.querySelector('.plan-habit').innerText.includes('Đọc sách') && document.querySelector('.plan-habit').innerText.includes('12:00–12:20')"), true);
+        for (const width of [390, 320]) {
+            await browser.resize(width, 844);
+            assert.equal((await snapshot(browser)).overflow, false);
+            await browser.evaluate("document.querySelector('.plan-habits').scrollIntoView({block:'center'})");
+            if (process.env.WEB_TEST_SCREENSHOT_PATH) await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, '-habit-today-' + width + '.png'));
+        }
+        await browser.evaluate("document.querySelector('.plan-habit').click()");
+        await browser.wait("document.querySelectorAll('.habit-card').length===3");
         for (const width of [390, 320, 1440]) {
             await browser.resize(width, 844);
             assert.equal((await snapshot(browser)).overflow, false);
@@ -419,6 +443,9 @@ test('habit mobile flow creates three cadences, edits quantity without duplicate
         await browser.tap('[data-sheet-close]');
         await browser.click('Nhịp đã qua', '#content button');
         await browser.wait("!!document.querySelector('.habit-history-tools')");
+        await browser.wait("!!document.querySelector('.habit-report')");
+        await browser.resize(390, 844);
+        if (process.env.WEB_TEST_SCREENSHOT_PATH) await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, '-habit-report.png'));
         assert.deepEqual(control.state.account, original);
         assert.deepEqual(control.state.tasks, tasks);
         assert.deepEqual(browser.errors, []);

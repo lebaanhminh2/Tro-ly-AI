@@ -1,6 +1,6 @@
 # Tạo hình ảnh cục bộ cho toàn bộ Thần Lộ
 
-Cập nhật 2026-10-12. User chọn AI tự thiết lập model ảnh local khi chạy `/goal`, ngân sách bổ sung **0đ**. Đây là kế hoạch sản xuất, **chưa cài model/chưa tạo ảnh**. [CREATIVE_BRIEF](HABIT_GAME_CREATIVE_BRIEF.md) sở hữu art direction/cast/inventory, [PROGRESS](HABIT_GAME_PROGRESS.md) lưu bằng chứng.
+Cập nhật 2026-10-12. User chọn AI tự thiết lập model ảnh local khi chạy `/goal`, ngân sách bổ sung **0đ**. Pipeline đã cài và tạo hai ảnh concept thật, chưa QA trong game/toàn inventory. [CREATIVE_BRIEF](HABIT_GAME_CREATIVE_BRIEF.md) sở hữu art direction/cast/inventory, [PROGRESS](HABIT_GAME_PROGRESS.md) lưu bằng chứng.
 
 ## 1. Phạm vi và cách vận hành
 
@@ -10,7 +10,7 @@ User cho tải model/cài môi trường art riêng khi bắt đầu goal; AI t�
 
 ## 2. Preflight trước tải lớn
 
-Quan sát ban đầu: Windows, GTX 1650 khoảng 4 GB VRAM, có lệnh python/nvidia-smi; chưa xác minh interpreter/CUDA/disk/tốc độ/chất lượng.
+Đã xác minh: Windows/GTX 1650 4095 MiB, CUDA12.4, Python3.12.10, Torch2.6.0+cu124, diffusers0.35.2. Venv/models/drafts ở `D:\Tro-ly-AI-art`, ngoài Git. Hai trial float32 đạt hình hữu hạn ở 448×640/640×448, khoảng 100 giây/ảnh, peak4053MiB. Chưa chứng minh được độ phân giải lớn hơn hoặc identity variants.
 
 - Xác minh Python dùng được, driver/GPU/VRAM/RAM và dung lượng trống cho model/cache/venv/art. Không báo CUDA chạy chỉ vì có NVIDIA.
 - Chọn interpreter/dependencies tương thích trong môi trường riêng; không sửa Python hệ thống hoặc đưa ML packages vào runtime Workers/npm.
@@ -18,7 +18,9 @@ Quan sát ban đầu: Windows, GTX 1650 khoảng 4 GB VRAM, có lệnh python/nv
 - Thử một portrait + boss/cảnh, đo thời gian/VRAM/khả năng repeat/quality và export vào UI. Không bắt đầu hàng chục ảnh trước khi bản thử đạt.
 - Chạy server local nếu cần với loopback, log có giới hạn và background ẩn trên Windows; không mở công cụ art ra internet. Có cách dừng/resume rõ.
 
-Mọi setup/download/inference thuộc goal tương lai; không thực thi trong phiên chuẩn bị docs.
+Setup/download/inference thực hiện trong goal đang active. Script `scripts/art-local.py`, dependency pin `scripts/art-requirements.txt`, trial manifest `docs/art/trials.json`; metadata/finals tại `docs/art/assets.json` và `web/assets/than-lo`.
+
+Workflow đang dùng `Lykon/dreamshaper-8`, revision `a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917`, license `creativeml-openrail-m`. DPM++ Karras28steps, float32 với CPU offload/attention slicing/VAE slicing/tiling. Trial fp16 tạo NaN/ảnh đen và prompt cắt: đã loại bỏ. Script kiểm CLIP token budget, finite latents và ảnh suy biến; không publish output lỗi. Hai asset Tịch Vân/Thiết Lệnh Sứ có WebP + thumbnail, concept QA đã xem, integrated UI QA pending. Chưa bắt đầu batch toàn cast/chương.
 
 ## 3. Backend và model
 

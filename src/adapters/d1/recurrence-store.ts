@@ -5,6 +5,10 @@ type RuleRow={id:string;owner:string;title:string;kind:RecurrenceRule['kind'];ti
 export class RecurrenceStore{
  private db:Database;
  constructor(db:Database){this.db=db;}
+ async get(owner:string,id:string):Promise<RecurrenceRule|null>{
+  const r=await query(this.db,'SELECT * FROM recurrence_rules WHERE owner=? AND id=?',owner,id).first<RuleRow>();
+  return r?{id:r.id,owner:r.owner,title:r.title,kind:r.kind,times:JSON.parse(r.times_json) as string[],weekdays:JSON.parse(r.weekdays_json) as number[],startDate:r.start_date,endDate:r.end_date,enabled:!!r.enabled,version:r.version}:null;
+ }
  async rules(owner:string){
   const rows=await query(this.db,'SELECT * FROM recurrence_rules WHERE owner=? ORDER BY created,id LIMIT 100',owner).all<RuleRow>();
   return rows.results.map(r=>({id:r.id,owner:r.owner,title:r.title,kind:r.kind,times:JSON.parse(r.times_json) as string[],weekdays:JSON.parse(r.weekdays_json) as number[],startDate:r.start_date,endDate:r.end_date,enabled:!!r.enabled,version:r.version}));
@@ -27,8 +31,12 @@ export class RecurrenceStore{
    // Batch small groups for D1; deterministic keys preserve skipped/moved instances.
    for(let i=0;i<items.length;i+=25){
     await this.db.batch(items.slice(i,i+25).map(o=>query(this.db,
-     "INSERT OR IGNORE INTO recurrence_occurrences(id,rule_id,owner,rule_version,slot,due) SELECT ?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM recurrence_rules WHERE id=? AND owner=? AND enabled=1 AND version=?)",
-     o.id,o.ruleId,o.owner,o.version,o.slot,o.due,o.ruleId,o.owner,o.version)));
+     `INSERT OR IGNORE INTO recurrence_occurrences(id,rule_id,owner,rule_version,slot,due) SELECT ?,?,?,?,?,?
+      WHERE EXISTS(SELECT 1 FROM recurrence_rules WHERE id=? AND owner=? AND enabled=1 AND version=?)
+      AND (NOT EXISTS(SELECT 1 FROM habit_reminder_links WHERE owner=? AND rule_id=?) OR NOT EXISTS(
+        SELECT 1 FROM recurrence_occurrences prior JOIN outbox b ON b.id='recurring:'||prior.id
+        WHERE prior.owner=? AND prior.rule_id=? AND prior.slot=? AND b.state IN('sending','sent','uncertain')))`,
+     o.id,o.ruleId,o.owner,o.version,o.slot,o.due,o.ruleId,o.owner,o.version,o.owner,o.ruleId,o.owner,o.ruleId,o.slot)));
    }
   }
  }

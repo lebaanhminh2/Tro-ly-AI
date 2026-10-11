@@ -1,12 +1,12 @@
 # Habit/Thần Lộ — quyết định đã chốt và đối chiếu source
 
-Cập nhật 2026-10-12. Đây là nguồn luật user và bối cảnh thiết kế; không phải nhật ký chat. Nhiệm vụ tại [IMPLEMENTATION](HABIT_GAME_IMPLEMENTATION.md); chi tiết triển khai nằm trong docs chuyên đề. Chưa triển khai tính năng mới.
+Cập nhật 2026-10-12. Đây là nguồn luật user và bối cảnh thiết kế; không phải nhật ký chat. Nhiệm vụ tại [IMPLEMENTATION](HABIT_GAME_IMPLEMENTATION.md); tình trạng triển khai local/remote thật ở [PROGRESS](HABIT_GAME_PROGRESS.md).
 
 ## 1. Phạm vi mới nhất
 
 User đã mở rộng yêu cầu từ habit/luyện/một phái/chương mở đầu sang **sản phẩm đầy đủ**, thêm các phần hữu ích do AI chọn. Đích hiện tại là [PRODUCT](HABIT_GAME_PRODUCT.md): đủ 5 phái/39 môn/15 chương, hệ thống/truyện/art/UX/vận hành hoàn chỉnh. Một phái/chương đầu là bước kiểm chứng nội bộ, không là điểm dừng giao.
 
-User muốn AI tự thiết kế và thực hiện từ đầu đến cuối, giữ độ mở cho phát sinh; user nghiệm thu cuối. Quyền chỉnh code cần được cấp rõ trong lệnh goal theo IMPLEMENTATION; phiên này chỉ chuẩn bị docs. Chỉ dẫn user mới nhất luôn có ưu tiên.
+User muốn AI tự thiết kế và thực hiện từ đầu đến cuối, giữ độ mở cho phát sinh; user nghiệm thu cuối. Goal đã cấp quyền chỉnh code trong phạm vi IMPLEMENTATION thay duyệt từng file. Chỉ dẫn user mới nhất luôn có ưu tiên.
 
 ## 2. Các luật user đã xác nhận
 

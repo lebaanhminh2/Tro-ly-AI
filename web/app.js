@@ -20,7 +20,7 @@ const runtime = createRuntimeState();
 const content = document.querySelector('#content'), sheet = document.querySelector('#sheet'), sheetContent = document.querySelector('#sheet-content');
 const actions = {};
 const forward = {};
-for (const name of ['loadHabits', 'openHabit', 'openHabitLog', 'toggleHabit', 'setHabitFilter', 'showHabitPanel', 'loadHabitHistory', 'exportHabits'])
+for (const name of ['loadHabits', 'openHabit', 'openHabitLog', 'openHabitSlot', 'showHabitInList', 'toggleHabit', 'setHabitFilter', 'showHabitPanel', 'loadHabitHistory', 'setHabitReportSpan', 'setHabitHistoryStatus', 'exportHabits'])
     forward[name] = (...args) => actions[name](...args);
 forward.loadActiveTasks = (...args) => actions.loadActiveTasks(...args);
 forward.renderSleepControls = (...args) => actions.renderSleepControls(...args);

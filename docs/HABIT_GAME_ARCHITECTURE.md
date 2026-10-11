@@ -1,6 +1,6 @@
 # Habit/Thần Lộ — kiến trúc và hợp đồng kỹ thuật
 
-Cập nhật 2026-10-12. Thiết kế khung cho triển khai, không phải schema/API đã có. Baseline source ứng dụng: `51f5ffd`, docs trước đợt này: `23a1808`; agent kiểm lại HEAD/schema thực tế khi bắt đầu.
+Cập nhật 2026-10-12. Hợp đồng habit F1/F2 đã chạy local; các phần game còn là khung thiết kế. F1 tại `5c8d90a`; kiểm HEAD/schema và [PROGRESS](HABIT_GAME_PROGRESS.md) khi tiếp tục, không suy từ tài liệu rằng remote đã migration/deploy.
 
 ## 1. Tiếp nối kiến trúc
 
@@ -29,7 +29,7 @@ Không SQL/fetch/config/process.env trong domain/ports/application. Không thêm
 
 ## 2. Nhóm dữ liệu cần thiết kế
 
-### Hợp đồng habit đã triển khai (F1)
+### Hợp đồng habit đã triển khai local (F1/F2)
 
 `0031_habits.sql`: aggregate guard `habit_accounts`, definitions `habits`, normalized `habit_revisions`, immutable day windows `habit_days`, current-day totals `habit_logs`, sequential cursor/period `habit_periods`, immutable contributions `habit_outcomes`, request receipts `habit_receipts`. Revision giữ archive boundary riêng để restore không thay lịch sử.
 
@@ -37,6 +37,14 @@ Không SQL/fetch/config/process.env trong domain/ports/application. Không thêm
 - `POST /api/habits`: request `id` theo auth/CSRF/body cap chung. Các operation create/update/archive/restore/log đi qua `HabitService` và port `HabitStore`; log bắt buộc `habitId,version,day,logVersion,value` (value external), note tùy chọn. Owner/time/commitment/rewards không nhận từ client.
 - `GET /api/habit-history?from=…&to=…&habitId=…&before=…&limit=…`: keyset, max100 rows/max366 ngày, target/lịch theo revision cũ; ngày chưa kết toán hiển thị processing. CSV export chỉ đọc và chống công thức nguy hiểm.
 - Owner habit receipt kiểm trước day; guard habit + log + owner aggregate trong một D1 batch. Không dùng healthy account cho một tick. Cron settle có giới hạn, bất kể healthy suspension; không gọi LLM để tính kết quả.
+
+F2 bổ sung:
+
+- `0032_habit_reminders.sql`: link tới recurrence rule chuẩn, ID SHA256 owner/habit. `reminderTime` optional khi create/update, lưu cùng receipt. Nhắc là lời nhắc cá nhân đã cấu hình, tiếp tục khi ngủ; không tick habit hoặc thưởng. Ngày chọn thứ được dịch nếu giờ nhắc nằm trước mốc ngày sinh hoạt. Archive có end date và guard lifecycle; không gửi lại cùng slot đã sending/sent/uncertain khi đổi revision.
+- `0033_habit_slots.sql`: mỗi habit/ngày tối đa một reservation 5–240 phút, bước 5 phút. `slot/remove_slot` có expected day/version; thay slot tăng version habit để tab cũ không ghi đè. Atomic guards gồm aggregate habit, healthy/day/settings/plan/events/tasks; giữ khung task đã xếp, dự trữ thời gian khi replan. Slot không bật nhắc, tạo task hay ghi nhận hoàn thành.
+- `GET /api/habit-report?from=…&to=…&habitId=…`: totals, ngày, tỷ lệ từ successes/(successes+misses); neutral không vào mẫu số. Tổng lượng tách theo metric/unit qua revision. History hỗ trợ `status` và keyset; CSV tôn trọng bộ lọc.
+- `today()` đọc nhóm definitions/logs/reminders/slots với số query cố định; tuần preview tối đa 7 ngày. Integration 30 habit kiểm tổng prepare ≤25, có headroom dưới ngân sách 50. Chưa đo CPU/runtime remote hoặc lịch sử nhiều năm.
+- Today thực tế dùng `renderDailyPlan`; reservation hiển thị tại đây và link về danh sách habit. `renderTimeline` cũng nhận DTO nhưng không thay layout Today đã duyệt.
 
 Các schema/API phần game phía dưới còn là khung cần hoàn thiện, không phải đã triển khai.
 

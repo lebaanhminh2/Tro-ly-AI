@@ -1,6 +1,6 @@
 # Giao việc cho AI: hoàn thiện Habit và Thần Lộ
 
-Cập nhật **2026-10-12**. Đây là điểm vào duy nhất cho nhiệm vụ và prompt `/goal`. Hiện chỉ chuẩn bị tài liệu; chưa bắt đầu goal hoặc triển khai code/migration/model/art mới. Baseline ứng dụng khảo sát `51f5ffd`, HEAD tài liệu trước đợt này `23a1808`, nhánh `review/p1-p3`; kiểm lại khi bắt đầu.
+Cập nhật **2026-10-12**. Đây là điểm vào duy nhất cho nhiệm vụ và prompt `/goal`. Goal đang hoạt động; F1 đã commit/push `5c8d90a`, F2 đang triển khai local, chưa release remote. Trạng thái, quyết định và bằng chứng mới nhất tại [PROGRESS](HABIT_GAME_PROGRESS.md); kiểm git status/HEAD trước khi tiếp tục.
 
 ## 1. Nhiệm vụ cuối cùng
 
@@ -15,7 +15,7 @@ Phạm vi chi tiết và các bổ sung có ích nằm ở [PRODUCT](HABIT_GAME_
 
 ## 2. Quyền và điều kiện thực hiện
 
-**Hiện tại:** user yêu cầu cải thiện tài liệu; không suy ra rằng goal đã bắt đầu. Chỉ sửa Markdown trong bước chuẩn bị. Quy tắc user/AGENTS yêu cầu xác nhận trước code vẫn có hiệu lực nếu user chưa cấp ngoại lệ rõ trong lệnh triển khai.
+**Hiện tại:** user đã phát goal có ủy quyền rõ như mục 8. AI tự triển khai code/tests/assets/migration và staging trong phạm vi nhiệm vụ; không cần xin duyệt từng file. Chỉ dẫn user mới hơn thu hẹp quyền vẫn ưu tiên. Goal không tự cấp quyền ngoài phạm vi hoặc vượt sandbox/approval policy.
 
 **Khi user phát prompt mục 8:** prompt đó cấp quyền tự sửa/tạo/refactor code, migration, tests, assets và tooling/config cần cho nhiệm vụ này; thay yêu cầu duyệt từng file trong đúng phạm vi đó. AI tiếp tục qua các cổng tự kiểm tra, không chờ user duyệt mỗi nhóm. Ngoài phạm vi hoặc khi chỉ dẫn user mới hơn thu hẹp quyền thì áp dụng chỉ dẫn mới nhất. Tài liệu không tự cấp quyền thay user, `/goal` không vượt sandbox/approval policy.
 
@@ -23,7 +23,7 @@ Quyền/ngân sách đã trao đổi:
 
 - **Ngân sách bổ sung 0đ**: không API trả phí, subscription/top-up/nâng gói hay paid fallback. Key có sẵn không chứng minh quota miễn phí.
 - Được tự commit/push bình thường và migration/deploy **staging hiện tại** sau gates/kiểm target; bảo toàn dữ liệu và có backup/rollback phù hợp. Không force-push, production, xóa DB/tài nguyên hoặc dịch vụ mới ngoài phạm vi.
-- Được tải model/cài môi trường art local riêng khi goal bắt đầu. Máy khảo sát GTX 1650 khoảng 4 GB; thực hiện preflight và workflow ở [LOCAL_ART](HABIT_GAME_LOCAL_ART.md). Chưa cài/chạy thử trong bước tài liệu.
+- Được tải model/cài môi trường art local riêng. GTX 1650 4 GB đã chạy ảnh thử thật; workflow và giới hạn ở [LOCAL_ART](HABIT_GAME_LOCAL_ART.md). QA tích hợp và art toàn nội dung vẫn chưa hoàn tất.
 - User cho hỏi trực tiếp khi cần API/dịch vụ/cấu hình hoặc chặn thật. Hỏi cụ thể endpoint/model/quota/cách điền biến; secrets đặt trong môi trường/.env, không in/commit hoặc yêu cầu gửi full key vào chat. `.env.example` chỉ khai báo biến thực sự được code đọc.
 - Không tạo task/habit/log cá nhân giả, time-travel dữ liệu thật, gửi tin thử tới người khác hoặc reset uncertain delivery để test. Dùng local/fixture riêng.
 

@@ -7,13 +7,20 @@ export type WorkPlan={day:number;items:DayItem[];later:{taskId:string;reason:str
 const MIN=60000;
 const DAILY_FOCUS_LIMIT=3;
 const FOCUS_BLOCK_MINUTES=120;
+export function usableWorkRanges(ranges:TimeRange[],now:number):TimeRange[]{
+ return availableRanges(ranges,[],ranges[0]?.start??now).filter(range=>range.end-range.start>=10*MIN)
+  .map(range=>({start:range.start,end:range.start+Math.floor((range.end-range.start)/MIN*.8)*MIN}));
+}
+export function workCapacity(ranges:TimeRange[],now:number):number{
+ return usableWorkRanges(ranges,now).reduce((sum,range)=>sum+Math.floor((range.end-range.start)/MIN),0);
+}
 // Work occupies at most 80% of each available interval. The rest is transition,
 // rest and contingency, not extra work hidden outside the budget.
 export function chooseDailyPlan(tasks:Candidate[],days:DayCapacity[],now:number,preferred:string[]=[]):WorkPlan{
  if(!days.length)throw Error('INVALID_PLAN_DAYS');
  if(new Set(tasks.map(t=>t.id)).size!==tasks.length)throw Error('DUPLICATE_TASK');
  for(const t of tasks)if(t.remaining!==null&&(!Number.isInteger(t.remaining)||t.remaining<0||t.remaining>100000)||!Number.isInteger(t.priority)||t.priority<0||t.priority>2)throw Error('INVALID_ESTIMATE');
- const fullUsable=days.map(d=>availableRanges(d.ranges,[],d.ranges[0]?.start??now).filter(r=>r.end-r.start>=10*MIN).map(r=>({start:r.start,end:r.start+Math.floor((r.end-r.start)/MIN*.8)*MIN})));
+ const fullUsable=days.map(d=>usableWorkRanges(d.ranges,now));
  const usable=days.map((d,index)=>availableRanges(fullUsable[index]!,[],now));
  const capacity=fullUsable[0]!.reduce((n,r)=>n+Math.floor((r.end-r.start)/MIN),0);
  const known=tasks.filter(t=>t.remaining!==null);

@@ -14,6 +14,7 @@ export function createBrowserLoginActions(context) {
         state.reminders = [];
         state.habitData = null;
         state.habitHistory = null;
+        state.habitReport = null;
         state.habitError = null;
         state.authChallenge = null;
         state.loginError = '';

@@ -310,10 +310,26 @@ function renderTaskList(ui, state, buckets, card, button, openTask, render) {
     }
     return section;
 }
+function renderHabitReservations(ui, state, now) {
+    const slots = [...(state.timeline?.habitSlots ?? [])].sort((a, b) => a.startAt - b.startAt);
+    if (!slots.length)
+        return null;
+    const section = ui.el('section', undefined, 'plan-habits');
+    section.setAttribute('aria-label', 'Thói quen đã xếp giờ');
+    section.append(ui.el('h3', 'Thói quen đã xếp giờ'));
+    for (const slot of slots) {
+        const row = ui.button('', () => ui.showHabitInList(slot.habitId), 'plan-habit');
+        row.append(ui.el('strong', slot.name), renderSessionLabels(ui, [{ start: slot.startAt, end: slot.startAt + slot.minutes * 60000 }], now, false));
+        section.append(row);
+    }
+    return section;
+}
 function renderDailyPlan(ui, state) {
     const { el, button, openTask } = ui;
     const root = el('section', undefined, 'daily-plan');
     const plan = state.dailyPlan?.plan;
+    const now = (state.serverNow ?? Date.now()) + Date.now() - (state.loadedAt ?? Date.now());
+    const habits = renderHabitReservations(ui, state, now);
     if (!plan) {
         const empty = el('div', undefined, 'plan-empty');
         if (state.day?.task_plan_status === 'waiting') {
@@ -323,6 +339,8 @@ function renderDailyPlan(ui, state) {
         else
             empty.append(el('p', 'CHƯA CÓ LỊCH HÔM NAY', 'eyebrow'), el('h2', 'Cài giờ sinh hoạt để bắt đầu'), el('p', 'Khi biết giờ rảnh, Minh Anh sẽ chọn một vài việc phù hợp thay vì đưa cả danh sách vào hôm nay.', 'hint'));
         root.append(empty);
+        if (habits)
+            root.append(habits);
         return root;
     }
     const completed = plan.items.filter(item => state.tasks.find(task => task.id === item.taskId)?.done).length;
@@ -338,7 +356,6 @@ function renderDailyPlan(ui, state) {
     actions.append(button('Chỉnh lịch', () => ui.openTodayPlan(), 'secondary plan-action plan-action-main'), button('Giờ bận/rảnh', () => ui.openAvailability(), 'secondary plan-action'));
     overview.append(copy, actions);
     root.append(overview);
-    const now = (state.serverNow ?? Date.now()) + Date.now() - (state.loadedAt ?? Date.now());
     if (plan.items.length)
         root.append(renderPlanPosition(ui, state, plan, now));
     const notice = renderPlanNotice(ui, state);
@@ -379,6 +396,8 @@ function renderDailyPlan(ui, state) {
         list.append(empty);
     }
     root.append(list);
+    if (habits)
+        root.append(habits);
     if (completedList.children.length) {
         const done = el('details', undefined, 'daily-later completed-today');
         done.open = false;

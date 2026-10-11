@@ -29,6 +29,12 @@ export function renderTimeline(ui, state) {
     const legend = el('div', undefined, 'time-legend');
     legend.append(el('span', '● Công việc'), el('span', '▧ Bận / ngoài giờ rảnh'), el('span', '━ Bây giờ'));
     root.append(legend);
+    if (data.habitSlots?.length) {
+        const summary = el('details', undefined, 'time-habit-summary');
+        summary.append(el('summary', data.habitSlots.length + ' thói quen đã xếp giờ'));
+        for (const slot of data.habitSlots) summary.append(button(slot.name + ' · ' + clock(slot.startAt) + '–' + clock(slot.startAt + slot.minutes * 60000), () => ui.showHabitInList(slot.habitId), 'text-button'));
+        root.append(summary);
+    }
     root.append(el('p', 'Chạm tên việc để xem chi tiết · □ để đánh dấu xong', 'hint'));
     const scroll = el('div', undefined, 'time-scroll'), canvas = el('div', undefined, 'time-canvas');
     scroll.tabIndex = 0;
@@ -80,6 +86,16 @@ export function renderTimeline(ui, state) {
         const label = button('', () => ui.openTask(task), 'time-task-label');
         label.append(el('strong', '#' + task.code + ' ' + task.title), el('small', clock(b.start_at) + '–' + clock(b.start_at + b.minutes * 60000)), el('small', 'Dự kiến', 'time-status'));
         block.append(check, label);
+        canvas.append(block);
+    }
+    for (const slot of data.habitSlots ?? []) {
+        const block = el('div', undefined, 'time-habit');
+        block.style.top = (slot.startAt - range.start) * SCALE + 'px';
+        block.style.height = Math.max(9, slot.minutes * 60000 * SCALE - 3) + 'px';
+        const text = slot.name + ' · ' + clock(slot.startAt) + '–' + clock(slot.startAt + slot.minutes * 60000);
+        block.setAttribute('aria-label', text); block.title = text;
+        if (slot.minutes >= 10) block.append(el('strong', slot.name));
+        if (slot.minutes >= 20) block.append(el('small', clock(slot.startAt) + '–' + clock(slot.startAt + slot.minutes * 60000)));
         canvas.append(block);
     }
     const now = el('div', undefined, 'time-now');

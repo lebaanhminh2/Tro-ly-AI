@@ -1,6 +1,6 @@
 # Habit/Thần Lộ — kiểm chứng và nghiệm thu
 
-Cập nhật 2026-10-12. Đây là các gate phải thực hiện trong phiên triển khai; chưa có kết quả tính năng/art/deploy mới. [PROGRESS](HABIT_GAME_PROGRESS.md) lưu bằng chứng thực tế, không đánh dấu đạt chỉ vì đã viết tài liệu/test.
+Cập nhật 2026-10-12. Đây là các gate phải thực hiện trong goal. F1/F2 có kiểm thử local và hai ảnh concept đã xem, chưa có release mới; [PROGRESS](HABIT_GAME_PROGRESS.md) lưu bằng chứng thực tế. Không đánh dấu đạt chỉ vì đã viết tài liệu/test.
 
 ## 1. Chất lượng cần chứng minh
 

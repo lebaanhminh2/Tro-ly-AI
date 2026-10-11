@@ -6,7 +6,18 @@ import {appointmentAllowed} from './conversation-store.ts';
 
 export async function reminderAllowed(db:Database,id:string,now:number):Promise<boolean>{
   if(id.startsWith('recurring:')){
-    return !!await query(db,"SELECT o.id FROM recurrence_occurrences o JOIN recurrence_rules r ON r.id=o.rule_id AND r.owner=o.owner WHERE o.id=? AND o.status='queued' AND o.due<=? AND o.due>? AND r.enabled=1 AND r.version=o.rule_version",id.slice(10),now,now-3600000).first();
+    return !!await query(db,`SELECT o.id FROM recurrence_occurrences o JOIN recurrence_rules r ON r.id=o.rule_id AND r.owner=o.owner
+      WHERE o.id=? AND o.status='queued' AND o.due<=? AND o.due>? AND r.enabled=1 AND r.version=o.rule_version
+      AND (NOT EXISTS(SELECT 1 FROM habit_reminder_links WHERE owner=o.owner AND rule_id=o.rule_id) OR NOT EXISTS(
+        SELECT 1 FROM recurrence_occurrences prior JOIN outbox b ON b.id='recurring:'||prior.id
+        WHERE prior.owner=o.owner AND prior.rule_id=o.rule_id AND prior.slot=o.slot AND prior.id<>o.id AND b.state IN('sending','sent','uncertain')))
+      AND NOT EXISTS(SELECT 1 FROM habit_reminder_links l JOIN habit_revisions v ON v.owner=l.owner AND v.habit_id=l.habit_id
+        WHERE l.owner=o.owner AND l.rule_id=r.id AND v.from_day=(SELECT MAX(from_day) FROM habit_revisions
+          WHERE owner=l.owner AND habit_id=l.habit_id AND from_day<=COALESCE(
+            (SELECT day FROM habit_days WHERE owner=l.owner AND start_at<=o.due AND end_at>o.due ORDER BY start_at DESC LIMIT 1),
+            (SELECT day FROM schedule_days WHERE owner=l.owner AND start_at<=o.due AND end_at>o.due ORDER BY start_at DESC LIMIT 1),
+            CAST((o.due+25200000-COALESCE((SELECT start_minutes FROM schedule_settings WHERE owner=l.owner),0)*60000)/86400000 AS INTEGER)))
+        AND v.archived_from IS NOT NULL)`,id.slice(10),now,now-3600000).first();
   }
   if(id.startsWith('appointment:'))return appointmentAllowed(db,id,now);
   const r=await query(db,`SELECT r.*,s.status AS session_status,s.generation AS current_generation,s.start_at,s.minutes,

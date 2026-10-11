@@ -1,6 +1,6 @@
 # Thần Lộ — trải nghiệm, cốt truyện và chuẩn mỹ thuật
 
-Cập nhật 2026-10-12. Đặc tả sáng tạo cho **toàn sản phẩm**, chưa có ảnh/nhân vật mới được tạo hoặc tích hợp. AI sở hữu thiết kế chi tiết và tự QA; user nghiệm thu cuối. Phạm vi tại [PRODUCT](HABIT_GAME_PRODUCT.md), catalog/truyện tại [GAMEPLAY](HABIT_GAME_GAMEPLAY.md), sản xuất ảnh tại [LOCAL_ART](HABIT_GAME_LOCAL_ART.md).
+Cập nhật 2026-10-12. Đặc tả sáng tạo cho **toàn sản phẩm**. Hai concept Tịch Vân/Thiết Lệnh Sứ đã tạo và xem; art/game tích hợp chưa hoàn tất. AI sở hữu thiết kế chi tiết và tự QA; user nghiệm thu cuối. Phạm vi tại [PRODUCT](HABIT_GAME_PRODUCT.md), catalog/truyện tại [GAMEPLAY](HABIT_GAME_GAMEPLAY.md), sản xuất ảnh tại [LOCAL_ART](HABIT_GAME_LOCAL_ART.md).
 
 ## 1. Cảm giác cần tạo
 
@@ -38,7 +38,7 @@ Khung nhân vật đề xuất để AI thống nhất, có thể thay tên/chi 
 | Người tu hành vô danh | Xuất phát giản dị, vật dụng có lịch sử; silhouette đọc được | Không cần hệ avatar phức tạp; đường sức mạnh/ngoại hình phù hợp tiến trình |
 | A Lạc — người thân bị bắt | Có tính cách và mục tiêu riêng | Chủ động giữ trận cứu người, không chỉ đợi được cứu; scene/portrait theo bước ngoặt |
 | Kỷ Hành — đối thủ tái ngộ | Dấu nhận diện xuyên ba lần gặp | Kiếm pháp/trang phục đổi theo vai trò; động cơ cứu người và nguy cơ kế vị |
-| Người giữ thư các, gợi ý Tịch Vân | Điềm tĩnh, sách vá, chi tiết đồng | Hướng dẫn ngắn, biết lịch sử nhưng tiết lộ theo quyền mở thật |
+| Người giữ thư các, Tịch Vân | Điềm tĩnh, tóc búi/trâm đồng, áo xám/cổ ngà | Hướng dẫn ngắn, biết lịch sử nhưng tiết lộ theo quyền mở thật; portrait đã tạo, không bắt buộc sách trong crop |
 | Đồng minh, gợi ý Mộc An | Túi thuốc/bản đồ, hành động có mục đích | Câu chuyện/giá trị riêng, không làm một bộ nhắc habit mới |
 | Tạ Trường Sinh | Dấu tích của nhiều lần hiến cảnh giới | Cho thấy cái giá Nghịch Mệnh trước khi người chơi dùng |
 | La Sát Nữ Đế | Có khí chất và logic đánh đổi sinh mạng | Khác biệt giữa lực mạnh và lựa chọn đạo đức; không chỉ đổi màu “tà” |

@@ -1,6 +1,8 @@
 import { definitionOnDay, firstCommitmentDay, habitChangeDay, parseHabitCadence,
     parseHabitDefinition, validateRecordedValue } from '../domain/habits.ts';
 import type { HabitSaved, HabitStore } from '../ports/habit-store.ts';
+import { minutes } from '../domain/healthy.ts';
+import { availableRanges } from '../domain/availability.ts';
 
 function version(value: unknown): number {
     if (!Number.isSafeInteger(value) || Number(value) < 0) throw Error('INVALID_HABIT_VERSION');
@@ -17,12 +19,19 @@ export class HabitService {
     constructor(store: HabitStore) { this.store = store; }
     async execute(owner: string, requestId: string, input: Record<string, unknown>, now: number): Promise<HabitSaved> {
         const fields: Record<string, string[]> = {
-            create: ['operation', 'definition'], update: ['operation', 'habitId', 'version', 'definition'],
+            create: ['operation', 'definition', 'reminderTime'], update: ['operation', 'habitId', 'version', 'definition', 'reminderTime'],
             archive: ['operation', 'habitId', 'version'], restore: ['operation', 'habitId', 'version'],
             log: ['operation', 'habitId', 'version', 'day', 'logVersion', 'value', 'note'],
+            slot: ['operation', 'habitId', 'version', 'day', 'startAt', 'minutes'],
+            remove_slot: ['operation', 'habitId', 'version', 'day'],
         };
         const operation = String(input.operation), allowed = fields[operation];
         if (!allowed || Object.keys(input).some(key => !allowed.includes(key))) throw Error('INVALID_HABIT_OPERATION');
+        const reminderTime = input.reminderTime;
+        if (reminderTime !== undefined && reminderTime !== null) {
+            if (typeof reminderTime !== 'string') throw Error('INVALID_HABIT_REMINDER');
+            minutes(reminderTime);
+        }
         if (operation !== 'create' && (typeof input.habitId !== 'string' || !/^[a-zA-Z0-9_-]{8,110}$/.test(input.habitId)))
             throw Error('INVALID_HABIT_ID');
         return this.store.mutate(owner, requestId, input, now, snapshot => {
@@ -33,7 +42,7 @@ export class HabitService {
                 const cadence = parseHabitCadence(candidate?.cadence);
                 const definition = parseHabitDefinition(input.definition, firstCommitmentDay(day, cadence));
                 const habitId = 'h_' + requestId;
-                return { change: { kind: 'create', habitId, definition },
+                return { change: { kind: 'create', habitId, definition, reminderTime: reminderTime as string | null | undefined },
                     result: { saved: true, habitId, day, version: 1, effectiveFrom: definition.commitmentFrom } };
             }
             const habit = snapshot.habit;
@@ -41,6 +50,21 @@ export class HabitService {
             if (habit.version !== version(input.version)) throw Error('HABIT_CHANGED');
             const current = definitionOnDay(habit, day)?.definition;
             if (!current) throw Error('HABIT_NOT_FOUND');
+            if (operation === 'slot' || operation === 'remove_slot') {
+                if (input.day !== day) throw Error('HABIT_DAY_CLOSED');
+                if (operation === 'slot') {
+                    if (habit.archivedFrom !== null && day >= habit.archivedFrom) throw Error('HABIT_ARCHIVED');
+                    if (snapshot.log.value >= current.target) throw Error('HABIT_ALREADY_MET');
+                    const at = Number(input.startAt), duration = Number(input.minutes);
+                    if (typeof input.startAt !== 'number' || typeof input.minutes !== 'number' || !Number.isSafeInteger(at) || at % 300000 !== 0 ||
+                        !Number.isInteger(duration) || duration < 5 || duration > 240 || duration % 5 !== 0) throw Error('INVALID_HABIT_SLOT');
+                    const ranges = availableRanges(snapshot.schedule?.free ?? [], snapshot.schedule?.occupied ?? [], now);
+                    if (!ranges.some(range => at >= range.start && at + duration * 60000 <= range.end)) throw Error('HABIT_SLOT_CONFLICT');
+                }
+                return { change: { kind: 'slot', habitId: habit.id, version: habit.version,
+                    startAt: operation === 'slot' ? Number(input.startAt) : null, minutes: operation === 'slot' ? Number(input.minutes) : null },
+                    result: { saved: true, habitId: habit.id, day, version: habit.version + 1 } };
+            }
             if (operation === 'log') {
                 if (input.day !== day) throw Error('HABIT_DAY_CLOSED');
                 if (habit.archivedFrom !== null && day >= habit.archivedFrom) throw Error('HABIT_ARCHIVED');
@@ -54,7 +78,7 @@ export class HabitService {
                 const candidate = input.definition as Record<string, unknown> | null;
                 const cadence = parseHabitCadence(candidate?.cadence), fromDay = habitChangeDay(day, current.cadence, cadence);
                 const definition = parseHabitDefinition(input.definition, Math.max(current.commitmentFrom, fromDay));
-                return { change: { kind: 'revision', habitId: habit.id, version: habit.version, revision: { fromDay, definition } },
+                return { change: { kind: 'revision', habitId: habit.id, version: habit.version, revision: { fromDay, definition }, reminderTime: reminderTime as string | null | undefined },
                     result: { saved: true, habitId: habit.id, day, version: habit.version + 1, effectiveFrom: fromDay } };
             }
             if (operation === 'archive') {

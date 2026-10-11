@@ -50,7 +50,7 @@ export async function miniAppApi(request: Request, env: Env, now = Date.now()): 
     }
     try {
         const context = { env, owner, now, healthy: new HealthyStore(env.DB) };
-        if (request.method === 'GET' && ['/api/habits', '/api/habit-history'].includes(url.pathname))
+        if (request.method === 'GET' && ['/api/habits', '/api/habit-history', '/api/habit-report'].includes(url.pathname))
             return await readHabits(context, url);
         if (request.method === 'GET' && url.pathname === '/api/bootstrap')
             return await bootstrap(context);
@@ -78,6 +78,8 @@ export async function miniAppApi(request: Request, env: Env, now = Date.now()): 
             HABIT_CHANGED: 'Thói quen vừa thay đổi. Tải lại để tiếp tục nhé.', HABIT_LOG_CHANGED: 'Lần ghi này đã thay đổi ở một nơi khác. Tải lại để kiểm tra.',
             HABIT_DAY_CLOSED: 'Ngày này đã kết thúc. Cậu chỉ có thể ghi cho ngày hiện tại.', HABIT_ARCHIVED: 'Thói quen này đã có lịch lưu trữ.',
             HABIT_NOT_FOUND: 'Không tìm thấy thói quen này.', HABIT_NOT_ARCHIVED: 'Thói quen này đang hoạt động.', HABIT_LIMIT: 'Cậu có thể giữ tối đa 30 thói quen hoạt động.',
+            HABIT_SLOT_CONFLICT: 'Khoảng giờ này đã có việc, đang bận hoặc ngoài giờ sinh hoạt. Chọn một khoảng còn trống nhé.',
+            HABIT_ALREADY_MET: 'Thói quen này đã đạt hôm nay, không cần xếp thêm vào lịch.',
         };
         if (habitErrors[code]) return json({ error: code, message: habitErrors[code] }, 409);
         const sleepErrors:Record<string,string>={SLEEP_CHANGED:'Trạng thái ngủ vừa thay đổi. Đóng cài đặt rồi mở lại nhé.',SLEEP_UNDO_EXPIRED:'Đã hết 5 phút để hoàn tác báo ngủ.',SLEEP_UNDO_LOCKED:'Không thể hoàn tác vì kết quả tu luyện đã thay đổi sau khi báo ngủ.'};

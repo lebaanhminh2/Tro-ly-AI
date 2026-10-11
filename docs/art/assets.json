@@ -1,0 +1,106 @@
+[
+  {
+    "id": "tich-van",
+    "contentId": "character.tich-van",
+    "alt": "Tịch Vân, người giữ thư các, trong áo xám với cổ áo ngà và trâm đồng.",
+    "role": "portrait",
+    "focalPoint": [
+      0.5,
+      0.3
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "trial-guide-v2",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 17021,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, bust portrait, East Asian woman age 28, calm gaze, black hair bun and bronze hairpin, charcoal scholar robe, ivory collar, holding an old scroll, misty mountain backdrop",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, ugly face, extra limbs, extra fingers, bad anatomy, blurry, low resolution, nude, cleavage",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7.0,
+      "precision": "float32",
+      "seconds": 102.27,
+      "peakMiB": 4053,
+      "sha256": "2f40919390f975e367a27601922e3b21c1ab9d945fa4b9f45d9de9fa1bd639bb",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/tich-van.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 27004,
+        "sha256": "7f954b78b6b30985d6ad69c78c2e63a87ed8e9aebb4636c1a6fe3bb34c0158d1"
+      },
+      {
+        "path": "web/assets/than-lo/tich-van-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 5516,
+        "sha256": "307a0179b4a8754904a2403723e4f38ee0a56453ea792a30e909d6bf2de06cb5"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "pending",
+      "review": "Viewed original PNG 2026-10-12. Face, eyes, silhouette, cloth and mountain background coherent; monochrome slate/ivory/bronze. Scroll not visible, removed from identity requirements. Hands intentionally outside portrait crop. UI integration still pending."
+    }
+  },
+  {
+    "id": "thiet-lenh-su",
+    "contentId": "boss.thiet-lenh-su",
+    "alt": "Thiết Lệnh Sứ với mặt nạ đồng và giáp đen giữa núi mù sương.",
+    "role": "boss",
+    "focalPoint": [
+      0.5,
+      0.3
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "trial-envoy-v2",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 84016,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, masked imperial envoy on a stone bridge above misty mountain ravine, dark iron armor, weathered gray cloak, narrow bronze mask, one straight sword, quiet menace, wide shot",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, ugly face, extra limbs, extra fingers, bad anatomy, blurry, low resolution, nude, cleavage",
+      "size": [
+        640,
+        448
+      ],
+      "steps": 28,
+      "guidance": 7.0,
+      "precision": "float32",
+      "seconds": 98.38,
+      "peakMiB": 4053,
+      "sha256": "bbf5f5dcb02b17f02c4a7dbc3c1db193c6a07a9644713b31e7dc9247032db42f",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/thiet-lenh-su.webp",
+        "width": 640,
+        "height": 448,
+        "bytes": 28568,
+        "sha256": "4fb052220c015954ec04edd4eefd04e2cf89b3bb18d516639a3bd100397b9eb4"
+      },
+      {
+        "path": "web/assets/than-lo/thiet-lenh-su-thumb.webp",
+        "width": 160,
+        "height": 112,
+        "bytes": 3004,
+        "sha256": "5bf2f146bc3a44d7be61b27e0f2a074d4704de9b2ab93379b467a25892411b72"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "pending",
+      "review": "Viewed original PNG 2026-10-12. Readable masked silhouette and consistent bronze/gray palette. Classified as character/boss artwork, not a bridge scene; no claimed visible sword. Masked hands remain unobtrusive in card crop. UI integration still pending."
+    }
+  }
+]

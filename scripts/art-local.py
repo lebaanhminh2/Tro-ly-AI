@@ -22,6 +22,7 @@ def main():
     parser.add_argument("--output", type=Path, default=ART_HOME / "drafts")
     parser.add_argument("--cache", type=Path, default=ART_HOME / "models")
     parser.add_argument("--precision", choices=["float32", "float16"], default="float32")
+    parser.add_argument("--publish", action="store_true", help="Export only assets marked conceptApproved after visual review.")
     args = parser.parse_args()
     import torch
     if not torch.cuda.is_available():
@@ -39,6 +40,9 @@ def main():
     manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
     if manifest["model"] != MODEL or not manifest.get("revision") or manifest["revision"] == "main":
         raise RuntimeError("Pin the verified model revision in the manifest first.")
+    if args.publish:
+        publish_assets(manifest, args)
+        return
     from diffusers import StableDiffusionPipeline, DPMSolverMultistepScheduler
     print("Loading the pinned free model into the external cache...", flush=True)
     pipeline = StableDiffusionPipeline.from_pretrained(
@@ -97,6 +101,46 @@ def main():
         print(json.dumps(metadata, ensure_ascii=False), flush=True)
     del pipeline
     torch.cuda.empty_cache()
+
+
+def publish_assets(manifest, args):
+    from PIL import Image
+    destination = WORKSPACE / "web/assets/than-lo"
+    destination.mkdir(parents=True, exist_ok=True)
+    inventory = WORKSPACE / "docs/art/assets.json"
+    records = json.loads(inventory.read_text(encoding="utf-8")) if inventory.exists() else []
+    for item in manifest["assets"]:
+        if args.only and item["id"] not in args.only:
+            continue
+        if not item.get("conceptApproved"):
+            raise RuntimeError("Visual review required before exporting: " + item["id"])
+        asset_id = item["publishId"]
+        if not asset_id.replace("-", "").isalnum() or len(asset_id) > 64:
+            raise RuntimeError("Invalid final asset ID.")
+        source = args.output / (item["id"] + ".png")
+        metadata = json.loads(source.with_suffix(".json").read_text(encoding="utf-8"))
+        if hashlib.sha256(source.read_bytes()).hexdigest() != metadata["sha256"] or metadata["revision"] != manifest["revision"]:
+            raise RuntimeError("Source provenance mismatch.")
+        original = Image.open(source).convert("RGB")
+        outputs = []
+        for suffix, width in [("", original.width), ("-thumb", 160)]:
+            output = destination / (asset_id + suffix + ".webp")
+            image = original.copy()
+            if width < image.width:
+                image.thumbnail((width, max(1, round(original.height * width / original.width))), Image.Resampling.LANCZOS)
+            image.save(output, "WEBP", quality=86 if not suffix else 82, method=6)
+            outputs.append({"path": output.relative_to(WORKSPACE).as_posix(), "width": image.width,
+                            "height": image.height, "bytes": output.stat().st_size,
+                            "sha256": hashlib.sha256(output.read_bytes()).hexdigest()})
+        records = [record for record in records if record["id"] != asset_id]
+        records.append({"id": asset_id, "contentId": item["contentId"], "alt": item["alt"],
+                        "role": item["role"], "focalPoint": item["focalPoint"],
+                        "modelLicense": "creativeml-openrail-m", "workflow": "scripts/art-local.py",
+                        "source": metadata, "files": outputs,
+                        "qa": {"concept": "approved", "integratedUi": "pending", "review": item["qaNote"]}})
+        print(json.dumps({"published": asset_id, "files": outputs}), flush=True)
+    inventory.parent.mkdir(parents=True, exist_ok=True)
+    inventory.write_text(json.dumps(records, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
 if __name__ == "__main__":
