@@ -4,12 +4,19 @@
 
 Bắt đầu bằng [HANDOFF.md](HANDOFF.md). Chỉ mở tài liệu liên quan nhiệm vụ, không đọc toàn bộ docs.
 
+Riêng mở rộng Habit/Thần Lộ: bắt đầu bằng [HABIT_GAME_IMPLEMENTATION.md](HABIT_GAME_IMPLEMENTATION.md), rồi mở các mục luật/nội dung liên quan. Đã chốt AI tự thiết kế/triển khai tới nghiệm thu cuối qua /goal: một phái, chương 3–5 boss, ảnh cục bộ, ngân sách bổ sung 0đ và quyền commit/push/migration/deploy staging. Chưa bắt đầu goal/chưa có code tính năng mới.
+
 | Tài liệu | Nguồn chính cho |
 | --- | --- |
 | [HANDOFF.md](HANDOFF.md) | Trạng thái hiện tại, quyền, việc tiếp theo |
 | [PRODUCT_BRIEF.md](PRODUCT_BRIEF.md) | Mục tiêu và trải nghiệm đã chốt |
 | [TOOL_CALLING_PLAN.md](TOOL_CALLING_PLAN.md) | Phạm vi thay thế runtime hội thoại, chờ duyệt code |
 | [OPERATIONS.md](OPERATIONS.md) | Stack, kiểm thử, bảo mật và vận hành |
+| [HABIT_GAME_IMPLEMENTATION.md](HABIT_GAME_IMPLEMENTATION.md) | Giao việc agent, kiến trúc, nghiệm thu và prompt khởi động |
+| [HABIT_GAME_REVIEW.md](HABIT_GAME_REVIEW.md) | Quyết định habit/game, đối chiếu source và các điểm còn mở |
+| [HABIT_GAME_BUSINESS_DRAFT.md](HABIT_GAME_BUSINESS_DRAFT.md) | Bản nháp nghiệp vụ/nội dung gốc; không phải toàn bộ luật đã duyệt |
+| [HABIT_GAME_CREATIVE_BRIEF.md](HABIT_GAME_CREATIVE_BRIEF.md) | Trải nghiệm, nhân vật gốc, hướng nghệ thuật, tạo ảnh thật và tự nghiệm thu |
+| [HABIT_GAME_LOCAL_ART.md](HABIT_GAME_LOCAL_ART.md) | Thiết lập model ảnh cục bộ đã được phép, preflight và workflow tạo/tích hợp ảnh |
 
 STAGING_SETUP.md chỉ là link chuyển hướng cho công cụ cũ, không cần đọc thêm.
 

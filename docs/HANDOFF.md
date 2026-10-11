@@ -1,4 +1,11 @@
 # Tiếp tục từ đây
+## Habit và Thần Lộ — 2026-10-12 (chuẩn bị tài liệu, chưa code)
+- Bắt đầu [HABIT_GAME_IMPLEMENTATION.md](HABIT_GAME_IMPLEMENTATION.md); luật đã trao đổi ở HABIT_GAME_REVIEW.md; bản nháp gốc đã có trong repo.
+- Hướng mới đã chốt: AI tự thiết kế/code/test tới nghiệm thu cuối; habit + luyện + một phái đầy đủ + chương mở đầu 3–5 boss. CREATIVE_BRIEF mô tả art tiên hiệp trầm; LOCAL_ART hướng dẫn ảnh cục bộ trên GTX 1650 khi bắt đầu goal.
+- Ngân sách bổ sung 0đ; được tự commit/push/migration/deploy staging hiện tại. Chưa cài model/chưa tạo ảnh; không dùng API trả phí hoặc nâng gói.
+- Chưa bắt đầu /goal hoặc sửa code habit/game. Khi user phát goal theo IMPLEMENTATION, áp dụng phạm vi tự sửa đã ủy quyền thay việc duyệt từng file; remote/API trả phí theo quyền đã chốt.
+- Các mục phát hành bên dưới là lịch sử; kiểm tra HEAD/source/migration trước khi dùng làm trạng thái hiện tại. Lỗi đã báo ngủ mà còn nhận nhắc ngủ vẫn chưa xác định nguyên nhân.
+
 ## Today page redesign + task sheet footer — 2026-09-16 (đã deploy staging)
 - Commit `7e21087`; Worker `personal-assistant-staging` version `d6833fba-f62e-40b5-963a-f69292857205`.
 - Trang “Hôm nay” được sắp theo luồng việc tiếp theo → lịch hôm nay → chỉnh lịch → việc chưa chọn; cảnh báo được rút gọn và chỉ hiện khi cần. Task dài giới hạn hai dòng, không tràn ngang.
