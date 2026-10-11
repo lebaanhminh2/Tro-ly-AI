@@ -1,0 +1,11 @@
+{
+  "model": "Lykon/dreamshaper-8",
+  "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+  "variant": "fp16",
+  "style": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy",
+  "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, ugly face, extra limbs, extra fingers, bad anatomy, blurry, low resolution, nude, cleavage",
+  "assets": [
+    {"id": "trial-guide-v2", "seed": 17021, "width": 448, "height": 640, "prompt": "bust portrait, East Asian woman age 28, calm gaze, black hair bun and bronze hairpin, charcoal scholar robe, ivory collar, holding an old scroll, misty mountain backdrop"},
+    {"id": "trial-envoy-v2", "seed": 84016, "width": 640, "height": 448, "prompt": "masked imperial envoy on a stone bridge above misty mountain ravine, dark iron armor, weathered gray cloak, narrow bronze mask, one straight sword, quiet menace, wide shot"}
+  ]
+}

@@ -16,14 +16,14 @@ export function createMutations({ state, runtime, sheet, render, toast, showBrow
         try {
             // Reconcile an acknowledged write before allowing another state-changing action.
             if (runtime.refreshPending) {
-                applySnapshot(state, await refreshLive({ activeOffset: state.activeTasksOffset ?? 0 }));
+                applySnapshot(state, await refreshLive({ activeOffset: state.activeTasksOffset ?? 0, includeHabits: runtime.pendingReceipt?.path === 'habits' || state.tab === 'habits' }));
                 if (runtime.pendingReceipt)
                     settleRequest(runtime.pendingReceipt.path, runtime.pendingReceipt.input);
                 runtime.pendingReceipt = null;
                 runtime.refreshPending = false;
             }
             const includeHistory = path === 'tasks' || path === 'tasks-delete' || (state.tab === 'today' && state.mode === 'tasks');
-            const refreshOptions = { includeHistory, activeOffset: state.activeTasksOffset ?? 0 };
+            const refreshOptions = { includeHistory, activeOffset: state.activeTasksOffset ?? 0, includeHabits: path === 'habits' || state.tab === 'habits' };
             let data;
             if (options.effect) {
                 const request = liveMutation(path, input, refreshOptions);

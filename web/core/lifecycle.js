@@ -4,6 +4,7 @@ import { renderAchievements } from '../views/achievements.js';
 import { renderReminders } from '../views/reminders.js';
 import { updateTimelineClock } from '../views/timeline.js';
 import { renderToday } from '../views/today.js';
+import { renderHabits } from '../views/habits.js';
 import { settleRequest } from './http.js';
 import { connectLive, refreshLive } from './live-data.js';
 import { applySnapshot } from './state.js';
@@ -74,7 +75,7 @@ export function createLifecycle({ state, runtime, ui, content, sheet, renderBrow
         }
         else {
             content.removeAttribute('aria-busy');
-            content.append(state.tab === 'today' ? renderToday(ui, state) : state.tab === 'reminders' ? renderReminders(ui, state) : renderAchievements(ui, state));
+            content.append(state.tab === 'today' ? renderToday(ui, state) : state.tab === 'habits' ? renderHabits(ui, state) : state.tab === 'reminders' ? renderReminders(ui, state) : renderAchievements(ui, state));
         }
         const now = (state.serverNow ?? Date.now()) + Date.now() - (state.loadedAt ?? Date.now());
         const boundaries = (state.dailyPlan?.plan?.items ?? []).flatMap(item => (item.windows ?? []).flatMap(slot => [slot.start, slot.end]));
@@ -107,7 +108,7 @@ export function createLifecycle({ state, runtime, ui, content, sheet, renderBrow
         refreshing = true;
         const revision = runtime.revision;
         try {
-            const latest = await refreshLive({ activeOffset: state.activeTasksOffset ?? 0 });
+            const latest = await refreshLive({ activeOffset: state.activeTasksOffset ?? 0, includeHabits: state.tab === 'habits' });
             // A newer write, logout or open editor makes this response obsolete.
             if (revision !== runtime.revision || runtime.saving || !state.loaded || sheet.open || state.timelineDragging || state.historyLoading || state.activeTasksLoading)
                 return;

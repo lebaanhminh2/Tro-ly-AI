@@ -23,6 +23,8 @@ const makeNode = (tag: string, value = '', className = '') => ({ tag, value, cla
     },
     get lastChild() {
         return this.children.at(-1);
+    }, get firstElementChild() {
+        return this.children[0];
     }, get classList() {
         return { add: (...names: string[]) => {
                 this.className = [this.className, ...names].join(' ');
@@ -32,7 +34,9 @@ const walk = (n: any): any[] => [n, ...n.children.flatMap(walk)];
 const flatten = (n: any): string => [n.textContent ?? n.value, ...n.children.map(flatten)].join(' ');
 const mockUi = (state: any) => ({ el: makeNode, card: (css = '') => makeNode('div', '', 'card ' + css), button: (text: string, action: () => void, css = 'secondary') => ({ ...makeNode('button', text, css), action }), heading: (title: string, description: string) => {
         const n = makeNode('div', '', 'heading');
-        n.append(makeNode('h1', title), makeNode('p', description));
+        const group = makeNode('div');
+        group.append(makeNode('h1', title), makeNode('p', description));
+        n.append(group);
         return n;
     }, cultivation: () => state.cultivation, render() {
     }, claimCheckin() {

@@ -10,6 +10,7 @@ import { createScheduleActions } from './features/schedule.js';
 import { createSleepActions } from './features/sleep.js';
 import { createTaskActions } from './features/tasks.js';
 import { createTodayPlanActions } from './features/today-plan.js';
+import { createHabitActions } from './features/habits.js';
 import * as dom from './ui/dom.js';
 import { createFeedback } from './ui/feedback.js';
 import { createSheets } from './ui/sheets.js';
@@ -19,6 +20,8 @@ const runtime = createRuntimeState();
 const content = document.querySelector('#content'), sheet = document.querySelector('#sheet'), sheetContent = document.querySelector('#sheet-content');
 const actions = {};
 const forward = {};
+for (const name of ['loadHabits', 'openHabit', 'openHabitLog', 'toggleHabit', 'setHabitFilter', 'showHabitPanel', 'loadHabitHistory', 'exportHabits'])
+    forward[name] = (...args) => actions[name](...args);
 forward.loadActiveTasks = (...args) => actions.loadActiveTasks(...args);
 forward.renderSleepControls = (...args) => actions.renderSleepControls(...args);
 for (const name of ["render", "toast", "openSheet", "closeSheet", "confirm", "performLive", "toggleTask", "openTask", "confirmDelete", "loadHistory", "toggleTaskFocus", "openTodayPlan", "openReminder", "openSettings", "openAvailability", "openShare", "demoDay", "claimCheckin", "openRewardCalendar", "openDailyReward", "openDraw", "openInventory", "openBreakthrough", "showBrowserLogin", "connected", "renderBrowserLogin", "refreshOnReturn", "startConnection"])
@@ -37,6 +40,7 @@ Object.assign(actions, createReminderActions(context));
 Object.assign(actions, createScheduleActions(context));
 Object.assign(actions, createSleepActions(context));
 Object.assign(actions, createCultivationActions(context));
+Object.assign(actions, createHabitActions(context));
 Object.assign(actions, createBrowserLoginActions(context));
 Object.assign(actions, createLifecycle(context));
 applyTheme();
@@ -67,6 +71,7 @@ for (const b of document.querySelectorAll('[data-tab]'))
         state.tab = b.dataset.tab;
         state.screenState = 'ready';
         actions.render();
+        if (state.tab === 'habits') actions.loadHabits();
         actions.refreshOnReturn();
         window.scrollTo(0, 0);
     });

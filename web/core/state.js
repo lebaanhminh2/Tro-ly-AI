@@ -1,6 +1,8 @@
 import { createDemo } from '../demo/state.js';
 export function createAppState(live) {
     const state = createDemo();
+    state.habitData = null;
+    state.habitHistory = null;
     state.live = live;
     if (live) {
         state.tasks = [];

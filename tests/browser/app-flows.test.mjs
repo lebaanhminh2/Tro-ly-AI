@@ -9,6 +9,7 @@ import test from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
 import { createDemo } from '../../web/demo/state.js';
 import { checkinProgress } from '../../web/models/cultivation.js';
+import { assessHabitDay, newHabitPeriod } from '../../src/domain/habits.ts';
 // Real-browser smoke tests. Only localhost fixtures are used; no .env or cloud data.
 const browserBin = process.env.BROWSER_BIN || [
     'C:/Program Files/Google/Chrome/Application/chrome.exe',
@@ -35,7 +36,8 @@ function fixture() {
         taskFocus: null, taskFocusTarget: { taskId: 'task-0', endsAt: now + 4800000 }, rest: { reason: 'active' }, sleepStatus: { asleep: false, canUndo: false }, resting: false, needsSetup: false,
         progress: { completions: [], milestones: [], achievements: [] }, sessions: [], events: []
     };
-    const control = { state, authenticated: true, failBootstrap: false, calls: [], posts: [], receipts: new Map() };
+    const control = { state, authenticated: true, failBootstrap: false, calls: [], posts: [], receipts: new Map(),
+        habits: { now, day: { day: operatingDay, startAt: start, endAt: start + 86400000 }, habits: [] } };
     control.bootstrap = () => ({ ...state, checkin: checkinProgress(state.account.state, now) });
     control.mutate = (path, input) => {
         if (control.receipts.has(input.id))
@@ -43,7 +45,30 @@ function fixture() {
         control.posts.push({ path, input: clone(input) });
         let result = { saved: true };
         const task = state.tasks.find(t => t.id === input.taskId);
-        if (path === 'tasks') {
+        if (path === 'habits') {
+            const day = control.habits.day.day;
+            let view = control.habits.habits.find(item => item.habit.id === input.habitId);
+            if (input.operation === 'create') {
+                const definition = { ...input.definition, target: input.definition.target * 100, unit: input.definition.metric === 'check' ? 'lần' : input.definition.metric === 'duration' ? 'phút' : input.definition.unit,
+                    commitmentFrom: day + (input.definition.cadence.kind === 'weekly' ? 7 - ((day + 3) % 7) : 1) };
+                view = { habit: { id: 'h_' + input.id, version: 1, createdDay: day, archivedFrom: null, revisions: [{ fromDay: day, definition }] },
+                    definition, pending: null, log: { value: 0, note: '', version: 0 }, preview: null };
+                control.habits.habits.push(view); result = { saved: true, habitId: view.habit.id, version: 1 };
+            } else if (input.operation === 'log') {
+                view.log = { value: input.value * 100, note: input.note, version: view.log.version + 1 };
+                result = { saved: true, version: view.log.version };
+            } else if (input.operation === 'update') {
+                view.habit.version++;
+                view.pending = { fromDay: day + 1, definition: { ...input.definition, target: input.definition.target * 100, commitmentFrom: day + 1 } };
+            } else if (input.operation === 'archive') {
+                view.habit.version++; view.habit.archivedFrom = day + 1;
+            }
+            if (view) {
+                const period = newHabitPeriod(view.definition, day); period.closedThrough = day - 1;
+                view.preview = assessHabitDay(view.definition, day, view.log.value, period, view.habit.archivedFrom);
+            }
+        }
+        else if (path === 'tasks') {
             if (input.operation === 'create') {
                 const created = { id: 'new-task-' + state.tasks.length, public_code: 30 + state.tasks.length, title: input.title, note: input.note || '', version: 1, deadline: input.deadline || null, status: 'active', steps: [], remaining_minutes: input.remainingMinutes };
                 state.tasks.push(created);
@@ -185,6 +210,10 @@ async function serve(control, baseline) {
                     else
                         response.end(JSON.stringify(control.bootstrap()));
                 }
+                else if (endpoint === 'habits' && request.method === 'GET')
+                    response.end(JSON.stringify(control.habits));
+                else if (endpoint === 'habit-history')
+                    response.end(JSON.stringify({ rows: [], next: null }));
                 else if (endpoint === 'history')
                     response.end(JSON.stringify({ result: { items: [], offset: 0, total: 0, hasMore: false } }));
                 else if (endpoint === 'tasks-page') {
@@ -349,6 +378,52 @@ async function chrome() {
 async function snapshot(browser) {
     return browser.evaluate(`(() => { const root=document.querySelector('#content');const rect=root.getBoundingClientRect();return {text:root.innerText,buttons:[...root.querySelectorAll('button')].map(b=>({text:b.innerText,disabled:b.disabled})),geometry:{x:Math.round(rect.x),y:Math.round(rect.y),width:Math.round(rect.width),height:Math.round(rect.height)},overflow:document.documentElement.scrollWidth>innerWidth+1};})()`);
 }
+
+test('habit mobile flow creates three cadences, edits quantity without duplicate rewards and preserves fixed modal controls', { skip: !browserBin, timeout: 90000 }, async () => {
+    const control = fixture(), server = await serve(control), original = clone(control.state.account), tasks = clone(control.state.tasks);
+    let browser;
+    try {
+        browser = await chrome();
+        await browser.navigate(server.url, 390);
+        await browser.wait("!!document.querySelector('.focus-flip-card')");
+        await browser.tap('[data-tab=habits]');
+        await browser.wait("document.querySelector('.habits-page') && !document.querySelector('[aria-busy=true]')");
+        const create = async (name, metric, cadence) => {
+            await browser.tap('[aria-label="Thêm thói quen"]');
+            await browser.evaluate(`(() => { const f=document.querySelector('.habit-form'); const inputs=f.querySelectorAll('input'); inputs[0].value=${JSON.stringify(name)}; const selects=f.querySelectorAll('select'); selects[0].value=${JSON.stringify(metric)}; selects[0].dispatchEvent(new Event('change')); if(${JSON.stringify(metric)}!=='check') inputs[1].value='20'; selects[1].value=${JSON.stringify(cadence)}; selects[1].dispatchEvent(new Event('change')); f.requestSubmit(); })()`);
+            await browser.wait("!document.querySelector('#sheet').open && !document.querySelector('#content button:disabled')");
+            await browser.wait(`document.querySelector('.habit-list')?.innerText.includes(${JSON.stringify(name)})`);
+        };
+        await create('Thiền', 'check', 'daily');
+        await create('Đọc sách', 'duration', 'weekly');
+        await create('Đi bộ', 'check', 'weekdays');
+        assert.equal(control.habits.habits.length, 3);
+        assert.deepEqual(control.habits.habits.map(view => view.definition.cadence.kind), ['daily', 'weekly', 'weekdays']);
+        await browser.evaluate("document.querySelector('.habit-card .habit-check').click()");
+        await browser.wait("document.querySelector('.habit-check')?.getAttribute('aria-pressed')==='true'");
+        assert.equal(control.habits.habits[0].log.value, 100);
+        await browser.click('Ghi nhận', '.habit-card button');
+        await browser.evaluate("document.querySelector('.habit-form input[type=number]').value='15';document.querySelector('.habit-form input[type=text]').value='<img src=x onerror=alert(1)>';document.querySelector('.habit-form').requestSubmit()");
+        await browser.wait("!document.querySelector('#sheet').open");
+        assert.equal(control.habits.habits[1].log.value, 1500);
+        assert.equal(control.habits.habits[1].preview.successes, 0);
+        assert.equal(await browser.evaluate("document.querySelectorAll('.habit-note img').length"), 0);
+        for (const width of [390, 320, 1440]) {
+            await browser.resize(width, 844);
+            assert.equal((await snapshot(browser)).overflow, false);
+            if (process.env.WEB_TEST_SCREENSHOT_PATH) await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, '-habits-' + width + '.png'));
+        }
+        await browser.resize(320, 460);
+        await browser.evaluate("document.querySelector('.habit-card .icon-button').click();document.querySelector('.habit-form').scrollTop=9999");
+        assert.equal(await browser.evaluate("(() => {const r=document.querySelector('[data-sheet-close]').getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight})()"), true);
+        await browser.tap('[data-sheet-close]');
+        await browser.click('Nhịp đã qua', '#content button');
+        await browser.wait("!!document.querySelector('.habit-history-tools')");
+        assert.deepEqual(control.state.account, original);
+        assert.deepEqual(control.state.tasks, tasks);
+        assert.deepEqual(browser.errors, []);
+    } finally { if (browser) await browser.close(); await server.close(); }
+});
 
 test('settings keep the title and close button visible when scrolling and when the viewport shrinks', { skip: !browserBin, timeout: 60000 }, async () => {
     const control = fixture(), server = await serve(control);

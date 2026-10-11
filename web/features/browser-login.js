@@ -12,6 +12,9 @@ export function createBrowserLoginActions(context) {
         state.loaded = false;
         state.tasks = [];
         state.reminders = [];
+        state.habitData = null;
+        state.habitHistory = null;
+        state.habitError = null;
         state.authChallenge = null;
         state.loginError = '';
         state.screenState = 'login';

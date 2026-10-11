@@ -14,6 +14,7 @@ import {queueAppointments} from '../adapters/d1/conversation-store.ts';
 import {DayPlanStore} from '../adapters/d1/day-plan-store.ts';
 import {queueWorkNudge} from '../adapters/d1/work-nudges.ts';
 import {TaskDayStore} from '../adapters/d1/task-day-store.ts';
+import {D1HabitStore} from '../adapters/d1/habit-store.ts';
 import type {ChatService} from '../application/plan-command.ts';
 import type {Clock} from '../ports/work-store.ts';
 
@@ -68,6 +69,7 @@ export async function runScheduled(env:Env,deps:{cardsEnabled:boolean;transport:
   await expireMemory(env.DB,clock.now());
   await unlockAchievements(env.DB,env.TELEGRAM_USER_ID,clock.now());
   await flushCards();
+  await new D1HabitStore(env.DB).settle(env.TELEGRAM_USER_ID,clock.now(),6);
  }
  await flushOutbox(env,transport,clock.now(),()=>clock.now(),undefined,1);
 }

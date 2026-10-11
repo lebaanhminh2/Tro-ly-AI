@@ -29,6 +29,17 @@ Không SQL/fetch/config/process.env trong domain/ports/application. Không thêm
 
 ## 2. Nhóm dữ liệu cần thiết kế
 
+### Hợp đồng habit đã triển khai (F1)
+
+`0031_habits.sql`: aggregate guard `habit_accounts`, definitions `habits`, normalized `habit_revisions`, immutable day windows `habit_days`, current-day totals `habit_logs`, sequential cursor/period `habit_periods`, immutable contributions `habit_outcomes`, request receipts `habit_receipts`. Revision giữ archive boundary riêng để restore không thay lịch sử.
+
+- `GET /api/habits?archived=1`: ngày server `{day,startAt,endAt}` và list definition/pending/log/preview. Lazy load ngoài bootstrap; preview chưa phải reward.
+- `POST /api/habits`: request `id` theo auth/CSRF/body cap chung. Các operation create/update/archive/restore/log đi qua `HabitService` và port `HabitStore`; log bắt buộc `habitId,version,day,logVersion,value` (value external), note tùy chọn. Owner/time/commitment/rewards không nhận từ client.
+- `GET /api/habit-history?from=…&to=…&habitId=…&before=…&limit=…`: keyset, max100 rows/max366 ngày, target/lịch theo revision cũ; ngày chưa kết toán hiển thị processing. CSV export chỉ đọc và chống công thức nguy hiểm.
+- Owner habit receipt kiểm trước day; guard habit + log + owner aggregate trong một D1 batch. Không dùng healthy account cho một tick. Cron settle có giới hạn, bất kể healthy suspension; không gọi LLM để tính kết quả.
+
+Các schema/API phần game phía dưới còn là khung cần hoàn thiện, không phải đã triển khai.
+
 | Nhóm | Dữ liệu/trách nhiệm | Bất biến |
 | --- | --- | --- |
 | Habit definitions/revisions | Mục tiêu, lịch, lifecycle, mốc hiệu lực | Lịch sử đọc theo revision hiệu lực, không theo mục tiêu mới |
