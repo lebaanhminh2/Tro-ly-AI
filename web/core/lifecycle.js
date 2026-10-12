@@ -12,6 +12,8 @@ import { applySnapshot } from './state.js';
 import { experiencePreferences } from './experience.js';
 export function createLifecycle({ state, runtime, ui, content, sheet, renderBrowserLogin, showBrowserLogin, connected, toast }) {
     let focusExpiryTimer, refreshing = false, lastRefresh = 0;
+    const featureScroll = new Map();
+    let renderedScreen = null;
     async function expireTaskFocus() {
         const now = (state.serverNow ?? Date.now()) + Date.now() - (state.loadedAt ?? Date.now());
         if (!state.taskFocus || state.taskFocus.endsAt > now) {
@@ -37,9 +39,12 @@ export function createLifecycle({ state, runtime, ui, content, sheet, renderBrow
     function render() {
         if (runtime.focusAnimating)
             return;
+        if (renderedScreen) featureScroll.set(renderedScreen, window.scrollY);
         clearTimeout(focusExpiryTimer);
         const gameVisible = experiencePreferences().gameVisible;
         if (!gameVisible && state.tab === 'game') state.tab = 'today';
+        const screen = state.tab === 'habits' ? 'habits:' + (state.habitPanel ?? 'today') + ':' + (state.habitFilter ?? 'active')
+            : state.tab === 'game' ? 'game:' + (state.gamePanel ?? 'practice') : null;
         const previousScroll = document.querySelector('.time-scroll');
         if (previousScroll)
             state.timelineScroll = previousScroll.scrollTop;
@@ -106,14 +111,20 @@ export function createLifecycle({ state, runtime, ui, content, sheet, renderBrow
         }, 'text-button'));
         if (!state.live)
             content.append(controls);
+        renderedScreen = screen;
+        if (screen) window.scrollTo({ top: featureScroll.get(screen) ?? 0, behavior: 'instant' });
     }
     async function refreshOnReturn() {
-        if (!state.live || !state.loaded || runtime.saving || runtime.focusAnimating || refreshing || sheet.open || state.timelineDragging || state.historyLoading || state.activeTasksLoading || Date.now() - lastRefresh < 2000)
+        if (!state.live || !state.loaded || runtime.saving || runtime.focusAnimating || sheet.open || state.timelineDragging || state.historyLoading || state.activeTasksLoading)
             return;
+        if (!runtime.refreshPending && (state.tab === 'habits' || state.tab === 'game')) {
+            return state.tab === 'habits' ? ui.loadHabits() : ui.loadGame();
+        }
+        if (refreshing || (!state.baseDirty && Date.now() - lastRefresh < 2000)) return;
         refreshing = true;
         const revision = runtime.revision;
         try {
-            const latest = await refreshLive({ activeOffset: state.activeTasksOffset ?? 0, includeHabits: state.tab === 'habits', includeGame: state.tab === 'game' || runtime.pendingReceipt?.path === 'game' });
+            const latest = await refreshLive({ activeOffset: state.activeTasksOffset ?? 0, includeHabits: state.tab === 'habits' || runtime.pendingReceipt?.path === 'habits', includeGame: state.tab === 'game' || runtime.pendingReceipt?.path === 'game' });
             // A newer write, logout or open editor makes this response obsolete.
             if (revision !== runtime.revision || runtime.saving || !state.loaded || sheet.open || state.timelineDragging || state.historyLoading || state.activeTasksLoading)
                 return;
@@ -124,6 +135,7 @@ export function createLifecycle({ state, runtime, ui, content, sheet, renderBrow
             runtime.refreshPending = false;
             lastRefresh = Date.now();
             render();
+            if (state.tab === 'game' && !state.gameCatalog) await ui.loadGame({ catalogOnly: true });
         }
         catch (error) {
             if (revision !== runtime.revision)

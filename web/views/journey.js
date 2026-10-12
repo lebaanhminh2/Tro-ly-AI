@@ -1,7 +1,7 @@
 import { habitDate } from '../models/habits.js';
 const statusNames = { won: 'Đã thắng', awaiting_rescue: 'Chờ cứu mạng', dead: 'Tử trận', expired: 'Hết lượt giao chiến', withdrawn: 'Đã rút lui', cancelled: 'Đã hủy chuẩn bị' };
 
-export function renderJourney(ui, data, catalog, selectedChapter) {
+export function renderJourney(ui, data, catalog, selectedChapter, principalOnly = false) {
     const { el, button, card } = ui, root = el('div', undefined, 'journey-page');
     const current = (data.battles ?? []).find(battle => battle.id === data.current.battleId || battle.id === data.pending?.battleId)
         ?? (data.battles ?? []).find(battle => ['won', 'dead', 'expired', 'withdrawn'].includes(battle.status));
@@ -43,7 +43,8 @@ export function renderJourney(ui, data, catalog, selectedChapter) {
                 for (const choice of battle.choices) {
                     const control = button(choice.name, () => ui.chooseBattle(current, choice), 'secondary');
                     control.dataset.choiceId = choice.id;
-                    control.disabled = !choice.available || catchingUp; control.setAttribute('aria-pressed', String(chosen?.techniqueId === choice.id));
+                    control.dataset.write = 'battle-choice';
+                    control.disabled = !choice.available || catchingUp || !!ui.state().featureSaving; control.setAttribute('aria-pressed', String(chosen?.techniqueId === choice.id));
                     if (choice.repeatDamagePenalty) control.append(el('small', 'Bị đọc chiêu · −' + choice.repeatDamagePenalty / 10 + '% sát thương'));
                     if (choice.warning) control.append(el('small', 'Có đánh đổi')); choices.append(control);
                 }
@@ -68,10 +69,12 @@ export function renderJourney(ui, data, catalog, selectedChapter) {
         }
         panel.append(button('Nhật ký trận', () => ui.openBattleHistory(current), 'text-button')); root.append(panel);
     }
+    if (principalOnly) return root;
     const section = el('section', undefined, 'journey-boss-list');
     const chapters = catalog.chapters ?? [{ number: 1, name: 'Hắc Lệnh Qua Thôn', scene: 'chapter01', encounters: ['truy-lenh', 'song-nha', 'thu-lenh', 'thiet-lenh-su'] }];
     const next = chapters.find(chapter => chapter.encounters.some(id => !(data.victories ?? []).includes(id))) ?? chapters.at(-1);
     const chapter = chapters.find(chapter => chapter.number === selectedChapter) ?? chapters.find(chapter => chapter.number === current?.content.chapter) ?? next;
+    const nextBoss = chapter.encounters.map(id => catalog.bosses.find(boss => boss.id === id)).find(boss => boss && !(data.victories ?? []).includes(boss.id));
     const pickerWrap = el('label', 'Chương truyện', 'form-field journey-chapter-picker'), picker = el('select');
     for (const value of chapters) {
         const option = el('option', String(value.number).padStart(2, '0') + ' · ' + value.name); option.value = value.number; picker.append(option);
@@ -87,26 +90,29 @@ export function renderJourney(ui, data, catalog, selectedChapter) {
     for (const boss of (catalog.bosses ?? []).filter(boss => boss.chapter === chapter.number)) {
         const won = (data.victories ?? []).includes(boss.id), unlocked = boss.requires.every(id => (data.victories ?? []).includes(id))
             && (boss.practicePrerequisites ?? []).every(id => (data.learned ?? []).includes(id));
-        const row = card('journey-boss' + (!unlocked ? ' is-locked' : ''));
+        const recommended = boss.id === nextBoss?.id && unlocked && !['prepared', 'active', 'awaiting_rescue'].includes(current?.status);
+        const row = card('journey-boss' + (!unlocked ? ' is-locked' : '') + (recommended ? ' is-next' : ''));
         row.dataset.bossId = boss.id;
         const heading = el('div', undefined, 'journey-boss-heading'), copy = el('div');
         const needsPractice = boss.requires.every(id => (data.victories ?? []).includes(id)) && !unlocked;
-        copy.append(el('p', won ? 'Đã vượt qua' : unlocked ? boss.maxTurns + ' lượt tối đa' : needsPractice ? 'Cần luyện các môn yêu cầu' : 'Mở sau trận trước', 'eyebrow'), el('h3', boss.name));
+        copy.append(el('p', recommended ? 'TRẬN TIẾP THEO · ' + boss.maxTurns + ' LƯỢT' : won ? 'Đã vượt qua' : unlocked ? boss.maxTurns + ' lượt tối đa' : needsPractice ? 'Cần luyện các môn yêu cầu' : 'Mở sau trận trước', 'eyebrow'), el('h3', boss.name));
         heading.append(copy);
         if (boss.artId) {
             const image = el('img'); image.src = './assets/than-lo/' + boss.artId + '-thumb.webp'; image.width = 56; image.height = 72;
             image.alt = ''; image.loading = 'lazy'; heading.append(image);
             if (boss.artPosition) image.style.objectPosition = boss.artPosition.map(value => value * 100 + '%').join(' ');
         }
-        row.append(heading, el('p', boss.mechanics, 'hint'));
-        if (boss.repeatWard) row.append(el('p', 'Đọc chiêu lặp · đổi chiêu để giữ trọn sát thương.', 'hint'));
+        row.append(heading);
+        if (unlocked) row.append(el('p', boss.mechanics, 'hint'));
+        if (boss.repeatWard && unlocked) row.append(el('p', 'Đọc chiêu lặp · đổi chiêu để giữ trọn sát thương.', 'hint'));
         if (needsPractice) {
             const missing = (boss.practicePrerequisites ?? []).filter(id => !(data.learned ?? []).includes(id));
             row.append(el('p', 'Cần đạt Nhập môn: ' + missing.map(id => catalog.techniques.find(technique => technique.id === id)?.name ?? id).join(', ') + '.', 'hint'));
         }
-        const prepare = button(won ? 'Đánh lại' : 'Xem và chuẩn bị', () => ui.prepareBoss(boss), 'secondary');
+        const prepare = button(won ? 'Đánh lại' : 'Xem và chuẩn bị', () => ui.prepareBoss(boss), recommended ? 'primary' : 'secondary');
         prepare.disabled = !unlocked || data.current.mode === 'battle' || !!current && ['active', 'awaiting_rescue'].includes(current.state.status) || current?.startsDay > data.day.day;
-        row.append(prepare); section.append(row);
+        if (unlocked) row.append(prepare);
+        if (recommended) section.prepend(row); else section.append(row);
     }
     root.append(section);
     const previous = (data.battles ?? []).filter(battle => battle.id !== current?.id && statusNames[battle.status]);

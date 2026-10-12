@@ -5,12 +5,16 @@ import { button, el } from '../ui/dom.js';
 import { battlePresetControls } from './battle-presets.js';
 
 export function createBattleActions(context) {
-    const { state, render, toast, openSheet, closeSheet, sheet, sheetContent, confirm, performLive } = context;
+    const { state, runtime, render, toast, openSheet, closeSheet, sheet, sheetContent, confirm, performLive } = context;
     const command = (operation, battle, extra = {}) => ({ operation, day: state.gameData.day.day, version: state.gameData.version,
         ...(battle ? { battleId: battle.id, battleVersion: battle.version } : {}), ...extra });
     async function save(input) {
+        const panel = state.gamePanel;
         const result = await performLive('game', input);
-        if (result) { closeSheet(); state.gamePanel = 'journey'; render(); }
+        if (result) {
+            if (input.operation === 'prepare_battle' && state.gamePanel === panel) state.gamePanel = 'journey';
+            render();
+        }
     }
     function chooseBattle(battle, choice) {
         const input = command('choose_battle', battle, { techniqueId: choice.id, acceptCost: !!choice.warning });
@@ -50,7 +54,9 @@ export function createBattleActions(context) {
             const [data, detail] = await Promise.all([liveRequest('battle-loadout'), liveRequest('game-boss?bossId=' + encodeURIComponent(boss.id))]);
             if (!body.isConnected || !sheet.open) return;
             waiting.remove();
-            body.append(el('p', detail.boss.introduction, 'battle-story'), el('p', detail.boss.mechanics, 'hint'));
+            body.append(el('p', detail.boss.mechanics, 'hint'));
+            const story = el('details', undefined, 'battle-preparation-story battle-editions');
+            story.append(el('summary', 'Bối cảnh trận'), el('p', detail.boss.introduction, 'battle-story')); body.append(story);
             if (detail.boss.advice?.length) {
                 const advice = el('details', undefined, 'battle-editions'); advice.append(el('summary', 'Gợi ý giao chiến'));
                 for (const text of detail.boss.advice) advice.append(el('p', text, 'hint')); body.append(advice);
@@ -67,6 +73,14 @@ export function createBattleActions(context) {
                 weaponWrap.append(weaponSelect); body.append(weaponWrap, hint);
             }
             const selectors = [];
+            const loadoutSummary = el('p', 'Võ Kỹ luôn có sẵn trong trận.', 'battle-loadout-summary'); body.append(loadoutSummary);
+            function updateSummary() {
+                const selected = selectors.map(select => data.versions.find(version => version.versionId === select.value)).filter(Boolean);
+                loadoutSummary.textContent = selected.length ? 'Võ Kỹ + ' + selected.map(version => catalog.techniques.find(value => value.id === version.techniqueId)?.name ?? version.techniqueId).join(' · ')
+                    : 'Võ Kỹ luôn có sẵn trong trận.';
+                if (weaponSelect.value) loadoutSummary.textContent += ' · ' + (catalog.weapons.find(value => value.id === weaponSelect.value)?.name ?? weaponSelect.value);
+            }
+            weaponSelect.addEventListener('change', updateSummary);
             const labelFor = version => (catalog.techniques.find(value => value.id === version.techniqueId)?.name ?? version.techniqueId)
                 + ' · bản ' + version.edition + ' · tầng ' + version.tier + ' · ' + purityLabel(version.purityBp);
             const addVersion = version => {
@@ -86,6 +100,11 @@ export function createBattleActions(context) {
                     wrap.append(select); group.append(wrap); selectors.push(select);
                 }
                 body.append(group);
+                const customize = el('details', undefined, 'battle-loadout-customize battle-editions');
+                customize.append(el('summary', 'Chỉnh bộ chiêu · tối đa 5 môn'), group); body.append(customize);
+                for (const select of selectors) select.addEventListener('change', updateSummary);
+                const recommended = data.versions.find(version => catalog.techniques.find(value => value.id === version.techniqueId)?.kind === 'ordinary');
+                if (recommended) { selectors[0].value = recommended.versionId; updateSummary(); }
                 const editions = el('details', undefined, 'battle-editions battle-version-picker'); editions.append(el('summary', 'Chọn bản luyện khác'));
                 editions.append(el('p', 'Danh sách trên gợi ý tầng cao nhất của mỗi môn, rồi đến tinh thuần. Cậu vẫn có thể chọn một bản cũ.', 'hint'));
                 const wrap = el('label', 'Công pháp', 'form-field'), techniqueSelect = el('select');
@@ -124,13 +143,15 @@ export function createBattleActions(context) {
                 techniqueSelect.addEventListener('change', () => loadEditions(true));
             } else body.append(el('p', boss.chapter === 1 ? 'Chưa có công pháp đạt Nhập môn. Cậu vẫn có thể dùng Võ Kỹ để mở đầu.'
                 : 'Chưa có công pháp đạt Nhập môn. Luyện trước khi vào trận này sẽ giúp cậu chuẩn bị tốt hơn.', 'hint'));
-            body.append(battlePresetControls({ data, selectors, weaponSelect, addVersion, performLive, toast }));
-            body.append(el('p', 'Xuất chiến từ ' + habitDate(input.day + 1) + '. Luyện tạm dừng trong trận; cam kết habit vẫn theo dõi như thường. Chỉ thưởng quyền học lần đầu.', 'hint'),
-                button('Chuẩn bị xuất chiến', () => {
+            body.append(battlePresetControls({ data, selectors, weaponSelect, addVersion, performLive, toast, presetSnapshot: () => runtime.refreshPending ? null : state.gamePresetData }));
+            const effective = el('p', 'Xuất chiến từ ' + habitDate(input.day + 1) + '. Luyện tạm dừng trong trận; habit vẫn theo lịch cam kết.', 'battle-effective hint');
+            const prepare = button('Chuẩn bị xuất chiến', () => {
                     const versions = selectors.map(select => select.value).filter(Boolean), skills = versions.map(id => data.versions.find(version => version.versionId === id)?.techniqueId);
                     if (new Set(skills).size !== skills.length) { toast('Mỗi công pháp dùng một ô; chọn một bản luyện cho môn đó nhé.'); return; }
                     save({ ...input, versions, weaponId: weaponSelect.value || null });
-                }, 'primary'));
+                }, 'primary');
+            body.insertBefore(effective, story); body.insertBefore(prepare, story);
+            body.insertBefore(loadoutSummary, effective);
         } catch (error) { if (body.isConnected) waiting.textContent = error.message; }
     }
     async function openBattleHistory(battle) {

@@ -1,5 +1,6 @@
 // Owns transport and retry identities, including ambiguous network failures.
 const pendingRequests = new Map();
+const inFlightReads = new Map();
 export function settleRequest(path, input) {
     pendingRequests.delete(path + JSON.stringify(input));
 }
@@ -11,11 +12,28 @@ export async function browserAuthRequest(action) {
         error.code = data.error;
         throw error;
     }
-    if (action === 'logout')
+    if (action === 'logout') {
         pendingRequests.clear();
+        inFlightReads.clear();
+    }
+    if (action === 'start' || (action === 'status' && data.authenticated)) inFlightReads.clear();
     return data;
 }
-export async function liveRequest(path, body) {
+export function liveRequest(path, body) {
+    // Reads started before a write cannot reconcile that write.
+    if (body) {
+        inFlightReads.clear();
+        return transport(path, body);
+    }
+    const key = (globalThis.Telegram?.WebApp?.initData ?? 'browser') + ':' + path;
+    if (inFlightReads.has(key)) return inFlightReads.get(key);
+    const request = transport(path).finally(() => {
+        if (inFlightReads.get(key) === request) inFlightReads.delete(key);
+    });
+    inFlightReads.set(key, request);
+    return request;
+}
+async function transport(path, body) {
     const initData = globalThis.Telegram?.WebApp?.initData;
     const key = body ? path + JSON.stringify(body) : null;
     let request = body;

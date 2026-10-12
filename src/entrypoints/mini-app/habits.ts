@@ -4,7 +4,12 @@ import { json, type MiniAppContext, type MiniAppInput } from './context.ts';
 
 export async function readHabits({ env, owner, now }: MiniAppContext, url: URL): Promise<Response> {
     const store = new D1HabitStore(env.DB);
-    if (url.pathname === '/api/habits') return json({ now, ...await store.today(owner, now, url.searchParams.get('archived') === '1') });
+    if (url.pathname === '/api/habits') {
+        const started = performance.now();
+        const response = json({ now, ...await store.today(owner, now, url.searchParams.get('archived') === '1') });
+        response.headers.set('Server-Timing', `habits;dur=${(performance.now() - started).toFixed(1)}`);
+        return response;
+    }
     const from = Number(url.searchParams.get('from')), to = Number(url.searchParams.get('to'));
     if (!url.searchParams.has('from') || !url.searchParams.has('to')) throw Error('INVALID_HABIT_HISTORY');
     if (url.pathname === '/api/habit-report') return json({ now, ...await store.report(owner, from, to, url.searchParams.get('habitId')) });

@@ -1,7 +1,7 @@
 import { liveRequest } from '../core/http.js';
 import { button, el } from '../ui/dom.js';
 
-export function battlePresetControls({ data, selectors, weaponSelect, addVersion, performLive, toast }) {
+export function battlePresetControls({ data, selectors, weaponSelect, addVersion, performLive, toast, presetSnapshot }) {
     const root = el('details', undefined, 'battle-editions battle-presets');
     root.append(el('summary', 'Bộ chiêu đã lưu'));
     const pickerWrap = el('label', 'Dùng lại một bộ', 'form-field'), picker = el('select'); pickerWrap.append(picker);
@@ -31,11 +31,11 @@ export function battlePresetControls({ data, selectors, weaponSelect, addVersion
         for (const preset of snapshot.presets) { const option = el('option', preset.name); option.value = preset.id; picker.append(option); }
         picker.value = snapshot.presets.some(preset => preset.id === selected) ? selected : '';
     }
-    async function load(selected = picker.value) {
+    async function load(selected = picker.value, confirmed = null) {
         if (busy) return;
         busy = true; sync();
         try {
-            const next = await liveRequest('game-presets'); if (!root.isConnected) return;
+            const next = confirmed ?? await liveRequest('game-presets'); if (!root.isConnected) return;
             snapshot = next; loaded = true; rebuild(selected);
             notice.textContent = next.presets.length >= 6 ? 'Đã lưu 6 bộ. Cậu có thể cập nhật hoặc xóa một bộ.'
                 : 'Lưu các ô và thần binh đang chọn để dùng lại khi chuẩn bị trận.';
@@ -58,7 +58,7 @@ export function battlePresetControls({ data, selectors, weaponSelect, addVersion
                 notice.textContent = 'Một bản luyện hoặc thần binh trong bộ này chưa dùng được. Các ô hiện tại được giữ; cậu có thể chỉnh và cập nhật bộ.'; return;
             }
             for (const version of resolved.versions) addVersion(version);
-            selectors.forEach((select, index) => { select.value = preset.versions[index] ?? ''; });
+            selectors.forEach((select, index) => { select.value = preset.versions[index] ?? ''; select.dispatchEvent(new Event('change')); });
             weaponSelect.value = preset.weaponId ?? ''; weaponSelect.dispatchEvent(new Event('change'));
             notice.textContent = 'Đã áp dụng “' + preset.name + '”. Cậu vẫn có thể chỉnh các ô trước khi xuất chiến.';
         } catch (error) { if (root.isConnected) notice.textContent = error.message; }
@@ -83,7 +83,7 @@ export function battlePresetControls({ data, selectors, weaponSelect, addVersion
             pending = input; notice.textContent = 'Chưa xác nhận được kết quả. Thử lại để kiểm tra cùng lần lưu trước khi chỉnh tiếp.'; sync(); return;
         }
         pending = null; deleteConfirmed = false; remove.textContent = 'Xóa bộ';
-        await load(result?.deleted ? '' : result?.presetId ?? picker.value);
+        await load(result?.deleted ? '' : result?.presetId ?? picker.value, result ? presetSnapshot?.() : null);
         if (result) {
             if (result.deleted) name.value = '';
             notice.textContent = result.deleted ? 'Đã xóa bộ chiêu. Các ô đang chọn vẫn được giữ.' : 'Đã lưu bộ chiêu để dùng lại trên các thiết bị.';

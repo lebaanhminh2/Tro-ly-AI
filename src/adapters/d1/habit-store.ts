@@ -24,6 +24,14 @@ export class D1HabitStore implements HabitStore {
     private defer?: (statements: Statement[]) => void;
     constructor(db: Database, defer?: (statements: Statement[]) => void) { this.db = db; this.defer = defer; }
     private async currentDay(owner: string, now: number): Promise<HabitDay> {
+        // Habit days are immutable snapshots. Reuse an already initialized day;
+        // join the active schedule and configured settings rather than caching by wall date.
+        const initialized = await query(this.db, `SELECT h.day,h.start_at,h.end_at FROM habit_days h
+            JOIN schedule_days d ON d.owner=h.owner AND d.day=h.day
+            JOIN schedule_settings s ON s.owner=d.owner AND s.sleep_minutes IS NOT NULL
+            WHERE h.owner=? AND d.start_at<=? AND d.end_at>? AND h.start_at<=? AND h.end_at>?
+            ORDER BY d.start_at DESC LIMIT 1`, owner, now, now, now, now).first<DayRow>();
+        if (initialized) return dayDTO(initialized);
         const current = await new ScheduleStore(this.db).ensureDay(owner, now);
         if (!current) throw Error('NO_ACTIVE_DAY');
         await query(this.db, 'INSERT OR IGNORE INTO habit_days(owner,day,start_at,end_at) VALUES(?,?,?,?)',

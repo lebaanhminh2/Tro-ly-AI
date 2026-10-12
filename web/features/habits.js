@@ -7,7 +7,15 @@ import { prefersReducedMotion } from '../core/experience.js';
 export function createHabitActions(context) {
     const { state, runtime, render, toast, sheet, sheetContent, openSheet, performLive, confirm } = context;
     let loadGeneration = 0;
-    async function loadHabits() {
+    let loading, loadingRevision;
+    function loadHabits() {
+        if (loading && loadingRevision === runtime.revision) return loading;
+        loadingRevision = runtime.revision;
+        const request = fetchHabits().finally(() => { if (loading === request) loading = null; });
+        loading = request;
+        return request;
+    }
+    async function fetchHabits() {
         const generation = ++loadGeneration, revision = runtime.revision;
         state.habitLoading = true; state.habitError = null; render();
         try {
@@ -70,6 +78,7 @@ export function createHabitActions(context) {
             day: state.habitData.day.day, value: log.value >= definition.target ? 0 : 1, note: log.note }, { silent: true });
     }
     function openHabitLog(view) {
+        if (runtime.saving) { toast('Đang lưu thao tác trước…'); return; }
         const logDay = state.habitData.day.day;
         openSheet(view.definition.name); sheet.classList.add('settings-sheet-open');
         const form = el('form', undefined, 'settings-sheet-body habit-form');
@@ -77,7 +86,8 @@ export function createHabitActions(context) {
         const amount = field('Tổng đã làm hôm nay (' + view.definition.unit + ')', 'number', String(view.log.value / 100));
         amount.input.min = '0'; amount.input.max = '1000000'; amount.input.step = '0.01'; amount.input.inputMode = 'decimal';
         const note = field('Ghi chú', 'text', view.log.note, false); note.input.maxLength = 300;
-        form.append(amount.wrap, note.wrap, el('p', 'Đủ ' + view.definition.target / 100 + ' ' + view.definition.unit + ' mới được tính đóng góp. Cậu có thể điều chỉnh trong ngày.', 'hint'));
+        const extra = el('details', undefined, 'habit-form-extra'); extra.append(el('summary', 'Thêm ghi chú'), note.wrap);
+        form.append(amount.wrap, el('p', 'Lưu sẽ thay tổng hôm nay. Đạt ' + view.definition.target / 100 + ' ' + view.definition.unit + ' mới góp tiến độ.', 'hint'), extra);
         const controls = el('div', undefined, 'actions'), submit = el('button', 'Lưu', 'primary'); submit.type = 'submit';
         controls.append(submit); form.append(controls);
         form.addEventListener('submit', async event => {
@@ -87,7 +97,24 @@ export function createHabitActions(context) {
         });
         sheetContent.append(form);
     }
+    function openHabitDetails(view) {
+        openSheet(view.definition.name); sheet.classList.add('settings-sheet-open');
+        const body = el('div', undefined, 'settings-sheet-body habit-detail');
+        body.append(el('p', cadenceLabel(view.definition.cadence), 'hint'));
+        if (view.definition.metric !== 'check') body.append(el('p', 'Hôm nay ' + view.log.value / 100 + ' / ' + view.definition.target / 100 + ' ' + view.definition.unit, 'habit-detail-progress'));
+        if (view.log.note) body.append(el('p', view.log.note, 'habit-note'));
+        if (view.pending) body.append(el('p', 'Thay đổi áp dụng từ ' + habitDate(view.pending.fromDay), 'hint'));
+        const archived = view.habit.archivedFrom !== null && state.habitData.day.day >= view.habit.archivedFrom;
+        if (!archived) {
+            body.append(button('Điều chỉnh hôm nay', () => view.definition.metric === 'check' ? toggleHabit(view) : openHabitLog(view), 'secondary'),
+                button(view.slot ? 'Chỉnh thời gian' : 'Xếp thời gian', () => openHabitSlot(view), 'secondary'));
+        }
+        body.append(button('Chỉnh thói quen', () => openHabit(view), 'text-button'));
+        if (view.reminderTime && !archived) body.append(el('p', 'Nhắc lúc ' + view.reminderTime, 'hint'));
+        sheetContent.append(body);
+    }
     function openHabitSlot(view) {
+        if (runtime.saving) { toast('Đang lưu thao tác trước…'); return; }
         const day = { ...state.habitData.day };
         openSheet('Thời gian cho ' + view.definition.name); sheet.classList.add('settings-sheet-open');
         const form = el('form', undefined, 'settings-sheet-body habit-form');
@@ -118,6 +145,7 @@ export function createHabitActions(context) {
             block: 'center', behavior: prefersReducedMotion() ? 'instant' : 'smooth' });
     }
     function openHabit(view) {
+        if (runtime.saving) { toast('Đang lưu thao tác trước…'); return; }
         const initial = view?.pending?.definition ?? view?.definition;
         openSheet(view ? 'Chỉnh thói quen' : 'Thêm thói quen'); sheet.classList.add('settings-sheet-open');
         const form = el('form', undefined, 'settings-sheet-body habit-form'), name = field('Tên thói quen', 'text', initial?.name ?? '');
@@ -154,8 +182,10 @@ export function createHabitActions(context) {
             explanation.textContent = cadence.input.value === 'weekly' ? 'Làm vào bất kỳ ngày nào, mỗi ngày tính một lần. Cam kết mới áp dụng từ thứ Hai kế tiếp; hôm nay vẫn có thể theo dõi.' : 'Cam kết mới áp dụng từ ngày sinh hoạt kế tiếp. Mục tiêu hôm nay giữ nguyên.';
         };
         metric.input.addEventListener('change', update); cadence.input.addEventListener('change', update); update();
-        form.append(name.wrap, metric.wrap, target.wrap, unit.wrap, cadence.wrap, days, quota.wrap, note.wrap, remind.wrap,
-            el('p', 'Để trống nếu không cần nhắc. Lịch nhắc cập nhật ngay theo lựa chọn này và vẫn gửi khi đang ngủ hoặc tập trung. Cậu có thể chỉnh riêng ở Lời nhắc.', 'hint'), explanation);
+        const extra = el('details', undefined, 'habit-form-extra');
+        extra.append(el('summary', 'Nhắc giờ & ghi chú'), note.wrap, remind.wrap,
+            el('p', 'Giờ nhắc cập nhật ngay và vẫn gửi khi ngủ hoặc tập trung.', 'hint'));
+        form.append(name.wrap, metric.wrap, target.wrap, unit.wrap, cadence.wrap, days, quota.wrap, explanation, extra);
         const controls = el('div', undefined, 'actions'), submit = el('button', view ? 'Lưu thay đổi' : 'Thêm thói quen', 'primary'); submit.type = 'submit';
         const archived = view && view.habit.archivedFrom !== null;
         if (!archived) controls.append(submit);
@@ -211,5 +241,5 @@ export function createHabitActions(context) {
             toast('Đã xuất lịch sử ' + span + ' ngày.');
         } catch (error) { toast(error.message); }
     }
-    return { loadHabits, openHabit, openHabitLog, openHabitSlot, showHabitInList, toggleHabit, setHabitFilter, showHabitPanel, loadHabitHistory, setHabitReportSpan, setHabitHistoryStatus, exportHabits, openHabitExport };
+    return { loadHabits, openHabit, openHabitDetails, openHabitLog, openHabitSlot, showHabitInList, toggleHabit, setHabitFilter, showHabitPanel, loadHabitHistory, setHabitReportSpan, setHabitHistoryStatus, exportHabits, openHabitExport };
 }

@@ -2,6 +2,8 @@
 
 Cập nhật 2026-10-12. Toàn scope đã triển khai, migrate/deploy staging và kiểm sau publish; sẵn sàng để user nghiệm thu. Các checkpoint cũ là lịch sử, không bắt đầu lại từ đầu.
 
+**Phản hồi nghiệm thu mới:** user đánh giá UI/UX/luồng và tốc độ của **hai tab Thói quen/Thần Lộ** chưa đạt, rồi yêu cầu agent tự chụp, đánh giá và sửa sau khi trình inventory. [UX_REVIEW](HABIT_GAME_UX_REVIEW.md) ghi findings, luồng, inventory và tiến độ vòng sửa UX. Code UX mới đang kiểm chứng trong worktree; runtime ở mục dưới vẫn là bản cũ cho đến khi vòng mới deploy xong. Các gates/release kỹ thuật không thay nghiệm thu trải nghiệm của user.
+
 ## Bản đã phát hành
 
 - App: https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev/app/

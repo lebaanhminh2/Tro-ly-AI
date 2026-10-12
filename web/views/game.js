@@ -9,8 +9,9 @@ import { nearestGameGoal, returnGameSummary } from '../models/game-goal.js';
 
 export function renderGame(ui, state) {
     const { el, button, card, heading } = ui, root = el('section', undefined, 'game-page');
-    const top = heading('Thần Lộ', 'Tu luyện từ những cam kết ngoài đời.');
+    const top = heading('Thần Lộ', 'Một hành trình từ những việc nhỏ mỗi ngày.');
     top.append(button('Cách chơi', () => ui.openGameGuide(), 'text-button')); root.append(top);
+    if (state.featureSaving) root.append(el('p', 'Đang lưu thao tác…', 'feature-saving hint'));
     if (state.gameError) root.append(el('p', state.gameError, 'hint'), button('Tải lại', () => ui.loadGame(), 'secondary'));
     const data = state.gameData, catalog = state.gameCatalog;
     if (!data || !catalog) {
@@ -19,19 +20,12 @@ export function renderGame(ui, state) {
         return root;
     }
     const navigation = el('div', undefined, 'habit-navigation game-navigation');
-    const selectedPanel = state.gamePanel ?? (data.current.mode === 'battle' ? 'journey' : 'practice');
-    for (const [panel, label] of [['practice', 'Tu luyện'], ['journey', 'Hành trình'], ['library', 'Công pháp'], ['collection', 'Sưu tập']]) {
+    const selectedPanel = state.gamePanel ?? 'practice';
+    for (const [panel, label] of [['journey', 'Hành trình'], ['library', 'Công pháp'], ['collection', 'Sưu tập']]) {
         const control = button(label, () => ui.showGamePanel(panel), 'text-button');
         control.setAttribute('aria-pressed', String(selectedPanel === panel)); navigation.append(control);
     }
-    root.append(navigation);
-    if (!experiencePreferences().gameGuideDismissed && !data.currentPractice && !data.pendingPractice && data.current.mode === 'idle'
-        && !data.recent.length && !(data.victories ?? []).length && !(data.battles ?? []).length) {
-        const guide = el('aside', undefined, 'game-start-guide');
-        guide.append(el('p', 'Mới tới thư các? Một cam kết vừa sức và Võ Kỹ là đủ để bắt đầu.'),
-            button('Xem hướng dẫn', () => ui.openGameGuide(), 'text-button'), button('Để sau', () => ui.dismissGameGuide(), 'text-button'));
-        root.append(guide);
-    }
+    if (selectedPanel !== 'practice') root.append(button('‹ Thần Lộ', () => ui.showGamePanel('practice'), 'text-button feature-back'), navigation);
     if (selectedPanel === 'journey') { root.append(renderJourney(ui, data, catalog, state.gameChapter)); return root; }
     if (selectedPanel === 'collection') { root.append(renderGameCollection(ui, data, catalog)); return root; }
     if (state.gamePanel === 'library') {
@@ -82,38 +76,54 @@ export function renderGame(ui, state) {
     const version = data.currentPractice?.practice;
     const practice = card('practice-card');
     if (data.current.mode === 'battle') {
-        practice.append(el('h2', 'Đang xuất chiến'), el('p', 'Luyện tạm dừng trong trận. Cam kết tuần đã dùng để luyện vẫn chốt khi đến hạn.', 'technique-description'), button('Mở trận hiện tại', () => ui.showGamePanel('journey'), 'primary'));
-        root.append(practice); return root;
+        root.append(renderJourney(ui, data, catalog, state.gameChapter, true), navigation); return root;
     }
     if (!version) {
         const intro = el('div', undefined, 'practice-intro'), portrait = el('img');
-        portrait.src = './assets/than-lo/tich-van-thumb.webp'; portrait.width = 64; portrait.height = 64; portrait.alt = 'Tịch Vân, người giữ thư các'; portrait.loading = 'lazy';
-        const copy = el('div'); copy.append(el('p', 'TỊCH VÂN · THƯ CÁC', 'eyebrow'), el('h2', data.pending ? 'Ngày mai bắt đầu nhé' : 'Chọn một môn để bắt đầu'));
-        intro.append(portrait, copy); practice.append(intro, el('p', 'Một habit vừa sức là đủ. Mỗi ngày đạt cam kết, cậu tiến thêm một chút; công pháp có thể dùng từ Nhập môn.', 'technique-description'), button(data.pending ? 'Đổi lựa chọn' : 'Chọn công pháp', () => ui.showGamePanel('library'), 'primary'));
+        portrait.src = './assets/than-lo/tich-van-thumb.webp'; portrait.width = 80; portrait.height = 100; portrait.alt = 'Tịch Vân, người giữ thư các';
+        const copy = el('div'); copy.append(el('p', 'TỊCH VÂN · THƯ CÁC', 'eyebrow'), el('h2', data.pending ? 'Đã sẵn sàng cho ngày mai' : 'Hành trình của cậu bắt đầu ở đây'));
+        intro.append(portrait, copy); practice.append(intro, el('p', data.pending ? 'Lựa chọn đã lưu. Từ ngày sinh hoạt kế tiếp, cam kết đạt mục tiêu sẽ góp vào hành trình.' : 'Luyện công pháp từ những thói quen hằng ngày, rồi mang thành quả vào các trận chiến.', 'technique-description'));
+        if (!data.pending) {
+            const first = catalog.bosses.find(boss => !(data.victories ?? []).includes(boss.id) && boss.requires.every(id => (data.victories ?? []).includes(id)) && !(boss.practicePrerequisites ?? []).length);
+            if (first) practice.append(button('Thử trận đầu', () => ui.prepareBoss(first), 'primary'));
+        }
+        practice.append(button(data.pending ? 'Đổi lựa chọn' : 'Chọn công pháp', () => ui.showGamePanel('library'), 'secondary'));
+        if (!experiencePreferences().gameGuideDismissed && !data.pending && !data.recent.length && !(data.victories ?? []).length && !(data.battles ?? []).length) {
+            const guide = el('aside', undefined, 'game-start-guide');
+            guide.append(el('p', 'Trận đầu có thể dùng Võ Kỹ, chưa cần luyện công pháp.'), button('Xem hướng dẫn', () => ui.openGameGuide(), 'text-button'), button('Để sau', () => ui.dismissGameGuide(), 'text-button'));
+            practice.append(guide);
+        }
     } else {
         const technique = catalog.techniques.find(technique => technique.id === version.techniqueId);
-        practice.append(el('p', 'BẢN ' + version.edition, 'eyebrow'), el('h2', technique?.name ?? version.techniqueId), el('p', practiceStatus(version), 'practice-state'));
+        const title = el('div', undefined, 'technique-heading'), name = el('div');
+        name.append(el('p', 'TU LUYỆN · BẢN ' + version.edition, 'eyebrow'), el('h2', technique?.name ?? version.techniqueId));
+        title.append(name, techniqueSymbol(version.techniqueId, 48)); practice.append(title, el('p', practiceStatus(version), 'practice-state'));
         if (version.tiers.length < 4) {
             const max = version.costsMilli[version.tiers.length], progress = el('progress');
             progress.max = max; progress.value = version.progressMilli; progress.setAttribute('aria-label', 'Tiến độ tầng đang luyện');
             practice.append(progress, el('p', practiceNumber(version.progressMilli) + ' / ' + practiceNumber(max) + ' tiến độ', 'practice-count'));
         }
+        if (version.pendingWeeks.length) practice.append(el('p', version.progressMilli >= version.costsMilli[version.tiers.length]
+            ? 'Tầng này chờ chốt tinh thuần khi cam kết tuần kết thúc hoặc đạt đủ số ngày.'
+            : 'Tinh thuần của tầng này còn phụ thuộc cam kết tuần đang diễn ra.', 'practice-wait-note'));
+        const levels = el('details', undefined, 'practice-levels'); levels.append(el('summary', 'Các tầng & tinh thuần'));
         const tiers = el('div', undefined, 'practice-tier-list');
         for (let index = 0; index < 4; index++) {
             const locked = version.tiers[index], item = el('div');
-            item.append(el('span', practiceTiers[index]), el('strong', locked ? purityLabel(locked.purityBp) : 'Chưa chốt')); tiers.append(item);
+            item.append(el('span', practiceTiers[index]), el('strong', locked ? purityLabel(locked.purityBp) : index === version.tiers.length ? 'Đang luyện' : 'Chưa tới')); tiers.append(item);
         }
-        practice.append(tiers);
-        if (version.pendingWeeks.length) practice.append(el('p', 'Tinh thuần còn chờ cam kết tuần. Đổi môn hoặc dừng luyện vẫn giữ nghĩa vụ của tuần này.', 'hint'));
+        levels.append(tiers); practice.append(levels);
+        if (version.tiers.length) practice.append(el('p', practiceTiers[version.tiers.length - 1] + ' · tinh thuần ' + purityLabel(version.tiers.at(-1).purityBp), 'practice-quality'));
         const actions = el('div', undefined, 'actions'); actions.append(button('Đổi môn / bản', () => ui.showGamePanel('library'), 'secondary'), button('Dừng luyện', () => ui.stopPractice(), 'text-button')); practice.append(actions);
     }
     root.append(practice);
     const goal = nearestGameGoal(data, catalog), returning = returnGameSummary(data);
     if (returning) root.append(el('p', returning, 'hint game-return-summary'));
-    if (goal) {
+    if (goal && (version || (data.victories ?? []).length || (data.battles ?? []).length)) {
         const next = el('aside', undefined, 'game-next-step');
-        next.append(el('p', 'BƯỚC TIẾP THEO', 'eyebrow'), el('h3', goal.title), el('p', goal.description, 'hint'),
-            button(goal.action, () => ui.followGameGoal(goal), 'text-button'));
+        next.append(el('p', 'BƯỚC TIẾP THEO', 'eyebrow'), el('h3', goal.title));
+        if (!(version?.pendingWeeks.length && version.progressMilli >= version.costsMilli[version.tiers.length])) next.append(el('p', goal.description, 'hint'));
+        next.append(button(goal.action, () => ui.followGameGoal(goal), 'text-button'));
         root.append(next);
     }
     if (data.recent.length) {
@@ -128,5 +138,6 @@ export function renderGame(ui, state) {
         }
         root.append(history);
     }
+    root.append(navigation);
     return root;
 }

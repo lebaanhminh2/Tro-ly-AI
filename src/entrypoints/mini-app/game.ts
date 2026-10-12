@@ -48,9 +48,15 @@ export async function readGame({ env, owner, now }: MiniAppContext, url: URL): P
     }
     // Opportunistic bounded closure, based only on already immutable outcomes.
     // No model calls or client-controlled clock/day and no chosen action added.
+    const started = performance.now();
     await store.settle(owner, now, 1);
+    const settled = performance.now();
     const game = await store.read(owner, now);
-    return json({ now, ...game, ...await battles.overview(owner, game.day) });
+    const read = performance.now();
+    const battle = await battles.overview(owner, game.day);
+    const response = json({ now, ...game, ...battle });
+    response.headers.set('Server-Timing', `settle;dur=${(settled - started).toFixed(1)}, practice;dur=${(read - settled).toFixed(1)}, battle;dur=${(performance.now() - read).toFixed(1)}`);
+    return response;
 }
 export async function handleGame({ env, owner, now }: MiniAppContext, input: MiniAppInput): Promise<Response> {
     const { id, ...command } = input;

@@ -7,12 +7,20 @@ import { techniqueSymbol } from '../ui/game-art.js';
 export function createGameActions(context) {
     const { state, runtime, render, toast, openSheet, sheet, sheetContent, confirm, performLive } = context;
     let generation = 0;
-    async function loadGame() {
+    let loading, loadingRevision;
+    function loadGame({ catalogOnly = false } = {}) {
+        if (loading && loadingRevision === runtime.revision) return loading;
+        loadingRevision = runtime.revision;
+        const request = fetchGame(catalogOnly).finally(() => { if (loading === request) loading = null; });
+        loading = request;
+        return request;
+    }
+    async function fetchGame(catalogOnly) {
         const request = ++generation, revision = runtime.revision;
         state.gameLoading = true; state.gameError = null; render();
         try {
             if (!state.live) return;
-            const [data, catalog] = await Promise.all([liveRequest('game'), state.gameCatalog ? Promise.resolve(state.gameCatalog) : liveRequest('game-catalog')]);
+            const [data, catalog] = await Promise.all([catalogOnly && state.gameData ? Promise.resolve(state.gameData) : liveRequest('game'), state.gameCatalog ? Promise.resolve(state.gameCatalog) : liveRequest('game-catalog')]);
             if (request !== generation || revision !== runtime.revision) return;
             state.gameData = data; state.gameCatalog = catalog;
         } catch (error) {
@@ -76,7 +84,8 @@ export function createGameActions(context) {
             if (!sheet.open || !body.isConnected) return;
             hint.remove();
             body.append(el('p', 'Chọn luyện có hiệu lực từ ' + habitDate(expected.day + 1) + '. Habit đạt mục tiêu mới góp tiến độ; tinh thuần chốt khi hoàn tất tầng và cam kết tuần.', 'hint'));
-            const list = el('div', undefined, 'practice-version-history'); body.append(list);
+            const editions = el('details', undefined, 'technique-edition-details'); editions.append(el('summary', 'Các bản luyện đã có'));
+            const list = el('div', undefined, 'practice-version-history'); editions.append(list); body.append(editions);
             function appendVersion(stored) {
                 const version = stored.practice, row = el('section', undefined, 'practice-version-row');
                 row.append(el('strong', 'Bản ' + version.edition), el('p', practiceStatus(version), 'hint'));
@@ -91,7 +100,15 @@ export function createGameActions(context) {
                 if (history.versions.length) confirm('Luyện lại từ Nhập môn?', 'Bản mới bắt đầu từ tầng 1 để cải thiện tinh thuần. Các bản cũ và chất lượng đã chốt được giữ nguyên.', () => save(input));
                 else save(input);
             }, 'primary');
-            body.append(el('p', 'Bốn tầng: ' + [3, 6, 10, 15].map(value => practiceNumber(value * technique.trainingFactor)).join(' / ') + ' tiến độ.', 'hint'), create);
+            body.insertBefore(create, sources);
+            const effective = el('p', 'Áp dụng từ ' + habitDate(expected.day + 1) + '.', 'technique-effective'); body.insertBefore(effective, sources);
+            if (history.versions.length) {
+                const latest = history.versions.find(entry => entry.practice.tiers.length < 4);
+                if (latest) body.insertBefore(button('Tiếp tục bản ' + latest.practice.edition, () => save({ operation: 'continue_practice', ...expected, practiceId: latest.practice.id }), 'secondary'), create);
+            }
+            const explanation = el('details', undefined, 'technique-formula'); explanation.append(el('summary', 'Tiến độ & cách tính'),
+                el('p', 'Bốn tầng: ' + [3, 6, 10, 15].map(value => practiceNumber(value * technique.trainingFactor)).join(' / ') + ' tiến độ.', 'hint'));
+            body.append(explanation);
             if (history.next) {
                 let cursor = history.next;
                 const more = button('Xem thêm bản cũ', async () => {

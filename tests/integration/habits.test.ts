@@ -50,6 +50,9 @@ test('habit list keeps a fixed D1 query budget at 30 active habits and projects 
         assert.equal(data.habits.length, 30);
         assert.ok(data.habits.every(view => view.preview!.misses === 1 && view.preview!.period.completedDays.length === 1));
         assert.ok(queries <= 25, 'Full habit load including schedule reads must leave headroom below 50: ' + queries);
+        queries = 0;
+        assert.deepEqual(await new D1HabitStore(measured).today('123', monday + 5 * DAY, true), data);
+        assert.ok(queries <= 6, 'An initialized day needs at most six bounded reads for all 30 habits: ' + queries);
     } finally { await mf.dispose(); }
 });
 

@@ -45,16 +45,34 @@ export class D1GameStore implements GameStore {
     }
     async read(owner: string, now: number, readOnly = false): Promise<GameOverview> {
         const day = await this.day(owner, now, readOnly);
-        const [account, current, pending, owned, audits, recent] = await Promise.all([
-            this.account(owner), this.selected(owner, day.day), this.pending(owner, day.day), this.owned(owner),
-            query(this.db, 'SELECT state_json FROM practice_week_audits WHERE owner=? AND closed_day IS NULL ORDER BY end_day,habit_id LIMIT 30', owner).all<{ state_json: string }>(),
-            query(this.db, 'SELECT day,mode,result_json FROM game_days WHERE owner=? ORDER BY day DESC LIMIT 7', owner).all<{ day: number; mode: string; result_json: string }>(),
-        ]);
-        const [currentPractice, pendingPractice] = await Promise.all([this.practice(owner, current.practiceId), this.practice(owner, pending?.practiceId ?? null)]);
+        // One bounded snapshot replaces the dependent selection/version reads.
+        // All fields observe the same database statement, including the selected editions.
+        const snapshot = await query(this.db, `SELECT * FROM (WITH
+            current_selection AS (SELECT * FROM game_selections WHERE owner=? AND from_day<=? ORDER BY from_day DESC LIMIT 1),
+            pending_selection AS (SELECT * FROM game_selections WHERE owner=? AND from_day>? ORDER BY from_day LIMIT 1)
+            SELECT
+            (SELECT json_object('version',version,'nextDay',next_day) FROM game_accounts WHERE owner=?) AS account,
+            (SELECT json_object('fromDay',from_day,'mode',mode,'practiceId',practice_id,'battleId',battle_id) FROM current_selection) AS current,
+            (SELECT json_object('fromDay',from_day,'mode',mode,'practiceId',practice_id,'battleId',battle_id) FROM pending_selection) AS pending,
+            (SELECT json_group_array(technique_id) FROM (SELECT technique_id FROM technique_unlocks WHERE owner=? ORDER BY technique_id LIMIT 50)) AS owned,
+            (SELECT json_group_array(json(state_json)) FROM (SELECT state_json FROM practice_week_audits WHERE owner=? AND closed_day IS NULL ORDER BY end_day,habit_id LIMIT 30)) AS audits,
+            (SELECT json_group_array(json_object('day',day,'mode',mode,'result',json(result_json))) FROM (SELECT day,mode,result_json FROM game_days WHERE owner=? ORDER BY day DESC LIMIT 7)) AS recent,
+            (SELECT json_object('id',id,'state_json',state_json,'version',version,'created',created) FROM practice_versions WHERE owner=? AND id=(SELECT practice_id FROM current_selection)) AS current_practice,
+            (SELECT json_object('id',id,'state_json',state_json,'version',version,'created',created) FROM practice_versions WHERE owner=? AND id=(SELECT practice_id FROM pending_selection)) AS pending_practice)`,
+            owner, day.day, owner, day.day, owner, owner, owner, owner, owner, owner)
+            .first<{ account: string | null; current: string | null; pending: string | null; owned: string; audits: string; recent: string;
+                current_practice: string | null; pending_practice: string | null }>();
+        if (!snapshot) throw Error('GAME_SNAPSHOT_UNAVAILABLE');
+        const account = snapshot.account ? JSON.parse(snapshot.account) as { version: number; nextDay: number } : null;
+        const current = snapshot.current ? JSON.parse(snapshot.current) as GameSelection : idle(day.day);
+        const pending = snapshot.pending ? JSON.parse(snapshot.pending) as GameSelection : null;
+        const owned = [...new Set([...INITIAL_TECHNIQUES, ...JSON.parse(snapshot.owned) as string[]])];
+        const currentPractice = snapshot.current_practice ? stored(JSON.parse(snapshot.current_practice) as VersionRow) : null;
+        const pendingPractice = snapshot.pending_practice ? stored(JSON.parse(snapshot.pending_practice) as VersionRow) : null;
         return { day, version: account?.version ?? 0, current, pending, currentPractice, pendingPractice, owned,
-            settledThrough: account ? account.next_day - 1 : null,
-            audits: audits.results.map(row => JSON.parse(row.state_json) as PracticeWeek),
-            recent: recent.results.map(row => ({ day: row.day, mode: row.mode, result: JSON.parse(row.result_json) as Record<string, unknown> })) };
+            settledThrough: account ? account.nextDay - 1 : null,
+            audits: JSON.parse(snapshot.audits) as PracticeWeek[],
+            recent: JSON.parse(snapshot.recent) as GameOverview['recent'] };
     }
     async versions(owner: string, techniqueId: string, before: string | null, limit: number) {
         techniqueById(techniqueId);

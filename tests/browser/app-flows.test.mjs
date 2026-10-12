@@ -273,6 +273,11 @@ async function serve(control, baseline) {
                     response.end(JSON.stringify({ error: 'AUTH_REQUIRED' }));
                     return;
                 }
+                if (request.method === 'GET' && control.readDelays?.[endpoint]) await delay(control.readDelays[endpoint]);
+                if (request.method === 'GET' && control.failedReads?.has(endpoint)) {
+                    response.statusCode = 503;
+                    response.end(JSON.stringify({ error: 'OPERATION_NOT_CONFIRMED' })); return;
+                }
                 if (endpoint === 'bootstrap') {
                     if (control.failBootstrap) {
                         response.statusCode = 503;
@@ -570,6 +575,115 @@ test('six habits and game screens remain usable with large text, keyboard and a 
         assert.equal(control.posts.length, writes, 'Navigation, accessibility checks and recovery do not write personal data');
         assert.deepEqual(browser.errors, []);
         if (process.env.UI_SCREENSHOT_DIR) await writeFile(join(process.env.UI_SCREENSHOT_DIR, 'f6-ui-network-metrics.json'), JSON.stringify({ fixture: 'localhost, Chrome emulation, 150ms latency/100KiB per second, synthetic text 200%; no device or remote latency claim', measurements }, null, 2));
+    } finally { if (browser) await browser.close(); await server.close(); }
+});
+
+test('feature tabs coalesce reads, show cached rows immediately and reconcile a habit without bootstrap or blocking navigation', { skip: !browserBin, timeout: 60000 }, async () => {
+    const control = fixture();
+    for (let index = 0; index < 8; index++) control.mutate('habits', { id: 'ux_seed_' + index, operation: 'create',
+        definition: { name: 'Thói quen ' + (index + 1), metric: 'check', target: 1, cadence: { kind: 'daily' } } });
+    const server = await serve(control); let browser;
+    try {
+        browser = await chrome(); await browser.navigate(server.url, 390); await browser.wait("!!document.querySelector('.focus-flip-card')");
+        control.readDelays = { habits: 650, game: 650 };
+        const start = control.calls.length;
+        await browser.evaluate("document.querySelector('[data-tab=habits]').click();document.querySelector('[data-tab=habits]').click()");
+        await browser.wait("document.querySelectorAll('.habit-card').length===8 && !document.querySelector('.feature-updating')");
+        assert.deepEqual(control.calls.slice(start), ['GET habits']);
+        const transitionCalls = control.calls.slice(start);
+        await browser.evaluate("window.scrollTo(0,300)"); const scroll = await browser.evaluate('scrollY');
+        assert.ok(scroll > 100);
+        await browser.tap('[data-tab=game]'); await browser.wait("!!document.querySelector('.practice-intro')");
+        const returning = await browser.evaluate("(() => {const started=performance.now();document.querySelector('[data-tab=habits]').click();return {elapsed:performance.now()-started,rows:document.querySelectorAll('.habit-card').length,scroll:scrollY}})()");
+        assert.equal(returning.rows, 8); assert.ok(returning.elapsed < 200, 'Cached screen renders within 200 ms in this localhost fixture');
+        assert.ok(Math.abs(returning.scroll - scroll) <= 2, 'Returning keeps the habit list position');
+        await browser.wait("!document.querySelector('.feature-updating')");
+        control.failBootstrap = true; const writes = control.posts.length, savingStart = control.calls.length;
+        await browser.evaluate("document.querySelector('.habit-check').click()");
+        await browser.wait("document.querySelector('.habit-check[aria-busy=true]')?.textContent==='Đang lưu…'");
+        assert.equal(await browser.evaluate("[...document.querySelectorAll('.bottom-nav button')].some(button=>button.disabled)"), false);
+        await browser.tap('[data-tab=game]');
+        await browser.wait("document.querySelector('.practice-intro') && !document.querySelector('.feature-saving')");
+        await browser.tap('[data-tab=habits]');
+        await browser.wait("document.querySelector('.habit-check')?.getAttribute('aria-pressed')==='true'");
+        assert.equal(control.posts.length, writes + 1);
+        assert.equal(control.calls.slice(savingStart).includes('GET bootstrap'), false);
+        assert.equal(control.calls.slice(savingStart).includes('GET history'), false);
+        assert.equal(control.habits.habits[0].log.value, 100); assert.deepEqual(browser.errors, []);
+        if (process.env.UX_BASELINE_REF) {
+            const original = fixture();
+            for (let index = 0; index < 8; index++) original.mutate('habits', { id: 'ux_seed_' + index, operation: 'create',
+                definition: { name: 'Thói quen ' + (index + 1), metric: 'check', target: 1, cadence: { kind: 'daily' } } });
+            const baseline = await serve(original, process.env.UX_BASELINE_REF);
+            try {
+                await browser.navigate(baseline.url, 390); await browser.wait("!!document.querySelector('.focus-flip-card')");
+                const baselineStart = original.calls.length;
+                await browser.evaluate("document.querySelector('[data-tab=habits]').click();document.querySelector('[data-tab=habits]').click()");
+                await browser.wait("document.querySelectorAll('.habit-card').length===8");
+                const beforeCalls = original.calls.slice(baselineStart);
+                assert.ok(beforeCalls.filter(call => call === 'GET habits').length > transitionCalls.length);
+                assert.ok(beforeCalls.includes('GET bootstrap'));
+                if (process.env.UI_SCREENSHOT_DIR) await writeFile(join(process.env.UI_SCREENSHOT_DIR, 'ux-request-comparison.json'), JSON.stringify({
+                    fixture: 'Localhost Chrome 390px; identical eight-habit seed; two consecutive tab clicks; no remote/device timing claim',
+                    baselineRef: process.env.UX_BASELINE_REF, beforeCalls, afterCalls: transitionCalls,
+                    cachedRenderMs: returning.elapsed, scrollRestored: Math.abs(returning.scroll - scroll) <= 2,
+                    saveCalls: control.calls.slice(savingStart), bootstrapUnavailableDuringSave: true,
+                }, null, 2));
+            } finally { await baseline.close(); }
+        }
+    } finally { if (browser) await browser.close(); await server.close(); }
+});
+
+test('acknowledged habit refresh failures reconcile before the next log and old reads cannot restore a logged-out screen', { skip: !browserBin, timeout: 60000 }, async () => {
+    const control = fixture(); control.mutate('habits', { id: 'recovery_seed', operation: 'create',
+        definition: { name: 'Thiền', metric: 'check', target: 1, cadence: { kind: 'daily' } } });
+    const healthy = clone(control.state.account), server = await serve(control); let browser;
+    try {
+        browser = await chrome(); await browser.navigate(server.url, 390); await browser.wait("!!document.querySelector('.focus-flip-card')");
+        await browser.tap('[data-tab=habits]'); await browser.wait("!!document.querySelector('.habit-check')");
+        const before = control.posts.length;
+        control.failedReads = new Set(['habits']); await browser.evaluate("document.querySelector('.habit-check').click()");
+        await browser.wait("document.querySelector('#toast').textContent.includes('Đã lưu trên server')");
+        assert.equal(control.posts.length, before + 1); assert.equal(control.habits.habits[0].log.version, 1);
+        assert.equal(await browser.evaluate("document.querySelector('.habit-check').getAttribute('aria-pressed')"), 'false', 'The failed refresh cannot fabricate a new authoritative log');
+        control.failedReads.clear(); await browser.tap('[data-tab=game]'); await browser.wait("!!document.querySelector('.practice-intro')");
+        await browser.tap('[data-tab=habits]'); await browser.wait("document.querySelector('.habit-check')?.getAttribute('aria-pressed')==='true'");
+        assert.equal(control.posts.length, before + 1, 'Reconciliation is read-only');
+        await browser.evaluate("document.querySelector('.habit-check').click()");
+        await browser.wait("document.querySelector('.habit-check')?.getAttribute('aria-pressed')==='false'");
+        assert.equal(control.habits.habits[0].log.version, 2); assert.deepEqual(control.state.account, healthy);
+        await browser.evaluate("window.holdHabitRead=true;const savedFetch=fetch;window.fetch=(url,init)=>savedFetch(url,init).then(async response=>{if(String(url).startsWith('/api/habits')&&init.method==='GET'&&window.holdHabitRead){await new Promise(resolve=>window.releaseHabitRead=resolve)}return response});document.querySelector('[data-tab=habits]').click()");
+        await browser.wait("typeof window.releaseHabitRead==='function'");
+        await browser.click('Đăng xuất'); await browser.wait("!!document.querySelector('.browser-login')");
+        await browser.evaluate("window.holdHabitRead=false;window.releaseHabitRead()");
+        await delay(120);
+        assert.equal(await browser.evaluate("document.querySelectorAll('.habit-card').length"), 0);
+        assert.equal(await browser.evaluate("!!document.querySelector('.browser-login')"), true);
+        assert.deepEqual(browser.errors, []);
+    } finally { if (browser) await browser.close(); await server.close(); }
+});
+
+test('an acknowledged feature write cannot restore the previous account snapshot after an authentication change', { skip: !browserBin, timeout: 60000 }, async () => {
+    const control = fixture(); control.mutate('habits', { id: 'private_seed', operation: 'create',
+        definition: { name: 'Habit của phiên trước', metric: 'check', target: 1, cadence: { kind: 'daily' } } });
+    const server = await serve(control); let browser;
+    try {
+        browser = await chrome(); await browser.navigate(server.url, 390); await browser.wait("!!document.querySelector('.focus-flip-card')");
+        await browser.tap('[data-tab=habits]'); await browser.wait("!!document.querySelector('.habit-check')");
+        await browser.evaluate("window.holdSavedSnapshot=true;const originalFetch=fetch;window.fetch=(url,init)=>originalFetch(url,init).then(async response=>{if(String(url).startsWith('/api/habits')&&init.method==='GET'&&window.holdSavedSnapshot){await new Promise(resolve=>window.releaseSavedSnapshot=resolve)}return response});document.querySelector('.habit-check').click()");
+        await browser.wait("typeof window.releaseSavedSnapshot==='function'");
+        assert.equal(await browser.evaluate("document.querySelector('#logout').disabled"), true, 'Auth changes stay serialized with a write; read navigation remains available');
+        // Force an auth transition to model a session changed outside this pending control.
+        // The controller must also discard its response, rather than relying only on disabled UI.
+        await browser.evaluate("document.querySelector('#logout').disabled=false;document.querySelector('#logout').click()");
+        await browser.wait("!!document.querySelector('.browser-login')");
+        await browser.evaluate("window.holdSavedSnapshot=false;window.releaseSavedSnapshot()");
+        await delay(120); control.habits.habits = []; control.authenticated = true;
+        await browser.click('Lấy mã đăng nhập'); await browser.wait("!!document.querySelector('.habits-page')");
+        assert.equal(await browser.evaluate("document.querySelectorAll('.habit-card').length"), 0, 'The old acknowledged response cannot populate the new session');
+        await browser.tap('[data-tab=habits]'); await browser.wait("!document.querySelector('[aria-busy=true]')");
+        assert.equal(await browser.evaluate("document.querySelectorAll('.habit-card').length"), 0);
+        assert.deepEqual(browser.errors, []);
     } finally { if (browser) await browser.close(); await server.close(); }
 });
 
@@ -976,9 +1090,9 @@ test('returning player sees the real next goal, opens its screen and habit audit
         // tracking. Navigation itself never fills a log or changes practice.
         control.game.currentPractice.practice.tiers = []; control.game.currentPractice.practice.progressMilli = 3000;
         control.game.currentPractice.practice.pendingWeeks = ['audit_week'];
-        await browser.tap('[data-tab=game]'); await browser.click('Tu luyện');
+        await browser.tap('[data-tab=game]'); await browser.click('‹ Thần Lộ');
         await browser.wait("document.querySelector('.game-next-step h3').textContent==='Tới Nhập môn'");
-        assert.equal(await browser.evaluate("document.querySelector('.game-next-step').textContent.includes('cam kết tuần')"), true);
+        assert.equal(await browser.evaluate("document.querySelector('.practice-wait-note').textContent.includes('cam kết tuần')"), true);
         await browser.click('Xem thói quen'); await browser.wait("!!document.querySelector('.habits-page')");
         assert.equal(control.posts.length, 0); assert.deepEqual(browser.errors, []);
     } finally { if (browser) await browser.close(); await server.close(); }
@@ -1114,7 +1228,11 @@ test('habit mobile flow creates three cadences, edits quantity without duplicate
         assert.equal(control.habits.habits[1].log.value, 1500);
         assert.equal(control.habits.habits[1].preview.successes, 0);
         assert.equal(await browser.evaluate("document.querySelectorAll('.habit-note img').length"), 0);
-        await browser.click('Xếp thời gian', '.habit-card button');
+        await browser.click('Đọc sách', '.habit-name');
+        await browser.wait("!!document.querySelector('.habit-detail')");
+        assert.equal(await browser.evaluate("document.querySelector('.habit-note').textContent"), '<img src=x onerror=alert(1)>');
+        assert.equal(await browser.evaluate("document.querySelectorAll('.habit-note img').length"), 0);
+        await browser.click('Xếp thời gian', '.habit-detail button');
         await browser.evaluate("document.querySelector('.habit-form input[type=time]').value='12:00';document.querySelector('.habit-form input[type=number]').value='20';document.querySelector('.habit-form').requestSubmit()");
         await browser.wait("!document.querySelector('#sheet').open");
         assert.equal(control.habits.habits[1].slot.minutes, 20);
@@ -1137,10 +1255,12 @@ test('habit mobile flow creates three cadences, edits quantity without duplicate
             if (process.env.WEB_TEST_SCREENSHOT_PATH) await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, '-habits-' + width + '.png'));
         }
         await browser.resize(320, 460);
-        await browser.evaluate("document.querySelector('.habit-card .icon-button').click();document.querySelector('.habit-form').scrollTop=9999");
+        await browser.evaluate("document.querySelector('.habit-card .icon-button').click()");
+        await browser.click('Chỉnh thói quen');
+        await browser.evaluate("document.querySelector('.habit-form').scrollTop=9999");
         assert.equal(await browser.evaluate("(() => {const r=document.querySelector('[data-sheet-close]').getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight})()"), true);
         await browser.tap('[data-sheet-close]');
-        await browser.click('Nhịp đã qua', '#content button');
+        await browser.click('Lịch sử & báo cáo', '#content button');
         await browser.wait("!!document.querySelector('.habit-history-tools')");
         await browser.wait("!!document.querySelector('.habit-report')");
         await browser.resize(390, 844);

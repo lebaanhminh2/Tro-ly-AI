@@ -38,7 +38,12 @@ export async function activeTaskPage(offset = 0) {
     const page = response.result ?? {};
     return { ...page, items: (page.items ?? []).map(task => mapTask(task)) };
 }
-export async function refreshLive({ includeHistory = true, activeOffset = 0, includeHabits = false, includeGame = false } = {}) {
+export async function refreshLive({ includeHistory = true, activeOffset = 0, includeHabits = false, includeGame = false, scope = 'all' } = {}) {
+    if (scope === 'game-presets') return { gamePresetData: await liveRequest('game-presets') };
+    if (scope === 'habits' || scope === 'game') {
+        const data = await liveRequest(scope === 'habits' ? 'habits?archived=1' : 'game');
+        return { [scope === 'habits' ? 'habitData' : 'gameData']: data, baseDirty: true };
+    }
     // Start independent reads together; history errors still do not block bootstrap.
     const historyRequest = includeHistory ? historyPage(0).catch(() => null) : Promise.resolve(null);
     const habitsRequest = includeHabits ? liveRequest('habits?archived=1') : Promise.resolve(null);
@@ -83,7 +88,7 @@ export async function refreshLive({ includeHistory = true, activeOffset = 0, inc
         cultivation: mapAccount(data.account, data.day?.day),
         ...(includeHabits ? { habitData } : {}),
         ...(includeGame ? { gameData } : {}),
-        day: data.day, operatingDay: data.day?.day ?? null, dailyPlan: data.dailyPlan, taskFocus: data.taskFocus ?? null, taskFocusTarget: data.taskFocusTarget ?? null, timeline: data.timeline, loadedAt: Date.now(), progress: data.progress, sessions: data.sessions, events: data.events
+        day: data.day, operatingDay: data.day?.day ?? null, dailyPlan: data.dailyPlan, taskFocus: data.taskFocus ?? null, taskFocusTarget: data.taskFocusTarget ?? null, timeline: data.timeline, loadedAt: Date.now(), progress: data.progress, sessions: data.sessions, events: data.events, baseDirty: false
     };
 }
 export async function liveMutation(path, input, options = {}) {

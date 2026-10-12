@@ -38,6 +38,10 @@ test('practice selection is tomorrow-only, retry is canonical across closure, an
         const current = await game.read('123', monday);
         assert.equal(current.current.mode, 'idle'); assert.equal(current.pending!.fromDay, day + 1);
         assert.equal(current.pending!.practiceId, result.practiceId);
+        let reads = 0;
+        const measured: Database = { prepare: sql => { reads++; return db.prepare(sql); }, batch: items => db.batch(items) };
+        assert.deepEqual(await new D1GameStore(measured).read('123', monday), current);
+        assert.ok(reads <= 3, 'Schedule plus the complete selected-edition snapshot needs at most three reads: ' + reads);
         assert.deepEqual(await service.execute('123', id, { techniqueId: 'kiem-y', version: 0, day, operation: 'start_practice' }, monday + DAY), result);
         await assert.rejects(service.execute('123', id, { ...input, techniqueId: 'kim-than' }, monday), /REQUEST_ID_REUSED/);
         assert.equal((await game.versions('123', 'kiem-y', null, 20)).versions.length, 1);

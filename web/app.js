@@ -27,7 +27,7 @@ const actions = {};
 const forward = {};
 for (const name of ['loadGame', 'showGamePanel', 'openTechnique', 'selectGameSchool', 'stopPractice', 'followGameGoal', 'chooseBattle', 'cancelBattle', 'withdrawBattle', 'rescueBattle', 'acceptBattleDeath', 'prepareBoss', 'openBattleHistory', 'openBattleExchange', 'openGameChapter', 'selectGameChapter', 'openBattleArchive', 'openGameGuide', 'dismissGameGuide', 'openGameExport'])
     forward[name] = (...args) => actions[name](...args);
-for (const name of ['loadHabits', 'openHabit', 'openHabitLog', 'openHabitSlot', 'showHabitInList', 'toggleHabit', 'setHabitFilter', 'showHabitPanel', 'loadHabitHistory', 'setHabitReportSpan', 'setHabitHistoryStatus', 'exportHabits', 'openHabitExport'])
+for (const name of ['loadHabits', 'openHabit', 'openHabitDetails', 'openHabitLog', 'openHabitSlot', 'showHabitInList', 'toggleHabit', 'setHabitFilter', 'showHabitPanel', 'loadHabitHistory', 'setHabitReportSpan', 'setHabitHistoryStatus', 'exportHabits', 'openHabitExport'])
     forward[name] = (...args) => actions[name](...args);
 forward.loadActiveTasks = (...args) => actions.loadActiveTasks(...args);
 forward.renderSleepControls = (...args) => actions.renderSleepControls(...args);
@@ -86,10 +86,8 @@ for (const b of document.querySelectorAll('[data-tab]'))
         state.tab = b.dataset.tab;
         state.screenState = 'ready';
         actions.render();
-        if (state.tab === 'habits') actions.loadHabits();
-        if (state.tab === 'game') actions.loadGame();
         actions.refreshOnReturn();
-        window.scrollTo(0, 0);
+        if (state.tab !== 'habits' && state.tab !== 'game') window.scrollTo(0, 0);
     });
 if (state.live)
     actions.startConnection();
