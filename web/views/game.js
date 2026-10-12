@@ -5,6 +5,7 @@ import { renderGameCollection } from './game-collection.js';
 import { matchingTechniques } from '../models/game-library.js';
 import { experiencePreferences } from '../core/experience.js';
 import { techniqueSymbol } from '../ui/game-art.js';
+import { nearestGameGoal, returnGameSummary } from '../models/game-goal.js';
 
 export function renderGame(ui, state) {
     const { el, button, card, heading } = ui, root = el('section', undefined, 'game-page');
@@ -107,6 +108,14 @@ export function renderGame(ui, state) {
         const actions = el('div', undefined, 'actions'); actions.append(button('Đổi môn / bản', () => ui.showGamePanel('library'), 'secondary'), button('Dừng luyện', () => ui.stopPractice(), 'text-button')); practice.append(actions);
     }
     root.append(practice);
+    const goal = nearestGameGoal(data, catalog), returning = returnGameSummary(data);
+    if (returning) root.append(el('p', returning, 'hint game-return-summary'));
+    if (goal) {
+        const next = el('aside', undefined, 'game-next-step');
+        next.append(el('p', 'BƯỚC TIẾP THEO', 'eyebrow'), el('h3', goal.title), el('p', goal.description, 'hint'),
+            button(goal.action, () => ui.followGameGoal(goal), 'text-button'));
+        root.append(next);
+    }
     if (data.recent.length) {
         const history = el('details', undefined, 'practice-recent'); history.append(el('summary', 'Những ngày đã chốt'));
         for (const day of data.recent) {

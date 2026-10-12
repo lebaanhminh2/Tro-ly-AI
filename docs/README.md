@@ -21,6 +21,7 @@ Cập nhật 2026-10-12. Docs tách **source đang có**, **sản phẩm đích*
 | [HABIT_GAME_PRODUCT](HABIT_GAME_PRODUCT.md) | Full scope, bổ sung có ích, hành trình/UI và độ mở |
 | [HABIT_GAME_HABITS](HABIT_GAME_HABITS.md) | Ghi nhận, tuần linh hoạt, quyền sửa, lifecycle/tracking/lịch |
 | [HABIT_GAME_GAMEPLAY](HABIT_GAME_GAMEPLAY.md) | Luyện, battle/cost/effects, catalog 39 và truyện 15 chương |
+| [HABIT_GAME_BALANCE](HABIT_GAME_BALANCE.md) | Mô phỏng earned imperfect/weekly/mixed, chiến thuật lặp và findings F6 |
 | [HABIT_GAME_ARCHITECTURE](HABIT_GAME_ARCHITECTURE.md) | Layers, persistence/API/time/replay/version/performance |
 | [HABIT_GAME_CREATIVE_BRIEF](HABIT_GAME_CREATIVE_BRIEF.md) | Trải nghiệm/cast/lore/style và asset inventory standards |
 | [HABIT_GAME_LOCAL_ART](HABIT_GAME_LOCAL_ART.md) | Preflight, model/backend local miễn phí, production/manifest/QA |

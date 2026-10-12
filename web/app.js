@@ -25,7 +25,7 @@ const runtime = createRuntimeState();
 const content = document.querySelector('#content'), sheet = document.querySelector('#sheet'), sheetContent = document.querySelector('#sheet-content');
 const actions = {};
 const forward = {};
-for (const name of ['loadGame', 'showGamePanel', 'openTechnique', 'selectGameSchool', 'stopPractice', 'chooseBattle', 'cancelBattle', 'withdrawBattle', 'rescueBattle', 'acceptBattleDeath', 'prepareBoss', 'openBattleHistory', 'openBattleExchange', 'openGameChapter', 'selectGameChapter', 'openBattleArchive', 'openGameGuide', 'dismissGameGuide', 'openGameExport'])
+for (const name of ['loadGame', 'showGamePanel', 'openTechnique', 'selectGameSchool', 'stopPractice', 'followGameGoal', 'chooseBattle', 'cancelBattle', 'withdrawBattle', 'rescueBattle', 'acceptBattleDeath', 'prepareBoss', 'openBattleHistory', 'openBattleExchange', 'openGameChapter', 'selectGameChapter', 'openBattleArchive', 'openGameGuide', 'dismissGameGuide', 'openGameExport'])
     forward[name] = (...args) => actions[name](...args);
 for (const name of ['loadHabits', 'openHabit', 'openHabitLog', 'openHabitSlot', 'showHabitInList', 'toggleHabit', 'setHabitFilter', 'showHabitPanel', 'loadHabitHistory', 'setHabitReportSpan', 'setHabitHistoryStatus', 'exportHabits', 'openHabitExport'])
     forward[name] = (...args) => actions[name](...args);

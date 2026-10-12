@@ -794,6 +794,42 @@ test('saved battle sets restore exact older editions across reloads, preserve co
     } finally { if (browser) await browser.close(); await server.close(); }
 });
 
+test('returning player sees the real next goal, opens its screen and habit audit without any automatic write', { skip: !browserBin, timeout: 60000 }, async () => {
+    const control = fixture(), day = control.game.day.day;
+    const practice = newPracticeVersion('return_edition', 'kiem-y', day - 10);
+    practice.tiers = [{ tier: 1, purityBp: 8000, effortMilli: 3000, defectsMilli: 375, startedDay: day - 10, lockedDay: day - 5 }];
+    control.game.current = { fromDay: day - 10, mode: 'practice', practiceId: practice.id, battleId: null };
+    control.game.currentPractice = { practice, version: 1, created: now - 86400000 * 10 };
+    control.game.learned = ['kiem-y']; control.game.victories = ['truy-lenh']; control.game.settledThrough = day - 1;
+    control.game.recent = [{ day: day - 1, mode: 'battle', result: { progressMilli: 0, directMisses: 0, weeklyMisses: 0, battle: { status: 'withdrawn', waitDays: 3 } } }];
+    const server = await serve(control); let browser;
+    try {
+        browser = await chrome(); await browser.navigate(server.url, 320); await browser.wait("!!document.querySelector('.focus-flip-card')");
+        await browser.tap('[data-tab=game]'); await browser.wait("!!document.querySelector('.game-next-step')");
+        assert.equal(await browser.evaluate("document.querySelector('.game-next-step h3').textContent"), bossById('song-nha').name);
+        assert.equal(await browser.evaluate("document.querySelector('.game-return-summary').textContent.includes('rút an toàn')"), true);
+        for (const [width, theme] of [[320, 'light'], [390, 'dark']]) {
+            await browser.resize(width, 844); await browser.evaluate("document.documentElement.dataset.theme='" + theme + "';document.querySelector('.game-next-step').scrollIntoView({block:'center'})");
+            await browser.evaluate("new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))");
+            assert.equal((await snapshot(browser)).overflow, false);
+            if (process.env.UI_SCREENSHOT_DIR) await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'f6-next-goal-' + width + '-' + theme + '.png'));
+        }
+        await browser.click('Xem thử thách');
+        await browser.wait("!!document.querySelector('.journey-boss[data-boss-id=song-nha]') && document.querySelector('.journey-chapter-picker select').value==='1'");
+        assert.equal(await browser.evaluate("document.querySelector('.journey-boss[data-boss-id=song-nha]').classList.contains('is-locked')"), false);
+        assert.equal(await browser.evaluate("document.querySelector('#sheet').open"), false);
+        // A new unfinished edition shows its real weekly audit and links to
+        // tracking. Navigation itself never fills a log or changes practice.
+        control.game.currentPractice.practice.tiers = []; control.game.currentPractice.practice.progressMilli = 3000;
+        control.game.currentPractice.practice.pendingWeeks = ['audit_week'];
+        await browser.tap('[data-tab=game]'); await browser.click('Tu luyện');
+        await browser.wait("document.querySelector('.game-next-step h3').textContent==='Tới Nhập môn'");
+        assert.equal(await browser.evaluate("document.querySelector('.game-next-step').textContent.includes('cam kết tuần')"), true);
+        await browser.click('Xem thói quen'); await browser.wait("!!document.querySelector('.habits-page')");
+        assert.equal(control.posts.length, 0); assert.deepEqual(browser.errors, []);
+    } finally { if (browser) await browser.close(); await server.close(); }
+});
+
 test('technique library searches Vietnamese without accents and opens the real unlock path without revealing future story', { skip: !browserBin, timeout: 60000 }, async () => {
     const control = fixture(), server = await serve(control); let browser;
     try {

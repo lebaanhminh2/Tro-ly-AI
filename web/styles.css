@@ -486,6 +486,11 @@ html[data-motion=reduce] *,html[data-motion=reduce] *::before,html[data-motion=r
 .technique-introduction .technique-description{margin:0;min-width:0}
 .game-school-intro{display:flex;align-items:center;gap:12px;margin:16px 0}
 .game-school-intro[hidden]{display:none}
+.game-next-step{margin-top:18px;padding:4px 2px 0}
+.game-next-step .eyebrow{margin-bottom:5px}
+.game-next-step h3{margin:0 0 6px;font-size:16px}
+.game-next-step .hint{margin:0 0 4px}
+.game-return-summary{padding:0 2px}
 .game-school-intro>img,.game-relic-art{flex:0 0 auto;border-radius:12px;object-fit:cover}
 .game-school-intro>div{min-width:0}
 .game-school-intro .hint{margin-top:4px}

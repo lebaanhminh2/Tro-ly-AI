@@ -10,13 +10,13 @@ Cập nhật 2026-10-12. Goal Habit/Thần Lộ đang active, AI tự triển kh
 
 ## Trạng thái thật
 
-- F1 commit/push `5c8d90a`, F2 `656f06d`, F3 `d766e69`, F4 `699c69a`; checkpoint F5 `72d0424` đã push, branch `review/p1-p3`; còn F5–F6/R1. Luôn kiểm git status/HEAD.
-- Habit/luyện/battle/economy chạy local; schema0031–0037. F5 có40encounters/15chương/39quyền, rewards/equipment/archive, bộ chiêu lưu đa thiết bị và thư viện tìm/đường mở. Earned perfect-daily domainfixture cả5phái đi40trận/luyện39môn; chưa chứng minh imperfect/weekly/cân bằng nhánh sớm. Toàn art/UX/vận hành chưa hoàn tất hoặc release remote. Luật tại BATTLE_RULES.
-- Full gate và targeted cases mới xem PROGRESS. Chrome mobile screenshot đã xem. Art pipeline local đã tích hợp Tịch Vân/5bosses/cảnh cửa núi và cập nhật QA; toàn inventory còn phải làm.
+- F1–F4 đã push; F5 checkpoint mới nhất `8adf336`, branch `review/p1-p3`. F6 guidance/balance đang trong worktree; kiểm git status/HEAD và PROGRESS trước nối tiếp.
+- Habit/luyện/battle/economy/bot chạy local; schema0031–0037. Đủ40encounters/15chương/39quyền/presets/discovery/export/settings.30earned imperfect/weekly/earlybranch routes và5mixed routes tới40wins;3200repeat cases tìm được chiêu spam mạnh, chưa cân bằng đạt. Xem HABIT_GAME_BALANCE.
+- Full gate checkpoint bot/art:300main+25experiments/28browser,44webmodules. Guidance browser29pass;9unit+typecheck/check:web45modules. Regression D1 hiện tại xem PROGRESS/handle; không coi gate cũ là finalrelease.
 - Phạm vi mới: habit/tracking/lịch-nhắc, luyện/chiến đấu, đủ 5 phái/39 môn/15 chương tới DIỆT THẦN, tuyến phụ/thần binh/chiến tích, cast/art/UI và vận hành. Một phái/chương đầu chỉ là cổng nội bộ.
 - Source đã có task/planner/sleep5min undo/focus/checkin/healthy/Chrome auth/reminders; giữ nguyên. Remote chưa áp migration0031–0037.
 - `72d0424` bổ sung export Thần Lộ JSON một snapshot/read-only, guide bỏ qua/mở lại, ẩn game/giảm chuyển động device-local và12asset cuối truyện. Gate290main/25experiments +27browser đạt;43webmodules. `npm test` giữ concurrency2 cho máy local; logs và giới hạn ở PROGRESS. Chưa release remote.
-- **Art session98972 đang chạy**, manifest `docs/art/branches.json`, output `D:\Tro-ly-AI-art\branches`, log `branches-remaining.log`. Poll đúng handle trước khi chạy GPU khác. Sáu portrait tuyến phụ đã xem/chọn nhưng chưa publish; bảy nguồn còn lại đang tạo. Thần Sổ v1/v2/v3 bị loại, v4 chưa tạo; `relics.json` còn artwork thần binh/năm phái. Art01–15 và phần lớn boss chính đã tích hợp; dark/320/toàn crop QA còn F6.
+- Không artprocess live. Finals toàn40encounters/15cảnh/nămphái/baweapon và39symbols đã publish/sourceQA; branch prepare light390/dark320, school headers light390 vàweapon light320/dark390 đã xem. Fullvisual/network/staging QA cònF6/R1. Venv/models/sourcePNG ở D:/Tro-ly-AI-art, ngoàiGit.
 - Issue nền: đã báo ngủ sớm bằng web nhưng còn nhận nudge ngủ. Root cause **chưa xác định/chưa sửa**; điều tra và regression trong goal.
 
 ## Quyền và giới hạn
@@ -28,6 +28,6 @@ Cập nhật 2026-10-12. Goal Habit/Thần Lộ đang active, AI tự triển kh
 
 ## Next action
 
-Đọc checkpoint F5 cuối tại PROGRESS, poll session98972 rồi tiếp tục toànF5–F6/R1. Main và earned collection40trận/39bản đã kiểm bằng domainproduction cho cả5phái; fixture luôn đạt habit/ngủ đúng vàRNGđột phá0, không đại diện thời gian chơi hoặc imperfect/weekly. Hoàn thiện artnhánh/ThầnSổ/nhận diệnphái vàthần binh; bot context/tools và atomic write policy; mục tiêu gần nhất/quay lại; profiles/mixed/nhánh sớm/chiến tích; sleep issue;F6/R1QA/backuprestore/gates/staging. Presets/search/guide/settings/game-export đã làm ở checkpoint; không làm lại hoặc coi toàn goal đã xong.
+Đọc checkpoint F6 cuối tại PROGRESS, kiểm git status và process handle được ghi. Xử lý repeated-tactic dominance tại BALANCE bằng stats/pattern production và compatibility, rerun earned routes bị ảnh hưởng. Sau đó earnedrescue/chiến tích; sleep issue với evidence; fullUI/accessibility/network/performance/backuprestore/finalgates/staging. Bot/art/presets/guide/export đã làm, không khởi động lại các phần đó hoặc thu goal xuống checkpoint.
 
 Các ghi chú phát hành tháng 9 trước đây là lịch sử và còn trong Git tại `23a1808:docs/HANDOFF.md`; không chứng minh trạng thái cloud hiện tại. Kiểm source/schema/config và release evidence mới khi thao tác remote.

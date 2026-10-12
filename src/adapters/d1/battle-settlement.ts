@@ -1,5 +1,5 @@
 import { payBattleDeath } from '../../domain/battle-economy.ts';
-import { settleBattleDay } from '../../domain/battle-run.ts';
+import { battleHabitContribution, settleBattleDay } from '../../domain/battle-run.ts';
 import type { PracticeSource } from '../../domain/practice.ts';
 import type { HabitDay } from '../../ports/habit-store.ts';
 import { battleJson, battleVictoryStatements, storedBattle, type BattleRow } from './battle-store.ts';
@@ -16,8 +16,7 @@ export async function prepareBattleSettlement(db: Database, owner: string, id: s
     if (!row) throw Error('BATTLE_NOT_FOUND');
     const battle = storedBattle(row);
     if (!supportsContentVersion(battle.run.contentVersion)) throw Error('GAME_CONTENT_UNSUPPORTED');
-    const successes = sources.filter(source => source.successes > 0), mature = successes.filter(source => source.mature).length;
-    const habits = successes.length ? 300 + 60 * Math.min(5, Math.max(0, mature - (mature === successes.length ? 1 : 0))) : 0;
+    const habits = battleHabitContribution(sources);
     const tasks = battle.run.state.status === 'active' && choice ? (await query(db, `SELECT s.task_id,s.title FROM battle_task_sources s
         JOIN tasks t ON t.owner=s.owner AND t.id=s.task_id JOIN task_completions c ON c.owner=t.owner AND c.task_id=t.id
         WHERE s.owner=? AND s.battle_id=? AND t.status='completed' AND t.deleted_at IS NULL AND c.completed_at>=? AND c.completed_at<?

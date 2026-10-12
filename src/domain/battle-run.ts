@@ -4,6 +4,13 @@ export type BattleRun = { id: string; bossId: string; contentVersion: string; co
     startsDay: number; lastDay: number | null; waitDays: number; rescueUntilDay: number | null; deathPaid: boolean };
 export type BattleDayResult = { run: BattleRun; entries: BattleLogEntry[]; fought: boolean; automaticDeath: boolean };
 
+// Only settled habit successes contribute. Neutral days, partial logs and
+// weekly quota overflow are not completions; six mature successes cap at 60%.
+export function battleHabitContribution(sources: { successes: number; mature: boolean }[]): number {
+    const successes = sources.filter(source => source.successes > 0), mature = successes.filter(source => source.mature).length;
+    return successes.length ? 300 + 60 * Math.min(5, Math.max(0, mature - (mature === successes.length ? 1 : 0))) : 0;
+}
+
 export function settleBattleDay(before: BattleRun, day: number, choice: BattleTurnInput | null): BattleDayResult {
     if (!Number.isSafeInteger(day) || day < before.startsDay || before.lastDay !== null && day <= before.lastDay)
         throw Error('INVALID_BATTLE_DAY');

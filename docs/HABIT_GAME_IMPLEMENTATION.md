@@ -36,6 +36,7 @@ Quyền/ngân sách đã trao đổi:
 | [HABITS](HABIT_GAME_HABITS.md) | Cam kết, lịch tuần linh hoạt, quyền sửa, báo cáo/lịch | P0/F1/F2 và integration |
 | [GAMEPLAY](HABIT_GAME_GAMEPLAY.md) | Luyện, engine, giá, catalog 39, khung 15 chương | P0/F3/F4/F5 |
 | [BATTLE_RULES](HABIT_GAME_BATTLE_RULES.md) | Quyết định A05/A06 đang triển khai, giá/thứ tự/nguồn/cứu | F4/F5, review và simulation |
+| [BALANCE](HABIT_GAME_BALANCE.md) | Evidence earned profiles/tuyến phụ/builds, findings chiến thuật và giới hạn fixture | F5/F6 trước quyết định cân bằng |
 | [ARCHITECTURE](HABIT_GAME_ARCHITECTURE.md) | Layers, dữ liệu/API/transaction/time/version/performance | Trước code/migration và review kỹ thuật |
 | [CREATIVE_BRIEF](HABIT_GAME_CREATIVE_BRIEF.md) | UX, cast/cốt truyện, style/asset standards | Thiết kế và review mỗi lát cắt |
 | [LOCAL_ART](HABIT_GAME_LOCAL_ART.md) | Pipeline ảnh miễn phí, preflight, production/QA | P0 và art batches |

@@ -21,6 +21,22 @@ export function createGameActions(context) {
     }
     function showGamePanel(panel) { state.gamePanel = panel; render(); }
     function selectGameSchool(id) { state.gameSchool = id; render(); }
+    function followGameGoal(goal) {
+        if (goal.kind === 'refresh') return loadGame();
+        if (goal.kind === 'habits') {
+            state.tab = 'habits'; state.habitPanel = 'today'; render();
+            context.loadHabits(); window.scrollTo(0, 0); return;
+        }
+        if (goal.kind === 'technique') {
+            const technique = state.gameCatalog?.techniques.find(value => value.id === goal.id);
+            if (technique) return openTechnique(technique);
+        }
+        if (goal.kind === 'collection') { showGamePanel('collection'); window.scrollTo(0, 0); return; }
+        if (goal.kind === 'boss') {
+            state.gamePanel = 'journey'; state.gameChapter = goal.chapter; render();
+            requestAnimationFrame(() => document.querySelector('[data-boss-id="' + CSS.escape(goal.id) + '"]')?.scrollIntoView({ block: 'center' }));
+        }
+    }
     function payload(operation, values = {}) {
         return { operation, day: state.gameData.day.day, version: state.gameData.version, ...values };
     }
@@ -92,5 +108,5 @@ export function createGameActions(context) {
             }
         } catch (error) { if (body.isConnected) { hint.textContent = error.message; body.append(button('Thử lại', () => openTechnique(technique), 'secondary')); } }
     }
-    return { loadGame, showGamePanel, openTechnique, selectGameSchool, stopPractice };
+    return { loadGame, showGamePanel, openTechnique, selectGameSchool, stopPractice, followGameGoal };
 }

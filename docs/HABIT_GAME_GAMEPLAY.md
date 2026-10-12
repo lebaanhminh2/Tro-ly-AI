@@ -169,3 +169,5 @@ Mỗi chương phải có mở/diễn biến/encounter/chuyển biến/kết n�
 Trước khi mở rộng sau lát cắt đầu, AI tạo mẫu khai báo đủ cho công pháp/boss/chương/phần thưởng/điều kiện/asset và validator phát hiện ID trùng, reference thiếu, vòng mở khóa, chiêu rỗng, số không hợp lệ. Mỗi boss có cơ chế dễ tóm tắt, intent có ý nghĩa, ít nhất hai hướng đáp trả, số ngày/rủi ro và nguyên nhân muốn đánh.
 
 Mô phỏng một và 5–6 habit; nhịp hoàn thành 60–80%, tuần linh hoạt, ngày nghỉ và quay lại sau gián đoạn. Kiểm toàn catalog, từng phái, phối hợp, bản phẩm chất thấp/vừa/cao, cứu mạng, trấn phái/cấm thuật và endgame. Sửa chiến thuật thống trị hoặc nội dung không thể mở; không chỉ ghi thành “hạn chế”. Xem tiêu chí bằng chứng tại [ACCEPTANCE](HABIT_GAME_ACCEPTANCE.md).
+
+Evidence hiện tại và finding chiến thuật lặp ở [BALANCE](HABIT_GAME_BALANCE.md).30earned profiles và5mixed routes có đường thắng, nhưng chưa chứng minh F6 đạt: nhiều môn vẫn spam thắng toàntruyện trong tactical fixture. Giữ tinh thuần nghiêm; chỉnh nhịp/counter dựa trên evidence và bảo toàn snapshots cũ.
