@@ -4,6 +4,7 @@ import { renderJourney } from './journey.js';
 import { renderGameCollection } from './game-collection.js';
 import { matchingTechniques } from '../models/game-library.js';
 import { experiencePreferences } from '../core/experience.js';
+import { techniqueSymbol } from '../ui/game-art.js';
 
 export function renderGame(ui, state) {
     const { el, button, card, heading } = ui, root = el('section', undefined, 'game-page');
@@ -41,20 +42,31 @@ export function renderGame(ui, state) {
         }
         filter.value = state.gameSchool ?? 'owned'; filterWrap.append(filter); filters.append(searchWrap, filterWrap);
         const count = el('p', undefined, 'hint'), list = el('div', undefined, 'technique-list'); count.setAttribute('role', 'status');
+        const schoolIntro = el('aside', undefined, 'game-school-intro');
         function updateList() {
             state.gameSearch = search.value; state.gameSchool = filter.value; list.replaceChildren();
+            schoolIntro.replaceChildren(); schoolIntro.hidden = true;
+            const selectedSchool = catalog.schools.find(school => school.id === filter.value);
+            if (selectedSchool) {
+                const image = el('img'); image.src = './assets/than-lo/school-' + selectedSchool.id + '-thumb.webp';
+                image.width = 64; image.height = 64; image.alt = ''; image.loading = 'lazy';
+                const copy = el('div'); copy.append(el('h3', selectedSchool.name), el('p', selectedSchool.description, 'hint'));
+                schoolIntro.append(image, copy); schoolIntro.hidden = false;
+            }
             const techniques = matchingTechniques(catalog, data.owned, filter.value, search.value);
             count.textContent = techniques.length + ' công pháp';
             if (!techniques.length) list.append(el('p', 'Chưa có công pháp phù hợp. Thử đổi nhóm hoặc từ tìm nhé.', 'hint'));
             for (const technique of techniques) {
                 const row = card('technique-card'), school = catalog.schools.find(school => school.id === technique.school), owned = data.owned.includes(technique.id);
-                row.append(el('small', school?.name ?? (technique.kind === 'outside' ? 'Ngoại Đạo' : 'Cấm thuật'), 'technique-school'), el('h2', technique.name),
-                    el('p', technique.description, 'technique-description'), button(owned ? 'Xem và chọn luyện' : 'Xem cách mở', () => ui.openTechnique(technique), 'secondary'));
+                const heading = el('div', undefined, 'technique-heading'), copy = el('div');
+                copy.append(el('small', school?.name ?? (technique.kind === 'outside' ? 'Ngoại Đạo' : 'Cấm thuật'), 'technique-school'), el('h2', technique.name));
+                heading.append(copy, techniqueSymbol(technique.id));
+                row.append(heading, el('p', technique.description, 'technique-description'), button(owned ? 'Xem và chọn luyện' : 'Xem cách mở', () => ui.openTechnique(technique), 'secondary'));
                 list.append(row);
             }
         }
         search.addEventListener('input', updateList); filter.addEventListener('change', updateList); updateList();
-        root.append(filters, count, list); return root;
+        root.append(filters, schoolIntro, count, list); return root;
     }
     if (data.pending) {
         const pending = card('game-pending');

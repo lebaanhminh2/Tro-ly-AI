@@ -1,0 +1,392 @@
+[
+  {
+    "id": "kiem-y",
+    "identity": "pierce",
+    "kind": "ordinary",
+    "school": "thien-kiem",
+    "path": "web/assets/than-lo/technique-kiem-y.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "lien-van",
+    "identity": "multi_hit",
+    "kind": "ordinary",
+    "school": "thien-kiem",
+    "path": "web/assets/than-lo/technique-lien-van.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "tuyet-menh",
+    "identity": "execute",
+    "kind": "ordinary",
+    "school": "thien-kiem",
+    "path": "web/assets/than-lo/technique-tuyet-menh.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "vo-hoi",
+    "identity": "risk_burst",
+    "kind": "ordinary",
+    "school": "thien-kiem",
+    "path": "web/assets/than-lo/technique-vo-hoi.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "kiem-vuc",
+    "identity": "sword_domain",
+    "kind": "heritage",
+    "school": "thien-kiem",
+    "path": "web/assets/than-lo/technique-kiem-vuc.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "kim-than",
+    "identity": "guard_stack",
+    "kind": "ordinary",
+    "school": "bat-diet",
+    "path": "web/assets/than-lo/technique-kim-than.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "huyen-quy",
+    "identity": "persistent_shield",
+    "kind": "ordinary",
+    "school": "bat-diet",
+    "path": "web/assets/than-lo/technique-huyen-quy.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "phan-chan",
+    "identity": "reflect",
+    "kind": "ordinary",
+    "school": "bat-diet",
+    "path": "web/assets/than-lo/technique-phan-chan.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "tran-son",
+    "identity": "consume_guard",
+    "kind": "ordinary",
+    "school": "bat-diet",
+    "path": "web/assets/than-lo/technique-tran-son.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "chien-the",
+    "identity": "guard_conversion",
+    "kind": "heritage",
+    "school": "bat-diet",
+    "path": "web/assets/than-lo/technique-chien-the.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "thon-thien",
+    "identity": "life_steal",
+    "kind": "ordinary",
+    "school": "u-minh",
+    "path": "web/assets/than-lo/technique-thon-thien.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "huyet-sat",
+    "identity": "blood_cost",
+    "kind": "ordinary",
+    "school": "u-minh",
+    "path": "web/assets/than-lo/technique-huyet-sat.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "minh-ha",
+    "identity": "bleed",
+    "kind": "ordinary",
+    "school": "u-minh",
+    "path": "web/assets/than-lo/technique-minh-ha.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "tan-menh",
+    "identity": "low_hp_burst",
+    "kind": "ordinary",
+    "school": "u-minh",
+    "path": "web/assets/than-lo/technique-tan-menh.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "huyet-hai",
+    "identity": "max_hp_trade",
+    "kind": "heritage",
+    "school": "u-minh",
+    "path": "web/assets/than-lo/technique-huyet-hai.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "thai-hu-bo",
+    "identity": "illusion_guard",
+    "kind": "ordinary",
+    "school": "thai-hu",
+    "path": "web/assets/than-lo/technique-thai-hu-bo.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "hu-khong",
+    "identity": "illusion_heal",
+    "kind": "ordinary",
+    "school": "thai-hu",
+    "path": "web/assets/than-lo/technique-hu-khong.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "khong-minh",
+    "identity": "illusion_strike",
+    "kind": "ordinary",
+    "school": "thai-hu",
+    "path": "web/assets/than-lo/technique-khong-minh.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "hoan-hinh",
+    "identity": "illusion_dodge",
+    "kind": "ordinary",
+    "school": "thai-hu",
+    "path": "web/assets/than-lo/technique-hoan-hinh.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "quy-hu",
+    "identity": "dispel",
+    "kind": "heritage",
+    "school": "thai-hu",
+    "path": "web/assets/than-lo/technique-quy-hu.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "quan-thien",
+    "identity": "foresight",
+    "kind": "ordinary",
+    "school": "thien-co",
+    "path": "web/assets/than-lo/technique-quan-thien.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "lac-tu",
+    "identity": "delayed_mark",
+    "kind": "ordinary",
+    "school": "thien-co",
+    "path": "web/assets/than-lo/technique-lac-tu.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "dan-kiep",
+    "identity": "intent_conversion",
+    "kind": "ordinary",
+    "school": "thien-co",
+    "path": "web/assets/than-lo/technique-dan-kiep.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "that-tinh",
+    "identity": "mark_combo",
+    "kind": "ordinary",
+    "school": "thien-co",
+    "path": "web/assets/than-lo/technique-that-tinh.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "nghich-thien",
+    "identity": "intent_swap",
+    "kind": "heritage",
+    "school": "thien-co",
+    "path": "web/assets/than-lo/technique-nghich-thien.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "nghich-menh",
+    "identity": "rank_rescue",
+    "kind": "forbidden",
+    "school": null,
+    "path": "web/assets/than-lo/technique-nghich-menh.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "thau-thien",
+    "identity": "bounded_hp_steal",
+    "kind": "forbidden",
+    "school": null,
+    "path": "web/assets/than-lo/technique-thau-thien.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "tang-nhat",
+    "identity": "near_death_burst",
+    "kind": "forbidden",
+    "school": null,
+    "path": "web/assets/than-lo/technique-tang-nhat.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "dong-menh",
+    "identity": "actual_hp_reflect",
+    "kind": "forbidden",
+    "school": null,
+    "path": "web/assets/than-lo/technique-dong-menh.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "cuu-u",
+    "identity": "bounded_copy",
+    "kind": "forbidden",
+    "school": null,
+    "path": "web/assets/than-lo/technique-cuu-u.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "phong-than",
+    "identity": "seal",
+    "kind": "forbidden",
+    "school": null,
+    "path": "web/assets/than-lo/technique-phong-than.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "tam-nhat",
+    "identity": "death_mark",
+    "kind": "forbidden",
+    "school": null,
+    "path": "web/assets/than-lo/technique-tam-nhat.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "nghich-luan",
+    "identity": "reverse_buff",
+    "kind": "forbidden",
+    "school": null,
+    "path": "web/assets/than-lo/technique-nghich-luan.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "vo-mon",
+    "identity": "loadout_exchange",
+    "kind": "outside",
+    "school": null,
+    "path": "web/assets/than-lo/technique-vo-mon.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "son-ha",
+    "identity": "virtual_armor",
+    "kind": "outside",
+    "school": null,
+    "path": "web/assets/than-lo/technique-son-ha.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "huyet-trieu",
+    "identity": "bounded_max_hp",
+    "kind": "outside",
+    "school": null,
+    "path": "web/assets/than-lo/technique-huyet-trieu.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "kiep-dong",
+    "identity": "announced_damage",
+    "kind": "outside",
+    "school": null,
+    "path": "web/assets/than-lo/technique-kiep-dong.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "van-co",
+    "identity": "bounded_echo",
+    "kind": "outside",
+    "school": null,
+    "path": "web/assets/than-lo/technique-van-co.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  },
+  {
+    "id": "van-thien",
+    "identity": "four_seals",
+    "kind": "outside",
+    "school": null,
+    "path": "web/assets/than-lo/technique-van-thien.svg",
+    "format": "svg",
+    "creator": "project-original",
+    "workflow": "scripts/build-technique-art.ts"
+  }
+]

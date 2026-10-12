@@ -381,7 +381,7 @@ async function serve(control, baseline) {
             }
             else
                 body = await readFile(file);
-            response.setHeader('Content-Type', relative.endsWith('.js') ? 'text/javascript' : relative.endsWith('.css') ? 'text/css' : relative.endsWith('.webp') ? 'image/webp' : 'text/html');
+            response.setHeader('Content-Type', relative.endsWith('.js') ? 'text/javascript' : relative.endsWith('.css') ? 'text/css' : relative.endsWith('.webp') ? 'image/webp' : relative.endsWith('.svg') ? 'image/svg+xml' : 'text/html');
             response.end(body);
         }
         catch {
@@ -481,8 +481,10 @@ async function chrome() {
             },
             async resize(width, height) {
                 await call('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: width < 900 });
+                await evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
             },
             async tap(selector) {
+                await evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
                 const point = await evaluate(`(() => { const node=document.querySelector(${JSON.stringify(selector)});if(!node)return null;const rect=node.getBoundingClientRect();return {x:rect.left+rect.width/2,y:rect.top+rect.height/2}; })()`);
                 assert.ok(point, 'Missing tap target: ' + selector);
                 await call('Input.dispatchMouseEvent', { type: 'mousePressed', ...point, button: 'left', clickCount: 1 });
@@ -636,6 +638,38 @@ test('campaign images keep distinct chapter scenes and readable original cast cr
     } finally { if (browser) await browser.close(); await server.close(); }
 });
 
+test('side-path portraits and the final book load in real preparation flows at narrow light and dark widths', { skip: !browserBin, timeout: 120000 }, async () => {
+    const control = fixture(); control.game.victories = GAME_BOSSES.map(boss => boss.id); control.game.learned = TECHNIQUES.map(technique => technique.id);
+    const bosses = GAME_BOSSES.filter(boss => boss.id.startsWith('cam-') || boss.id.startsWith('di-san-') || boss.artId === 'than-so');
+    assert.equal(bosses.length, 14);
+    const server = await serve(control); let browser;
+    try {
+        browser = await chrome(); await browser.navigate(server.url, 390);
+        await browser.wait("!!document.querySelector('.focus-flip-card')"); await browser.tap('[data-tab=game]');
+        await browser.wait("!!document.querySelector('.practice-intro')"); await browser.click('Hành trình');
+        for (const theme of ['light', 'dark']) {
+            await browser.resize(theme === 'light' ? 320 : 390, 844);
+            await browser.evaluate("document.documentElement.dataset.theme='" + theme + "'");
+            for (const boss of bosses) {
+                await browser.evaluate("document.querySelector('.journey-chapter-picker select').value='" + boss.chapter + "';document.querySelector('.journey-chapter-picker select').dispatchEvent(new Event('change'))");
+                await browser.wait("!!document.querySelector('[data-boss-id=" + boss.id + "] img')");
+                await browser.evaluate("document.querySelector('[data-boss-id=" + boss.id + "] button').click()");
+                await browser.wait("!!document.querySelector('.battle-preparation>.primary') && document.querySelector('.battle-preparation-art').complete && document.querySelector('.battle-preparation-art').naturalWidth>0");
+                assert.equal(await browser.evaluate("document.querySelector('.battle-preparation-art').src.endsWith('/" + boss.artId + ".webp')"), true);
+                assert.equal((await snapshot(browser)).overflow, false);
+                await browser.evaluate("new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))");
+                assert.equal(await browser.evaluate("(() => { const r=document.querySelector('[data-sheet-close]').getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight })()"), true);
+                if (process.env.UI_SCREENSHOT_DIR) await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'f5-branch-' + boss.id + '-' + theme + '.png'));
+                await browser.evaluate("document.querySelector('.battle-preparation').scrollTop=9999");
+                assert.equal(await browser.evaluate("(() => { const r=document.querySelector('[data-sheet-close]').getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight })()"), true);
+                await browser.tap('[data-sheet-close]');
+                await browser.wait("!document.querySelector('#sheet').open");
+            }
+        }
+        assert.equal(control.posts.length, 0); assert.deepEqual(browser.errors, []);
+    } finally { if (browser) await browser.close(); await server.close(); }
+});
+
 test('collection, equipment, alternative editions and full battle archive remain readable on mobile', { skip: !browserBin, timeout: 90000 }, async () => {
     const control = fixture();
     control.game.rewards = [{ kind: 'weapon', id: 'thach-tam' }, { kind: 'achievement', id: 'mo-loi' }];
@@ -657,6 +691,17 @@ test('collection, equipment, alternative editions and full battle archive remain
             await delay(220);
             assert.equal((await snapshot(browser)).overflow, false);
             if (process.env.WEB_TEST_SCREENSHOT_PATH) await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, '-collection-' + width + '-' + theme + '.png'));
+            await browser.wait("[...document.querySelectorAll('.game-relic-art')].every(image=>image.complete&&image.naturalWidth>0)");
+            assert.equal(await browser.evaluate("document.querySelectorAll('.game-relic-art').length"), 3);
+            if (process.env.UI_SCREENSHOT_DIR) await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'f5-relics-' + width + '-' + theme + '.png'));
+            if (process.env.UI_SCREENSHOT_DIR) {
+                for (let index = 0; index < 3; index++) {
+                    await browser.evaluate("document.querySelectorAll('.game-relic-art')[" + index + "].scrollIntoView({block:'center'})");
+                    await browser.evaluate("new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))");
+                    await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'f5-relic-' + index + '-' + width + '-' + theme + '.png'));
+                }
+                await browser.evaluate("document.querySelector('.game-collection').scrollIntoView({block:'start'})");
+            }
         }
         await browser.evaluate("document.documentElement.dataset.theme='light'"); await browser.click('Hành trình');
         await browser.wait("document.querySelector('.journey-chapter-picker select').value==='3'"); await browser.click('Đọc truyện');
@@ -759,12 +804,14 @@ test('technique library searches Vietnamese without accents and opens the real u
         assert.equal(await browser.evaluate("document.activeElement===document.querySelector('.game-library-filters input')"), true);
         assert.equal(await browser.evaluate("document.querySelectorAll('.technique-card').length"), 1);
         assert.equal(await browser.evaluate("document.querySelector('.technique-card').innerText.includes('Táng Nhật Nhất Kích')"), true);
+        await browser.wait("document.querySelector('.technique-card .technique-symbol').complete && document.querySelector('.technique-card .technique-symbol').naturalWidth>0");
         for (const [width, theme] of [[320, 'light'], [390, 'dark']]) {
             await browser.resize(width, 844); await browser.evaluate("document.documentElement.dataset.theme='" + theme + "'");
             assert.equal((await snapshot(browser)).overflow, false);
             if (process.env.WEB_TEST_SCREENSHOT_PATH) await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, '-library-' + width + '-' + theme + '.png'));
         }
         await browser.click('Xem cách mở'); await browser.wait("!!document.querySelector('.technique-sources')");
+        await browser.wait("document.querySelector('.technique-sheet .technique-symbol').complete && document.querySelector('.technique-sheet .technique-symbol').naturalWidth>0");
         const text = await browser.evaluate("document.querySelector('.technique-sheet').innerText");
         assert.ok(text.includes('chỉ còn 1 HP')); assert.ok(text.includes('Người Giữ Nhật Tàn · chương 6'));
         assert.equal(await browser.evaluate("!!document.querySelector('.technique-sheet>.primary')"), false);
@@ -772,8 +819,36 @@ test('technique library searches Vietnamese without accents and opens the real u
         await browser.click('Xem thử thách');
         await browser.wait("!document.querySelector('#sheet').open && document.querySelector('.journey-chapter-picker select').value==='6'");
         assert.equal(await browser.evaluate("document.querySelector('[data-boss-id=cam-tang-nhat]').classList.contains('is-locked')"), true);
+        await browser.click('Công pháp');
+        await browser.evaluate("(() => { const filter=document.querySelector('.game-library-filters select');filter.value='';filter.dispatchEvent(new Event('change'));const search=document.querySelector('.game-library-filters input');search.value='';search.dispatchEvent(new Event('input')); })()");
+        assert.equal(await browser.evaluate("document.querySelectorAll('#content .technique-symbol').length"), 39);
+        for (let i = 0; i < 39; i++) {
+            await browser.evaluate("document.querySelectorAll('#content .technique-symbol')[" + i + "].scrollIntoView({block:'center'})");
+            await browser.wait("document.querySelectorAll('#content .technique-symbol')[" + i + "].complete && document.querySelectorAll('#content .technique-symbol')[" + i + "].naturalWidth>0");
+        }
+        assert.equal(await browser.evaluate("new Set([...document.querySelectorAll('#content .technique-symbol')].map(image=>image.src)).size"), 39);
+        if (process.env.UI_SCREENSHOT_DIR) {
+            // Diagnostic contact sheet of the exact SVGs loaded by the app.
+            // Product-layout screenshots above remain the integration evidence.
+            await browser.resize(390, 920);
+            await browser.evaluate("(() => { const gallery=document.createElement('section');gallery.id='symbol-contact';gallery.style.cssText='position:fixed;inset:0;z-index:9999;padding:12px;background:var(--surface);display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;align-content:start';for(const card of document.querySelectorAll('#content .technique-card')){const box=document.createElement('div');box.style.cssText='height:82px;display:grid;justify-items:center;align-content:start;gap:4px';const image=card.querySelector('img').cloneNode();image.loading='eager';box.append(image);const name=document.createElement('small');name.style.cssText='font-size:10px;text-align:center;line-height:1.2';name.textContent=card.querySelector('h2').textContent;box.append(name);gallery.append(box)}document.body.append(gallery) })()");
+            await browser.wait("[...document.querySelectorAll('#symbol-contact img')].every(image=>image.complete&&image.naturalWidth>0)");
+            await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'f5-technique-symbols-contact-dark.png'));
+            await browser.evaluate("document.documentElement.dataset.theme='light'");
+            await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'f5-technique-symbols-contact-light.png'));
+            await browser.evaluate("document.querySelector('#symbol-contact').remove()");
+        }
         assert.equal(control.calls.includes('GET game-boss'), false);
         assert.equal(control.calls.includes('GET practice-versions'), false);
+        for (const school of SCHOOLS) {
+            await browser.evaluate("document.querySelector('.game-library-filters select').value='" + school.id + "';document.querySelector('.game-library-filters select').dispatchEvent(new Event('change'))");
+            await browser.wait("document.querySelector('.game-school-intro img').complete&&document.querySelector('.game-school-intro img').naturalWidth>0");
+            await browser.evaluate("document.querySelector('.game-school-intro').scrollIntoView({block:'center'})");
+            await browser.evaluate("new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))");
+            assert.equal(await browser.evaluate("document.querySelectorAll('#content .technique-card').length"), 5);
+            assert.equal((await snapshot(browser)).overflow, false);
+            if (process.env.UI_SCREENSHOT_DIR) await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'f5-school-' + school.id + '.png'));
+        }
         assert.equal(control.posts.length, 0); assert.deepEqual(browser.errors, []);
     } finally { if (browser) await browser.close(); await server.close(); }
 });

@@ -4,7 +4,10 @@ export function renderGameCollection(ui, data, catalog) {
     for (const weapon of catalog.weapons ?? []) {
         const owned = rewards.some(reward => reward.kind === 'weapon' && reward.id === weapon.id), boss = catalog.bosses.find(boss => boss.id === weapon.sourceBossId);
         const row = card('technique-card');
-        row.append(el('small', owned ? 'Đã sở hữu' : 'Chưa mở', 'technique-school'), el('h3', weapon.name), el('p', weapon.description, 'technique-description'));
+        const heading = el('div', undefined, 'technique-heading'), copy = el('div'), image = el('img', undefined, 'game-relic-art');
+        image.src = './assets/than-lo/weapon-' + weapon.id + '-thumb.webp'; image.width = 64; image.height = 64; image.alt = ''; image.loading = 'lazy';
+        copy.append(el('small', owned ? 'Đã sở hữu' : 'Chưa mở', 'technique-school'), el('h3', weapon.name));
+        heading.append(copy, image); row.append(heading, el('p', weapon.description, 'technique-description'));
         if (!owned && boss) row.append(button('Tìm ở chương ' + boss.chapter + ' · ' + boss.name, () => {
             ui.selectGameChapter(boss.chapter); ui.showGamePanel('journey');
         }, 'text-button'));

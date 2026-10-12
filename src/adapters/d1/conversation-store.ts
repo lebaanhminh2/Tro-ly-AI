@@ -38,6 +38,37 @@ export class ConversationStore {
      const index=readIndexes.get(step)??0;readIndexes.set(step,index+1);
      return this.step(lease,`read:${step}:${index}`,'read',request(call),clock,()=>executeTool(call,reader,lease.owner,lease.input.updateId,clock()));
     }
+    if(call.name==='habit_action'||call.name==='practice_action'){
+     if(!reader.habitGame)throw Error('COMPANION_UNAVAILABLE');
+     const existing=await this.writeResult(lease,request(call));
+     if(existing)return {result:existing,changes:[],fallback:String(existing.fallback)};
+     let prepared;
+     try{
+      prepared=await reader.habitGame.prepare(lease.owner,'companion_'+lease.input.updateId,
+       call.name==='habit_action'?'habit':'practice',call.args.command as Record<string,unknown>,clock());
+     }catch(error){
+      const reason=error instanceof Error?error.message:'COMPANION_UNAVAILABLE';
+      const fallback=['CONFIRM_PRACTICE_RESTART','COMPANION_RESTART_REQUIRES_WEB'].includes(reason)?'Luyện lại cần xác nhận trên web để giữ rõ bản cũ và bản mới. Tớ chưa đổi lựa chọn luyện.':
+       ['HABIT_CHANGED','HABIT_LOG_CHANGED','GAME_CHANGED','HABIT_DAY_CLOSED','GAME_DAY_CLOSED','NO_ACTIVE_DAY'].includes(reason)?'Dữ liệu hoặc ngày sinh hoạt đã đổi. Tớ chưa lưu; cần đọc lại trạng thái hiện tại.':
+       'Tớ chưa lưu thay đổi habit hoặc luyện này. Kiểm tra mục tiêu, lịch và trạng thái hiện tại nhé.';
+      return {result:{status:'rejected',reason},changes:[],fallback};
+     }
+     const now=clock();if(now>=prepared.validUntil) return {result:{status:'rejected',reason:'ACTIVITY_DAY_CLOSED'},changes:[],fallback:'Ngày sinh hoạt đã kết thúc. Tớ chưa lưu thay đổi này.'};
+     const fallback=call.name==='habit_action'?
+      ('effectiveFrom' in prepared.result?'Tớ đã lưu thay đổi habit; có hiệu lực từ ngày sinh hoạt '+new Date(Number(prepared.result.effectiveFrom)*86400000).toISOString().slice(0,10).split('-').reverse().join('/')+'.':
+       'Tớ đã lưu habit của ngày sinh hoạt hiện tại. Kết quả luyện và trận chỉ được tính khi chốt ngày.'):
+      'Tớ đã lưu lựa chọn luyện cho ngày sinh hoạt kế tiếp.';
+     try{
+      const result=await this.commitWrite(lease,request(call),{...prepared.result,status:'applied',fallback},prepared.statements,now);
+      return {result,changes:[],fallback};
+     }catch{
+      // A lost acknowledgement can follow a successful atomic commit. Recover
+      // from the receipt; if it cannot be read, end the turn without another write.
+      const recorded=await this.writeResult(lease,request(call)).catch(()=>null);
+      if(recorded)return {result:recorded,changes:[],fallback:String(recorded.fallback)};
+      return {result:{status:'uncertain'},changes:[],fallback:'Tớ chưa xác nhận được kết quả lưu habit hoặc luyện. Kiểm tra trạng thái trên web trước khi thực hiện lại nhé.'};
+     }
+    }
     if(call.name==='edit_task_step'){
      if(!reader.prepareStep)throw Error('STEP_UNAVAILABLE');
      const existing=await this.writeResult(lease,request(call));
@@ -107,7 +138,7 @@ export class ConversationStore {
   scoped.events=async(owner,from,to)=>[...await reader.events?.(owner,from,to)??[],...plannedEvents.filter(e=>e.owner===owner&&e.start_at>=from&&e.start_at<to)];
   for(let index=0;index<calls.length;index++){
    const original=calls[index]!;
-   if(isReadTool(original.name)||original.name==='resolve_pending')throw Error('INVALID_BATCH_OPERATION');
+   if(isReadTool(original.name)||['resolve_pending','habit_action','practice_action','edit_task_step'].includes(original.name))throw Error('INVALID_BATCH_OPERATION');
    const call={...original,args:{...original.args}};
    // A new task can be referenced by its earlier action index, never an invented DB ID.
    if(typeof call.args.task_id==='string'&&/^@\d+$/.test(call.args.task_id)){

@@ -22,6 +22,12 @@ Habit ngoài đời là nguồn tiến bộ của hệ game. Nhân vật không 
 
 Boss còn lại có mục tiêu/vật liệu riêng: canh thú, cổ thư/ấn lệnh, khôi lỗi, thủ mộ, chấp kiếm và thần tướng. Tái ngộ giữ identity; variants chỉ thay dấu thương/trang phục/ánh sáng có lý do. Người Giữ Kiếm Trầm là người già với tóc bạc/áo xám đã tạo, không đổi thành Kỷ Hành.
 
+### Identity tuyến phụ đã tạo
+
+13chân dung tuyến cấm thuật/Ngoại Đạo đã tạo, nguồn được xem và alt theo hình thật tại `docs/art/branches.json`. Người Giữ Nhật Tàn là người phụ nữ tóc bạc, Người Giữ Luân Khuyết tóc đen búi cao và Người Giữ Kiếm Âm tóc đen búi thấp. Không tiếp tục dùng tuổi/màu tóc/đại từ của prompt chưa đạt để mô tả hình cuối. Sáu người giữ Ngoại Đạo khác nhau về tuổi, áo/giáp, khăn và silhouette, không đổi một mặt cho cả sáu. Thần Sổ là cổ thư bìa da sẫm với ấn tròn, không còn là tháp/người/bia; ký hiệu trên bìa chỉ trang trí, không là chữ user cần đọc.
+
+Thần binh là vật phẩm có hình riêng: Thạch Tâm là hộ phù đá/vòng đồng; Định Tâm là mặt hộ phù ngà/than trên dây hạt; Thuận Phong là kiếm bạc chuôi ngà cạnh phiến đá. Art này không đổi effect/tradeoff. Art năm phái dùng bí tịch/ấn/ngọc/thiên bàn theo hình cuối, không yêu cầu cả năm thành cùng một quyển sách. 39biểu tượng nét tại `docs/art/technique-symbols.json` diễn tả identity chiến thuật, có glyph riêng và viền phân biệt trấn phái/cấm thuật/Ngoại Đạo.
+
 ## 3. Nhịp15chương
 
 | Chương | Mở và thay đổi | Kết quả cần dẫn sang chương tiếp |

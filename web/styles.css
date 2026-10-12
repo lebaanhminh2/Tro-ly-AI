@@ -479,6 +479,16 @@ html[data-motion=reduce] *,html[data-motion=reduce] *::before,html[data-motion=r
 .journey-boss-heading>div{min-width:0}
 .journey-boss-heading img{flex:0 0 56px;object-fit:cover;object-position:50% 25%;border-radius:9px}
 .battle-preparation-art{display:block;width:100%;max-height:190px;object-fit:cover;object-position:50% 25%;border-radius:12px;margin-bottom:16px}
+.technique-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.technique-heading>div{min-width:0}
+.technique-symbol{flex:0 0 auto;object-fit:contain}
+.technique-introduction{display:flex;align-items:flex-start;gap:12px;margin-bottom:16px}
+.technique-introduction .technique-description{margin:0;min-width:0}
+.game-school-intro{display:flex;align-items:center;gap:12px;margin:16px 0}
+.game-school-intro[hidden]{display:none}
+.game-school-intro>img,.game-relic-art{flex:0 0 auto;border-radius:12px;object-fit:cover}
+.game-school-intro>div{min-width:0}
+.game-school-intro .hint{margin-top:4px}
 .journey-boss h3{font-size:16px;line-height:1.5;margin:8px 0}
 .journey-boss .hint{font-size:12px;line-height:1.6;margin:8px 0 14px}
 .journey-boss.is-locked{background:var(--bg)}

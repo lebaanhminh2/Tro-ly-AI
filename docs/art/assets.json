@@ -22,7 +22,7 @@
         640
       ],
       "steps": 28,
-      "guidance": 7.0,
+      "guidance": 7,
       "precision": "float32",
       "seconds": 102.27,
       "peakMiB": 4053,
@@ -76,7 +76,7 @@
         448
       ],
       "steps": 28,
-      "guidance": 7.0,
+      "guidance": 7,
       "precision": "float32",
       "seconds": 98.38,
       "peakMiB": 4053,
@@ -2369,6 +2369,1194 @@
       "integratedUi": "pending",
       "review": "Viewed full portrait sources and chapter contact sheet 2026-10-12. Coherent anatomy or constructed silhouette, restrained slate/ivory/bronze and truthful alt. Integrated UI review still pending.",
       "integrationEvidence": "D:/Tro-ly-AI-art/f5-finalcampaign-campaign-chapter-11.png; chapter-12 through chapter-15; prepare-11,12,14 and story-15. Real Chrome light390 screenshots; selected overview and settings screenshots viewed. Full dark/320 and lower-fold crop QA pending F6."
+    }
+  },
+  {
+    "id": "cam-thau-thien",
+    "contentId": "boss.cam-thau-thien",
+    "alt": "Người Đoạt Huyết tóc đen buộc sau, áo xám than và cổ áo đen cao.",
+    "role": "boss",
+    "focalPoint": [
+      0.5,
+      0.3
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "cam-thau-thien",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 40301,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, bust portrait, mature East Asian male ascetic, narrow severe eyes, shaved scalp, charcoal layered robe, tiny muted crimson collar, tarnished bronze ring clasp, plain grey background",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 99.92,
+      "peakMiB": 4053,
+      "sha256": "d896f326a607108988fe50a688f3128a1aafe41add38bb97a6513aa3321accf7",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/cam-thau-thien.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 21736,
+        "sha256": "12c4d750072ebd370565680c96cdd01def2c12ea1ce2eb2f1406fa84408eb0fd"
+      },
+      {
+        "path": "web/assets/than-lo/cam-thau-thien-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 3762,
+        "sha256": "929634ae9e21d870a5fd484e216ca32859ec68c8bed0b17099413e07944c06ed"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed full source PNG 2026-10-12. Coherent original adult character, anatomy and costume; alt describes actual output rather than unmet prompt details.",
+      "integrationReviewedAt": "2026-10-12",
+      "integrationEvidence": "D:/Tro-ly-AI-art/f5-branch-cam-thau-thien-{light,dark}.png; D:/Tro-ly-AI-art/f5-branch-contact.png; actual preparation screenshots viewed at light390 and dark320, close control checked after scrolling; fixture adds access only, no writes"
+    }
+  },
+  {
+    "id": "cam-tang-nhat",
+    "contentId": "boss.cam-tang-nhat",
+    "alt": "Người Giữ Nhật Tàn tóc bạc tết dài, trâm đồng và áo xám ngà.",
+    "role": "boss",
+    "focalPoint": [
+      0.5,
+      0.3
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "cam-tang-nhat",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 40302,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, bust portrait, older East Asian woman, long silver grey braid, weathered patient face, ash grey closed robe, bronze sun medallion, plain grey background",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 99.8,
+      "peakMiB": 4053,
+      "sha256": "c88466d5af1727f44adab925d5ecd8c65a0df6b4d4c9847679e655115ee7eb48",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/cam-tang-nhat.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 33266,
+        "sha256": "d7efa25ef8d10726bf2de71999e9e0622c88a5438db3525dc8596e2dd35143d1"
+      },
+      {
+        "path": "web/assets/than-lo/cam-tang-nhat-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 5244,
+        "sha256": "2a551e31bbe5d9ad726ab447d4939dbaed07f6e3b8895a82ee20f4bb04e3bd8f"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed full source PNG 2026-10-12. Coherent original adult character, anatomy and costume; alt describes actual output rather than unmet prompt details.",
+      "integrationReviewedAt": "2026-10-12",
+      "integrationEvidence": "D:/Tro-ly-AI-art/f5-branch-cam-tang-nhat-{light,dark}.png; D:/Tro-ly-AI-art/f5-branch-contact.png; actual preparation screenshots viewed at light390 and dark320, close control checked after scrolling; fixture adds access only, no writes"
+    }
+  },
+  {
+    "id": "cam-dong-menh",
+    "contentId": "boss.cam-dong-menh",
+    "alt": "Người Giữ Song Khế trong áo xám với giáp vai đồng và tóc đen buộc sau.",
+    "role": "boss",
+    "focalPoint": [
+      0.5,
+      0.3
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "cam-dong-menh",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 40303,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, bust portrait, middle aged East Asian male scholar, tied black hair, solemn face, ivory charcoal layered robe, two small bronze collar clasps, plain grey background",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 99.45,
+      "peakMiB": 4053,
+      "sha256": "e3782ac66011fd60c07b5cc44fe946c08f5ac60cfff5ecd8e911283801faa9eb",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/cam-dong-menh.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 20504,
+        "sha256": "73350014af7dc2f0261260835b1dbc175c997e0e87252a8e5dbab1c5ab03cbb6"
+      },
+      {
+        "path": "web/assets/than-lo/cam-dong-menh-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 3502,
+        "sha256": "cfc21879885cc8009e8ed6f38023632dd1d99b661e82e9f367fc44c37f9e93e7"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed full source PNG 2026-10-12. Coherent original adult character, anatomy and costume; alt describes actual output rather than unmet prompt details.",
+      "integrationReviewedAt": "2026-10-12",
+      "integrationEvidence": "D:/Tro-ly-AI-art/f5-branch-cam-dong-menh-{light,dark}.png; D:/Tro-ly-AI-art/f5-branch-contact.png; actual preparation screenshots viewed at light390 and dark320, close control checked after scrolling; fixture adds access only, no writes"
+    }
+  },
+  {
+    "id": "cam-cuu-u",
+    "contentId": "boss.cam-cuu-u",
+    "alt": "Người Giữ Dấu Hồn tóc đen dài, vòng trang sức đồng trên đầu và giáp vai đồng.",
+    "role": "boss",
+    "focalPoint": [
+      0.5,
+      0.3
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "cam-cuu-u",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 40304,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, bust portrait, East Asian woman age forty, pale calm face, black hair pinned high, charcoal hood resting on shoulders, antique bronze neck ornament, plain grey background",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 99.48,
+      "peakMiB": 4053,
+      "sha256": "13b2f783f3b4e57395448f466f38b04b02188fca5718348ed40e351f23864132",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/cam-cuu-u.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 31662,
+        "sha256": "aed67f44c10a7194391f1c6510757cbb7575bf9e689c85fcf8a9aa326237983a"
+      },
+      {
+        "path": "web/assets/than-lo/cam-cuu-u-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 6242,
+        "sha256": "9fd341da87edf6578e5a446f9e99f22d359a34b583baf0c8b36c804429228395"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed full source PNG 2026-10-12. Coherent original adult character, anatomy and costume; alt describes actual output rather than unmet prompt details.",
+      "integrationReviewedAt": "2026-10-12",
+      "integrationEvidence": "D:/Tro-ly-AI-art/f5-branch-cam-cuu-u-{light,dark}.png; D:/Tro-ly-AI-art/f5-branch-contact.png; actual preparation screenshots viewed at light390 and dark320, close control checked after scrolling; fixture adds access only, no writes"
+    }
+  },
+  {
+    "id": "cam-phong-than",
+    "contentId": "boss.cam-phong-than",
+    "alt": "Người Giữ Niêm Ấn tóc đen ngắn, cổ áo ngà và giáp vai đồng khắc hoa văn.",
+    "role": "boss",
+    "focalPoint": [
+      0.5,
+      0.3
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "cam-phong-than",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 40305,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, bust portrait, mature East Asian female warden, dark short tied hair, steady eyes, ivory high collar, charcoal robe, rectangular bronze brooch, plain grey background",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 99.7,
+      "peakMiB": 4053,
+      "sha256": "c07e34ef024737b8c6da4b59a5dafbdc52fd26b0c23a855d6eeb541005222f75",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/cam-phong-than.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 30448,
+        "sha256": "cb1fa039deb151866b4c514992f694cf36d16f42e20edb44d18e620bb1807aa5"
+      },
+      {
+        "path": "web/assets/than-lo/cam-phong-than-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 5522,
+        "sha256": "81e741aaab9889663b8b9720a9d4a1ac2eab40bf1a4f69d248b9e2aae4683b11"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed full source PNG 2026-10-12. Coherent original adult character, anatomy and costume; alt describes actual output rather than unmet prompt details.",
+      "integrationReviewedAt": "2026-10-12",
+      "integrationEvidence": "D:/Tro-ly-AI-art/f5-branch-cam-phong-than-{light,dark}.png; D:/Tro-ly-AI-art/f5-branch-contact.png; actual preparation screenshots viewed at light390 and dark320, close control checked after scrolling; fixture adds access only, no writes"
+    }
+  },
+  {
+    "id": "cam-tam-nhat",
+    "contentId": "boss.cam-tam-nhat",
+    "alt": "Người Giữ Tử Ấn với râu bạc, mũ trùm ngà và áo xám than.",
+    "role": "boss",
+    "focalPoint": [
+      0.5,
+      0.3
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "cam-tam-nhat",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 40306,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, bust portrait, elderly East Asian male hermit, long grey beard, grey cloth hood, lined face, ivory inner robe, small round bronze clasp, plain grey background",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 100.61,
+      "peakMiB": 4053,
+      "sha256": "6c23baa003aa18f212566bd9409680b029d636be445a880e55505ae62fbc5c6b",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/cam-tam-nhat.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 34132,
+        "sha256": "365961f07a5d1f73170be0054db3aa77a29097bc5956bb6488efdef7ef1a3383"
+      },
+      {
+        "path": "web/assets/than-lo/cam-tam-nhat-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 5958,
+        "sha256": "0218689156d989d7553073f0c3f91c073be9eebc34028fe8140221dfc9f4261d"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed full source PNG 2026-10-12. Coherent original adult character, anatomy and costume; alt describes actual output rather than unmet prompt details.",
+      "integrationReviewedAt": "2026-10-12",
+      "integrationEvidence": "D:/Tro-ly-AI-art/f5-branch-cam-tam-nhat-{light,dark}.png; D:/Tro-ly-AI-art/f5-branch-contact.png; actual preparation screenshots viewed at light390 and dark320, close control checked after scrolling; fixture adds access only, no writes"
+    }
+  },
+  {
+    "id": "cam-nghich-luan",
+    "contentId": "boss.cam-nghich-luan",
+    "alt": "Người Giữ Luân Khuyết tóc đen búi cao, áo xám cổ đen và móc đồng tròn.",
+    "role": "boss",
+    "focalPoint": [
+      0.5,
+      0.3
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "cam-nghich-luan",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 40307,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, bust portrait, older East Asian female archivist, grey hair tight bun, tired observant eyes, layered closed slate robe, simple bronze ring pendant, plain grey background",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 99.59,
+      "peakMiB": 4053,
+      "sha256": "474371336e5b9ed48937ea8d84b6052553871a6b0b0177f727381329adc0d4d8",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/cam-nghich-luan.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 26172,
+        "sha256": "0cb08b93fa1cca5a3dfa8c07d49d7d6cccd5fcf6c5a5a8e0f71fd584641642df"
+      },
+      {
+        "path": "web/assets/than-lo/cam-nghich-luan-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 4302,
+        "sha256": "cb5e4326eaacfdb51c4f9ad5f1b5293ea7a89f0bb72de5d81492b6d255623dee"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed full source PNG 2026-10-12. Coherent original adult character, anatomy and costume; alt describes actual output rather than unmet prompt details.",
+      "integrationReviewedAt": "2026-10-12",
+      "integrationEvidence": "D:/Tro-ly-AI-art/f5-branch-cam-nghich-luan-{light,dark}.png; D:/Tro-ly-AI-art/f5-branch-contact.png; actual preparation screenshots viewed at light390 and dark320, close control checked after scrolling; fixture adds access only, no writes"
+    }
+  },
+  {
+    "id": "di-san-vo-mon",
+    "contentId": "boss.di-san-vo-mon",
+    "alt": "Khách Không Môn tóc đen, khăn than và áo xám cũ với đai nâu.",
+    "role": "boss",
+    "focalPoint": [
+      0.5,
+      0.3
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "di-san-vo-mon",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 40308,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, bust portrait, mature East Asian male wanderer, short messy black hair, relaxed thoughtful face, worn ash grey closed robe, charcoal scarf, plain grey background",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 97.8,
+      "peakMiB": 4053,
+      "sha256": "2fc715bb696cd76f180b593e68cc54381df45eaf42b3d914646fb4ecf506b1ca",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/di-san-vo-mon.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 25794,
+        "sha256": "6b96908698d10a2498101740e43814224944228f4c0b66595532720590f64c53"
+      },
+      {
+        "path": "web/assets/than-lo/di-san-vo-mon-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 4580,
+        "sha256": "8e7ac561e217745facf6a305285d542339f56fb471434303b6dae9d394e5628f"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed full source PNG 2026-10-12. Coherent original adult character, anatomy and costume; alt describes actual output rather than unmet prompt details.",
+      "integrationReviewedAt": "2026-10-12",
+      "integrationEvidence": "D:/Tro-ly-AI-art/f5-branch-di-san-vo-mon-{light,dark}.png; D:/Tro-ly-AI-art/f5-branch-contact.png; actual preparation screenshots viewed at light390 and dark320, close control checked after scrolling; fixture adds access only, no writes"
+    }
+  },
+  {
+    "id": "di-san-son-ha",
+    "contentId": "boss.di-san-son-ha",
+    "alt": "Người Giữ Sơn Hà tóc bạc, râu trắng và giáp xám viền đồng.",
+    "role": "boss",
+    "focalPoint": [
+      0.5,
+      0.3
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "di-san-son-ha",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 40309,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, bust portrait, older East Asian male mountain keeper, broad weathered face, grey beard, charcoal stone shoulder armor, ivory collar, bronze clasp, plain grey background",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 96.59,
+      "peakMiB": 4053,
+      "sha256": "07a0403963afaff00453d272ac6ef079444729136fcc66fdeb30130567c23a5d",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/di-san-son-ha.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 30338,
+        "sha256": "cb191d749b04ab27323546312f01a7aac7d29ceca91578f571bc6987e52cb902"
+      },
+      {
+        "path": "web/assets/than-lo/di-san-son-ha-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 4766,
+        "sha256": "91c3f01c09e4e4abcfdb682d899f9f3e095de3f4889d3cad85eacbd9f6f4a158"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed full source PNG 2026-10-12. Coherent original adult character, anatomy and costume; alt describes actual output rather than unmet prompt details.",
+      "integrationReviewedAt": "2026-10-12",
+      "integrationEvidence": "D:/Tro-ly-AI-art/f5-branch-di-san-son-ha-{light,dark}.png; D:/Tro-ly-AI-art/f5-branch-contact.png; actual preparation screenshots viewed at light390 and dark320, close control checked after scrolling; fixture adds access only, no writes"
+    }
+  },
+  {
+    "id": "di-san-huyet-trieu",
+    "contentId": "boss.di-san-huyet-trieu",
+    "alt": "Người Giữ Huyết Triều tóc đen tết đôi, trâm đồng và áo xám ngà.",
+    "role": "boss",
+    "focalPoint": [
+      0.5,
+      0.3
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "di-san-huyet-trieu",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 40310,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, bust portrait, mature East Asian female river guardian, black braided hair, stern face, closed slate robe, muted crimson sash, silver shoulder plates, plain grey background",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 97.19,
+      "peakMiB": 4053,
+      "sha256": "20c0c07155a24246fcfcd87135cc836e2df7acdeda1419f523a80a1907541fe7",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/di-san-huyet-trieu.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 23026,
+        "sha256": "a9df1fd51e94619fb0bb4e69aec13430e332a7decb9c5b9aa3e20cf09b598d5b"
+      },
+      {
+        "path": "web/assets/than-lo/di-san-huyet-trieu-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 4424,
+        "sha256": "417e4c73d044f3e1e4863a54527c670ee5be4060f54db5f57f0895b42aada0d3"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed full source PNG 2026-10-12. Coherent original adult character, anatomy and costume; alt describes actual output rather than unmet prompt details.",
+      "integrationReviewedAt": "2026-10-12",
+      "integrationEvidence": "D:/Tro-ly-AI-art/f5-branch-di-san-huyet-trieu-{light,dark}.png; D:/Tro-ly-AI-art/f5-branch-contact.png; actual preparation screenshots viewed at light390 and dark320, close control checked after scrolling; fixture adds access only, no writes"
+    }
+  },
+  {
+    "id": "di-san-kiep-dong",
+    "contentId": "boss.di-san-kiep-dong",
+    "alt": "Người Giữ Kiếp Thanh tóc đen buộc sau, râu đen, khăn ngà và giáp than.",
+    "role": "boss",
+    "focalPoint": [
+      0.5,
+      0.3
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "di-san-kiep-dong",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 40311,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, bust portrait, East Asian man age forty, long dark hair tied back, calm intense eyes, charcoal lamellar armor, ivory scarf, small bronze ornament, plain grey background",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 96.83,
+      "peakMiB": 4053,
+      "sha256": "7cef701d0e030bc460fb5bae1dc221d1c7487fc98fb5bc7092dd188c4b9a47d1",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/di-san-kiep-dong.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 27668,
+        "sha256": "3b569c63675c0e8ce56e6ffbfd64911606aee17358a26784e0c38d2c5f0e7dc6"
+      },
+      {
+        "path": "web/assets/than-lo/di-san-kiep-dong-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 5400,
+        "sha256": "c798a79dd307eb8483d298b7c2d40141cb40913cd8e42d1bf01aaa6e0f824a71"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed full source PNG 2026-10-12. Coherent original adult character, anatomy and costume; alt describes actual output rather than unmet prompt details.",
+      "integrationReviewedAt": "2026-10-12",
+      "integrationEvidence": "D:/Tro-ly-AI-art/f5-branch-di-san-kiep-dong-{light,dark}.png; D:/Tro-ly-AI-art/f5-branch-contact.png; actual preparation screenshots viewed at light390 and dark320, close control checked after scrolling; fixture adds access only, no writes"
+    }
+  },
+  {
+    "id": "di-san-van-co",
+    "contentId": "boss.di-san-van-co",
+    "alt": "Người Giữ Kiếm Âm tóc đen búi thấp, áo ngà và giáp vai than chạm nổi.",
+    "role": "boss",
+    "focalPoint": [
+      0.5,
+      0.3
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "di-san-van-co",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 40312,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, bust portrait, older East Asian female sword keeper, straight grey hair tied back, serious face, ivory closed scholar robe, dark shoulder mantle, bronze clasp, plain grey background",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 96.64,
+      "peakMiB": 4053,
+      "sha256": "6620bc302fda708f99977eacbe96f15001eb4c030f1dec72c4c23099ddf30bc9",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/di-san-van-co.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 23000,
+        "sha256": "5dea32f22242cebcffb9d77f9271b09597e23310999f2d37bf77f005c4a403eb"
+      },
+      {
+        "path": "web/assets/than-lo/di-san-van-co-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 4422,
+        "sha256": "ee8dce5d48890780f3fd406349f20c72fd10a87c889305cf6ae90ed6e3ddb112"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed full source PNG 2026-10-12. Coherent original adult character, anatomy and costume; alt describes actual output rather than unmet prompt details.",
+      "integrationReviewedAt": "2026-10-12",
+      "integrationEvidence": "D:/Tro-ly-AI-art/f5-branch-di-san-van-co-{light,dark}.png; D:/Tro-ly-AI-art/f5-branch-contact.png; actual preparation screenshots viewed at light390 and dark320, close control checked after scrolling; fixture adds access only, no writes"
+    }
+  },
+  {
+    "id": "di-san-van-thien",
+    "contentId": "boss.di-san-van-thien",
+    "alt": "Người Giữ Tứ Ấn tóc bạc búi cao, râu trắng, áo ngà và cổ áo đen.",
+    "role": "boss",
+    "focalPoint": [
+      0.5,
+      0.3
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "di-san-van-thien",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 40313,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, bust portrait, elderly East Asian male keeper, white hair tight bun, short white beard, charcoal ivory layered high collar robe, round bronze chest seal, plain grey background",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 96.94,
+      "peakMiB": 4053,
+      "sha256": "3959b9027b209cbf7fd6e8c222a7f8b5894783597f4bd80e94a4d119ea2b8438",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/di-san-van-thien.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 35720,
+        "sha256": "d448818c9d7e78ca59987703bd19f3d3af234f19ca046775e8e4824a0a2fbcfa"
+      },
+      {
+        "path": "web/assets/than-lo/di-san-van-thien-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 5960,
+        "sha256": "a1bbd60583e9921da50ee537923c38a0343858ab9d7cb432d036636477fa9c77"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed full source PNG 2026-10-12. Coherent original adult character, anatomy and costume; alt describes actual output rather than unmet prompt details.",
+      "integrationReviewedAt": "2026-10-12",
+      "integrationEvidence": "D:/Tro-ly-AI-art/f5-branch-di-san-van-thien-{light,dark}.png; D:/Tro-ly-AI-art/f5-branch-contact.png; actual preparation screenshots viewed at light390 and dark320, close control checked after scrolling; fixture adds access only, no writes"
+    }
+  },
+  {
+    "id": "than-so",
+    "contentId": "boss.than-so",
+    "alt": "Thiên Mệnh Thần Sổ bìa da sẫm, ấn ký tròn và viền đồng.",
+    "role": "boss",
+    "focalPoint": [
+      0.5,
+      0.5
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "than-so-v4",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 37304,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, antique leather bound book, dark bronze circular seal on cover, thick ivory paper edges, resting on a stone altar, dim ancient cave, still life, paper texture, close view",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage, person, human, woman, man, face, portrait, body, pagoda, tower",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 99.45,
+      "peakMiB": 4053,
+      "sha256": "ebab26808d01dafa0ffcafbf8ee6a028481398af8b472fecd0c73fe3b7410431",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/than-so.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 48880,
+        "sha256": "b42295539584e5fa790d6871cb59e12c40824fcde20112f6747573bb7ed40934"
+      },
+      {
+        "path": "web/assets/than-lo/than-so-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 4048,
+        "sha256": "249cb85ae6c676f722fde1e6409e854ec40d6ef68f3a5ee78b947ffc7e3f286a"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed full source PNG 2026-10-12. Accepted book identity, leather cover and bronze round ornament. Central decorative mark is not readable UI text or translated lettering. Previous tower, person and stone-marker variants rejected.",
+      "integrationReviewedAt": "2026-10-12",
+      "integrationEvidence": "D:/Tro-ly-AI-art/f5-branch-than-so-{light,dark}.png; D:/Tro-ly-AI-art/f5-branch-contact.png; actual preparation screenshots viewed at light390 and dark320, close control checked after scrolling; fixture adds access only, no writes"
+    }
+  },
+  {
+    "id": "weapon-thach-tam",
+    "contentId": "weapon.thach-tam",
+    "alt": "Thạch Tâm, hộ phù tròn với vòng đá xám và viền đồng chạm nổi.",
+    "role": "weapon",
+    "focalPoint": [
+      0.5,
+      0.5
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "weapon-thach-tam",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 40502,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, still life, circular antique bronze shield medallion with rough dark stone center, angular raised protective rim, resting on charcoal cloth, ivory background",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage, person, human, woman, man, face, portrait, body, statue",
+      "size": [
+        448,
+        448
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 57.66,
+      "peakMiB": 3700,
+      "sha256": "acc26afd728c3a72ba15a667104bf482c3635978b4b6fc5eabeac6a7ef620e79",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/weapon-thach-tam.webp",
+        "width": 448,
+        "height": 448,
+        "bytes": 40080,
+        "sha256": "dff6865d63c020e5ce98120d65492d991cb8caf72ca65eb09fffd8411a520c3e"
+      },
+      {
+        "path": "web/assets/than-lo/weapon-thach-tam-thumb.webp",
+        "width": 160,
+        "height": 160,
+        "bytes": 5524,
+        "sha256": "4d73395d8a02cd465fc4ad4bfafb7b9f4886b01fe4f72daf7a1bffe0e187dbd0"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed full source PNG 2026-10-12. Accepted original isolated relic or school emblem; actual silhouette and decorative markings retained, no readable UI text required.",
+      "integrationReviewedAt": "2026-10-12",
+      "integrationEvidence": "D:/Tro-ly-AI-art/f5-relic-{0,1,2}-{320-light,390-dark}.png; actual collection viewed, including lower Dinh Tam row; 64px thumbnails and effects remain readable"
+    }
+  },
+  {
+    "id": "weapon-dinh-tam",
+    "contentId": "weapon.dinh-tam",
+    "alt": "Định Tâm, mặt hộ phù tròn ngà và than, viền đồng và dây hạt đen.",
+    "role": "weapon",
+    "focalPoint": [
+      0.5,
+      0.5
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "weapon-dinh-tam",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 40504,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, still life, ancient bronze rectangular seal pendant, black stone inset, thin dark cord, resting on ivory linen, weathered metal, close view",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage, person, human, woman, man, face, portrait, body, statue",
+      "size": [
+        448,
+        448
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 53.27,
+      "peakMiB": 3700,
+      "sha256": "9e4f2d8d57a26c84b95643657129ec03563bca75bfcb4d6ac794bf14679b0fe5",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/weapon-dinh-tam.webp",
+        "width": 448,
+        "height": 448,
+        "bytes": 50578,
+        "sha256": "7eb64140ca51593609a4b4a6b7a044bda1fddb4a3bf97d195ed46a93c7f5661d"
+      },
+      {
+        "path": "web/assets/than-lo/weapon-dinh-tam-thumb.webp",
+        "width": 160,
+        "height": 160,
+        "bytes": 4714,
+        "sha256": "7cf12e5f00a7a87612e5d3119eacf6f7a7fe98226b11a5becae7463c94249cb2"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed full source PNG 2026-10-12. Accepted original isolated relic or school emblem; actual silhouette and decorative markings retained, no readable UI text required.",
+      "integrationReviewedAt": "2026-10-12",
+      "integrationEvidence": "D:/Tro-ly-AI-art/f5-relic-{0,1,2}-{320-light,390-dark}.png; actual collection viewed, including lower Dinh Tam row; 64px thumbnails and effects remain readable"
+    }
+  },
+  {
+    "id": "school-thien-kiem",
+    "contentId": "school.thien-kiem",
+    "alt": "Bí tịch Thiên Kiếm bìa xám chạm nổi, hai lưỡi bạc đặt trên sách.",
+    "role": "school",
+    "focalPoint": [
+      0.5,
+      0.5
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "school-thien-kiem",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 40505,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, still life, old charcoal cloth bound book, single small bronze straight sword ornament on cover, worn ivory pages, bronze corner protectors, resting on plain ivory linen",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage, person, human, woman, man, face, portrait, body, statue",
+      "size": [
+        448,
+        448
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 52.75,
+      "peakMiB": 3700,
+      "sha256": "3a9aa60a0448595d6686c45cc5436eabf7da522726f76961de935b8540cd63b3",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/school-thien-kiem.webp",
+        "width": 448,
+        "height": 448,
+        "bytes": 21638,
+        "sha256": "ccc990a99b4ba2302f312b71638797fd789d41f198a15629c910a74f947ec260"
+      },
+      {
+        "path": "web/assets/than-lo/school-thien-kiem-thumb.webp",
+        "width": 160,
+        "height": 160,
+        "bytes": 2542,
+        "sha256": "6aaf208d6f84434cc2a2eb5f77a48b1c8cd9ce58a849c3b3d926974b2f52c6ff"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed full source PNG 2026-10-12. Accepted original isolated relic or school emblem; actual silhouette and decorative markings retained, no readable UI text required.",
+      "integrationReviewedAt": "2026-10-12",
+      "integrationEvidence": "D:/Tro-ly-AI-art/f5-school-thien-kiem.png; all five actual filtered library headers viewed at light390 after scrolling into view; source-reviewed 64px thumbnails load"
+    }
+  },
+  {
+    "id": "school-bat-diet",
+    "contentId": "school.bat-diet",
+    "alt": "Biểu trưng Bất Diệt, viên ngọc ngà trên đĩa ấn đồng chạm nổi.",
+    "role": "school",
+    "focalPoint": [
+      0.5,
+      0.5
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "school-bat-diet",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 40506,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, still life, old charcoal cloth bound book, small angular bronze shield ornament on cover, thick worn ivory pages, bronze corner protectors, resting on plain ivory linen",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage, person, human, woman, man, face, portrait, body, statue",
+      "size": [
+        448,
+        448
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 52.36,
+      "peakMiB": 3700,
+      "sha256": "e118a7743530d6f5ec961aaffe60a1a995c2aac620b48aa2a5b14269323f96bd",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/school-bat-diet.webp",
+        "width": 448,
+        "height": 448,
+        "bytes": 18416,
+        "sha256": "cfebbf1e1a6484bbb18f7edab7f6b943f5e4969142a4d02eed50ea54c26c3961"
+      },
+      {
+        "path": "web/assets/than-lo/school-bat-diet-thumb.webp",
+        "width": 160,
+        "height": 160,
+        "bytes": 2206,
+        "sha256": "dd670f89b77ebf52909c95fad6469dbb485b7d561025a7d2eef4fb84203ea4ea"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed full source PNG 2026-10-12. Accepted original isolated relic or school emblem; actual silhouette and decorative markings retained, no readable UI text required.",
+      "integrationReviewedAt": "2026-10-12",
+      "integrationEvidence": "D:/Tro-ly-AI-art/f5-school-bat-diet.png; all five actual filtered library headers viewed at light390 after scrolling into view; source-reviewed 64px thumbnails load"
+    }
+  },
+  {
+    "id": "school-thien-co",
+    "contentId": "school.thien-co",
+    "alt": "Biểu trưng Thiên Cơ, thiên bàn tròn chạm nổi với kim chỉ bốn hướng.",
+    "role": "school",
+    "focalPoint": [
+      0.5,
+      0.5
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "school-thien-co",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 40509,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, still life, old charcoal cloth bound book, small bronze compass ornament on cover, worn ivory pages, bronze corner protectors, resting on plain ivory linen",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage, person, human, woman, man, face, portrait, body, statue",
+      "size": [
+        448,
+        448
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 52.3,
+      "peakMiB": 3700,
+      "sha256": "4c7188bc3a493df436632a1de52330e30508e148c402c16ceca896d6ab8a737b",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/school-thien-co.webp",
+        "width": 448,
+        "height": 448,
+        "bytes": 52610,
+        "sha256": "e5f4abaa3f85282c3097020f5c13c3cccf6c8d5c763313e31a5b2aa5c97925df"
+      },
+      {
+        "path": "web/assets/than-lo/school-thien-co-thumb.webp",
+        "width": 160,
+        "height": 160,
+        "bytes": 5998,
+        "sha256": "55f506adcb119d913492fdeda4a5ca1681685a1f0ee5ed8a625532a9b5d95c67"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed full source PNG 2026-10-12. Accepted original isolated relic or school emblem; actual silhouette and decorative markings retained, no readable UI text required.",
+      "integrationReviewedAt": "2026-10-12",
+      "integrationEvidence": "D:/Tro-ly-AI-art/f5-school-thien-co.png; all five actual filtered library headers viewed at light390 after scrolling into view; source-reviewed 64px thumbnails load"
+    }
+  },
+  {
+    "id": "school-u-minh",
+    "contentId": "school.u-minh",
+    "alt": "Bí tịch U Minh bìa da sẫm đỏ với vòng ấn đồng, đặt cạnh các quyển sách cũ.",
+    "role": "school",
+    "focalPoint": [
+      0.5,
+      0.5
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "school-u-minh-v2",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 37304,
+      "prompt": "original xianxia relic concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, still life, antique leather bound book, dark bronze circular seal on cover, thick ivory paper edges, charcoal leather with a narrow muted crimson border, resting on a stone altar, dim ancient cave, close view",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, person, human, woman, man, face, portrait, body, statue, hands, blurry",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 97.62,
+      "peakMiB": 4053,
+      "sha256": "5058da323b4419f8f23dee314665d1dc39f971e18b45cb767fb3d4eb5d514629",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/school-u-minh.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 30768,
+        "sha256": "6c000f8fc5722333409859ef055648239a0fa7a979501db604183dacd547114c"
+      },
+      {
+        "path": "web/assets/than-lo/school-u-minh-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 4252,
+        "sha256": "1b2cf2868e35f440e605995dcb2591c911f439b0b7df82f2e257f44866f9bc9f"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed full source PNG 2026-10-12. Accepted closed book and restrained cover ornament; predecessor human scene rejected.",
+      "integrationReviewedAt": "2026-10-12",
+      "integrationEvidence": "D:/Tro-ly-AI-art/f5-school-u-minh.png; all five actual filtered library headers viewed at light390 after scrolling into view; source-reviewed 64px thumbnails load"
+    }
+  },
+  {
+    "id": "school-thai-hu",
+    "contentId": "school.thai-hu",
+    "alt": "Bí tịch Thái Hư bìa xám với ấn tròn và hoa văn đồng ở bốn góc.",
+    "role": "school",
+    "focalPoint": [
+      0.5,
+      0.5
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "school-thai-hu-v2",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 37305,
+      "prompt": "original xianxia relic concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, still life, antique leather bound book, dark bronze circular seal on cover, thick ivory paper edges, pale grey leather with faint silver crescent ornament, resting on a stone altar, dim ancient cave, close view",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, person, human, woman, man, face, portrait, body, statue, hands, blurry",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 96.45,
+      "peakMiB": 4053,
+      "sha256": "0dba2fc900ff29b34a57e2eb0c5d3f8939409569301cd78b9b37c679ea7bf448",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/school-thai-hu.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 38684,
+        "sha256": "e7ae80820e83b177e3bc43ad0ee0b3055440ba4202f6f2b762c90a1f8953f628"
+      },
+      {
+        "path": "web/assets/than-lo/school-thai-hu-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 3888,
+        "sha256": "b689c82a34de7b0a22ed58566511a516176c3fd033f0cdbd7a562bfd3fcaa1af"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed full source PNG 2026-10-12. Accepted closed book and restrained cover ornament; predecessor human scene rejected.",
+      "integrationReviewedAt": "2026-10-12",
+      "integrationEvidence": "D:/Tro-ly-AI-art/f5-school-thai-hu.png; all five actual filtered library headers viewed at light390 after scrolling into view; source-reviewed 64px thumbnails load"
+    }
+  },
+  {
+    "id": "weapon-thuan-phong",
+    "contentId": "weapon.thuan-phong",
+    "alt": "Thuận Phong, lưỡi kiếm bạc chuôi ngà chạm nổi, đặt cạnh phiến đá xám.",
+    "role": "weapon",
+    "focalPoint": [
+      0.5,
+      0.5
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "weapon-thuan-phong-v3",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 40520,
+      "prompt": "original xianxia relic concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, still life, one single antique straight sword, vertical blade, dark bronze handle at bottom, silver blade pointing up, minimal simple crossguard, on plain ivory background, museum artifact, isolated object",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, person, human, woman, man, face, portrait, body, statue, hands, blurry, crossed swords, two swords, multiple swords, crossed blades, dagger, curved blade",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 108.02,
+      "peakMiB": 4053,
+      "sha256": "6d4a0eeab9d7d417d198b9f9c0bb528dcca363ca95b6b052060039fb297a8699",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/weapon-thuan-phong.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 20442,
+        "sha256": "433bf8904c907e90269f89a5338779fa4090da2067a4ab61d86c5d6dfda39f38"
+      },
+      {
+        "path": "web/assets/than-lo/weapon-thuan-phong-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 2544,
+        "sha256": "f197c613152ca3c79608291f26bf12c87921239fb345a7d3ebdfcb8acb792395"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed full source PNG 2026-10-12. Accepted one physical silver blade with ivory handle and simple guard beside stone, matching a light weapon. V1 human action and v2 overlapping blades rejected. Actual blade points down; alt describes actual source.",
+      "integrationReviewedAt": "2026-10-12",
+      "integrationEvidence": "D:/Tro-ly-AI-art/f5-relic-{0,1,2}-{320-light,390-dark}.png; actual collection viewed, including lower Dinh Tam row; 64px thumbnails and effects remain readable"
     }
   }
 ]

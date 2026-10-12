@@ -1,6 +1,6 @@
 import type {ToolCall,ToolName} from './contracts.ts';
 
-export function isReadTool(name:ToolName){return name==='find_tasks'||name==='get_agenda';}
+export function isReadTool(name:ToolName){return ['find_tasks','get_agenda','find_habits','get_game'].includes(name);}
 function fields(args:Record<string,unknown>,required:string[],optional:string[]=[]){
  if(required.some(k=>!(k in args))||Object.keys(args).some(k=>![...required,...optional].includes(k)))throw Error('INVALID_TOOL_FIELDS');
 }
@@ -25,6 +25,19 @@ function deadlineArg(value:unknown){
 export function validateTool(call:ToolCall,now:number):void{
  const a=call.args;
  switch(call.name){
+  case 'find_habits':fields(a,['query','status','cursor']);if(typeof a.query!=='string'||a.query.length>100||!['active','all'].includes(String(a.status)))throw Error('INVALID_QUERY');cursorArg(a.cursor);break;
+  case 'get_game':if(a.section==='versions'){fields(a,['section','techniqueId','before']);textArg(a.techniqueId,100);if(a.before!==null)textArg(a.before,130);}
+   else{fields(a,['section']);if(!['status','library'].includes(String(a.section)))throw Error('INVALID_GAME_SECTION');}break;
+  case 'habit_action':case 'practice_action':{
+   fields(a,['command']);if(!a.command||typeof a.command!=='object'||Array.isArray(a.command)||JSON.stringify(a.command).length>4000)throw Error('INVALID_COMPANION_COMMAND');
+   const c=a.command as Record<string,unknown>;
+   const operations:Record<string,string[]>=call.name==='habit_action'?{
+    create:['definition','reminderTime'],update:['habitId','version','definition','reminderTime'],archive:['habitId','version'],restore:['habitId','version'],
+    log:['habitId','version','day','logVersion','value','note'],slot:['habitId','version','day','startAt','minutes'],remove_slot:['habitId','version','day']
+   }:{start_practice:['day','version','techniqueId'],continue_practice:['day','version','practiceId'],stop_practice:['day','version']};
+   const allowed=operations[String(c.operation)];if(!allowed)throw Error('INVALID_COMPANION_OPERATION');
+   fields(c,['operation'],allowed);break;
+  }
   case 'ask_user':fields(a,['question']);textArg(a.question,700);break;
   case 'edit_task_step':fields(a,['operation','task_id','expected_version','step_id','title','complete']);textArg(a.task_id,100);
    if(!['add_step','edit_step','step_status'].includes(String(a.operation)))throw Error('INVALID_STEP_OPERATION');

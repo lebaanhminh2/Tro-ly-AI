@@ -21,7 +21,8 @@ const revisionDTO = (row: RevisionRow): HabitRevision => ({ fromDay: row.from_da
 // changes the existing healthy account or mints an ordinary task ticket.
 export class D1HabitStore implements HabitStore {
     private db: Database;
-    constructor(db: Database) { this.db = db; }
+    private defer?: (statements: Statement[]) => void;
+    constructor(db: Database, defer?: (statements: Statement[]) => void) { this.db = db; this.defer = defer; }
     private async currentDay(owner: string, now: number): Promise<HabitDay> {
         const current = await new ScheduleStore(this.db).ensureDay(owner, now);
         if (!current) throw Error('NO_ACTIVE_DAY');
@@ -46,8 +47,10 @@ export class D1HabitStore implements HabitStore {
             owner, id, day).first<{ value: number; note: string; version: number; updated: number }>();
         return row ? { value: row.value, note: row.note, version: row.version, updatedAt: row.updated } : emptyLog();
     }
-    async today(owner: string, now: number, archived = false) {
-        const day = await this.currentDay(owner, now);
+    async today(owner: string, now: number, archived = false, readOnly = false) {
+        const existing = readOnly ? await query(this.db, 'SELECT day,start_at,end_at FROM schedule_days WHERE owner=? AND start_at<=? AND end_at>? ORDER BY start_at DESC LIMIT 1', owner, now, now).first<DayRow>() : null;
+        if (readOnly && !existing) throw Error('NO_ACTIVE_DAY');
+        const day = existing ? dayDTO(existing) : await this.currentDay(owner, now);
         const rows = (await query(this.db, `SELECT id,version,created_day,archived_from,next_day FROM habits WHERE owner=?
             ${archived ? '' : 'AND (archived_from IS NULL OR archived_from>?)'} ORDER BY created,id LIMIT 100`,
             ...archived ? [owner] : [owner, day.day]).all<HabitRow>()).results;
@@ -130,7 +133,7 @@ export class D1HabitStore implements HabitStore {
                 change.habitId, time, change.revision.definition));
         }
         try {
-            await this.db.batch([
+            const writes = [
                 query(this.db, 'INSERT INTO transaction_guard SELECT CASE WHEN COALESCE((SELECT version FROM habit_accounts WHERE owner=?),0)=? THEN 1 ELSE 0 END', owner, aggregate?.version ?? 0),
                 // The same snapshot is checked in the transaction, not just while
                 // constructing it; a concurrent closure cannot admit a new log.
@@ -139,7 +142,8 @@ export class D1HabitStore implements HabitStore {
                 query(this.db, 'INSERT INTO habit_accounts(owner,version) VALUES(?,1) ON CONFLICT(owner) DO UPDATE SET version=version+1', owner),
                 query(this.db, 'INSERT INTO habit_receipts(owner,request_id,request_json,result_json,created) VALUES(?,?,?,?,?)', owner, requestId, request, JSON.stringify(result), now),
                 query(this.db, 'DELETE FROM transaction_guard'),
-            ]);
+            ];
+            if (this.defer) this.defer(writes); else await this.db.batch(writes);
         } catch (error) {
             const committed = await query(this.db, 'SELECT request_json,result_json FROM habit_receipts WHERE owner=? AND request_id=?', owner, requestId)
                 .first<{ request_json: string; result_json: string }>();

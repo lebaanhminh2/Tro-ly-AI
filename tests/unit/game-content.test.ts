@@ -1,8 +1,37 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { existsSync, readFileSync } from 'node:fs';
 import { GAME_BOSSES, GAME_CHAPTERS, publicGameCatalog, supportsContentVersion, validateGameContent } from '../../src/domain/game-content.ts';
 import { TECHNIQUES, INITIAL_TECHNIQUES, SCHOOLS } from '../../src/domain/techniques.ts';
 import { simulateEarnedJourney } from '../../scripts/simulate-game.ts';
+
+test('every encounter portrait resolves to a reviewed final asset and its declared crop derivatives', () => {
+    const assets = JSON.parse(readFileSync('docs/art/assets.json', 'utf8')) as { id: string; qa: { concept: string }; files: { path: string }[] }[];
+    for (const boss of GAME_BOSSES) {
+        assert.ok(boss.artId, 'Missing portrait: ' + boss.id);
+        const record = assets.find(asset => asset.id === boss.artId);
+        assert.equal(record?.qa.concept, 'approved', 'Unreviewed portrait: ' + boss.id);
+        for (const suffix of ['', '-thumb']) {
+            const path = 'web/assets/than-lo/' + boss.artId + suffix + '.webp';
+            assert.ok(existsSync(path), path); assert.ok(record!.files.some(file => file.path === path), path);
+        }
+    }
+});
+
+test('all thirty-nine technique identities have distinct bounded original symbols and reproducible mappings', () => {
+    const symbols = JSON.parse(readFileSync('docs/art/technique-symbols.json', 'utf8')) as { id: string; identity: string; path: string; workflow: string }[];
+    assert.equal(symbols.length, TECHNIQUES.length);
+    const drawings = new Set<string>();
+    for (const technique of TECHNIQUES) {
+        const symbol = symbols.find(value => value.id === technique.id)!;
+        assert.equal(symbol.identity, technique.identity); assert.ok(existsSync(symbol.workflow));
+        const svg = readFileSync(symbol.path, 'utf8');
+        assert.ok(Buffer.byteLength(svg) < 1200, 'Symbol exceeds UI budget: ' + technique.id);
+        assert.doesNotMatch(svg, /<script|onload=|<text\b|https?:\/\/(?!www\.w3\.org)/i);
+        drawings.add(svg);
+    }
+    assert.equal(drawings.size, TECHNIQUES.length);
+});
 
 test('all fifteen chapters and thirty-nine rights have reachable finite encounters, including five earned inheritances and the final victory', () => {
     validateGameContent();

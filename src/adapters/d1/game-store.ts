@@ -16,9 +16,11 @@ const idle = (day: number): GameSelection => ({ fromDay: day, mode: 'idle', prac
 
 export class D1GameStore implements GameStore {
     private db: Database;
-    constructor(db: Database) { this.db = db; }
-    private async day(owner: string, now: number): Promise<HabitDay> {
-        const day = await new ScheduleStore(this.db).ensureDay(owner, now);
+    private defer?: (statements: Statement[]) => void;
+    constructor(db: Database, defer?: (statements: Statement[]) => void) { this.db = db; this.defer = defer; }
+    private async day(owner: string, now: number, readOnly = false): Promise<HabitDay> {
+        const day = readOnly ? await query(this.db, 'SELECT day,start_at,end_at FROM schedule_days WHERE owner=? AND start_at<=? AND end_at>? ORDER BY start_at DESC LIMIT 1', owner, now, now)
+            .first<{ day: number; start_at: number; end_at: number }>() : await new ScheduleStore(this.db).ensureDay(owner, now);
         if (!day) throw Error('NO_ACTIVE_DAY');
         if (now < day.start_at || now >= day.end_at) throw Error('GAME_DAY_CLOSED');
         return { day: day.day, startAt: day.start_at, endAt: day.end_at };
@@ -41,8 +43,8 @@ export class D1GameStore implements GameStore {
         const row = await query(this.db, 'SELECT id,state_json,version,created FROM practice_versions WHERE owner=? AND id=?', owner, id).first<VersionRow>();
         return row ? stored(row) : null;
     }
-    async read(owner: string, now: number): Promise<GameOverview> {
-        const day = await this.day(owner, now);
+    async read(owner: string, now: number, readOnly = false): Promise<GameOverview> {
+        const day = await this.day(owner, now, readOnly);
         const [account, current, pending, owned, audits, recent] = await Promise.all([
             this.account(owner), this.selected(owner, day.day), this.pending(owner, day.day), this.owned(owner),
             query(this.db, 'SELECT state_json FROM practice_week_audits WHERE owner=? AND closed_day IS NULL ORDER BY end_day,habit_id LIMIT 30', owner).all<{ state_json: string }>(),
@@ -104,7 +106,7 @@ export class D1GameStore implements GameStore {
             query(this.db, 'INSERT INTO game_receipts(owner,request_id,request_json,result_json,created) VALUES(?,?,?,?,?)', owner, id, request, JSON.stringify(result), now),
             query(this.db, 'DELETE FROM transaction_guard'),
         );
-        try { await this.db.batch(statements); }
+        try { if (this.defer) this.defer(statements); else await this.db.batch(statements); }
         catch (error) {
             const receipt = await query(this.db, 'SELECT request_json,result_json FROM game_receipts WHERE owner=? AND request_id=?', owner, id).first<{ request_json: string; result_json: string }>();
             if (receipt?.request_json === request) return JSON.parse(receipt.result_json) as GameSaved;

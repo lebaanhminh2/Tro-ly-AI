@@ -1,7 +1,7 @@
 import { bossAction as act, contentFighter as fighter, type GameBoss } from './game-content-model.ts';
 
 type Branch = Omit<GameBoss, 'revival' | 'defeat' | 'advice' | 'artId'> & { defeat?: string; advice?: string[]; artId?: string };
-const branch = (value: Branch): GameBoss => ({ revival: { remaining: 0, hpPercent: 350 }, artId: null,
+const branch = (value: Branch): GameBoss => ({ revival: { remaining: 0, hpPercent: 350 }, artId: value.id,
     defeat: 'Thử thách chưa vượt qua. Những bản luyện và quyền học đã có được giữ; cậu có thể đổi cách chuẩn bị rồi trở lại.',
     advice: ['Thắng mở quyền học, không tặng một bản luyện sẵn.', 'Đây là tuyến tùy chọn; không bắt hoàn thành để đi tiếp tuyến chính.'], ...value });
 
@@ -35,7 +35,7 @@ export const BRANCH_BOSSES: GameBoss[] = [
         introduction: 'Một người tại hội đã giữ thân bằng huyết lực của kẻ khác. Cậu cần phá khế mà không biến người đứng sau thành phần HP dùng thêm.', victory: 'Khế bị phá, quyền học Thâu Thiên Hoán Mệnh mở. Bản của cậu chỉ đoạt lực có trần và lấy HP tối đa của chính cậu làm giá.', mechanics: 'Cấm thuật đoạt huyết: chặn nhịp hồi hoặc dồn công qua khoảng rỗng.', unlocks: ['thau-thien'] }),
     branch({ id: 'cam-tang-nhat', name: 'Người Giữ Nhật Tàn', kind: 'forbidden', chapter: 6, requires: ['vo-anh'], recommendedRank: 3, maxTurns: 9,
         fighter: fighter(640, 40, 2), pattern: [act('Dư hỏa', 'Đòn nhẹ trước đại kích.', [300]), act('Nhật tận', 'Một hit rất lớn đã báo.', [2400], true), act('Tàn tro', 'Một hit rất nhẹ sau đại kích.', [100])],
-        introduction: 'Người giữ một đòn cuối đã không còn người để bảo vệ. Anh hỏi cậu sẽ làm gì nếu đòn ấy không hạ được đối thủ.', victory: 'Nhật tàn dừng trước khi dùng hết sinh lực. Cậu được quyền học Táng Nhật, cùng cảnh báo rằng đòn chưa thắng vẫn để lại một người chỉ còn1HP.', mechanics: 'Cấm thuật cực công: đại kích rất lớn xen khoảng nghỉ, không thưởng từ tự chết.', unlocks: ['tang-nhat'] }),
+        introduction: 'Người giữ một đòn cuối đã không còn người để bảo vệ. Người ấy hỏi cậu sẽ làm gì nếu đòn ấy không hạ được đối thủ.', victory: 'Nhật tàn dừng trước khi dùng hết sinh lực. Cậu được quyền học Táng Nhật, cùng cảnh báo rằng đòn chưa thắng vẫn để lại một người chỉ còn1HP.', mechanics: 'Cấm thuật cực công: đại kích rất lớn xen khoảng nghỉ, không thưởng từ tự chết.', unlocks: ['tang-nhat'] }),
     branch({ id: 'cam-dong-menh', name: 'Người Giữ Song Khế', kind: 'forbidden', chapter: 5, requires: ['khoi-loi-dai-hoi'], recommendedRank: 3, maxTurns: 9,
         fighter: fighter(610, 35, 5), pattern: [act('Khế thứ nhất', 'Hai hit vừa.', [800, 800]), act('Khế thứ hai', 'Một hit mạnh; phản thương chỉ từ HP thật đã mất.', [1700], true), act('Cắt dây', 'Một hit nhẹ để chuyển thế.', [250])],
         introduction: 'Hai người bị nối bằng một khế, nhưng chỉ một người đồng ý. Người giữ Song Khế đưa thử thách tách dây mà không phủ nhận thương tổn đã có.', victory: 'Khế chỉ còn phần người tự chọn. Quyền học Đồng Mệnh Huyết Khế mở; nhận phản thương không miễn phần HP bản thân phải chịu.', mechanics: 'Cấm thuật phản thương: đa hit và đại kích để cân nhắc HP thật với phòng ngự.', unlocks: ['dong-menh'] }),

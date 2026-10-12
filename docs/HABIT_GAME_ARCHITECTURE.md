@@ -144,6 +144,15 @@ Mọi endpoint kiểm owner từ auth context. Giữ Telegram initData/HMAC/TTL,
 
 Tool chỉ ghi khi user có yêu cầu rõ trong cơ chế hiện tại. Hỏi tình trạng không tự tạo habit/đổi chế độ/chọn cấm thuật. Context gồm ngày server, sleep/focus/notification state, tóm tắt habit/chế độ/trận liên quan với revision; không đưa cả catalog/history hoặc dựa summary để suy quyền. Khi Gemini lỗi/quota, web và luật/kết toán vẫn dùng được.
 
+### Tích hợp bot đã triển khai local (F5)
+
+- `WorkReader.habitGame` qua port `HabitGameCompanion`; adapter D1 đọc snapshot ngày đã tồn tại. `find_habits` tìm không dấu, phân trang10mục và có `active/all` để tìm ID habit lưu trữ; số lượng/mục tiêu trả bằng đơn vị thật. `get_game` đọc trạng thái/thư viện hoặc các bản luyện một môn qua keyset10mục, chỉ dùng public battle projection và không lộ future pattern/ending. Các đọc không ensure/settle ngày hoặc phát thưởng.
+- Context mặc định giữ6habit, cursor tiếp tục từ6 và current/pending practice, live battle gọn. Không nhét cả39môn hoặc logtrận vào mỗi lượt. Context30weekly và query budget được kiểm bằng D1fixture; cần giữ final runtime/performance gate.
+- `habit_action(command)` dùng nguyên `HabitService` cho create/update/archive/restore/log/slot/remove_slot; `practice_action(command)` dùng `PracticeService` cho start/continue/stop. Đơn vị input thật, log thay tổng, chỉ ngày hiện tại; mode và revisions theo mốc service. ID/request/owner/time do server quản lý, model không truyền grant/purity/owner/clock.
+- Adapter chuẩn bị statements rồi `ConversationStore.commitWrite` fence lease/inbox, lưu tool receipt + business receipt + mutation cùng D1batch. Ghi chỉ ở action mode, một companionwrite mỗiresponse, `respond` có thể kèm; chặn ghép taskbatch. Kiểm lại end_at sau prepare. ACKmất đọc lại receipt, không đọc được thì kết thúc với trạng thái chưa xác nhận thay vì gọi thêm ghi.
+- Luyện lại bản từng luyện cần web confirm; battle prepare/choose/cost/exchange/withdraw/rescue/death qua web để đọc giá và xác nhận. Bot trả trạng thái/gameplay có dữ liệu, không tự phát thưởng. Sleep/focus context giữ giới hạn thúc task/habit/ngủ/xuấtchiến; configured reminders vẫn độc lập.
+- Kiểm `tests/integration/habit-game-bot.test.ts`: readonly/owner/unit/search/archive, write+replay/rollback, mode/batch/restartguard, tomorrow selection, qua cutoff, ACKloss và30weeklycontext. Đây là fixture native/D1, chưa chứng minh live provider/Telegram.
+
 ## 5. Thời gian và cron
 
 Ngày sinh hoạt lấy từ `operatingDay/dayWindow`; điểm danh vẫn dùng ngày lịch Việt Nam. Snapshot đầu kỳ phải ổn định khi user đổi settings, mode hay catalog. Các period đã đóng không thể được viết lại bằng sửa giờ máy/client.

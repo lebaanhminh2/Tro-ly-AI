@@ -38,6 +38,10 @@ def main():
                           "files": [item.rfilename for item in info.siblings]}, ensure_ascii=False), flush=True)
         return
     manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
+    if args.only:
+        unknown = set(args.only) - {item["id"] for item in manifest["assets"]}
+        if unknown:
+            raise RuntimeError("Unknown requested asset IDs: " + ", ".join(sorted(unknown)))
     if manifest["model"] != MODEL or not manifest.get("revision") or manifest["revision"] == "main":
         raise RuntimeError("Pin the verified model revision in the manifest first.")
     if args.publish:
@@ -68,7 +72,7 @@ def main():
         if destination.exists():
             print("Already generated: " + item["id"], flush=True)
             continue
-        prompt = manifest["style"] + ", " + item["prompt"]
+        prompt = item.get("style", manifest["style"]) + ", " + item["prompt"]
         negative = manifest["negative"] + (", " + item["negative"] if item.get("negative") else "")
         for value in [prompt, negative]:
             if len(pipeline.tokenizer(value).input_ids) > pipeline.tokenizer.model_max_length:
@@ -91,7 +95,7 @@ def main():
             raise RuntimeError("Degenerate image; no artifact is approved or saved.")
         result.save(destination)
         metadata = {"id": item["id"], "model": MODEL, "revision": manifest["revision"],
-                    "seed": item["seed"], "prompt": manifest["style"] + ", " + item["prompt"],
+                    "seed": item["seed"], "prompt": prompt,
                     "negative": negative, "size": result.size,
                     "steps": item.get("steps", 28), "guidance": item.get("guidance", 7.0),
                     "precision": args.precision,

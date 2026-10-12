@@ -93,6 +93,12 @@ export async function executeTool(call:ToolCall,store:WorkReader,owner:string,up
   return {result:{status:'planned'},fallback:'Tớ vẫn đang theo mạch câu chuyện nhé.',changes:[{type:'summary-update',owner,content:String(a.content),through:Number(a.through),expectedVersion:Number(a.expected_version),now}]};
  }
  if(isReadTool(call.name)){
+  if(call.name==='find_habits'||call.name==='get_game'){
+   if(!store.habitGame)throw Error('MISSING_COMPANION_READER');
+   const result=call.name==='find_habits'?await store.habitGame.findHabits(owner,String(a.query),Number(a.cursor),now,a.status as 'active'|'all'):
+    await store.habitGame.game(owner,a.section as 'status'|'library'|'versions',now,a.techniqueId as string|undefined,a.before as string|null|undefined);
+   return {result,changes:[],fallback:'Tớ đã đọc dữ liệu habit và Thần Lộ.'};
+  }
   if(call.name==='find_tasks'){
    if(!store.findTasks)throw Error('MISSING_TOOL_READER');
    return {result:await store.findTasks(owner,String(a.query),a.status as 'active'|'completed'|'all',Number(a.cursor)),changes:[],fallback:'Tớ đã đọc danh sách việc.'};
@@ -116,6 +122,7 @@ export async function executeTool(call:ToolCall,store:WorkReader,owner:string,up
   type:'remember',memory:{id:`toolmem${owner}_${updateId}${suffix}`,owner,content:String(a.content),kind:a.lifetime==='today'?'temporary':'preference',source:`user-tool:${updateId}`,created:now,expires:a.lifetime==='today'?dayStart(now)+86400000:null}
  }]};
  if(call.name==='resolve_pending')throw Error('PENDING_RESOLUTION_REQUIRES_JOURNAL');
+ if(call.name==='habit_action'||call.name==='practice_action')throw Error('COMPANION_WRITE_REQUIRES_JOURNAL');
  const task=await store.task(owner,String(a.task_id));
  if(!task)return {result:{status:'rejected',reason:'task_not_found'},changes:[],fallback:'Tớ chưa tìm thấy việc này.'};
  if(task.version!==a.expected_version)return {result:{status:'rejected',reason:'stale_version',task},changes:[],fallback:'Việc vừa thay đổi. Mình kiểm tra lại trước nhé.'};

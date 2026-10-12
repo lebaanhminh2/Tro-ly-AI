@@ -37,7 +37,7 @@
       "steps": 28,
       "guidance": 7,
       "conceptApproved": true,
-      "qaNote": "Viewed full source PNG 2026-10-12. Face, silhouette, cloth and bronze detail coherent; alt records the actual image. Sources selected but not yet published or integrated."
+      "qaNote": "Viewed full source PNG 2026-10-12. Coherent original adult character, anatomy and costume; alt describes actual output rather than unmet prompt details. Selected for publication; integrated UI review pending."
     },
     {
       "id": "cam-tang-nhat",
@@ -56,7 +56,7 @@
       "steps": 28,
       "guidance": 7,
       "conceptApproved": true,
-      "qaNote": "Viewed full source PNG 2026-10-12. Face, silhouette, cloth and bronze detail coherent; alt records the actual image. Sources selected but not yet published or integrated."
+      "qaNote": "Viewed full source PNG 2026-10-12. Coherent original adult character, anatomy and costume; alt describes actual output rather than unmet prompt details. Selected for publication; integrated UI review pending."
     },
     {
       "id": "cam-dong-menh",
@@ -75,7 +75,7 @@
       "steps": 28,
       "guidance": 7,
       "conceptApproved": true,
-      "qaNote": "Viewed full source PNG 2026-10-12. Face, silhouette, cloth and bronze detail coherent; alt records the actual image. Sources selected but not yet published or integrated."
+      "qaNote": "Viewed full source PNG 2026-10-12. Coherent original adult character, anatomy and costume; alt describes actual output rather than unmet prompt details. Selected for publication; integrated UI review pending."
     },
     {
       "id": "cam-cuu-u",
@@ -94,7 +94,7 @@
       "steps": 28,
       "guidance": 7,
       "conceptApproved": true,
-      "qaNote": "Viewed full source PNG 2026-10-12. Face, silhouette, cloth and bronze detail coherent; alt records the actual image. Sources selected but not yet published or integrated."
+      "qaNote": "Viewed full source PNG 2026-10-12. Coherent original adult character, anatomy and costume; alt describes actual output rather than unmet prompt details. Selected for publication; integrated UI review pending."
     },
     {
       "id": "cam-phong-than",
@@ -113,7 +113,7 @@
       "steps": 28,
       "guidance": 7,
       "conceptApproved": true,
-      "qaNote": "Viewed full source PNG 2026-10-12. Face, silhouette, cloth and bronze detail coherent; alt records the actual image. Sources selected but not yet published or integrated."
+      "qaNote": "Viewed full source PNG 2026-10-12. Coherent original adult character, anatomy and costume; alt describes actual output rather than unmet prompt details. Selected for publication; integrated UI review pending."
     },
     {
       "id": "cam-tam-nhat",
@@ -132,11 +132,11 @@
       "steps": 28,
       "guidance": 7,
       "conceptApproved": true,
-      "qaNote": "Viewed full source PNG 2026-10-12. Face, silhouette, cloth and bronze detail coherent; alt records the actual image. Sources selected but not yet published or integrated."
+      "qaNote": "Viewed full source PNG 2026-10-12. Coherent original adult character, anatomy and costume; alt describes actual output rather than unmet prompt details. Selected for publication; integrated UI review pending."
     },
     {
       "id": "cam-nghich-luan",
-      "alt": "Người Giữ Luân Khuyết.",
+      "alt": "Người Giữ Luân Khuyết tóc đen búi cao, áo xám cổ đen và móc đồng tròn.",
       "prompt": "bust portrait, older East Asian female archivist, grey hair tight bun, tired observant eyes, layered closed slate robe, simple bronze ring pendant, plain grey background",
       "seed": 40307,
       "publishId": "cam-nghich-luan",
@@ -150,12 +150,12 @@
       "height": 640,
       "steps": 28,
       "guidance": 7,
-      "conceptApproved": false,
-      "qaNote": "Pending source/identity and integrated review."
+      "conceptApproved": true,
+      "qaNote": "Viewed full source PNG 2026-10-12. Coherent original adult character, anatomy and costume; alt describes actual output rather than unmet prompt details. Selected for publication; integrated UI review pending."
     },
     {
       "id": "di-san-vo-mon",
-      "alt": "Khách Không Môn.",
+      "alt": "Khách Không Môn tóc đen, khăn than và áo xám cũ với đai nâu.",
       "prompt": "bust portrait, mature East Asian male wanderer, short messy black hair, relaxed thoughtful face, worn ash grey closed robe, charcoal scarf, plain grey background",
       "seed": 40308,
       "publishId": "di-san-vo-mon",
@@ -169,12 +169,12 @@
       "height": 640,
       "steps": 28,
       "guidance": 7,
-      "conceptApproved": false,
-      "qaNote": "Pending source/identity and integrated review."
+      "conceptApproved": true,
+      "qaNote": "Viewed full source PNG 2026-10-12. Coherent original adult character, anatomy and costume; alt describes actual output rather than unmet prompt details. Selected for publication; integrated UI review pending."
     },
     {
       "id": "di-san-son-ha",
-      "alt": "Người Giữ Sơn Hà.",
+      "alt": "Người Giữ Sơn Hà tóc bạc, râu trắng và giáp xám viền đồng.",
       "prompt": "bust portrait, older East Asian male mountain keeper, broad weathered face, grey beard, charcoal stone shoulder armor, ivory collar, bronze clasp, plain grey background",
       "seed": 40309,
       "publishId": "di-san-son-ha",
@@ -188,12 +188,12 @@
       "height": 640,
       "steps": 28,
       "guidance": 7,
-      "conceptApproved": false,
-      "qaNote": "Pending source/identity and integrated review."
+      "conceptApproved": true,
+      "qaNote": "Viewed full source PNG 2026-10-12. Coherent original adult character, anatomy and costume; alt describes actual output rather than unmet prompt details. Selected for publication; integrated UI review pending."
     },
     {
       "id": "di-san-huyet-trieu",
-      "alt": "Người Giữ Huyết Triều.",
+      "alt": "Người Giữ Huyết Triều tóc đen tết đôi, trâm đồng và áo xám ngà.",
       "prompt": "bust portrait, mature East Asian female river guardian, black braided hair, stern face, closed slate robe, muted crimson sash, silver shoulder plates, plain grey background",
       "seed": 40310,
       "publishId": "di-san-huyet-trieu",
@@ -207,12 +207,12 @@
       "height": 640,
       "steps": 28,
       "guidance": 7,
-      "conceptApproved": false,
-      "qaNote": "Pending source/identity and integrated review."
+      "conceptApproved": true,
+      "qaNote": "Viewed full source PNG 2026-10-12. Coherent original adult character, anatomy and costume; alt describes actual output rather than unmet prompt details. Selected for publication; integrated UI review pending."
     },
     {
       "id": "di-san-kiep-dong",
-      "alt": "Người Giữ Kiếp Thanh.",
+      "alt": "Người Giữ Kiếp Thanh tóc đen buộc sau, râu đen, khăn ngà và giáp than.",
       "prompt": "bust portrait, East Asian man age forty, long dark hair tied back, calm intense eyes, charcoal lamellar armor, ivory scarf, small bronze ornament, plain grey background",
       "seed": 40311,
       "publishId": "di-san-kiep-dong",
@@ -226,12 +226,12 @@
       "height": 640,
       "steps": 28,
       "guidance": 7,
-      "conceptApproved": false,
-      "qaNote": "Pending source/identity and integrated review."
+      "conceptApproved": true,
+      "qaNote": "Viewed full source PNG 2026-10-12. Coherent original adult character, anatomy and costume; alt describes actual output rather than unmet prompt details. Selected for publication; integrated UI review pending."
     },
     {
       "id": "di-san-van-co",
-      "alt": "Người Giữ Kiếm Âm.",
+      "alt": "Người Giữ Kiếm Âm tóc đen búi thấp, áo ngà và giáp vai than chạm nổi.",
       "prompt": "bust portrait, older East Asian female sword keeper, straight grey hair tied back, serious face, ivory closed scholar robe, dark shoulder mantle, bronze clasp, plain grey background",
       "seed": 40312,
       "publishId": "di-san-van-co",
@@ -245,12 +245,12 @@
       "height": 640,
       "steps": 28,
       "guidance": 7,
-      "conceptApproved": false,
-      "qaNote": "Pending source/identity and integrated review."
+      "conceptApproved": true,
+      "qaNote": "Viewed full source PNG 2026-10-12. Coherent original adult character, anatomy and costume; alt describes actual output rather than unmet prompt details. Selected for publication; integrated UI review pending."
     },
     {
       "id": "di-san-van-thien",
-      "alt": "Người Giữ Tứ Ấn.",
+      "alt": "Người Giữ Tứ Ấn tóc bạc búi cao, râu trắng, áo ngà và cổ áo đen.",
       "prompt": "bust portrait, elderly East Asian male keeper, white hair tight bun, short white beard, charcoal ivory layered high collar robe, round bronze chest seal, plain grey background",
       "seed": 40313,
       "publishId": "di-san-van-thien",
@@ -264,8 +264,8 @@
       "height": 640,
       "steps": 28,
       "guidance": 7,
-      "conceptApproved": false,
-      "qaNote": "Pending source/identity and integrated review."
+      "conceptApproved": true,
+      "qaNote": "Viewed full source PNG 2026-10-12. Coherent original adult character, anatomy and costume; alt describes actual output rather than unmet prompt details. Selected for publication; integrated UI review pending."
     }
   ],
   "model": "Lykon/dreamshaper-8",

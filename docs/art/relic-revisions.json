@@ -1,0 +1,86 @@
+{
+  "model": "Lykon/dreamshaper-8",
+  "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+  "variant": "fp16",
+  "style": "original xianxia relic concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, still life",
+  "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, person, human, woman, man, face, portrait, body, statue, hands, blurry",
+  "assets": [
+    {
+      "id": "weapon-thuan-phong-v3",
+      "publishId": "weapon-thuan-phong",
+      "contentId": "weapon.thuan-phong",
+      "role": "weapon",
+      "alt": "Thuận Phong, lưỡi kiếm bạc chuôi ngà chạm nổi, đặt cạnh phiến đá xám.",
+      "prompt": "one single antique straight sword, vertical blade, dark bronze handle at bottom, silver blade pointing up, minimal simple crossguard, on plain ivory background, museum artifact, isolated object",
+      "negative": "crossed swords, two swords, multiple swords, crossed blades, dagger, curved blade",
+      "seed": 40520,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "conceptApproved": true,
+      "qaNote": "Viewed full source PNG 2026-10-12. Accepted one physical silver blade with ivory handle and simple guard beside stone, matching a light weapon. V1 human action and v2 overlapping blades rejected. Actual blade points down; alt describes actual source. Integrated UI review pending."
+    },
+    {
+      "id": "weapon-thuan-phong-v2",
+      "publishId": "weapon-thuan-phong",
+      "contentId": "weapon.thuan-phong",
+      "role": "weapon",
+      "alt": "Thuận Phong.",
+      "prompt": "antique bronze straight sword, black leather wrapped handle, simple small bronze crossguard, long slender steel blade, lying diagonally on plain ivory linen, close view, museum artifact",
+      "seed": 37304,
+      "width": 640,
+      "height": 448,
+      "steps": 28,
+      "guidance": 7,
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "conceptApproved": false,
+      "qaNote": "Rejected after source review: overlapping blade forms, not one coherent physical sword. V3 accepted and published."
+    },
+    {
+      "id": "school-u-minh-v2",
+      "publishId": "school-u-minh",
+      "contentId": "school.u-minh",
+      "role": "school",
+      "alt": "Bí tịch U Minh bìa da sẫm đỏ với vòng ấn đồng, đặt cạnh các quyển sách cũ.",
+      "prompt": "antique leather bound book, dark bronze circular seal on cover, thick ivory paper edges, charcoal leather with a narrow muted crimson border, resting on a stone altar, dim ancient cave, close view",
+      "seed": 37304,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "conceptApproved": true,
+      "qaNote": "Viewed full source PNG 2026-10-12. Accepted closed book and restrained cover ornament; predecessor human scene rejected. Integrated UI review pending."
+    },
+    {
+      "id": "school-thai-hu-v2",
+      "publishId": "school-thai-hu",
+      "contentId": "school.thai-hu",
+      "role": "school",
+      "alt": "Bí tịch Thái Hư bìa xám với ấn tròn và hoa văn đồng ở bốn góc.",
+      "prompt": "antique leather bound book, dark bronze circular seal on cover, thick ivory paper edges, pale grey leather with faint silver crescent ornament, resting on a stone altar, dim ancient cave, close view",
+      "seed": 37305,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "conceptApproved": true,
+      "qaNote": "Viewed full source PNG 2026-10-12. Accepted closed book and restrained cover ornament; predecessor human scene rejected. Integrated UI review pending."
+    }
+  ]
+}

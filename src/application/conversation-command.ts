@@ -24,7 +24,7 @@ export async function runToolTurn(initial:ModelContent[],ports:ToolTurnPorts):Pr
    if(code==='AI_TRIAL_ENDED')return 'Đợt dùng thử AI đã hết thời hạn cấu hình. Các lời nhắc đã lưu vẫn chạy; cần mở lại thời hạn trước khi chat tiếp.';
    return fallback;
   }
-  if(ports.mode==='chat'&&response.calls.some(c=>!['respond','find_tasks','get_agenda','show_work','ask_user'].includes(c.name)))return 'Muốn tớ thực hiện thay đổi, cậu gửi / rồi cách một dấu và nội dung nhé.';
+  if(ports.mode==='chat'&&response.calls.some(c=>!['respond','find_tasks','get_agenda','find_habits','get_game','show_work','ask_user'].includes(c.name)))return 'Muốn tớ thực hiện thay đổi, cậu gửi / rồi cách một dấu và nội dung nhé.';
   const question=response.calls.find(c=>c.name==='ask_user');
   if(question){if(response.calls.some(c=>!['ask_user','respond'].includes(c.name)))return 'Chưa thay đổi dữ liệu: cần làm rõ yêu cầu trước.';return typeof question.args.question==='string'?question.args.question:'Cậu nói rõ phần còn thiếu giúp tớ nhé?';}
   const unfilteredCalls=response.calls;
@@ -65,6 +65,7 @@ export async function runToolTurn(initial:ModelContent[],ports:ToolTurnPorts):Pr
     results.push(toolResponse(call,{status:'rejected',reason:'invalid_or_unavailable_tool'}));continue;
    }
    if(isReadTool(call.name)){results.push(toolResponse(call,outcome.result));continue;}
+   if(outcome.result.status==='uncertain')return outcome.fallback;
    if(outcome.result.status==='applied'){
     // A persisted tool result from a previous attempt is not executed again.
     wrote=true;fallback=outcome.fallback;results.push(toolResponse(call,outcome.result));continue;

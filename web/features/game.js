@@ -2,6 +2,7 @@ import { liveRequest } from '../core/http.js';
 import { habitDate } from '../models/habits.js';
 import { practiceNumber, practiceStatus, purityLabel } from '../models/practice.js';
 import { button, el } from '../ui/dom.js';
+import { techniqueSymbol } from '../ui/game-art.js';
 
 export function createGameActions(context) {
     const { state, runtime, render, toast, openSheet, sheet, sheetContent, confirm, performLive } = context;
@@ -37,7 +38,8 @@ export function createGameActions(context) {
         const expected = { day: state.gameData.day.day, version: state.gameData.version };
         openSheet(technique.name); sheet.classList.add('settings-sheet-open');
         const body = el('div', undefined, 'settings-sheet-body technique-sheet');
-        body.append(el('p', technique.description, 'technique-description'));
+        const introduction = el('div', undefined, 'technique-introduction');
+        introduction.append(techniqueSymbol(technique.id, 48), el('p', technique.description, 'technique-description')); body.append(introduction);
         if (technique.combatWarning) body.append(el('p', technique.combatWarning, 'battle-warning'));
         const sources = el('section', undefined, 'technique-sources'); sources.append(el('h3', 'Đường học'));
         if (technique.availableInitially) sources.append(el('p', 'Quyền học có sẵn từ khi bắt đầu hành trình.', 'hint'));

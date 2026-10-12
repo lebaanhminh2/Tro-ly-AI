@@ -10,6 +10,7 @@ export type Clock = { now(): number };
 export type Lease = { pendingWrites?:PreparedWrite[]; owner: string; token: string; input: Input; attempts: number;
   ui?:{card:import('../domain/ui.ts').Card;action:import('../domain/ui.ts').CardAction}; uiStale?:boolean; uiRecovered?:boolean };
 export interface WorkReader {
+ habitGame?:import('./habit-game-companion.ts').HabitGameCompanion;
  taskFocus?(owner:string,now:number):Promise<{taskId:string|null;day:number;planGeneration:number;planVersion:number;startedAt:number;endsAt:number}|null>;
  notificationState?(owner:string,now:number):Promise<{reason:string;until:number|null}>;
  hasOpenSteps?(owner:string,taskId:string):Promise<boolean>;
