@@ -354,7 +354,6 @@ test('reward sheet keeps its header outside one bounded, keyboard-accessible scr
     assert.ok(contains(app, "sheetContent.append(calendar);calendar.scrollTop=0"));
     assert.ok(contains(app, "function openSheet(title){resetSheetLayout()"));
     assert.ok(contains(app, "function closeSheet(){resetSheetLayout()"));
-    assert.ok(contains(app, "sheet.addEventListener('close',()=>{resetSheetLayout()"));
     const sheet = styles.match(/dialog\.reward-sheet-open\{([^}]+)\}/)?.[1] ?? '';
     const content = styles.match(/dialog\.reward-sheet-open #sheet-content\{([^}]+)\}/)?.[1] ?? '';
     const header = styles.match(/dialog\.reward-sheet-open \.sheet-title-row\{([^}]+)\}/)?.[1] ?? '';
@@ -371,6 +370,34 @@ test('reward sheet keeps its header outside one bounded, keyboard-accessible scr
     assert.match(calendar, /min-height:0/);
     assert.match(calendar, /overflow-y:auto/);
     assert.ok(!styles.includes('dialog:has(.checkin-calendar-content) .sheet-title-row'));
+});
+
+test('a queued close preserves a newly opened sheet; the final close resets layout and unlocks page scrolling', async (t) => {
+    const sheetPath = '../../web/ui/sheets.js', { createSheets } = await import(sheetPath);
+    const previousDocument = (globalThis as any).document, previousObserver = (globalThis as any).MutationObserver;
+    t.after(() => {
+        (globalThis as any).document = previousDocument;
+        if (previousObserver === undefined) delete (globalThis as any).MutationObserver;
+        else (globalThis as any).MutationObserver = previousObserver;
+    });
+    const classes = (initial: string[]) => {
+        const values = new Set(initial);
+        return { values, add: (...names: string[]) => names.forEach(name => values.add(name)),
+            remove: (...names: string[]) => names.forEach(name => values.delete(name)) };
+    };
+    const html = classes(['sheet-open']), body = classes(['sheet-open']), layout = classes(['settings-sheet-open']);
+    (globalThis as any).document = { documentElement: { classList: html }, body: { classList: body } };
+    (globalThis as any).MutationObserver = class { observe() {} };
+    const listeners = new Map<string, () => void>(); let renders = 0;
+    const sheet = { open: true, scrollTop: 200, classList: layout,
+        addEventListener: (name: string, handler: () => void) => listeners.set(name, handler) };
+    createSheets({ sheet, sheetContent: { querySelectorAll: () => [] }, render: () => { renders++; } }).installSheetEvents();
+    listeners.get('close')!();
+    assert.ok(layout.values.has('settings-sheet-open')); assert.equal(sheet.scrollTop, 200);
+    assert.ok(html.values.has('sheet-open')); assert.ok(body.values.has('sheet-open')); assert.equal(renders, 0);
+    sheet.open = false; listeners.get('close')!();
+    assert.equal(layout.values.has('settings-sheet-open'), false); assert.equal(sheet.scrollTop, 0);
+    assert.equal(html.values.has('sheet-open'), false); assert.equal(body.values.has('sheet-open'), false); assert.equal(renders, 1);
 });
 test('desktop identity and navigation scroll together while mobile keeps its bottom navigation', () => {
     const desktop = styles.slice(styles.indexOf('@media(min-width:900px){'), styles.indexOf('/* Reward calendar:'));

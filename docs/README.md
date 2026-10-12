@@ -26,6 +26,8 @@ Cập nhật 2026-10-12. Docs tách **source đang có**, **sản phẩm đích*
 | [HABIT_GAME_CREATIVE_BRIEF](HABIT_GAME_CREATIVE_BRIEF.md) | Trải nghiệm/cast/lore/style và asset inventory standards |
 | [HABIT_GAME_LOCAL_ART](HABIT_GAME_LOCAL_ART.md) | Preflight, model/backend local miễn phí, production/manifest/QA |
 | [HABIT_GAME_ACCEPTANCE](HABIT_GAME_ACCEPTANCE.md) | Test/simulation/visual/data/release gates và điều kiện complete |
+| [HABIT_GAME_RELEASE](HABIT_GAME_RELEASE.md) | Đối chiếu yêu cầu/bằng chứng, target và các gate phát hành còn thiếu |
+| [HABIT_GAME_USER_GUIDE](HABIT_GAME_USER_GUIDE.md) | Hướng dẫn thao tác habit/luyện/trận/cứu và lỗi mạng cho người dùng |
 | [HABIT_GAME_PROGRESS](HABIT_GAME_PROGRESS.md) | Checkpoint, quyết định AI, evidence và cách resume |
 | [HABIT_GAME_BUSINESS_DRAFT](HABIT_GAME_BUSINESS_DRAFT.md) | Nháp nguồn lịch sử, tham khảo có chọn lọc; không là lệnh cấp quyền |
 

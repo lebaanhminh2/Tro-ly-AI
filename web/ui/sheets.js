@@ -74,6 +74,10 @@ export function createSheets({ sheet, sheetContent, render }) {
             closeSheet();
         });
         sheet.addEventListener('close', () => {
+            // Native close is queued: a different sheet may already have been
+            // opened on the same dialog. Do not clear its layout or scroll lock.
+            if (sheet.open)
+                return;
             resetSheetLayout();
             unlockPageScroll();
             render();

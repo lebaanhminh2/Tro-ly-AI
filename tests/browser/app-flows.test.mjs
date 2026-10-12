@@ -714,6 +714,48 @@ test('journey chapters keep future endings hidden, show original portraits and l
     } finally { if (browser) await browser.close(); await server.close(); }
 });
 
+test('full campaign art and preparation controls remain usable in light and dark mobile flows', { skip: !browserBin, timeout: 180000 }, async () => {
+    const control = fixture(); control.game.victories = GAME_BOSSES.map(boss => boss.id); control.game.learned = TECHNIQUES.map(technique => technique.id);
+    const server = await serve(control), evidence = []; let browser;
+    try {
+        browser = await chrome(); await browser.navigate(server.url, 390);
+        await browser.wait("!!document.querySelector('.focus-flip-card')"); await browser.tap('[data-tab=game]');
+        await browser.wait("!!document.querySelector('.practice-intro')"); await browser.click('Hành trình');
+        for (const [width, theme] of [[360, 'light'], [414, 'dark']]) {
+            await browser.resize(width, 844); await browser.evaluate(`document.documentElement.dataset.theme=${JSON.stringify(theme)}`);
+            for (const chapter of GAME_CHAPTERS) {
+                await browser.evaluate(`{ const select=document.querySelector('.journey-chapter-picker select');select.value=${JSON.stringify(String(chapter.number))};select.dispatchEvent(new Event('change'));window.scrollTo(0,0) }`);
+                await browser.wait("document.querySelector('.journey-chapter-scene')?.complete && document.querySelector('.journey-chapter-scene')?.naturalWidth>0");
+                assert.equal((await snapshot(browser)).overflow, false);
+                if (process.env.UI_SCREENSHOT_DIR) await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'f6-campaign-' + chapter.number + '-' + width + '-' + theme + '.png'));
+                await browser.click('Đọc truyện');
+                await browser.wait("document.querySelector('.battle-history')?.innerText.includes('Sau hành trình') && [...document.querySelectorAll('.game-story-people img')].every(image=>image.complete && image.naturalWidth>0)");
+                await browser.evaluate("document.querySelector('.battle-history').scrollTop=99999");
+                assert.equal(await browser.evaluate("document.querySelector('#sheet').scrollWidth<=document.querySelector('#sheet').clientWidth+1"), true, 'Story width / chapter ' + chapter.number);
+                if (process.env.UI_SCREENSHOT_DIR) await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'f6-story-end-' + chapter.number + '-' + width + '-' + theme + '.png'));
+                await browser.tap('[data-sheet-close]');
+                for (const boss of GAME_BOSSES.filter(value => value.chapter === chapter.number)) {
+                    await browser.evaluate(`document.querySelector('[data-boss-id=${boss.id}] button').click()`);
+                    await browser.wait("!!document.querySelector('.battle-preparation>.primary') && document.querySelector('.battle-preparation-art')?.complete && document.querySelector('.battle-preparation-art')?.naturalWidth>0");
+                    const source = await browser.evaluate("document.querySelector('.battle-preparation-art').src"); assert.ok(source.endsWith('/' + boss.artId + '.webp'));
+                    if (process.env.UI_SCREENSHOT_DIR) await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'f6-portrait-' + boss.id + '-' + width + '-' + theme + '.png'));
+                    await browser.evaluate("document.querySelector('.battle-preparation').scrollTop=99999");
+                    await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+                    if (process.env.UI_SCREENSHOT_DIR) await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'f6-preparation-end-' + boss.id + '-' + width + '-' + theme + '.png'));
+                    const geometry = await browser.evaluate("(() => {const body=document.querySelector('.battle-preparation'),action=body.querySelector(':scope>.primary'),close=document.querySelector('[data-sheet-close]');const a=action.getBoundingClientRect(),c=close.getBoundingClientRect(),top=visualViewport?.offsetTop??0,bottom=top+(visualViewport?.height??innerHeight);return {sheetClass:document.querySelector('#sheet').className,overflow:body.scrollWidth>body.clientWidth+1,actionVisible:a.top>=top&&a.bottom<=bottom,closeVisible:c.top>=top&&c.bottom<=bottom,actionHeight:a.height,closeHeight:c.height,actionTop:a.top,actionBottom:a.bottom,viewportTop:top,viewportBottom:bottom,bodyScroll:body.scrollTop}})()");
+                    assert.ok(geometry.sheetClass.includes('settings-sheet-open'), boss.id + ': queued close must not reset the next sheet');
+                    assert.equal(geometry.overflow, false, boss.id + JSON.stringify(geometry)); assert.equal(geometry.actionVisible, true, boss.id + JSON.stringify(geometry)); assert.equal(geometry.closeVisible, true, boss.id + JSON.stringify(geometry));
+                    assert.ok(geometry.actionHeight >= 44 && geometry.closeHeight >= 44, boss.id + ': main controls remain touch sized');
+                    evidence.push({ boss: boss.id, chapter: chapter.number, width, theme, geometry });
+                    await browser.tap('[data-sheet-close]');
+                }
+            }
+        }
+        assert.equal(evidence.length, 80); assert.equal(control.posts.length, 0); assert.deepEqual(browser.errors, []);
+        if (process.env.UI_SCREENSHOT_DIR) await writeFile(join(process.env.UI_SCREENSHOT_DIR, 'f6-campaign-ui-evidence.json'), JSON.stringify({ fixture: 'Chrome local catalog all unlocked; 15 chapters/40 encounters, 360 light and 414 dark; preview/read only', evidence }, null, 2));
+    } finally { if (browser) await browser.close(); await server.close(); }
+});
+
 test('campaign images keep distinct chapter scenes and readable original cast crops in the journey and preparation sheets', { skip: !browserBin, timeout: 90000 }, async () => {
     const control = fixture(); control.game.victories = GAME_BOSSES.map(boss => boss.id); control.game.learned = TECHNIQUES.map(technique => technique.id);
     const server = await serve(control); let browser;

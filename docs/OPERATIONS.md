@@ -45,6 +45,28 @@ User đã cho tự commit/push/migrate/deploy staging cho nhiệm vụ Habit/Th�
 
 Rollback code/config hoặc feature off có chủ đích, tương thích schema/data/jobs đang có. Không rollback schema bằng xóa dữ liệu hoặc deploy binary không hiểu state mới. Backup phục vụ phục hồi có kiểm chứng, không là nút ghi đè tự động vào data thật.
 
+### Backup và rehearsal offline
+
+Sau khi xác minh đúng staging và baseline qua `wrangler d1 migrations list DB --env staging --remote`, xuất SQL ra **file mới ngoài Git**:
+
+```powershell
+npx.cmd wrangler d1 export DB --env staging --remote --output D:/Tro-ly-AI-art/staging-before-habits.sql
+node scripts/rehearse-staging-upgrade.ts --backup D:/Tro-ly-AI-art/staging-before-habits.sql --restore D:/Tro-ly-AI-art/staging-rehearsal.sqlite --through 0030 --report D:/Tro-ly-AI-art/staging-rehearsal.json
+```
+
+Tên chỉ minh họa; chọn tên mới cho từng lần, không ghi đè backup. `0030` chỉ đúng khi listing/backup thật đã xác nhận baseline đó. Utility chỉ nạp SQL backup tin cậy, tạo SQLite bằng exclusive create, integrity/FK checks, áp migration trong transaction và kiểm count/hash mọi cột cũ trước commit. Không đọc secrets, chạy Worker/cron/transport hoặc gọi cloud; không dispatch outbox đã restore. Bản offline giữ `d1_migrations` cũ, report ghi các migration rehearsed; không dùng file đó để thay DB thật. Khi failure, giữ file riêng để kiểm tra; không tự xóa/ghi đè hoặc retry migration remote.
+
+Test fixture/production-store restore smoke và backup thật đã đạt sau khôi phục login (chi tiết RELEASE/PROGRESS). Rehearsal SQL/SQLite có dữ liệu riêng tư phải nằm ngoài Git, giữ quyền truy cập phù hợp. Report chỉ ghi schema/count/hash, không nội dung dòng. Export có thể tạm làm D1 ngừng phục vụ; chọn thời điểm phù hợp. Không in private download URL từ output export. Lệnh remote vẫn cần gates/target và quyền đã cấp.
+
+### Đo tải lâu dài bằng fixture riêng
+
+```powershell
+node scripts/benchmark-habit-runtime.ts --report D:/Tro-ly-AI-art/runtime-benchmark-new.json
+node --test tests/integration/habit-runtime-scale.test.ts tests/integration/upgrade-rehearsal.test.ts
+```
+
+Benchmark chỉ tạo SQLite memory, dùng stores production và dữ liệu synthetic6/30habit×1095ngày; đo Node+SQLite wall/CPU/query/payload, drain7/365ngày bằng các call bounded và replay. Không phải Worker CPU/remote D1 benchmark; Windows CPU counter có thể làm tròn0ms. D1scale riêng kiểm3nămlogs và boundedresume, không chứng minh exhausted365ngày bằng Miniflare. Kết quả/giới hạn tại RELEASE; không seed benchmark vào DB user.
+
 ## Ranh giới bảo mật và giao dịch
 
 - Owner từ auth context, initData HMAC/TTL hoặc browser cookies/Origin theo source; input/body cap, bind SQL, whitelist DTO, expected version/day, receipts.
