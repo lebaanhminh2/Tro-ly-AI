@@ -41,6 +41,10 @@ test('the full public catalog stays bounded and omits future story endings and b
     assert.ok(Buffer.byteLength(raw) < 40000, 'Catalog bytes: ' + Buffer.byteLength(raw));
     for (const boss of catalog.bosses) for (const privateField of ['pattern', 'introduction', 'victory', 'defeat', 'rewards']) assert.equal(privateField in boss, false);
     for (const chapter of catalog.chapters) for (const privateField of ['introduction', 'conclusion']) assert.equal(privateField in chapter, false);
+    for (const technique of catalog.techniques) {
+        assert.ok(technique.availableInitially || technique.sources.length > 0);
+        for (const id of technique.sources) assert.ok(GAME_BOSSES.find(boss => boss.id === id)!.unlocks.includes(technique.id));
+    }
 });
 
 test('each school reaches DIET THAN with earned ordinary versions and the existing sleep economy from fresh domain state', () => {

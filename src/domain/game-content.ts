@@ -5,6 +5,7 @@ import { CAMPAIGN_BOSSES, GAME_CHAPTERS } from './game-campaign.ts';
 import { BRANCH_BOSSES } from './game-branches.ts';
 import { GAME_CHARACTERS } from './game-characters.ts';
 import { GAME_ACHIEVEMENTS, GAME_WEAPONS } from './game-rewards.ts';
+import { battleTechnique } from './battle-techniques.ts';
 import { bossAction as action, contentFighter as fighter, type GameBoss, type GameChapter } from './game-content-model.ts';
 export type { GameBoss, GameChapter } from './game-content-model.ts';
 export { GAME_CHAPTERS } from './game-campaign.ts';
@@ -78,10 +79,13 @@ export function bossById(id: string): GameBoss {
     return boss;
 }
 export function publicGameCatalog() {
-    return { schools: SCHOOLS, techniques: TECHNIQUES, weapons: GAME_WEAPONS, achievements: GAME_ACHIEVEMENTS, contentVersion: GAME_CONTENT_VERSION,
+    return { schools: SCHOOLS, techniques: TECHNIQUES.map(technique => ({ ...technique,
+        sources: GAME_BOSSES.filter(boss => boss.unlocks.includes(technique.id)).map(boss => boss.id),
+        availableInitially: INITIAL_TECHNIQUES.includes(technique.id), combatWarning: battleTechnique(technique.id).warning })),
+        weapons: GAME_WEAPONS, achievements: GAME_ACHIEVEMENTS, contentVersion: GAME_CONTENT_VERSION,
         chapters: GAME_CHAPTERS.map(({ number, name, scene, encounters }) => ({ number, name, scene, encounters })),
-        bosses: GAME_BOSSES.map(({ id, name, chapter, kind, requires, practicePrerequisites, recommendedRank, maxTurns, mechanics, artId }) =>
-            ({ id, name, chapter, kind: kind ?? 'main', requires, practicePrerequisites, recommendedRank, maxTurns, mechanics, artId })) };
+        bosses: GAME_BOSSES.map(({ id, name, chapter, kind, requires, practicePrerequisites, recommendedRank, maxTurns, mechanics, artId, artPosition }) =>
+            ({ id, name, chapter, kind: kind ?? 'main', requires, practicePrerequisites, recommendedRank, maxTurns, mechanics, artId, artPosition })) };
 }
 export function bossIntents(boss: GameBoss): BossIntent[] {
     return Array.from({ length: boss.maxTurns }, (_, turn) => {
@@ -103,6 +107,7 @@ export function validateGameContent(bosses = GAME_BOSSES, chapters: GameChapter[
         visiting.add(id); boss.requires.forEach(walk); visiting.delete(id); visited.add(id);
     }
     for (const boss of bosses) {
+        if (boss.artPosition && (boss.artPosition.length !== 2 || boss.artPosition.some(value => !Number.isFinite(value) || value < 0 || value > 1))) throw Error('INVALID_GAME_CONTENT');
         if (!/^[a-z0-9-]{1,80}$/.test(boss.id) || !Number.isInteger(boss.chapter) || boss.chapter < 1 || boss.chapter > 15 ||
             !Number.isInteger(boss.recommendedRank) || boss.recommendedRank < 0 || boss.recommendedRank >= REALMS.length ||
             !Number.isInteger(boss.revival.remaining) || boss.revival.remaining < 0 || boss.revival.remaining > 3 ||

@@ -34,6 +34,12 @@ export class D1BattleStore implements BattleStore {
         return row ? storedBattle(row) : null;
     }
     private async loadout(owner: string, ids: string[]): Promise<EquippedTechnique[]> {
+        return (await this.resolveLoadout(owner, ids)).map(version => ({ id: version.techniqueId,
+            versionId: version.versionId, tier: version.tier, purityBp: version.purityBp }));
+    }
+    async resolveLoadout(owner: string, ids: string[]) {
+        if (!Array.isArray(ids) || ids.length > 5 || new Set(ids).size !== ids.length ||
+            ids.some(id => typeof id !== 'string' || !/^[a-zA-Z0-9_-]{8,110}$/.test(id))) throw Error('INVALID_BATTLE_LOADOUT');
         if (!ids.length) return [];
         const rows = (await query(this.db, 'SELECT id,state_json FROM practice_versions WHERE owner=? AND id IN(SELECT value FROM json_each(?))',
             owner, JSON.stringify(ids)).all<{ id: string; state_json: string }>()).results;
@@ -42,7 +48,7 @@ export class D1BattleStore implements BattleStore {
             if (!row) return [];
             const practice = JSON.parse(row.state_json) as PracticeVersion, tier = practice.tiers.at(-1);
             if (!tier) return [];
-            return [{ id: practice.techniqueId, versionId: id, tier: practice.tiers.length, purityBp: tier.purityBp }];
+            return [{ ...tier, techniqueId: practice.techniqueId, versionId: id, edition: practice.edition, tier: practice.tiers.length }];
         });
     }
     async availableLoadout(owner: string) {

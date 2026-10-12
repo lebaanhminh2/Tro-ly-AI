@@ -2,6 +2,7 @@ import { habitDate } from '../models/habits.js';
 import { practiceNumber, practiceStatus, practiceTiers, purityLabel } from '../models/practice.js';
 import { renderJourney } from './journey.js';
 import { renderGameCollection } from './game-collection.js';
+import { matchingTechniques } from '../models/game-library.js';
 
 export function renderGame(ui, state) {
     const { el, button, card, heading } = ui, root = el('section', undefined, 'game-page');
@@ -23,20 +24,28 @@ export function renderGame(ui, state) {
     if (selectedPanel === 'journey') { root.append(renderJourney(ui, data, catalog, state.gameChapter)); return root; }
     if (selectedPanel === 'collection') { root.append(renderGameCollection(ui, data, catalog)); return root; }
     if (state.gamePanel === 'library') {
-        const filters = el('div', undefined, 'game-school-filters');
-        for (const [id, name] of [['owned', 'Đã mở'], ...catalog.schools.map(school => [school.id, school.name]), ['', 'Tất cả']]) {
-            const control = button(name, () => ui.selectGameSchool(id), 'text-button');
-            control.setAttribute('aria-pressed', String((state.gameSchool ?? 'owned') === id)); filters.append(control);
+        const filters = el('div', undefined, 'game-library-filters'), searchWrap = el('label', 'Tìm công pháp', 'form-field');
+        const search = el('input'); search.type = 'search'; search.placeholder = 'Tên hoặc cách dùng'; search.maxLength = 100; search.value = state.gameSearch ?? ''; searchWrap.append(search);
+        const filterWrap = el('label', 'Nhóm', 'form-field'), filter = el('select');
+        for (const [id, name] of [['owned', 'Đã mở'], ...catalog.schools.map(school => [school.id, school.name]), ['forbidden', 'Cấm thuật'], ['outside', 'Ngoại Đạo'], ['', 'Tất cả']]) {
+            const option = el('option', name); option.value = id; filter.append(option);
         }
-        root.append(filters);
-        const selected = state.gameSchool ?? 'owned', list = el('div', undefined, 'technique-list');
-        for (const technique of catalog.techniques.filter(technique => selected === 'owned' ? data.owned.includes(technique.id) : !selected || technique.school === selected)) {
-            const row = card('technique-card'), school = catalog.schools.find(school => school.id === technique.school);
-            row.append(el('small', school?.name ?? (technique.kind === 'outside' ? 'Ngoại Đạo' : 'Cấm thuật'), 'technique-school'), el('h2', technique.name), el('p', technique.description, 'technique-description'),
-                button(data.owned.includes(technique.id) ? 'Xem và chọn luyện' : 'Chưa mở', () => ui.openTechnique(technique), 'secondary'));
-            list.append(row);
+        filter.value = state.gameSchool ?? 'owned'; filterWrap.append(filter); filters.append(searchWrap, filterWrap);
+        const count = el('p', undefined, 'hint'), list = el('div', undefined, 'technique-list'); count.setAttribute('role', 'status');
+        function updateList() {
+            state.gameSearch = search.value; state.gameSchool = filter.value; list.replaceChildren();
+            const techniques = matchingTechniques(catalog, data.owned, filter.value, search.value);
+            count.textContent = techniques.length + ' công pháp';
+            if (!techniques.length) list.append(el('p', 'Chưa có công pháp phù hợp. Thử đổi nhóm hoặc từ tìm nhé.', 'hint'));
+            for (const technique of techniques) {
+                const row = card('technique-card'), school = catalog.schools.find(school => school.id === technique.school), owned = data.owned.includes(technique.id);
+                row.append(el('small', school?.name ?? (technique.kind === 'outside' ? 'Ngoại Đạo' : 'Cấm thuật'), 'technique-school'), el('h2', technique.name),
+                    el('p', technique.description, 'technique-description'), button(owned ? 'Xem và chọn luyện' : 'Xem cách mở', () => ui.openTechnique(technique), 'secondary'));
+                list.append(row);
+            }
         }
-        root.append(list); return root;
+        search.addEventListener('input', updateList); filter.addEventListener('change', updateList); updateList();
+        root.append(filters, count, list); return root;
     }
     if (data.pending) {
         const pending = card('game-pending');

@@ -1,6 +1,6 @@
 import { bossAction as act, contentFighter as fighter, type GameBoss } from './game-content-model.ts';
 
-type Branch = Omit<GameBoss, 'revival' | 'defeat' | 'advice' | 'artId'> & { defeat?: string; advice?: string[] };
+type Branch = Omit<GameBoss, 'revival' | 'defeat' | 'advice' | 'artId'> & { defeat?: string; advice?: string[]; artId?: string };
 const branch = (value: Branch): GameBoss => ({ revival: { remaining: 0, hpPercent: 350 }, artId: null,
     defeat: 'Thử thách chưa vượt qua. Những bản luyện và quyền học đã có được giữ; cậu có thể đổi cách chuẩn bị rồi trở lại.',
     advice: ['Thắng mở quyền học, không tặng một bản luyện sẵn.', 'Đây là tuyến tùy chọn; không bắt hoàn thành để đi tiếp tuyến chính.'], ...value });
@@ -11,25 +11,25 @@ export const BRANCH_BOSSES: GameBoss[] = [
         pattern: [act('Thử thân', 'Ba hit nhỏ để kiểm lớp phòng ngự.', [600, 600, 600]), act('Trấn lực', 'Một hit mạnh đã báo.', [1800], true), act('Lùi nửa bước', 'Một hit nhẹ, khoảng chuyển thủ thành công.', [200])],
         introduction: 'Người giữ truyền thừa Bất Diệt đặt tay lên bia đá: “Thân chịu được chưa đủ. Lực giữ lại dùng để bảo vệ ai?” Bốn môn thường đã luyện là điểm bắt đầu của câu trả lời.',
         victory: 'Bia đá mở đường học Bất Diệt Chiến Thể. Cương Kình không phải lý do ở lại chịu đòn mãi; nó là lực dành cho lúc cần mở đường.',
-        mechanics: 'Truyền thừa Bất Diệt: đa hit và đại kích xen khoảng phản công, cần bốn môn thường Nhập môn.', unlocks: ['chien-the'] }),
+        mechanics: 'Truyền thừa Bất Diệt: đa hit và đại kích xen khoảng phản công, cần bốn môn thường Nhập môn.', unlocks: ['chien-the'], artId: 'thach-truyen' }),
     branch({ id: 'huyet-truyen', name: 'Người Giữ Huyết Khế', kind: 'heritage', chapter: 3, requires: ['huyet-ha'], recommendedRank: 2, maxTurns: 8,
         practicePrerequisites: ['thon-thien', 'huyet-sat', 'minh-ha', 'tan-menh'], fighter: fighter(450, 25, 4),
         pattern: [act('Huyết trả', 'Một hit vừa; còn sống thì hồi 16 HP.', [1000], true, 16), act('Khế khuyết', 'Một hit nhẹ, không hồi.', [300]), act('Giữ mạch', 'Hai hit vừa, sinh lực còn lại quyết định rủi ro.', [700, 700])],
         introduction: 'Người giữ U Minh yêu cầu cậu ghi tên mình vào phần giá phải trả. “Dùng huyết lực của mình khác lấy mạng người đứng sau.” Bốn môn đã học cần được dùng cùng cách giữ sinh lực.',
         victory: 'Huyết khế nhận tên người tự chọn. Quyền học Huyết Hải Phần Thiên mở; cái giá HP tối đa phải được xác nhận ở mỗi lần thi triển.',
-        mechanics: 'Truyền thừa U Minh: hồi theo nhịp và áp lực sinh lực, cần bốn môn thường Nhập môn.', unlocks: ['huyet-hai'] }),
+        mechanics: 'Truyền thừa U Minh: hồi theo nhịp và áp lực sinh lực, cần bốn môn thường Nhập môn.', unlocks: ['huyet-hai'], artId: 'huyet-truyen' }),
     branch({ id: 'hu-truyen', name: 'Người Giữ Hư Ảnh', kind: 'heritage', chapter: 2, requires: ['ky-hanh-1'], recommendedRank: 2, maxTurns: 8,
         practicePrerequisites: ['thai-hu-bo', 'hu-khong', 'khong-minh', 'hoan-hinh'], fighter: fighter(400, 30, 3),
         pattern: [act('Nhìn bóng', 'Một hit nhẹ, thời điểm tạo Hư Ảnh.', [400]), act('Chạm thật', 'Một hit lớn đã báo, có thể giữ hoặc tiêu Hư Ảnh để đáp lại.', [2000], true), act('Hai đường', 'Hai hit nhỏ; một lần né không tránh cả hai.', [700, 700])],
         introduction: 'Người giữ Thái Hư bước khỏi bóng mình. “Giữ một ảnh hay dùng nó, cậu chỉ có một lựa chọn mỗi nhịp.” Bốn môn thường cùng có ích, không ảnh nào thay người chơi trả giá.',
         victory: 'Hai bóng nhập lại thành một người. Cậu có quyền học Vạn Pháp Quy Hư: tháo phần lợi thế có thật, không xóa lịch sử của một đòn đã xảy ra.',
-        mechanics: 'Truyền thừa Thái Hư: tạo/giữ/tiêu một Hư Ảnh trước đại kích và đa hit.', unlocks: ['quy-hu'] }),
+        mechanics: 'Truyền thừa Thái Hư: tạo/giữ/tiêu một Hư Ảnh trước đại kích và đa hit.', unlocks: ['quy-hu'], artId: 'hu-truyen' }),
     branch({ id: 'co-truyen', name: 'Người Giữ Thiên Bàn', kind: 'heritage', chapter: 3, requires: ['huyet-ha'], recommendedRank: 2, maxTurns: 8,
         practicePrerequisites: ['quan-thien', 'lac-tu', 'dan-kiep', 'that-tinh'], fighter: fighter(460, 28, 5),
         pattern: [act('Đặt bàn', 'Một hit nhẹ; khoảng đặt quân hoặc soi nhịp.', [300]), act('Thiên kích', 'Một hit lớn đã báo; có thể dẫn lực hoặc đổi thứ tự hợp lệ.', [2100], true), act('Thu quân', 'Hai hit vừa, không xóa tuyệt kỹ khỏi trận.', [600, 600])],
         introduction: 'Người giữ Thiên Cơ để sẵn những quân cờ của cả trận. “Biết trước không khiến nhịp tự biến mất. Cậu cần chọn mình làm gì với điều đã biết.”',
         victory: 'Thiên bàn mở quyền học Nghịch Thiên Kỳ. Đổi hai nhịp giữ lại mọi hành động; quyền nhìn trước không phải quyền xóa hậu quả.',
-        mechanics: 'Truyền thừa Thiên Cơ: chuỗi đặt/soi/dẫn lực với bốn môn thường đã đạt Nhập môn.', unlocks: ['nghich-thien'] }),
+        mechanics: 'Truyền thừa Thiên Cơ: chuỗi đặt/soi/dẫn lực với bốn môn thường đã đạt Nhập môn.', unlocks: ['nghich-thien'], artId: 'co-truyen' }),
     branch({ id: 'cam-thau-thien', name: 'Người Đoạt Huyết', kind: 'forbidden', chapter: 5, requires: ['khoi-loi-dai-hoi'], recommendedRank: 3, maxTurns: 9,
         fighter: fighter(620, 31, 4), pattern: [act('Mượn mạng', 'Đòn vừa, hồi 28 HP nếu còn sống.', [1100], true, 28), act('Rỗng mạch', 'Một hit nhẹ, không hồi.', [200]), act('Truy huyết', 'Ba hit nhỏ.', [550, 550, 550])],
         introduction: 'Một người tại hội đã giữ thân bằng huyết lực của kẻ khác. Cậu cần phá khế mà không biến người đứng sau thành phần HP dùng thêm.', victory: 'Khế bị phá, quyền học Thâu Thiên Hoán Mệnh mở. Bản của cậu chỉ đoạt lực có trần và lấy HP tối đa của chính cậu làm giá.', mechanics: 'Cấm thuật đoạt huyết: chặn nhịp hồi hoặc dồn công qua khoảng rỗng.', unlocks: ['thau-thien'] }),

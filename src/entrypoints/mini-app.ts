@@ -9,11 +9,11 @@ import { handleReminders } from './mini-app/reminders.ts';
 import { handleSchedule } from './mini-app/schedule.ts';
 import { handleTasks } from './mini-app/tasks.ts';
 import { handleHabits, readHabits } from './mini-app/habits.ts';
-import { handleGame, readGame } from './mini-app/game.ts';
+import { handleGame, handleGamePresets, readGame } from './mini-app/game.ts';
 const taskRoutes = new Set(['/api/tasks', '/api/tasks-delete']);
 const reminderRoutes = new Set(['/api/reminders', '/api/reminder-instance']);
 const scheduleRoutes = new Set(['/api/settings', '/api/schedule', '/api/day-plan', '/api/task-work', '/api/task-focus', '/api/session', '/api/timeline', '/api/sleep']);
-const writeRoutes = new Set([...taskRoutes, ...reminderRoutes, ...scheduleRoutes, '/api/cultivation', '/api/habits', '/api/game']);
+const writeRoutes = new Set([...taskRoutes, ...reminderRoutes, ...scheduleRoutes, '/api/cultivation', '/api/habits', '/api/game', '/api/game-presets']);
 export async function miniAppApi(request: Request, env: Env, now = Date.now()): Promise<Response> {
     const receivedAt = Date.now();
     const url = new URL(request.url);
@@ -51,7 +51,7 @@ export async function miniAppApi(request: Request, env: Env, now = Date.now()): 
     }
     try {
         const context = { env, owner, now, healthy: new HealthyStore(env.DB) };
-        if (request.method === 'GET' && ['/api/game', '/api/game-catalog', '/api/game-boss', '/api/game-chapter', '/api/practice-versions', '/api/battle-history', '/api/battle-loadout', '/api/battles'].includes(url.pathname))
+        if (request.method === 'GET' && ['/api/game', '/api/game-catalog', '/api/game-boss', '/api/game-chapter', '/api/game-presets', '/api/practice-versions', '/api/battle-history', '/api/battle-loadout', '/api/battles'].includes(url.pathname))
             return await readGame(context, url);
         if (request.method === 'GET' && ['/api/habits', '/api/habit-history', '/api/habit-report'].includes(url.pathname))
             return await readHabits(context, url);
@@ -66,6 +66,7 @@ export async function miniAppApi(request: Request, env: Env, now = Date.now()): 
         const input = await readInput(request);
         if (input instanceof Response)
             return input;
+        if (url.pathname === '/api/game-presets') return await handleGamePresets(context, input);
         if (url.pathname === '/api/game') return await handleGame({ ...context, now: now + Math.max(0, Date.now() - receivedAt) }, input);
         if (url.pathname === '/api/habits') return await handleHabits({ ...context, now: now + Math.max(0, Date.now() - receivedAt) }, input);
         if (taskRoutes.has(url.pathname))
@@ -87,6 +88,9 @@ export async function miniAppApi(request: Request, env: Env, now = Date.now()): 
             BATTLE_CHANGED: 'Trận vừa được cập nhật. Tải lại trước khi chọn tiếp.', BATTLE_NOT_FOUND: 'Không tìm thấy trận này.',
             BOSS_LOCKED: 'Chưa đủ điều kiện mở đoạn này. Xem trận trước và các môn cần luyện trong Hành trình nhé.', GAME_CATCHING_UP: 'Đang chốt ngày trước. Cập nhật kết quả rồi chọn tiếp nhé.',
             GAME_WEAPON_LOCKED: 'Cậu chưa sở hữu thần binh này.',
+            GAME_PRESETS_CHANGED: 'Bộ chiêu đã thay đổi ở nơi khác. Tải lại danh sách rồi lưu tiếp; lựa chọn đang chỉnh vẫn được giữ.',
+            GAME_PRESET_NOT_FOUND: 'Bộ chiêu này không còn trong danh sách. Tải lại để kiểm tra nhé.',
+            GAME_PRESET_LIMIT: 'Cậu có thể lưu tối đa 6 bộ chiêu. Chọn một bộ để cập nhật hoặc xóa trước khi thêm.',
             BATTLE_COST_NOT_ACCEPTED: 'Cần xác nhận cái giá trước khi chọn chiêu hoặc cứu mạng.',
             BATTLE_INSUFFICIENT_HP: 'HP hiện tại chưa đủ để trả giá thi triển chiêu này.', BATTLE_NOT_ACTIVE: 'Trận hiện không còn chờ chọn chiêu.',
             BATTLE_NOT_STARTED: 'Trận bắt đầu từ ngày sinh hoạt kế tiếp.', BATTLE_NOT_CURRENT: 'Trận này không thuộc chế độ của hôm nay.',

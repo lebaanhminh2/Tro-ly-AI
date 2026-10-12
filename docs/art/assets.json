@@ -1022,5 +1022,717 @@
       "integrationEvidence": "D:\\Tro-ly-AI-art\\f5-campaign-qa-campaign-chapter-5.png; D:\\Tro-ly-AI-art\\f5-campaign-qa-campaign-prepare-5.png; light390 viewed",
       "integrationReviewedAt": "2026-10-12"
     }
+  },
+  {
+    "id": "thu-mo",
+    "contentId": "boss.thu-mo",
+    "alt": "Th? M? Nh?n ??u tr?c, r?u b?c, ?o v?i x?m v? kh?n s?m.",
+    "role": "boss",
+    "focalPoint": [
+      0.5,
+      0.18
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "thu-mo",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 38201,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, bust portrait, elderly East Asian male tomb keeper, bald head, short grey beard, dark weathered linen robe, thick ivory scarf, calm expression, ancient stone tomb background",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 102.94,
+      "peakMiB": 4053,
+      "sha256": "faba4ef54396b171a2e91c723ddc32dacd24b268e62afa21d293274c7873244b",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/thu-mo.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 26414,
+        "sha256": "1d88326f95a96f3cc30dbf034bdb3e3fad37603cbe59ccc05a8647cad98e9355"
+      },
+      {
+        "path": "web/assets/than-lo/thu-mo-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 4890,
+        "sha256": "b847f3c022980435e229a30ffb9a3ec27ca2a61e823704c5032d3cf5f275a545"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Source viewed in portraits/scenes-contact.png on 2026-10-12; subject, composition and anatomy reviewed. Alt describes the visible output. Integrated QA pending.",
+      "evidence": {
+        "date": "2026-10-12",
+        "viewport": "390x844",
+        "theme": "light",
+        "screenshot": "D:/Tro-ly-AI-art/f5-midcampaign-final-campaign-prepare-7.png",
+        "review": "Source and integrated contact sheets viewed; thumb and preparation URLs loaded in Chrome. Thu Mo forehead/eyes crop was corrected and final full screenshot viewed."
+      },
+      "objectPosition": [
+        0.5,
+        0
+      ]
+    }
+  },
+  {
+    "id": "thach-truyen",
+    "contentId": "boss.thach-truyen",
+    "alt": "Ng??i Gi? C??ng K?nh ??u c?o, ?o gi?p b?c v?i vai gi?p ??ng.",
+    "role": "boss",
+    "focalPoint": [
+      0.5,
+      0.32
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "thach-truyen",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 38204,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, bust portrait, sturdy middle aged East Asian male martial guardian, shaved head, square jaw, scarred bronze shoulder armor, charcoal linen high collar, resolute calm expression, stone wall",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 99.14,
+      "peakMiB": 4053,
+      "sha256": "e8e71803c53809b1b640cc850ef0256ebfc1f958dbc4e384d4bf5fcd3e70a237",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/thach-truyen.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 34890,
+        "sha256": "593f6adc4e2b929511d7e76a3db8927dec6f247cd5c0bf8a5ac0df1c2859d890"
+      },
+      {
+        "path": "web/assets/than-lo/thach-truyen-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 6272,
+        "sha256": "afb1c7f2000e2f07e0b6d0b112dcb3b23b591f563f8f985c409812314b4f28d2"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Source viewed in portraits/scenes-contact.png on 2026-10-12; subject, composition and anatomy reviewed. Alt describes the visible output. Integrated QA pending.",
+      "evidence": {
+        "date": "2026-10-12",
+        "viewport": "390x844",
+        "theme": "light",
+        "screenshot": "D:/Tro-ly-AI-art/f5-midcampaign-final-campaign-heritage-thach-truyen.png",
+        "review": "Source and integrated contact sheets viewed; thumb and preparation URLs loaded in Chrome. Thu Mo forehead/eyes crop was corrected and final full screenshot viewed."
+      }
+    }
+  },
+  {
+    "id": "huyet-truyen",
+    "contentId": "boss.huyet-truyen",
+    "alt": "Ng??i Gi? Huy?t Kh? t?c b?i, ?o v?i x?m v? ?ai ?? n?u.",
+    "role": "boss",
+    "focalPoint": [
+      0.5,
+      0.3
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "huyet-truyen",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 38205,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, bust portrait, East Asian female martial teacher age 35, black hair in tight bun, thoughtful face, closed charcoal robe burgundy sash, small worn bronze pendant, misty stone shrine",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 99.3,
+      "peakMiB": 4053,
+      "sha256": "694aa5b1ffb3ebb910e5373ec1978bd8824b190aa63ee7a4671c8de6d5b2caa6",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/huyet-truyen.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 18092,
+        "sha256": "901fa94634e45ffb0a61c856b249a5c4e82ae20790a4927aa4b58d0d8ba34700"
+      },
+      {
+        "path": "web/assets/than-lo/huyet-truyen-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 3714,
+        "sha256": "1ea99f57a69ed7fc8ae76768d6118195fb8e8e2a87a898c3e2fd6c9000382b81"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Source viewed in portraits/scenes-contact.png on 2026-10-12; subject, composition and anatomy reviewed. Alt describes the visible output. Integrated QA pending.",
+      "evidence": {
+        "date": "2026-10-12",
+        "viewport": "390x844",
+        "theme": "light",
+        "screenshot": "D:/Tro-ly-AI-art/f5-midcampaign-final-campaign-heritage-huyet-truyen.png",
+        "review": "Source and integrated contact sheets viewed; thumb and preparation URLs loaded in Chrome. Thu Mo forehead/eyes crop was corrected and final full screenshot viewed."
+      }
+    }
+  },
+  {
+    "id": "hu-truyen",
+    "contentId": "boss.hu-truyen",
+    "alt": "Ng??i Gi? H? ?nh t?c ?en bu?c sau, ?o cho?ng ng? v? c? ?o s?m.",
+    "role": "boss",
+    "focalPoint": [
+      0.5,
+      0.3
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "hu-truyen",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 38206,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, bust portrait, elderly East Asian female martial teacher, long silver hair tied low, fine facial wrinkles, ivory hood charcoal robe, serene distant gaze, misty mountain temple",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 99.14,
+      "peakMiB": 4053,
+      "sha256": "88daacfb4bbb71491261f65e120bea6ce4fd3f4906f22aaeebc1f0764abf7659",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/hu-truyen.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 24488,
+        "sha256": "0b22697b20cc43af7a31810b183a476ac5e973a565963ef5ca41ff9897680cbd"
+      },
+      {
+        "path": "web/assets/than-lo/hu-truyen-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 4026,
+        "sha256": "89455d311a78c65d18c0468ede2a0c235bc3fb330de27749d4467471bdda618b"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Source viewed in portraits/scenes-contact.png on 2026-10-12; subject, composition and anatomy reviewed. Alt describes the visible output. Integrated QA pending.",
+      "evidence": {
+        "date": "2026-10-12",
+        "viewport": "390x844",
+        "theme": "light",
+        "screenshot": "D:/Tro-ly-AI-art/f5-midcampaign-final-campaign-heritage-hu-truyen.png",
+        "review": "Source and integrated contact sheets viewed; thumb and preparation URLs loaded in Chrome. Thu Mo forehead/eyes crop was corrected and final full screenshot viewed."
+      }
+    }
+  },
+  {
+    "id": "chapter06",
+    "contentId": "chapter.06",
+    "alt": "Tr?m m?i ng?i gi?a thung l?ng n?i, ???ng ?? men theo s??n.",
+    "role": "chapter",
+    "focalPoint": [
+      0.5,
+      0.5
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "chapter06",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 38208,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, abandoned mountain watch station, dark tiled roofs, narrow cliff path, bronze signal bell, sparse pines, grey twilight fog, wide landscape, no people",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage, person, human, woman, man, face, portrait, body",
+      "size": [
+        640,
+        448
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 98.61,
+      "peakMiB": 4053,
+      "sha256": "52129f8c4c2179e426e7bedb12690deac9cecfcf9388e50800a5f223c23e95df",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/chapter06.webp",
+        "width": 640,
+        "height": 448,
+        "bytes": 58938,
+        "sha256": "4312271681501f98fb4bc64c65d1e5492e7b09b0ffedf5e5b17870f52e505b07"
+      },
+      {
+        "path": "web/assets/than-lo/chapter06-thumb.webp",
+        "width": 160,
+        "height": 112,
+        "bytes": 3968,
+        "sha256": "76531900e115da39506ed48508fb8b86e95a71b7d5cf03edbfc90eb46d3639e5"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Source viewed in portraits/scenes-contact.png on 2026-10-12; subject, composition and anatomy reviewed. Alt describes the visible output. Integrated QA pending.",
+      "evidence": {
+        "date": "2026-10-12",
+        "viewport": "390x844",
+        "theme": "light",
+        "screenshot": "D:/Tro-ly-AI-art/f5-midcampaign-final-campaign-chapter-6.png",
+        "review": "Source and integrated contact sheets viewed; thumb and preparation URLs loaded in Chrome. Thu Mo forehead/eyes crop was corrected and final full screenshot viewed."
+      }
+    }
+  },
+  {
+    "id": "chapter07",
+    "contentId": "chapter.07",
+    "alt": "C?ng ?? v? s?n bia c?a th?n m? trong s??ng.",
+    "role": "chapter",
+    "focalPoint": [
+      0.5,
+      0.5
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "chapter07",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 38209,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, ancient mountain mausoleum courtyard, immense worn stone tablets without writing, empty tomb gateway, sparse bare trees, misty dawn, wide landscape, no people",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage, person, human, woman, man, face, portrait, body",
+      "size": [
+        640,
+        448
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 98.5,
+      "peakMiB": 4053,
+      "sha256": "80f854857e5472ee094ea2d0603f6fe3986f07feceb717ad6d4b068b16c894ab",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/chapter07.webp",
+        "width": 640,
+        "height": 448,
+        "bytes": 50714,
+        "sha256": "6a04583d555e890835d98f6675e24dcad9978bcaa26793b2d6f74408e36663df"
+      },
+      {
+        "path": "web/assets/than-lo/chapter07-thumb.webp",
+        "width": 160,
+        "height": 112,
+        "bytes": 4452,
+        "sha256": "6a94ac58b629ddf5c9e78cda2157bfdbbb54781f454abfa3dd0874f1491f517b"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Source viewed in portraits/scenes-contact.png on 2026-10-12; subject, composition and anatomy reviewed. Alt describes the visible output. Integrated QA pending.",
+      "evidence": {
+        "date": "2026-10-12",
+        "viewport": "390x844",
+        "theme": "light",
+        "screenshot": "D:/Tro-ly-AI-art/f5-midcampaign-final-campaign-chapter-7.png",
+        "review": "Source and integrated contact sheets viewed; thumb and preparation URLs loaded in Chrome. Thu Mo forehead/eyes crop was corrected and final full screenshot viewed."
+      }
+    }
+  },
+  {
+    "id": "chapter08",
+    "contentId": "chapter.08",
+    "alt": "L?i ?? v? ??nh nh? b?n m?t n??c, n?i m? ph?a xa.",
+    "role": "chapter",
+    "focalPoint": [
+      0.5,
+      0.5
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "chapter08",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 38210,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, remote stone causeway over dark inland sea, weathered pavilion, subtle rust red shore reeds, pale fog, distant mountains, wide landscape, no people",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage, person, human, woman, man, face, portrait, body",
+      "size": [
+        640,
+        448
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 98.33,
+      "peakMiB": 4053,
+      "sha256": "08a850ff12ab1481884779f7647a82f5591833fbee96bea15452c07bb1ebcacd",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/chapter08.webp",
+        "width": 640,
+        "height": 448,
+        "bytes": 25226,
+        "sha256": "e13a117f1261daa71b7bb9f1d576083823a153e4aac48c9946c30268b22e4816"
+      },
+      {
+        "path": "web/assets/than-lo/chapter08-thumb.webp",
+        "width": 160,
+        "height": 112,
+        "bytes": 1812,
+        "sha256": "d356072742bb091f4083d472e987c479fcfaf890aa891afda9a139a8958c018b"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Source viewed in portraits/scenes-contact.png on 2026-10-12; subject, composition and anatomy reviewed. Alt describes the visible output. Integrated QA pending.",
+      "evidence": {
+        "date": "2026-10-12",
+        "viewport": "390x844",
+        "theme": "light",
+        "screenshot": "D:/Tro-ly-AI-art/f5-midcampaign-final-campaign-chapter-8.png",
+        "review": "Source and integrated contact sheets viewed; thumb and preparation URLs loaded in Chrome. Thu Mo forehead/eyes crop was corrected and final full screenshot viewed."
+      }
+    }
+  },
+  {
+    "id": "chapter09",
+    "contentId": "chapter.09",
+    "alt": "B?c ?? qua r?ng th?ng v? c?ng th?p d??i d?y n?i.",
+    "role": "chapter",
+    "focalPoint": [
+      0.5,
+      0.5
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "chapter09",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 38211,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, five jagged mountain peaks, ancient stone stairway through pine forest, distant austere temple roofs, ivory dawn sky, grey mist, wide landscape, no people",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage, person, human, woman, man, face, portrait, body",
+      "size": [
+        640,
+        448
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 98.28,
+      "peakMiB": 4053,
+      "sha256": "a3902a94b917631122b2b8b1f91dfd7501aa4eb6d3c88bab738a2be64ed70752",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/chapter09.webp",
+        "width": 640,
+        "height": 448,
+        "bytes": 51962,
+        "sha256": "bdf041aed94e51a57788822efce7ca28a56c0474b426fa156092f478899bda81"
+      },
+      {
+        "path": "web/assets/than-lo/chapter09-thumb.webp",
+        "width": 160,
+        "height": 112,
+        "bytes": 4420,
+        "sha256": "1c8e8987e5f7891020ce3c5587fd86106b315bebc3c7318e92c282451d1f67ed"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Source viewed in portraits/scenes-contact.png on 2026-10-12; subject, composition and anatomy reviewed. Alt describes the visible output. Integrated QA pending.",
+      "evidence": {
+        "date": "2026-10-12",
+        "viewport": "390x844",
+        "theme": "light",
+        "screenshot": "D:/Tro-ly-AI-art/f5-midcampaign-final-campaign-chapter-9.png",
+        "review": "Source and integrated contact sheets viewed; thumb and preparation URLs loaded in Chrome. Thu Mo forehead/eyes crop was corrected and final full screenshot viewed."
+      }
+    }
+  },
+  {
+    "id": "chapter10",
+    "contentId": "chapter.10",
+    "alt": "L?i l?t ?? gi?a t??ng th?nh v? c?ng thi?n ng?c.",
+    "role": "chapter",
+    "focalPoint": [
+      0.5,
+      0.5
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "chapter10",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 38212,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, ancient prison fortress outer courtyard, long stone passage, closed wooden gates, bronze lanterns, mountain clouds behind high walls, wide landscape, no people",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage, person, human, woman, man, face, portrait, body",
+      "size": [
+        640,
+        448
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 98.11,
+      "peakMiB": 4053,
+      "sha256": "cce1f1198be8554372669c5bb02679a93c08ce5c329dd4def3270c5d8e157b13",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/chapter10.webp",
+        "width": 640,
+        "height": 448,
+        "bytes": 72048,
+        "sha256": "17c4b1c0dec011d9b71973ff7dc68f8bcf9488bad20f765827d4d371d0ed8644"
+      },
+      {
+        "path": "web/assets/than-lo/chapter10-thumb.webp",
+        "width": 160,
+        "height": 112,
+        "bytes": 5292,
+        "sha256": "063e6c2f1233e70a5324e6150c91d0336cce77b40a2c545007a0106d16512031"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Source viewed in portraits/scenes-contact.png on 2026-10-12; subject, composition and anatomy reviewed. Alt describes the visible output. Integrated QA pending.",
+      "evidence": {
+        "date": "2026-10-12",
+        "viewport": "390x844",
+        "theme": "light",
+        "screenshot": "D:/Tro-ly-AI-art/f5-midcampaign-final-campaign-chapter-10.png",
+        "review": "Source and integrated contact sheets viewed; thumb and preparation URLs loaded in Chrome. Thu Mo forehead/eyes crop was corrected and final full screenshot viewed."
+      }
+    }
+  },
+  {
+    "id": "la-sat",
+    "contentId": "character.la-sat",
+    "alt": "La S?t N? ?? v?i n?t m?t tr??ng th?nh, t?c b?i, ?o x?m ng? v? c? ?o ?? n?u.",
+    "role": "character",
+    "focalPoint": [
+      0.5,
+      0.3
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "la-sat-v2",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 39202,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, bust portrait, East Asian woman age 55, visible wrinkles, stern dignified face, grey streaks black hair tied back, dark burgundy high collar robe, bronze clasp",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage, modern uniform, peaked cap, pilot hat, police, visor, military medals, teenage, young woman",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 102.8,
+      "peakMiB": 4053,
+      "sha256": "2a1e8e414f7a818435a239706803e6536bee3020b61b31d2ccfa4b79e86eea40",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/la-sat.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 28828,
+        "sha256": "1ab441eef3fe537ac47a47caff0443c52c8d8f4f80a4bf84970ab78400e8c33e"
+      },
+      {
+        "path": "web/assets/than-lo/la-sat-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 5136,
+        "sha256": "7cdef3d3484c32e2da9fa4ce4334ce257e9eb001e2399983c30251daa302e02a"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "v2 source individually viewed on 2026-10-12. Mature La Sat face and period-appropriate clothing/headwear accepted; no claim of grey streaks, medals or a hat absent in the output. Integrated QA pending.",
+      "evidence": {
+        "date": "2026-10-12",
+        "viewport": "390x844",
+        "theme": "light",
+        "screenshot": "D:/Tro-ly-AI-art/f5-midcampaign-final-campaign-prepare-8.png",
+        "review": "Source and integrated contact sheets viewed; thumb and preparation URLs loaded in Chrome. Thu Mo forehead/eyes crop was corrected and final full screenshot viewed."
+      }
+    }
+  },
+  {
+    "id": "thien-luat",
+    "contentId": "boss.thien-luat",
+    "alt": "Thi?n Lu?t Ch?p Ki?m S? t?c ?en ch?i sau, ria m?p v? ?o l? ng? vi?n s?m.",
+    "role": "boss",
+    "focalPoint": [
+      0.5,
+      0.3
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "thien-luat-v2",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 39203,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, bust portrait, East Asian male imperial magistrate, black moustache, stern face, traditional tall black cloth headpiece without brim, ivory high collar ceremonial robe",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage, modern uniform, peaked cap, pilot hat, police, visor, military medals, teenage, young woman",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 99.3,
+      "peakMiB": 4053,
+      "sha256": "0c8d89e38369d24575ed00fa7d8bd63b8a3f40f522d0c7c0c92adaf66cfe76d0",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/thien-luat.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 25952,
+        "sha256": "9d8943c27c4568cae7a481f036e3cff1fc5dcb77cb66dc2a85f1f64b46ec969c"
+      },
+      {
+        "path": "web/assets/than-lo/thien-luat-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 5034,
+        "sha256": "7fc96c8cc77062dcd439755c19a5dbcc13ef1eaa899776ccd5bfc1aeca448f41"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "v2 source individually viewed on 2026-10-12. Mature La Sat face and period-appropriate clothing/headwear accepted; no claim of grey streaks, medals or a hat absent in the output. Integrated QA pending.",
+      "evidence": {
+        "date": "2026-10-12",
+        "viewport": "390x844",
+        "theme": "light",
+        "screenshot": "D:/Tro-ly-AI-art/f5-midcampaign-final-campaign-prepare-9.png",
+        "review": "Source and integrated contact sheets viewed; thumb and preparation URLs loaded in Chrome. Thu Mo forehead/eyes crop was corrected and final full screenshot viewed."
+      }
+    }
+  },
+  {
+    "id": "co-truyen",
+    "contentId": "boss.co-truyen",
+    "alt": "Ng??i Gi? Thi?n B?n r?u t?c b?c, kh?n qu?n ng? v? ?o v?i x?m s?m.",
+    "role": "boss",
+    "focalPoint": [
+      0.5,
+      0.3
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "co-truyen-v2",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 39207,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, bust portrait, elderly East Asian male strategist, grey beard, traditional folded black cloth headwrap, ivory linen robe, dark collar, calm eyes, plain bronze pin",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage, modern uniform, peaked cap, pilot hat, police, visor, military medals, teenage, young woman",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 99.42,
+      "peakMiB": 4053,
+      "sha256": "a4c442a299962be22ca6b39d1ecd5c74cc3d7f96a2cee3c3f86b2b0eead1f435",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/co-truyen.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 28992,
+        "sha256": "12318fbd73ce1a1a79b50fc9cdba763fbb269dcd4f049e3b7d4447921a5bd498"
+      },
+      {
+        "path": "web/assets/than-lo/co-truyen-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 4432,
+        "sha256": "e23c579620389ff0fcdfed6875c396900149443003a646cdbcf18e377a2ad418"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "v2 source individually viewed on 2026-10-12. Mature La Sat face and period-appropriate clothing/headwear accepted; no claim of grey streaks, medals or a hat absent in the output. Integrated QA pending.",
+      "evidence": {
+        "date": "2026-10-12",
+        "viewport": "390x844",
+        "theme": "light",
+        "screenshot": "D:/Tro-ly-AI-art/f5-midcampaign-final-campaign-heritage-co-truyen.png",
+        "review": "Source and integrated contact sheets viewed; thumb and preparation URLs loaded in Chrome. Thu Mo forehead/eyes crop was corrected and final full screenshot viewed."
+      }
+    }
   }
 ]

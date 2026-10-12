@@ -2,6 +2,7 @@ import { liveRequest } from '../core/http.js';
 import { habitDate } from '../models/habits.js';
 import { purityLabel } from '../models/practice.js';
 import { button, el } from '../ui/dom.js';
+import { battlePresetControls } from './battle-presets.js';
 
 export function createBattleActions(context) {
     const { state, render, toast, openSheet, closeSheet, sheet, sheetContent, confirm, performLive } = context;
@@ -41,6 +42,7 @@ export function createBattleActions(context) {
         const body = el('div', undefined, 'settings-sheet-body battle-preparation'); sheetContent.append(body);
         if (boss.artId) {
             const image = el('img', undefined, 'battle-preparation-art'); image.src = './assets/than-lo/' + boss.artId + '.webp';
+            if (boss.artPosition) image.style.objectPosition = boss.artPosition.map(value => value * 100 + '%').join(' ');
             image.alt = boss.name; image.loading = 'lazy'; body.append(image);
         }
         const waiting = el('p', 'Đang lấy các bản công pháp đã luyện…', 'hint'); body.append(waiting);
@@ -122,6 +124,7 @@ export function createBattleActions(context) {
                 techniqueSelect.addEventListener('change', () => loadEditions(true));
             } else body.append(el('p', boss.chapter === 1 ? 'Chưa có công pháp đạt Nhập môn. Cậu vẫn có thể dùng Võ Kỹ để mở đầu.'
                 : 'Chưa có công pháp đạt Nhập môn. Luyện trước khi vào trận này sẽ giúp cậu chuẩn bị tốt hơn.', 'hint'));
+            body.append(battlePresetControls({ data, selectors, weaponSelect, addVersion, performLive, toast }));
             body.append(el('p', 'Xuất chiến từ ' + habitDate(input.day + 1) + '. Luyện tạm dừng trong trận; cam kết habit vẫn theo dõi như thường. Chỉ thưởng quyền học lần đầu.', 'hint'),
                 button('Chuẩn bị xuất chiến', () => {
                     const versions = selectors.map(select => select.value).filter(Boolean), skills = versions.map(id => data.versions.find(version => version.versionId === id)?.techniqueId);

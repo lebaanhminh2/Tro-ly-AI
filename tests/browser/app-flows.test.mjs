@@ -45,6 +45,7 @@ function fixture() {
     };
     const control = { state, authenticated: true, failBootstrap: false, calls: [], posts: [], receipts: new Map(),
         habits: { now, day: { day: operatingDay, startAt: start, endAt: start + 86400000 }, habits: [] },
+        presets: { version: 0, presets: [] }, presetRequests: [],
         battleRuns: new Map(), practiceVersions: [], game: { now, day: { day: operatingDay, startAt: start, endAt: start + 86400000 }, version: 0,
             current: { fromDay: operatingDay, mode: 'idle', practiceId: null, battleId: null }, pending: null,
             currentPractice: null, pendingPractice: null, owned: INITIAL_TECHNIQUES, settledThrough: operatingDay - 1, audits: [], recent: [], battles: [], victories: [], choices: [], rewards: [],
@@ -56,7 +57,16 @@ function fixture() {
         control.posts.push({ path, input: clone(input) });
         let result = { saved: true };
         const task = state.tasks.find(t => t.id === input.taskId);
-        if (path === 'game') {
+        if (path === 'game-presets') {
+            const presetId = input.presetId ?? 'set_' + input.id, index = control.presets.presets.findIndex(preset => preset.id === presetId);
+            if (input.operation === 'delete') control.presets.presets.splice(index, 1);
+            else {
+                const preset = { id: presetId, name: input.name, versions: input.versions, weaponId: input.weaponId };
+                if (index < 0) control.presets.presets.push(preset); else control.presets.presets[index] = preset;
+            }
+            result = { saved: true, version: ++control.presets.version, presetId, deleted: input.operation === 'delete' };
+        }
+        else if (path === 'game') {
             control.game.version++;
             if (input.operation.includes('battle')) {
                 const game = control.game;
@@ -272,6 +282,7 @@ async function serve(control, baseline) {
                 }
                 else if (endpoint === 'game' && request.method === 'GET') response.end(JSON.stringify(control.game));
                 else if (endpoint === 'game-catalog') response.end(JSON.stringify(publicGameCatalog()));
+                else if (endpoint === 'game-presets' && request.method === 'GET') response.end(JSON.stringify(control.presets));
                 else if (endpoint === 'game-boss') {
                     const boss = bossById(new URL(request.url, 'http://localhost').searchParams.get('bossId'));
                     response.end(JSON.stringify({ boss: { ...boss, pattern: undefined, victory: control.game.victories.includes(boss.id) ? boss.victory : undefined } }));
@@ -282,6 +293,13 @@ async function serve(control, baseline) {
                         characters: GAME_CHARACTERS.filter(character => chapter.characters.includes(character.id)) }));
                 }
                 else if (endpoint === 'battle-loadout') {
+                    const ids = new URL(request.url, 'http://localhost').searchParams.getAll('versionId');
+                    if (ids.length) {
+                        response.end(JSON.stringify({ versions: ids.flatMap(id => {
+                            const practice = control.practiceVersions.find(entry => entry.practice.id === id)?.practice, tier = practice?.tiers.at(-1);
+                            return tier ? [{ ...tier, techniqueId: practice.techniqueId, versionId: id, edition: practice.edition, tier: practice.tiers.length }] : [];
+                        }) })); return;
+                    }
                     const best = new Map();
                     for (const entry of control.practiceVersions) {
                         const practice = entry.practice, tier = practice.tiers.at(-1); if (!tier) continue;
@@ -317,6 +335,17 @@ async function serve(control, baseline) {
                     let body = '';
                     for await (const part of request)
                         body += part;
+                    if (endpoint === 'game-presets') {
+                        const input = JSON.parse(body); control.presetRequests.push(input);
+                        if (!control.receipts.has(input.id) && input.version !== control.presets.version) {
+                            response.statusCode = 409;
+                            response.end(JSON.stringify({ error: 'GAME_PRESETS_CHANGED', message: 'Bộ chiêu đã thay đổi ở nơi khác.' })); return;
+                        }
+                        if (control.presetAckOutage) {
+                            control.presetAckOutage = false; control.mutate(endpoint, input); response.statusCode = 503;
+                            response.end(JSON.stringify({ error: 'OPERATION_NOT_CONFIRMED' })); return;
+                        }
+                    }
                     if (endpoint === 'sleep' && control.sleepError) {
                         response.statusCode = 409;
                         response.end(JSON.stringify({ error: 'SLEEP_UNDO_LOCKED', message: 'Không thể hoàn tác sau khi đột phá.' }));
@@ -567,7 +596,7 @@ test('campaign images keep distinct chapter scenes and readable original cast cr
         browser = await chrome(); await browser.navigate(server.url, 390);
         await browser.wait("!!document.querySelector('.focus-flip-card')"); await browser.tap('[data-tab=game]');
         await browser.wait("!!document.querySelector('.practice-intro')"); await browser.click('Hành trình');
-        for (const chapter of [3, 4, 5, 6, 11]) {
+        for (const chapter of [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]) {
             await browser.evaluate("document.querySelector('.journey-chapter-picker select').value='" + chapter + "';document.querySelector('.journey-chapter-picker select').dispatchEvent(new Event('change'))");
             await browser.wait("[...document.querySelectorAll('.journey-page img')].every(image=>image.complete && image.naturalWidth>0)");
             assert.equal((await snapshot(browser)).overflow, false);
@@ -582,6 +611,14 @@ test('campaign images keep distinct chapter scenes and readable original cast cr
                 if (process.env.WEB_TEST_SCREENSHOT_PATH) await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, '-campaign-prepare-' + chapter + '.png'));
                 await browser.tap('[data-sheet-close]');
             }
+        }
+        for (const [id, chapter] of [['thach-truyen', 2], ['huyet-truyen', 3], ['hu-truyen', 2], ['co-truyen', 3]]) {
+            await browser.evaluate("document.querySelector('.journey-chapter-picker select').value='" + chapter + "';document.querySelector('.journey-chapter-picker select').dispatchEvent(new Event('change'))");
+            await browser.wait("!!document.querySelector('[data-boss-id=" + id + "] button')");
+            await browser.evaluate("document.querySelector('[data-boss-id=" + id + "] button').click()");
+            await browser.wait("!!document.querySelector('.battle-preparation>.primary') && document.querySelector('.battle-preparation-art').complete && document.querySelector('.battle-preparation-art').naturalWidth>0");
+            if (process.env.WEB_TEST_SCREENSHOT_PATH) await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, '-campaign-heritage-' + id + '.png'));
+            await browser.tap('[data-sheet-close]');
         }
         assert.equal(control.posts.length, 0, 'Reading story and viewing preparation never grants rewards');
         assert.deepEqual(browser.errors, []);
@@ -638,6 +675,95 @@ test('collection, equipment, alternative editions and full battle archive remain
         if (process.env.WEB_TEST_SCREENSHOT_PATH) await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, '-battle-archive.png'));
         await browser.click('Xem nhật ký'); await browser.wait("document.querySelector('#sheet').innerText.includes('Chưa có lượt giao chiến')");
         assert.deepEqual(browser.errors, []);
+    } finally { if (browser) await browser.close(); await server.close(); }
+});
+
+test('saved battle sets restore exact older editions across reloads, preserve conflicting drafts and retry an ambiguous save once', { skip: !browserBin, timeout: 90000 }, async () => {
+    const control = fixture(), healthy = clone(control.state.account), gameBefore = clone(control.game);
+    control.game.rewards = [{ kind: 'weapon', id: 'thach-tam' }];
+    for (const [id, edition, count] of [['preset_browser_old', 1, 1], ['preset_browser_new', 2, 2]]) {
+        const practice = newPracticeVersion(id, 'kiem-y', control.game.day.day, 1000, edition);
+        practice.tiers = Array.from({ length: count }, (_, index) => ({ tier: index + 1, purityBp: 8000,
+            effortMilli: 3000, defectsMilli: 0, startedDay: control.game.day.day, lockedDay: control.game.day.day }));
+        control.practiceVersions.push({ practice, version: 1, created: now });
+    }
+    const server = await serve(control); let browser;
+    try {
+        browser = await chrome();
+        async function openPreparation() {
+            await browser.navigate(server.url, 390); await browser.wait("!!document.querySelector('.focus-flip-card')");
+            await browser.tap('[data-tab=game]'); await browser.wait("!!document.querySelector('.practice-intro')"); await browser.click('Hành trình');
+            await browser.wait("!!document.querySelector('.journey-boss button')");
+            await browser.evaluate("document.querySelector('.journey-boss button').click()");
+            await browser.wait("!!document.querySelector('.battle-loadout-form')");
+            await browser.evaluate("document.querySelector('.battle-presets').open=true");
+            await browser.wait("!document.querySelector('.battle-presets select').disabled");
+        }
+        await openPreparation();
+        await browser.evaluate("document.querySelector('.battle-version-picker').open=true");
+        await browser.wait("!!document.querySelector('.battle-edition-row button:not([disabled])')");
+        await browser.evaluate("document.querySelector('.battle-edition-row button:not([disabled])').click();document.querySelector('.battle-loadout-form select').value='preset_browser_old';document.querySelector('.battle-preparation>label select').value='thach-tam';document.querySelector('.battle-presets input').value='Giữ thế thủ'");
+        control.presetAckOutage = true;
+        await browser.click('Lưu bộ'); await browser.wait("document.querySelector('.battle-presets').innerText.includes('Thử lại')");
+        assert.equal(control.presets.presets.length, 1);
+        assert.equal(await browser.evaluate("document.querySelector('.battle-presets input').disabled"), true);
+        await browser.click('Thử lại'); await browser.wait("document.querySelector('.battle-presets').innerText.includes('Đã lưu bộ chiêu')");
+        assert.equal(control.presetRequests.length, 2); assert.equal(control.presetRequests[0].id, control.presetRequests[1].id);
+        assert.equal(control.posts.filter(post => post.path === 'game-presets').length, 1);
+        assert.deepEqual(control.presets.presets[0].versions, ['preset_browser_old']);
+        await openPreparation();
+        assert.equal(await browser.evaluate("[...document.querySelector('.battle-loadout-form select').options].some(option=>option.value==='preset_browser_old')"), false);
+        await browser.evaluate("const picker=document.querySelector('.battle-presets select');picker.value=picker.options[1].value;picker.dispatchEvent(new Event('change'));document.querySelector('.battle-presets button').click()");
+        await browser.wait("document.querySelector('.battle-loadout-form select').value==='preset_browser_old'");
+        assert.equal(await browser.evaluate("document.querySelector('.battle-preparation>label select').value"), 'thach-tam');
+        for (const [width, theme] of [[320, 'light'], [390, 'dark']]) {
+            await browser.resize(width, 844); await browser.evaluate("document.documentElement.dataset.theme='" + theme + "'");
+            await browser.evaluate("document.querySelector('.battle-presets').scrollIntoView({block:'start'})");
+            await delay(150); assert.equal((await snapshot(browser)).overflow, false);
+            if (process.env.WEB_TEST_SCREENSHOT_PATH) await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, '-presets-' + width + '-' + theme + '.png'));
+        }
+        await browser.evaluate("document.querySelector('.battle-presets input').value='Bộ đã chỉnh';document.querySelector('.battle-preparation>label select').value=''");
+        control.presets.version++;
+        await browser.click('Cập nhật'); await browser.wait("!document.querySelector('.battle-presets input').disabled");
+        assert.equal(await browser.evaluate("document.querySelector('.battle-presets input').value"), 'Bộ đã chỉnh');
+        assert.equal(await browser.evaluate("document.querySelector('.battle-loadout-form select').value"), 'preset_browser_old');
+        await browser.click('Cập nhật'); await browser.wait("document.querySelector('.battle-presets').innerText.includes('Đã lưu bộ chiêu')");
+        assert.equal(control.presets.presets[0].name, 'Bộ đã chỉnh'); assert.equal(control.presets.presets[0].weaponId, null);
+        await browser.click('Xóa bộ'); await browser.click('Xác nhận xóa');
+        await browser.wait("document.querySelector('.battle-presets').innerText.includes('Đã xóa bộ chiêu')");
+        assert.equal(control.presets.presets.length, 0);
+        assert.equal(await browser.evaluate("document.querySelector('.battle-loadout-form select').value"), 'preset_browser_old');
+        assert.deepEqual(control.state.account, healthy); assert.equal(control.game.version, gameBefore.version); assert.deepEqual(control.game.battles, []);
+        assert.deepEqual(browser.errors, []);
+    } finally { if (browser) await browser.close(); await server.close(); }
+});
+
+test('technique library searches Vietnamese without accents and opens the real unlock path without revealing future story', { skip: !browserBin, timeout: 60000 }, async () => {
+    const control = fixture(), server = await serve(control); let browser;
+    try {
+        browser = await chrome(); await browser.navigate(server.url, 390); await browser.wait("!!document.querySelector('.focus-flip-card')");
+        await browser.tap('[data-tab=game]'); await browser.wait("!!document.querySelector('.practice-intro')"); await browser.click('Công pháp');
+        await browser.wait("!!document.querySelector('.game-library-filters input')");
+        await browser.evaluate("const filter=document.querySelector('.game-library-filters select');filter.value='forbidden';filter.dispatchEvent(new Event('change'));const search=document.querySelector('.game-library-filters input');search.focus();search.value='tang nhat';search.dispatchEvent(new Event('input'))");
+        assert.equal(await browser.evaluate("document.activeElement===document.querySelector('.game-library-filters input')"), true);
+        assert.equal(await browser.evaluate("document.querySelectorAll('.technique-card').length"), 1);
+        assert.equal(await browser.evaluate("document.querySelector('.technique-card').innerText.includes('Táng Nhật Nhất Kích')"), true);
+        for (const [width, theme] of [[320, 'light'], [390, 'dark']]) {
+            await browser.resize(width, 844); await browser.evaluate("document.documentElement.dataset.theme='" + theme + "'");
+            assert.equal((await snapshot(browser)).overflow, false);
+            if (process.env.WEB_TEST_SCREENSHOT_PATH) await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, '-library-' + width + '-' + theme + '.png'));
+        }
+        await browser.click('Xem cách mở'); await browser.wait("!!document.querySelector('.technique-sources')");
+        const text = await browser.evaluate("document.querySelector('.technique-sheet').innerText");
+        assert.ok(text.includes('chỉ còn 1 HP')); assert.ok(text.includes('Người Giữ Nhật Tàn · chương 6'));
+        assert.equal(await browser.evaluate("!!document.querySelector('.technique-sheet>.primary')"), false);
+        if (process.env.WEB_TEST_SCREENSHOT_PATH) await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, '-locked-technique.png'));
+        await browser.click('Xem thử thách');
+        await browser.wait("!document.querySelector('#sheet').open && document.querySelector('.journey-chapter-picker select').value==='6'");
+        assert.equal(await browser.evaluate("document.querySelector('[data-boss-id=cam-tang-nhat]').classList.contains('is-locked')"), true);
+        assert.equal(control.calls.includes('GET game-boss'), false);
+        assert.equal(control.calls.includes('GET practice-versions'), false);
+        assert.equal(control.posts.length, 0); assert.deepEqual(browser.errors, []);
     } finally { if (browser) await browser.close(); await server.close(); }
 });
 

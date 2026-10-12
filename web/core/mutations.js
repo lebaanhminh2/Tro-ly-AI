@@ -67,6 +67,7 @@ export function createMutations({ state, runtime, sheet, render, toast, showBrow
             return result;
         }
         catch (error) {
+            options.onError?.(error);
             if (error.code === 'AUTH_REQUIRED' && !globalThis.Telegram?.WebApp?.initData) {
                 showBrowserLogin();
                 return null;

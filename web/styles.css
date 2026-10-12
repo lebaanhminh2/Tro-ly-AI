@@ -483,6 +483,15 @@ dialog.task-sheet-open .task-actions>.task-plan-action{min-height:38px;font-size
 .battle-loadout-form{border:0;border-top:1px solid var(--line);padding:16px 0;margin:18px 0}
 .battle-loadout-form legend{font-size:13px;font-weight:600;padding-right:8px}
 .battle-loadout-form select{min-width:0;max-width:100%;width:100%;font-size:13px}
+.battle-preset-actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.battle-preset-actions .secondary{flex:1;min-height:42px;min-width:110px}
+.battle-presets .form-field{margin-top:12px}
+.game-library-filters{display:grid;grid-template-columns:minmax(0,1fr) minmax(110px,140px);gap:12px}
+.game-library-filters .form-field{margin:0;min-width:0}
+.game-library-filters input,.game-library-filters select{width:100%;min-width:0;font-size:13px}
+.technique-sources{border-top:1px solid var(--line);padding:12px 0}
+.technique-sources h3{font-size:14px;margin:0 0 10px}
+.technique-sources p{margin:6px 0}
 .battle-editions{border-top:1px solid var(--line);padding-top:8px;margin-bottom:18px}
 .battle-editions>summary{min-height:44px;padding:12px 0;font-size:13px;color:var(--accent)}
 .battle-edition-row{padding:8px 0;border-bottom:1px solid var(--line)}

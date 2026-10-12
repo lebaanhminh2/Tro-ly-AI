@@ -1,0 +1,242 @@
+{
+  "model": "Lykon/dreamshaper-8",
+  "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+  "variant": "fp16",
+  "style": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy",
+  "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage",
+  "assets": [
+    {
+      "id": "thu-mo",
+      "publishId": "thu-mo",
+      "contentId": "boss.thu-mo",
+      "role": "boss",
+      "alt": "Th? M? Nh?n ??u tr?c, r?u b?c, ?o v?i x?m v? kh?n s?m.",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "prompt": "bust portrait, elderly East Asian male tomb keeper, bald head, short grey beard, dark weathered linen robe, thick ivory scarf, calm expression, ancient stone tomb background",
+      "seed": 38201,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": true,
+      "qaNote": "Source viewed in portraits/scenes-contact.png on 2026-10-12; subject, composition and anatomy reviewed. Alt describes the visible output. Integrated QA pending."
+    },
+    {
+      "id": "la-sat",
+      "publishId": "la-sat",
+      "contentId": "character.la-sat",
+      "role": "character",
+      "alt": "La Sát Nữ Đế.",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "prompt": "bust portrait, mature East Asian female empress age 45, black hair silver strands tied up, composed firm face, charcoal high collar robe, dark burgundy trim, small bronze clasp, no crown",
+      "seed": 38202,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": false,
+      "qaNote": "v1 rejected in source review: La Sat appears too young; Thien Luat and Co Truyen headgear resembles modern peaked/stacked caps. Revision manifest holds next attempt."
+    },
+    {
+      "id": "thien-luat",
+      "publishId": "thien-luat",
+      "contentId": "boss.thien-luat",
+      "role": "boss",
+      "alt": "Thiên Luật Chấp Kiếm Sứ.",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "prompt": "bust portrait, middle aged East Asian male magistrate swordsman, neat black moustache, severe face, ivory ceremonial robe charcoal collar, bronze shoulder plates, tall plain black hat",
+      "seed": 38203,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": false,
+      "qaNote": "v1 rejected in source review: La Sat appears too young; Thien Luat and Co Truyen headgear resembles modern peaked/stacked caps. Revision manifest holds next attempt."
+    },
+    {
+      "id": "thach-truyen",
+      "publishId": "thach-truyen",
+      "contentId": "boss.thach-truyen",
+      "role": "boss",
+      "alt": "Ng??i Gi? C??ng K?nh ??u c?o, ?o gi?p b?c v?i vai gi?p ??ng.",
+      "focalPoint": [
+        0.5,
+        0.32
+      ],
+      "prompt": "bust portrait, sturdy middle aged East Asian male martial guardian, shaved head, square jaw, scarred bronze shoulder armor, charcoal linen high collar, resolute calm expression, stone wall",
+      "seed": 38204,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": true,
+      "qaNote": "Source viewed in portraits/scenes-contact.png on 2026-10-12; subject, composition and anatomy reviewed. Alt describes the visible output. Integrated QA pending."
+    },
+    {
+      "id": "huyet-truyen",
+      "publishId": "huyet-truyen",
+      "contentId": "boss.huyet-truyen",
+      "role": "boss",
+      "alt": "Ng??i Gi? Huy?t Kh? t?c b?i, ?o v?i x?m v? ?ai ?? n?u.",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "prompt": "bust portrait, East Asian female martial teacher age 35, black hair in tight bun, thoughtful face, closed charcoal robe burgundy sash, small worn bronze pendant, misty stone shrine",
+      "seed": 38205,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": true,
+      "qaNote": "Source viewed in portraits/scenes-contact.png on 2026-10-12; subject, composition and anatomy reviewed. Alt describes the visible output. Integrated QA pending."
+    },
+    {
+      "id": "hu-truyen",
+      "publishId": "hu-truyen",
+      "contentId": "boss.hu-truyen",
+      "role": "boss",
+      "alt": "Ng??i Gi? H? ?nh t?c ?en bu?c sau, ?o cho?ng ng? v? c? ?o s?m.",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "prompt": "bust portrait, elderly East Asian female martial teacher, long silver hair tied low, fine facial wrinkles, ivory hood charcoal robe, serene distant gaze, misty mountain temple",
+      "seed": 38206,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": true,
+      "qaNote": "Source viewed in portraits/scenes-contact.png on 2026-10-12; subject, composition and anatomy reviewed. Alt describes the visible output. Integrated QA pending."
+    },
+    {
+      "id": "co-truyen",
+      "publishId": "co-truyen",
+      "contentId": "boss.co-truyen",
+      "role": "boss",
+      "alt": "Người Giữ Thiên Bàn.",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "prompt": "bust portrait, elderly East Asian male strategist, short grey beard, round plain charcoal scholar cap, ivory linen robe, amber bronze pin, attentive kind eyes, quiet library background",
+      "seed": 38207,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": false,
+      "qaNote": "v1 rejected in source review: La Sat appears too young; Thien Luat and Co Truyen headgear resembles modern peaked/stacked caps. Revision manifest holds next attempt."
+    },
+    {
+      "id": "chapter06",
+      "publishId": "chapter06",
+      "contentId": "chapter.06",
+      "role": "chapter",
+      "alt": "Tr?m m?i ng?i gi?a thung l?ng n?i, ???ng ?? men theo s??n.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "prompt": "abandoned mountain watch station, dark tiled roofs, narrow cliff path, bronze signal bell, sparse pines, grey twilight fog, wide landscape, no people",
+      "negative": "person, human, woman, man, face, portrait, body",
+      "seed": 38208,
+      "width": 640,
+      "height": 448,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": true,
+      "qaNote": "Source viewed in portraits/scenes-contact.png on 2026-10-12; subject, composition and anatomy reviewed. Alt describes the visible output. Integrated QA pending."
+    },
+    {
+      "id": "chapter07",
+      "publishId": "chapter07",
+      "contentId": "chapter.07",
+      "role": "chapter",
+      "alt": "C?ng ?? v? s?n bia c?a th?n m? trong s??ng.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "prompt": "ancient mountain mausoleum courtyard, immense worn stone tablets without writing, empty tomb gateway, sparse bare trees, misty dawn, wide landscape, no people",
+      "negative": "person, human, woman, man, face, portrait, body",
+      "seed": 38209,
+      "width": 640,
+      "height": 448,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": true,
+      "qaNote": "Source viewed in portraits/scenes-contact.png on 2026-10-12; subject, composition and anatomy reviewed. Alt describes the visible output. Integrated QA pending."
+    },
+    {
+      "id": "chapter08",
+      "publishId": "chapter08",
+      "contentId": "chapter.08",
+      "role": "chapter",
+      "alt": "L?i ?? v? ??nh nh? b?n m?t n??c, n?i m? ph?a xa.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "prompt": "remote stone causeway over dark inland sea, weathered pavilion, subtle rust red shore reeds, pale fog, distant mountains, wide landscape, no people",
+      "negative": "person, human, woman, man, face, portrait, body",
+      "seed": 38210,
+      "width": 640,
+      "height": 448,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": true,
+      "qaNote": "Source viewed in portraits/scenes-contact.png on 2026-10-12; subject, composition and anatomy reviewed. Alt describes the visible output. Integrated QA pending."
+    },
+    {
+      "id": "chapter09",
+      "publishId": "chapter09",
+      "contentId": "chapter.09",
+      "role": "chapter",
+      "alt": "B?c ?? qua r?ng th?ng v? c?ng th?p d??i d?y n?i.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "prompt": "five jagged mountain peaks, ancient stone stairway through pine forest, distant austere temple roofs, ivory dawn sky, grey mist, wide landscape, no people",
+      "negative": "person, human, woman, man, face, portrait, body",
+      "seed": 38211,
+      "width": 640,
+      "height": 448,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": true,
+      "qaNote": "Source viewed in portraits/scenes-contact.png on 2026-10-12; subject, composition and anatomy reviewed. Alt describes the visible output. Integrated QA pending."
+    },
+    {
+      "id": "chapter10",
+      "publishId": "chapter10",
+      "contentId": "chapter.10",
+      "role": "chapter",
+      "alt": "L?i l?t ?? gi?a t??ng th?nh v? c?ng thi?n ng?c.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "prompt": "ancient prison fortress outer courtyard, long stone passage, closed wooden gates, bronze lanterns, mountain clouds behind high walls, wide landscape, no people",
+      "negative": "person, human, woman, man, face, portrait, body",
+      "seed": 38212,
+      "width": 640,
+      "height": 448,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": true,
+      "qaNote": "Source viewed in portraits/scenes-contact.png on 2026-10-12; subject, composition and anatomy reviewed. Alt describes the visible output. Integrated QA pending."
+    }
+  ]
+}

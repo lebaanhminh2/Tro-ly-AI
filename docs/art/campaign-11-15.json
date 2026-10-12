@@ -1,0 +1,264 @@
+{
+  "model": "Lykon/dreamshaper-8",
+  "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+  "variant": "fp16",
+  "style": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy",
+  "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage",
+  "assets": [
+    {
+      "id": "tru-thach",
+      "publishId": "tru-thach",
+      "contentId": "boss.tru-thach",
+      "role": "boss",
+      "alt": "Th?n T??ng Th?ch Tr?.",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "prompt": "bust portrait, middle aged East Asian stone guardian, square weathered face, shaved head, heavy charcoal stone shoulder plates, bronze clasps, closed high collar",
+      "seed": 40201,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": false,
+      "qaNote": "Pending source/identity and integrated review."
+    },
+    {
+      "id": "tru-thuy",
+      "publishId": "tru-thuy",
+      "contentId": "boss.tru-thuy",
+      "role": "boss",
+      "alt": "Th?n T??ng Th?y Tr?.",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "prompt": "bust portrait, mature East Asian female water guardian, black hair tight braid, composed face, slate blue grey layered closed robe, silver shoulder armor",
+      "seed": 40202,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": false,
+      "qaNote": "Pending source/identity and integrated review."
+    },
+    {
+      "id": "tru-am",
+      "publishId": "tru-am",
+      "contentId": "boss.tru-am",
+      "role": "boss",
+      "alt": "Th?n T??ng ?m Tr?.",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "prompt": "bust portrait, lean East Asian male shadow guardian, narrowed eyes, black cloth hood, lower face dark veil, segmented charcoal bronze shoulder armor",
+      "seed": 40203,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": false,
+      "qaNote": "Pending source/identity and integrated review."
+    },
+    {
+      "id": "van-phap-khoi",
+      "publishId": "van-phap-khoi",
+      "contentId": "boss.van-phap-khoi",
+      "role": "boss",
+      "alt": "V?n ??o Th?n Kh?i.",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "prompt": "nonhuman mechanical golem bust, featureless ivory ceramic mask, segmented bronze neck joints, angular dark bronze chest plates, ceremonial statue, plain grey background",
+      "seed": 40204,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": false,
+      "qaNote": "Pending source/identity and integrated review.",
+      "negative": "human skin, person, woman, man, naked, nude"
+    },
+    {
+      "id": "than-chien-vuong",
+      "publishId": "than-chien-vuong",
+      "contentId": "boss.than-chien-vuong",
+      "role": "boss",
+      "alt": "Th?n Chi?n V??ng.",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "prompt": "bust portrait, older East Asian male war guardian, grey hair tied back, weathered determined face, aged bronze lamellar armor, charcoal closed collar",
+      "seed": 40205,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": false,
+      "qaNote": "Pending source/identity and integrated review."
+    },
+    {
+      "id": "than-so",
+      "publishId": "than-so",
+      "contentId": "boss.than-so",
+      "role": "boss",
+      "alt": "Thi?n M?nh Th?n S?.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "prompt": "ancient upright stone book artifact, ivory stone carved blank pages, weathered bronze clasps, dark stone pedestal, isolated museum still life, no writing",
+      "seed": 40206,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": false,
+      "qaNote": "Pending source/identity and integrated review.",
+      "negative": "human, person, face, woman, man, skin, naked, nude"
+    },
+    {
+      "id": "than-the",
+      "publishId": "than-the",
+      "contentId": "boss.than-the",
+      "role": "boss",
+      "alt": "Thi?n M?nh Th?n Th?.",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "prompt": "nonhuman ivory marble armored deity bust, featureless sculpted mask, long carved white hair, full marble chest armor, dark bronze trim, plain grey background",
+      "seed": 40207,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": false,
+      "qaNote": "Pending source/identity and integrated review.",
+      "negative": "human skin, person, woman, man, naked, nude"
+    },
+    {
+      "id": "than-chu",
+      "publishId": "than-chu",
+      "contentId": "character.than-chu",
+      "role": "character",
+      "alt": "Th?n Ch?.",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "prompt": "bust portrait, mature East Asian male immortal, long white hair, calm cold expression, ivory ceremonial robe, charcoal closed collar, small bronze ring clasp",
+      "seed": 40208,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": false,
+      "qaNote": "Pending source/identity and integrated review."
+    },
+    {
+      "id": "chapter11",
+      "publishId": "chapter11",
+      "contentId": "chapter.11",
+      "role": "chapter",
+      "alt": "C?u Tr? Thi?n Ng?c.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "prompt": "ancient prison courtyard, immense nine stone towers, barred gate, narrow empty walkway, grey storm clouds, pale mist, wide landscape, no people",
+      "seed": 40209,
+      "width": 640,
+      "height": 448,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": false,
+      "qaNote": "Pending source/identity and integrated review.",
+      "negative": "human, person, face, woman, man, skin, naked, nude"
+    },
+    {
+      "id": "chapter12",
+      "publishId": "chapter12",
+      "contentId": "chapter.12",
+      "role": "chapter",
+      "alt": "V?n ??o Th?n Th?.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "prompt": "abandoned subterranean bronze altar, monumental ivory marble pillars, rock cavern, soft shafts of light, still dark water, wide landscape, no people",
+      "seed": 40210,
+      "width": 640,
+      "height": 448,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": false,
+      "qaNote": "Pending source/identity and integrated review.",
+      "negative": "human, person, face, woman, man, skin, naked, nude"
+    },
+    {
+      "id": "chapter13",
+      "publishId": "chapter13",
+      "contentId": "chapter.13",
+      "role": "chapter",
+      "alt": "Thi?n M?n Ph?n Chi?n.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "prompt": "immense ancient stone gate above mountain clouds, long narrow staircase, bronze door hinges, distant tiled temple, pale dawn, wide landscape, no people",
+      "seed": 40211,
+      "width": 640,
+      "height": 448,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": false,
+      "qaNote": "Pending source/identity and integrated review.",
+      "negative": "human, person, face, woman, man, skin, naked, nude"
+    },
+    {
+      "id": "chapter14",
+      "publishId": "chapter14",
+      "contentId": "chapter.14",
+      "role": "chapter",
+      "alt": "C? Th?n Chi?n Tr??ng.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "prompt": "empty ancient battlefield, broken stone steles and fallen bronze spear shafts, ruined walls, sparse grass, grey morning fog, wide landscape, no people",
+      "seed": 40212,
+      "width": 640,
+      "height": 448,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": false,
+      "qaNote": "Pending source/identity and integrated review.",
+      "negative": "human, person, face, woman, man, skin, naked, nude"
+    },
+    {
+      "id": "chapter15",
+      "publishId": "chapter15",
+      "contentId": "chapter.15",
+      "role": "chapter",
+      "alt": "Thi?n M?nh Th?n Ch?.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "prompt": "ancient stone bridge toward ruined temple, immense broken circular stone arch, pale moon above mountain clouds, muted grey night, wide landscape, no people",
+      "seed": 40213,
+      "width": 640,
+      "height": 448,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": false,
+      "qaNote": "Pending source/identity and integrated review.",
+      "negative": "human, person, face, woman, man, skin, naked, nude"
+    }
+  ]
+}

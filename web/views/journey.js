@@ -14,6 +14,7 @@ export function renderJourney(ui, data, catalog, selectedChapter) {
         if (current.content.artId) {
             const image = el('img'); image.src = './assets/than-lo/' + current.content.artId + '-thumb.webp'; image.width = 76; image.height = 96;
             image.alt = current.content.name; image.loading = 'lazy'; header.append(image);
+            if (current.content.artPosition) image.style.objectPosition = current.content.artPosition.map(value => value * 100 + '%').join(' ');
         }
         panel.append(header);
         if (current.weaponId) panel.append(el('p', 'Thần binh · ' + (catalog.weapons?.find(weapon => weapon.id === current.weaponId)?.name ?? current.weaponId), 'hint'));
@@ -85,6 +86,7 @@ export function renderJourney(ui, data, catalog, selectedChapter) {
         const won = (data.victories ?? []).includes(boss.id), unlocked = boss.requires.every(id => (data.victories ?? []).includes(id))
             && (boss.practicePrerequisites ?? []).every(id => (data.learned ?? []).includes(id));
         const row = card('journey-boss' + (!unlocked ? ' is-locked' : ''));
+        row.dataset.bossId = boss.id;
         const heading = el('div', undefined, 'journey-boss-heading'), copy = el('div');
         const needsPractice = boss.requires.every(id => (data.victories ?? []).includes(id)) && !unlocked;
         copy.append(el('p', won ? 'Đã vượt qua' : unlocked ? boss.maxTurns + ' lượt tối đa' : needsPractice ? 'Cần luyện các môn yêu cầu' : 'Mở sau trận trước', 'eyebrow'), el('h3', boss.name));
@@ -92,6 +94,7 @@ export function renderJourney(ui, data, catalog, selectedChapter) {
         if (boss.artId) {
             const image = el('img'); image.src = './assets/than-lo/' + boss.artId + '-thumb.webp'; image.width = 56; image.height = 72;
             image.alt = ''; image.loading = 'lazy'; heading.append(image);
+            if (boss.artPosition) image.style.objectPosition = boss.artPosition.map(value => value * 100 + '%').join(' ');
         }
         row.append(heading, el('p', boss.mechanics, 'hint'));
         if (needsPractice) {

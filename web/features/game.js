@@ -38,8 +38,19 @@ export function createGameActions(context) {
         openSheet(technique.name); sheet.classList.add('settings-sheet-open');
         const body = el('div', undefined, 'settings-sheet-body technique-sheet');
         body.append(el('p', technique.description, 'technique-description'));
+        if (technique.combatWarning) body.append(el('p', technique.combatWarning, 'battle-warning'));
+        const sources = el('section', undefined, 'technique-sources'); sources.append(el('h3', 'Đường học'));
+        if (technique.availableInitially) sources.append(el('p', 'Quyền học có sẵn từ khi bắt đầu hành trình.', 'hint'));
+        for (const id of technique.sources ?? []) {
+            const boss = state.gameCatalog.bosses.find(value => value.id === id); if (!boss) continue;
+            sources.append(el('p', 'Thắng ' + boss.name + ' · chương ' + boss.chapter, 'hint'), button('Xem thử thách', () => {
+                sheet.close(); state.gamePanel = 'journey'; state.gameChapter = boss.chapter; render();
+                requestAnimationFrame(() => document.querySelector('[data-boss-id="' + boss.id + '"]')?.scrollIntoView({ block: 'center' }));
+            }, 'text-button'));
+        }
+        body.append(sources);
         if (!state.gameData.owned.includes(technique.id)) {
-            body.append(el('p', 'Chưa có quyền học công pháp này.', 'hint')); sheetContent.append(body); return;
+            body.append(el('p', 'Chưa có quyền học. Thắng thử thách mở bí tịch; cậu tự luyện từ Nhập môn.', 'hint')); sheetContent.append(body); return;
         }
         const hint = el('p', 'Đang tải các bản luyện…', 'hint'); body.append(hint); sheetContent.append(body);
         try {
