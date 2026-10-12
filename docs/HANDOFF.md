@@ -10,11 +10,12 @@ Cập nhật 2026-10-12. Goal Habit/Thần Lộ đang active, AI tự triển kh
 
 ## Trạng thái thật
 
-- F1 commit/push `5c8d90a`, F2 `656f06d`, F3 `d766e69`, F4 `699c69a`, checkpoint F5 `306ed28`, branch `review/p1-p3`; còn F5–F6/R1. Luôn kiểm git status/HEAD.
-- Habit/luyện/battle/economy chạy local; schema0031–0036. F5 có 40encounters/15chương/39quyền và thần binh/chiến tích, lazy story, archive và bộ chọn bản cũ. Toàn art/tuyến phụ/UX/vận hành vẫn chưa hoàn tất hoặc release remote. Luật tại BATTLE_RULES.
+- F1 commit/push `5c8d90a`, F2 `656f06d`, F3 `d766e69`, F4 `699c69a`; checkpoint F5 `c99ed03` / `017b545`, branch `review/p1-p3`; còn F5–F6/R1. Luôn kiểm git status/HEAD.
+- Habit/luyện/battle/economy chạy local; schema0031–0037. F5 có40encounters/15chương/39quyền, rewards/equipment/archive, bộ chiêu lưu đa thiết bị và thư viện tìm/đường mở. Earned perfect-daily domainfixture cả5phái đi40trận/luyện39môn; chưa chứng minh imperfect/weekly/cân bằng nhánh sớm. Toàn art/UX/vận hành chưa hoàn tất hoặc release remote. Luật tại BATTLE_RULES.
 - Full gate và targeted cases mới xem PROGRESS. Chrome mobile screenshot đã xem. Art pipeline local đã tích hợp Tịch Vân/5bosses/cảnh cửa núi và cập nhật QA; toàn inventory còn phải làm.
 - Phạm vi mới: habit/tracking/lịch-nhắc, luyện/chiến đấu, đủ 5 phái/39 môn/15 chương tới DIỆT THẦN, tuyến phụ/thần binh/chiến tích, cast/art/UI và vận hành. Một phái/chương đầu chỉ là cổng nội bộ.
-- Source đã có task/planner/sleep5min undo/focus/checkin/healthy/Chrome auth/reminders; giữ nguyên. Remote chưa áp migration0031–0036.
+- Source đã có task/planner/sleep5min undo/focus/checkin/healthy/Chrome auth/reminders; giữ nguyên. Remote chưa áp migration0031–0037.
+- **Art session36218 đang chạy**, manifest `docs/art/campaign-11-15.json`, output/log tại `D:\Tro-ly-AI-art\campaign-11-15`. Poll đúng handle trước khi kết luận stopped hoặc khởi chạy tiếp.13source chưa QA/publish; art01–10 và bốn truyền thừa mới đã tích hợp theo inventory. Chi tiết/gates ở checkpoint PROGRESS cuối.
 - Issue nền: đã báo ngủ sớm bằng web nhưng còn nhận nudge ngủ. Root cause **chưa xác định/chưa sửa**; điều tra và regression trong goal.
 
 ## Quyền và giới hạn

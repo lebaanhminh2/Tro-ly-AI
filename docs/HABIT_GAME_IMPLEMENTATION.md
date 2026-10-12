@@ -1,6 +1,6 @@
 # Giao việc cho AI: hoàn thiện Habit và Thần Lộ
 
-Cập nhật **2026-10-12**. Đây là điểm vào duy nhất cho nhiệm vụ và prompt `/goal`. Goal đang hoạt động; F1–F4 đã commit/push (F4 `699c69a`), F5 có checkpoint `306ed28` đã push và còn triển khai tiếp, chưa release remote. Trạng thái, quyết định và bằng chứng mới nhất tại [PROGRESS](HABIT_GAME_PROGRESS.md); kiểm git status/HEAD trước khi tiếp tục.
+Cập nhật **2026-10-12**. Đây là điểm vào duy nhất cho nhiệm vụ và prompt `/goal`. Goal đang hoạt động; F1–F4 đã commit/push (F4 `699c69a`), F5 có checkpoint `c99ed03` / `017b545` đã push và còn triển khai tiếp, chưa release remote. Trạng thái, quyết định và bằng chứng mới nhất tại [PROGRESS](HABIT_GAME_PROGRESS.md); kiểm git status/HEAD trước khi tiếp tục.
 
 ## 1. Nhiệm vụ cuối cùng
 
