@@ -36,6 +36,20 @@ stateDiagram-v2
 
 P0 phải chốt cách phân bổ thiếu weekly khi chuyển môn/bản/tầng/chế độ, hủy luyện hoặc chưa chọn môn. Điểm xuất phát là sự kiện thuộc ngày nó phát sinh, không sửa tầng cũ. Quy tắc phải giữ nghĩa vụ đã phát sinh và chống né thiếu bằng chuyển trạng thái; có thể cần snapshot ràng buộc cam kết/phiên luyện hoặc hạn chế thời điểm thay đổi. AI chọn phương án dễ hiểu, ghi timeline và mô phỏng exploit trước khi code; không thêm lệnh cấm tùy tiện mà UI không giải thích.
 
+### Quyết định A03/A04 cho bản triển khai đầu
+
+Đây là quyết định của agent trong quyền thiết kế đã cấp, không phải luật mới do user tự chốt. Rule `practice-v1`:
+
+- Chi phí bốn tầng là3/6/10/15 đơn vị; Ngoại Đạo×2, cấm thuật×1,5, các môn phái/trấn phái×1. Lưu chi phí/rule trong bản luyện. Một ngày đạt ít nhất một habit hợp lệ nhận1đơn vị; bonus0,12 cho mỗi habit trưởng thành thêm, tối đa1,6. Bonus cần habit có cam kết hiệu lực ít nhất7ngày; phần theo dõi trước hiệu lực không tăng tiến độ. Tiến độ đầy một tầng không tràn sang tầng sau trước khi tầng khóa.
+- Tinh thuần tính từ nỗ lực đã dùng và thiếu tích lũy của **bản**: `max(1%, (S/(S+2M))^(1+0,35*(tầng-1)))`, làm tròn xuống basis point, không cao hơn tầng trước đã khóa. S là tiến độ đã dùng, M là thiếu quy đổi; không dùng ngày trung tính làm thành công. Khuyết điểm không mất khi đổi môn/tầng. Một habit hoàn thành đều có thể đạt100%; bản lỗi chỉ cải thiện bằng bản mới.
+- Thiếu daily/chọn thứ áp vào bản đang luyện trong snapshot của ngày. Tuần linh hoạt có audit riêng: bất kỳ bản/tầng nào nhận tiến độ trong tuần đều ràng buộc với **các cam kết tuần đang hiệu lực**, kể cả tiến độ hôm đó đến từ habit daily khác. Điều này chặn né quota tuần bằng chỉ luyện vào Chủ nhật hoặc dùng habit daily để khóa tầng trước ngày thiếu.
+- Audit chốt khi tuần kết thúc hoặc đủQ ngày đạt (khi đó thiếu mới về sau không thể phát sinh). Thiếu cả tuần phân bổ một lần theo phần tiến độ đã dùng của từng bản/tầng; integer milliunits và phần dư phân bổ xác định. Nếu cả tuần không có tiến độ, thiếu đi vào bản chưa hoàn tất được chọn luyện gần nhất trong tuần; không đổ vào tầng cũ đã khóa.
+- Tầng đủ tiến độ nhưng còn audit chưa chốt hiển thị “Đủ tiến độ · chờ cam kết tuần”. Mỗi tầng đã khóa bất biến; audit của bản đã chuyển khỏi lịch vẫn được chốt, kể cả đang chiến đấu/idle. Việc kiểm nghĩa vụ không tạo thêm tiến độ hay sức mạnh luyện từ nguồn đã thuộc trận.
+- Chọn môn/bản hoặc dừng luyện hiệu lực từ ngày sinh hoạt kế tiếp. Tạo bản mới giữ bản cũ; nếu đã có bản cùng môn thì yêu cầu xác nhận luyện lại. Chưa chọn bản thì habit vẫn theo dõi và không tự học môn. Một source/ngày chỉ thuộc snapshot mode của ngày đó.
+- Game settlement theo ngày, chỉ sau khi **tất cả** habit có hiệu lực trong ngày đã kết toán; guard account+habit cùng batch, đánh dấu sources với receiver và game_applied cùng kết quả. Cron muộn vẫn đọc selection của ngày cũ. Ngủ không chốt ngày/game.
+
+Timeline cần test: Q3 chỉ ngày1 đạt, luyện từdaily trong ngày1–3 → tầng đủ tiến độ nhưng chưa khóa; ngày6/7 thiếu tổng2, audit chốt rồi mới khóa. Đổi sang bản khác/ngừng luyện/Xuất Chiến từ ngày4 vẫn chốt vào các bản dùng tiến độ trước đó. Chỉ luyện Chủ nhật vớiquota đã thiếu trước đó vẫn chịu audit cả tuần. Q3 đạt ba ngày đầu → audit chốt sớm với0thiếu, không buộc chờ Chủ nhật. Các con số được mô phỏng và có thể điều chỉnh trước release, giữ luật nghiêm và compatibility/rule version.
+
 ## 3. Sức mạnh và kết toán
 
 Nguồn nền là Cảnh giới, tầng, tinh thuần và bản sắc công pháp. Habit là phần gia tăng chính theo cam kết đủ điều kiện, task là phần phụ có trần. Task vẫn thưởng vé theo hệ hiện có; không tự thêm thưởng Tu Vi/habit/vé mới.

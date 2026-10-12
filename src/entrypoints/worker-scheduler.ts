@@ -15,6 +15,7 @@ import {DayPlanStore} from '../adapters/d1/day-plan-store.ts';
 import {queueWorkNudge} from '../adapters/d1/work-nudges.ts';
 import {TaskDayStore} from '../adapters/d1/task-day-store.ts';
 import {D1HabitStore} from '../adapters/d1/habit-store.ts';
+import {D1GameStore} from '../adapters/d1/game-store.ts';
 import type {ChatService} from '../application/plan-command.ts';
 import type {Clock} from '../ports/work-store.ts';
 
@@ -63,13 +64,20 @@ export async function runScheduled(env:Env,deps:{cardsEnabled:boolean;transport:
   await queueWorkNudge(env,clock.now(),transport);
   if(cardsEnabled)await queueAppointments(env.DB,env.TELEGRAM_USER_ID,clock.now());
  }else{
-  for(const owner of await store.pendingOwners())if(owner===env.TELEGRAM_USER_ID)await processInbox(store,owner,clock,chat,1);
-  await store.archiveCompleted(env.TELEGRAM_USER_ID,clock.now(),90,25);
-  await new HealthyStore(env.DB).syncTaskTickets(env.TELEGRAM_USER_ID,clock.now());
-  await expireMemory(env.DB,clock.now());
-  await unlockAchievements(env.DB,env.TELEGRAM_USER_ID,clock.now());
-  await flushCards();
-  await new D1HabitStore(env.DB).settle(env.TELEGRAM_USER_ID,clock.now(),6);
+  // Three maintenance slots within phase3. Personal reminder/work delivery
+  // keeps its four-minute cadence. Habit/game groups close independently,
+  // leaving query/CPU headroom rather than stacking every job in one call.
+  const maintenance=Math.floor(now/240000)%3;
+  if(maintenance===1)await new D1HabitStore(env.DB).settleBatch(env.TELEGRAM_USER_ID,clock.now(),30);
+  else if(maintenance===2)await new D1GameStore(env.DB).settle(env.TELEGRAM_USER_ID,clock.now(),1);
+  else{
+   for(const owner of await store.pendingOwners())if(owner===env.TELEGRAM_USER_ID)await processInbox(store,owner,clock,chat,1);
+   await store.archiveCompleted(env.TELEGRAM_USER_ID,clock.now(),90,25);
+   await new HealthyStore(env.DB).syncTaskTickets(env.TELEGRAM_USER_ID,clock.now());
+   await expireMemory(env.DB,clock.now());
+   await unlockAchievements(env.DB,env.TELEGRAM_USER_ID,clock.now());
+   await flushCards();
+  }
  }
  await flushOutbox(env,transport,clock.now(),()=>clock.now(),undefined,1);
 }

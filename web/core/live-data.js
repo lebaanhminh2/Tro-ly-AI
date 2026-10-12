@@ -38,11 +38,12 @@ export async function activeTaskPage(offset = 0) {
     const page = response.result ?? {};
     return { ...page, items: (page.items ?? []).map(task => mapTask(task)) };
 }
-export async function refreshLive({ includeHistory = true, activeOffset = 0, includeHabits = false } = {}) {
+export async function refreshLive({ includeHistory = true, activeOffset = 0, includeHabits = false, includeGame = false } = {}) {
     // Start independent reads together; history errors still do not block bootstrap.
     const historyRequest = includeHistory ? historyPage(0).catch(() => null) : Promise.resolve(null);
     const habitsRequest = includeHabits ? liveRequest('habits?archived=1') : Promise.resolve(null);
-    const [data, page, habitData] = await Promise.all([liveRequest('bootstrap'), historyRequest, habitsRequest]);
+    const gameRequest = includeGame ? liveRequest('game') : Promise.resolve(null);
+    const [data, page, habitData, gameData] = await Promise.all([liveRequest('bootstrap'), historyRequest, habitsRequest, gameRequest]);
     const completions = new Map(data.progress.completions.map(item => [item.task_id, item.completed_at]));
     const clock = n => String(Math.floor(n / 60)).padStart(2, '0') + ':' + String(n % 60).padStart(2, '0');
     const history = page ?? { items: [], offset: 0, limit: 20, total: 0, hasMore: false };
@@ -81,6 +82,7 @@ export async function refreshLive({ includeHistory = true, activeOffset = 0, inc
         reminders: data.reminders.map(r => ({ ...r, times: r.times.join(', '), start: r.startDate, end: r.endDate ?? '' })),
         cultivation: mapAccount(data.account, data.day?.day),
         ...(includeHabits ? { habitData } : {}),
+        ...(includeGame ? { gameData } : {}),
         day: data.day, operatingDay: data.day?.day ?? null, dailyPlan: data.dailyPlan, taskFocus: data.taskFocus ?? null, taskFocusTarget: data.taskFocusTarget ?? null, timeline: data.timeline, loadedAt: Date.now(), progress: data.progress, sessions: data.sessions, events: data.events
     };
 }

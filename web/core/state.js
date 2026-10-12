@@ -3,6 +3,7 @@ export function createAppState(live) {
     const state = createDemo();
     state.habitData = null;
     state.habitHistory = null;
+    state.gameData = null;
     state.live = live;
     if (live) {
         state.tasks = [];

@@ -226,35 +226,68 @@ export class D1HabitStore implements HabitStore {
         await query(this.db, 'INSERT OR IGNORE INTO habit_days(owner,day,start_at,end_at) VALUES(?,?,?,?)', owner, day, row.start_at, row.end_at).run();
         return dayDTO((await query(this.db, 'SELECT day,start_at,end_at FROM habit_days WHERE owner=? AND day=?', owner, day).first<DayRow>())!);
     }
+    // One bounded group at the oldest day. Shared reads and JSON writes avoid
+    // consuming the Free invocation budget once per habit in the same day.
+    async settleBatch(owner: string, now: number, limit = 30): Promise<{ processed: number; pending: boolean }> {
+        if (!Number.isInteger(limit) || limit < 1 || limit > 50) throw Error('INVALID_HABIT_LIMIT');
+        const candidates = (await query(this.db, 'SELECT id,version,created_day,archived_from,next_day FROM habits WHERE owner=? AND (archived_from IS NULL OR next_day<archived_from) ORDER BY next_day,id LIMIT ?', owner, limit).all<HabitRow>()).results;
+        if (!candidates.length) return { processed: 0, pending: false };
+        const ordinal = candidates[0]!.next_day, rows = candidates.filter(row => row.next_day === ordinal);
+        const day = await this.historicDay(owner, ordinal);
+        if (now < day.endAt) return { processed: 0, pending: false };
+        const ids = JSON.stringify(rows.map(row => row.id));
+        const [aggregate, revisions, periods, logs] = await Promise.all([
+            query(this.db, 'SELECT version FROM habit_accounts WHERE owner=?', owner).first<{ version: number }>(),
+            query(this.db, `SELECT habit_id,from_day,definition_json,archived_from FROM habit_revisions r WHERE owner=?
+                AND habit_id IN(SELECT value FROM json_each(?)) AND from_day=(SELECT MAX(from_day) FROM habit_revisions
+                    WHERE owner=r.owner AND habit_id=r.habit_id AND from_day<=?)`, owner, ids, ordinal).all<RevisionRow & { habit_id: string }>(),
+            query(this.db, 'SELECT habit_id,start_day,period_json FROM habit_periods WHERE owner=? AND habit_id IN(SELECT value FROM json_each(?)) AND start_day IN(?,?)',
+                owner, ids, ordinal, ordinal - ((ordinal + 3) % 7)).all<{ habit_id: string; start_day: number; period_json: string }>(),
+            query(this.db, 'SELECT habit_id,value FROM habit_logs WHERE owner=? AND day=? AND habit_id IN(SELECT value FROM json_each(?))', owner, ordinal, ids).all<{ habit_id: string; value: number }>(),
+        ]);
+        const outcomes = rows.map(row => {
+            const revision = revisions.results.find(item => item.habit_id === row.id);
+            if (!revision) throw Error('HABIT_NOT_FOUND');
+            const definition = JSON.parse(revision.definition_json) as HabitDefinition;
+            let period = newHabitPeriod(definition, ordinal);
+            const saved = periods.results.find(item => item.habit_id === row.id && item.start_day === period.startDay);
+            if (saved) period = JSON.parse(saved.period_json) as HabitPeriod;
+            if (ordinal < definition.commitmentFrom) period.closedThrough = ordinal - 1;
+            const value = logs.results.find(item => item.habit_id === row.id)?.value ?? 0;
+            const outcome = assessHabitDay(definition, ordinal, value, period, revision.archived_from);
+            return { habitId: row.id, revisionDay: revision.from_day, ...outcome };
+        });
+        const json = JSON.stringify(outcomes), guards = JSON.stringify(rows.map(row => ({ id: row.id, version: row.version })));
+        try {
+            await this.db.batch([
+                query(this.db, `INSERT INTO transaction_guard SELECT CASE WHEN COALESCE((SELECT version FROM habit_accounts WHERE owner=?),0)=?
+                    AND NOT EXISTS(SELECT 1 FROM json_each(?) s WHERE NOT EXISTS(SELECT 1 FROM habits h WHERE h.owner=?
+                        AND h.id=json_extract(s.value,'$.id') AND h.version=json_extract(s.value,'$.version') AND h.next_day=?)) THEN 1 ELSE 0 END`,
+                    owner, aggregate?.version ?? 0, guards, owner, ordinal),
+                query(this.db, `INSERT INTO habit_outcomes(owner,habit_id,day,revision_day,status,reason,value,successes,misses,settled_at)
+                    SELECT ?,json_extract(value,'$.habitId'),?,json_extract(value,'$.revisionDay'),json_extract(value,'$.status'),
+                    json_extract(value,'$.reason'),json_extract(value,'$.value'),json_extract(value,'$.successes'),json_extract(value,'$.misses'),? FROM json_each(?)`, owner, ordinal, now, json),
+                query(this.db, `INSERT INTO habit_periods(owner,habit_id,start_day,period_json)
+                    SELECT ?,json_extract(value,'$.habitId'),json_extract(value,'$.period.startDay'),json_extract(value,'$.period') FROM json_each(?) WHERE 1
+                    ON CONFLICT(owner,habit_id,start_day) DO UPDATE SET period_json=excluded.period_json`, owner, json),
+                query(this.db, 'UPDATE habits SET next_day=next_day+1 WHERE owner=? AND id IN(SELECT value FROM json_each(?))', owner, ids),
+                query(this.db, 'INSERT INTO habit_accounts(owner,version) VALUES(?,1) ON CONFLICT(owner) DO UPDATE SET version=version+1', owner),
+                query(this.db, 'DELETE FROM transaction_guard'),
+            ]);
+        } catch (error) {
+            const newer = await query(this.db, 'SELECT version FROM habit_accounts WHERE owner=?', owner).first<{ version: number }>();
+            if (newer?.version !== aggregate?.version) return { processed: 0, pending: true };
+            throw error;
+        }
+        return { processed: rows.length, pending: true };
+    }
     async settle(owner: string, now: number, limit = 14) {
         if (!Number.isInteger(limit) || limit < 1 || limit > 50) throw Error('INVALID_HABIT_LIMIT');
         let processed = 0;
         while (processed < limit) {
-            const rows = (await query(this.db, 'SELECT id,version,created_day,archived_from,next_day FROM habits WHERE owner=? AND (archived_from IS NULL OR next_day<archived_from) ORDER BY next_day,id LIMIT 1', owner).all<HabitRow>()).results;
-            if (!rows.length) break;
-            const row = rows[0]!, day = await this.historicDay(owner, row.next_day);
-            if (now < day.endAt) break;
-            const aggregate = await query(this.db, 'SELECT version FROM habit_accounts WHERE owner=?', owner).first<{ version: number }>();
-            const habit = (await this.readHabit(owner, row.id, row.next_day))!, revision = definitionOnDay(habit, row.next_day)!;
-            let period = newHabitPeriod(revision.definition, row.next_day);
-            const saved = await query(this.db, 'SELECT period_json FROM habit_periods WHERE owner=? AND habit_id=? AND start_day=?', owner, row.id, period.startDay).first<{ period_json: string }>();
-            if (saved) period = JSON.parse(saved.period_json) as HabitPeriod;
-            if (row.next_day < revision.definition.commitmentFrom) period.closedThrough = row.next_day - 1;
-            const log = await this.log(owner, row.id, row.next_day), outcome = assessHabitDay(revision.definition, row.next_day, log.value, period, revision.archivedFrom ?? null);
-            try {
-                await this.db.batch([
-                    query(this.db, 'INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM habits WHERE owner=? AND id=? AND next_day=? AND version=?) AND COALESCE((SELECT version FROM habit_accounts WHERE owner=?),0)=? THEN 1 ELSE 0 END', owner, row.id, row.next_day, row.version, owner, aggregate?.version ?? 0),
-                    query(this.db, 'INSERT INTO habit_outcomes(owner,habit_id,day,revision_day,status,reason,value,successes,misses,settled_at) VALUES(?,?,?,?,?,?,?,?,?,?)', owner, row.id, row.next_day, revision.fromDay, outcome.status, outcome.reason, log.value, outcome.successes, outcome.misses, now),
-                    query(this.db, 'INSERT INTO habit_periods(owner,habit_id,start_day,period_json) VALUES(?,?,?,?) ON CONFLICT(owner,habit_id,start_day) DO UPDATE SET period_json=excluded.period_json', owner, row.id, period.startDay, JSON.stringify(outcome.period)),
-                    query(this.db, 'UPDATE habits SET next_day=next_day+1 WHERE owner=? AND id=?', owner, row.id),
-                    query(this.db, 'INSERT INTO habit_accounts(owner,version) VALUES(?,1) ON CONFLICT(owner) DO UPDATE SET version=version+1', owner),
-                    query(this.db, 'DELETE FROM transaction_guard'),
-                ]);
-            } catch (error) {
-                const next = await query(this.db, 'SELECT next_day FROM habits WHERE owner=? AND id=?', owner, row.id).first<{ next_day: number }>();
-                if (next?.next_day === row.next_day) throw error;
-            }
-            processed++;
+            const result = await this.settleBatch(owner, now, Math.min(30, limit - processed));
+            processed += result.processed;
+            if (!result.processed) break;
         }
         const pending = await query(this.db, 'SELECT 1 AS found FROM habits h JOIN habit_days d ON d.owner=h.owner AND d.day=h.next_day WHERE h.owner=? AND d.end_at<=? AND (h.archived_from IS NULL OR h.next_day<h.archived_from) LIMIT 1', owner, now).first();
         return { processed, pending: !!pending || processed === limit };

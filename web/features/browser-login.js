@@ -16,6 +16,8 @@ export function createBrowserLoginActions(context) {
         state.habitHistory = null;
         state.habitReport = null;
         state.habitError = null;
+        state.gameData = null;
+        state.gameError = null;
         state.authChallenge = null;
         state.loginError = '';
         state.screenState = 'login';

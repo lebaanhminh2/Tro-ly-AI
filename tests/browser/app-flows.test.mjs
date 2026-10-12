@@ -10,6 +10,8 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { createDemo } from '../../web/demo/state.js';
 import { checkinProgress } from '../../web/models/cultivation.js';
 import { assessHabitDay, newHabitPeriod } from '../../src/domain/habits.ts';
+import { TECHNIQUES, SCHOOLS, INITIAL_TECHNIQUES } from '../../src/domain/techniques.ts';
+import { newPracticeVersion } from '../../src/domain/practice.ts';
 // Real-browser smoke tests. Only localhost fixtures are used; no .env or cloud data.
 const browserBin = process.env.BROWSER_BIN || [
     'C:/Program Files/Google/Chrome/Application/chrome.exe',
@@ -37,7 +39,10 @@ function fixture() {
         progress: { completions: [], milestones: [], achievements: [] }, sessions: [], events: []
     };
     const control = { state, authenticated: true, failBootstrap: false, calls: [], posts: [], receipts: new Map(),
-        habits: { now, day: { day: operatingDay, startAt: start, endAt: start + 86400000 }, habits: [] } };
+        habits: { now, day: { day: operatingDay, startAt: start, endAt: start + 86400000 }, habits: [] },
+        practiceVersions: [], game: { now, day: { day: operatingDay, startAt: start, endAt: start + 86400000 }, version: 0,
+            current: { fromDay: operatingDay, mode: 'idle', practiceId: null, battleId: null }, pending: null,
+            currentPractice: null, pendingPractice: null, owned: INITIAL_TECHNIQUES, settledThrough: operatingDay - 1, audits: [], recent: [] } };
     control.bootstrap = () => ({ ...state, checkin: checkinProgress(state.account.state, now) });
     control.mutate = (path, input) => {
         if (control.receipts.has(input.id))
@@ -45,7 +50,19 @@ function fixture() {
         control.posts.push({ path, input: clone(input) });
         let result = { saved: true };
         const task = state.tasks.find(t => t.id === input.taskId);
-        if (path === 'habits') {
+        if (path === 'game') {
+            control.game.version++;
+            let stored;
+            if (input.operation === 'start_practice') {
+                const edition = control.practiceVersions.filter(item => item.practice.techniqueId === input.techniqueId).length + 1;
+                stored = { practice: newPracticeVersion('p_' + input.id, input.techniqueId, control.game.day.day, 1000, edition), version: 1, created: now + edition };
+                control.practiceVersions.unshift(stored);
+            } else if (input.operation === 'continue_practice') stored = control.practiceVersions.find(item => item.practice.id === input.practiceId);
+            control.game.pending = { fromDay: control.game.day.day + 1, mode: stored ? 'practice' : 'idle', practiceId: stored?.practice.id ?? null, battleId: null };
+            control.game.pendingPractice = stored ?? null;
+            result = { saved: true, effectiveFrom: control.game.pending.fromDay, practiceId: stored?.practice.id ?? null, version: control.game.version };
+        }
+        else if (path === 'habits') {
             const day = control.habits.day.day;
             let view = control.habits.habits.find(item => item.habit.id === input.habitId);
             if (input.operation === 'create') {
@@ -215,6 +232,12 @@ async function serve(control, baseline) {
                     else
                         response.end(JSON.stringify(control.bootstrap()));
                 }
+                else if (endpoint === 'game' && request.method === 'GET') response.end(JSON.stringify(control.game));
+                else if (endpoint === 'game-catalog') response.end(JSON.stringify({ schools: SCHOOLS, techniques: TECHNIQUES }));
+                else if (endpoint === 'practice-versions') {
+                    const id = new URL(request.url, 'http://localhost').searchParams.get('techniqueId');
+                    response.end(JSON.stringify({ versions: control.practiceVersions.filter(item => item.practice.techniqueId === id), next: null }));
+                }
                 else if (endpoint === 'habits' && request.method === 'GET')
                     response.end(JSON.stringify(control.habits));
                 else if (endpoint === 'habit-history')
@@ -255,7 +278,7 @@ async function serve(control, baseline) {
             }
             else
                 body = await readFile(file);
-            response.setHeader('Content-Type', relative.endsWith('.js') ? 'text/javascript' : relative.endsWith('.css') ? 'text/css' : 'text/html');
+            response.setHeader('Content-Type', relative.endsWith('.js') ? 'text/javascript' : relative.endsWith('.css') ? 'text/css' : relative.endsWith('.webp') ? 'image/webp' : 'text/html');
             response.end(body);
         }
         catch {
@@ -386,6 +409,48 @@ async function snapshot(browser) {
     return browser.evaluate(`(() => { const root=document.querySelector('#content');const rect=root.getBoundingClientRect();return {text:root.innerText,buttons:[...root.querySelectorAll('button')].map(b=>({text:b.innerText,disabled:b.disabled})),geometry:{x:Math.round(rect.x),y:Math.round(rect.y),width:Math.round(rect.width),height:Math.round(rect.height)},overflow:document.documentElement.scrollWidth>innerWidth+1};})()`);
 }
 
+test('practice mobile flow selects a future version, shows pending quality, confirms a fresh edition and preserves old versions', { skip: !browserBin, timeout: 90000 }, async () => {
+    const control = fixture(), server = await serve(control), healthy = clone(control.state.account), tasks = clone(control.state.tasks);
+    let browser;
+    try {
+        browser = await chrome(); await browser.navigate(server.url, 390);
+        await browser.wait("!!document.querySelector('.focus-flip-card')");
+        await browser.tap('[data-tab=game]'); await browser.wait("!!document.querySelector('.practice-intro img')");
+        await browser.wait("document.querySelector('.practice-intro img').complete && document.querySelector('.practice-intro img').naturalWidth>0");
+        if (process.env.WEB_TEST_SCREENSHOT_PATH) await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, '-practice-intro.png'));
+        await browser.click('Chọn công pháp'); await browser.wait("document.querySelectorAll('.technique-card').length===5");
+        await browser.click('Xem và chọn luyện'); await browser.wait("!!document.querySelector('.technique-sheet > .primary')");
+        await browser.click('Bắt đầu luyện'); await browser.wait("!!document.querySelector('.game-pending')");
+        assert.equal(control.game.current.mode, 'idle'); assert.equal(control.game.pending.fromDay, control.game.day.day + 1);
+        assert.equal(control.practiceVersions.length, 1);
+        const version = control.practiceVersions[0];
+        // This fixture represents a ready tier awaiting its weekly quality audit.
+        // The real domain and D1 transition producing it are tested separately.
+        version.practice.progressMilli = 3000; version.practice.effortMilli = 3000; version.practice.pendingWeeks = ['weekly:20731'];
+        control.game.current = control.game.pending; control.game.currentPractice = version; control.game.pending = null; control.game.pendingPractice = null;
+        control.game.day.day += 3; control.game.day.startAt += 3 * 86400000; control.game.day.endAt += 3 * 86400000; control.game.settledThrough = control.game.day.day - 1;
+        await browser.tap('[data-tab=today]'); await browser.tap('[data-tab=game]');
+        await browser.wait("document.querySelector('.practice-state')?.innerText.includes('chờ cam kết tuần')");
+        for (const width of [320, 390, 1440]) {
+            await browser.resize(width, 844); assert.equal((await snapshot(browser)).overflow, false);
+            if (process.env.WEB_TEST_SCREENSHOT_PATH) await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, '-practice-' + width + '.png'));
+        }
+        await browser.resize(390, 844); await browser.evaluate("document.documentElement.dataset.theme='dark'");
+        if (process.env.WEB_TEST_SCREENSHOT_PATH) await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, '-practice-dark.png'));
+        await browser.evaluate("document.documentElement.dataset.theme='light'");
+        const old = clone(version.practice);
+        await browser.resize(320, 460); await browser.click('Đổi môn / bản'); await browser.click('Xem và chọn luyện');
+        await browser.wait("!!document.querySelector('.practice-version-row')");
+        await browser.evaluate("document.querySelector('.technique-sheet').scrollTop=9999");
+        assert.equal(await browser.evaluate("(() => {const r=document.querySelector('[data-sheet-close]').getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight})()"), true);
+        await browser.click('Luyện một bản mới'); await browser.click('Xác nhận');
+        await browser.wait("!!document.querySelector('.game-pending')");
+        assert.equal(control.practiceVersions.length, 2); assert.equal(control.game.pendingPractice.practice.edition, 2);
+        assert.equal(control.game.pendingPractice.practice.progressMilli, 0);
+        assert.deepEqual(control.practiceVersions[1].practice, old);
+        assert.deepEqual(control.state.account, healthy); assert.deepEqual(control.state.tasks, tasks); assert.deepEqual(browser.errors, []);
+    } finally { if (browser) await browser.close(); await server.close(); }
+});
 test('habit mobile flow creates three cadences, edits quantity without duplicate rewards and preserves fixed modal controls', { skip: !browserBin, timeout: 90000 }, async () => {
     const control = fixture(), server = await serve(control), original = clone(control.state.account), tasks = clone(control.state.tasks);
     let browser;

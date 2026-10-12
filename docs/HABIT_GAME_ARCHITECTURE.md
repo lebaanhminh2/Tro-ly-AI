@@ -48,6 +48,16 @@ F2 bổ sung:
 
 Các schema/API phần game phía dưới còn là khung cần hoàn thiện, không phải đã triển khai.
 
+### Hợp đồng luyện đã triển khai local (F3)
+
+- `0034_practice.sql`: `game_accounts` giữ version/joined-day/next-day riêng; `game_selections` effective-day; `technique_unlocks`; `practice_versions` JSON≤8KB +edition unique; `practice_week_audits`; `game_days` immutable và `game_receipts`. Không nhét nội dung/phiên bản vào healthy account.
+- `PracticeService` điều phối input whitelist/start/continue/stop. `D1GameStore` guard/version/receipt canonical; cùngID khácpayload conflict. Không khởi tạo game chỉ vì mở tab, không luyện bù trước joined-day. Một ngày bắt đầu với mode đã lựa chọn, đổi effective ngày sau.
+- `GET /api/game` chốt tối đa1 ngày từ outcomes đã immutable rồi trả overview; catalog lazy tại `/api/game-catalog`; history theo technique/cursor tại `/api/practice-versions`; POST `/api/game` có day/version. Auth/Origin/body cap dùng chung; không owner/time/purity/rewards từ client.
+- Settlement chờ tất cả habit của ngày, guard game+habit và next-day ở commit; cập nhật versions/audits/game_days/source receiver/game_applied cùng batch. Không mutation healthy hoặc vé từ luyện. Mode battle hiện chờ handler F4, không tự chuyển nguồn sang practice.
+- Catalog39 hiện có identity/name/group/description/factor; **chưa có engine/effects/unlock toàn nội dung**. Năm môn đầu phái cho chọn luyện; quy hoạch quyền mở còn hoàn thiện ở F4/F5. Không gọi data catalog là game đã hoàn thành.
+- Chính sách tinh thuần/weekly audit/cost do [GAMEPLAY mục2](HABIT_GAME_GAMEPLAY.md) sở hữu; weekly audit của bản không active vẫn chốt. Outcome có named source trong game_days để UI giải thích ngày/habit góp luyện.
+- Habit closure cùng oldest-day được đọc/ghi theo nhóm≤30 (`settleBatch`); wrapper `settle` chỉ lặp tới limit cho maintenance/local. Cron phase3 luân phiên legacy/habit/game mỗi12phút, các phase thông báo giữ4phút. Không xếp6habit-days cộng game trong một invocation. Integration kiểm30habit grouped≤20SQL, GETgame≤50SQL/<50KB và hai maintenance invocation≤50SQL. Giới hạn Free được đối chiếu [Cloudflare D1 limits](https://developers.cloudflare.com/d1/platform/limits/); CPU/latency thật và backlog nhiều năm còn là gate release.
+
 | Nhóm | Dữ liệu/trách nhiệm | Bất biến |
 | --- | --- | --- |
 | Habit definitions/revisions | Mục tiêu, lịch, lifecycle, mốc hiệu lực | Lịch sử đọc theo revision hiệu lực, không theo mục tiêu mới |

@@ -9,10 +9,11 @@ import { handleReminders } from './mini-app/reminders.ts';
 import { handleSchedule } from './mini-app/schedule.ts';
 import { handleTasks } from './mini-app/tasks.ts';
 import { handleHabits, readHabits } from './mini-app/habits.ts';
+import { handleGame, readGame } from './mini-app/game.ts';
 const taskRoutes = new Set(['/api/tasks', '/api/tasks-delete']);
 const reminderRoutes = new Set(['/api/reminders', '/api/reminder-instance']);
 const scheduleRoutes = new Set(['/api/settings', '/api/schedule', '/api/day-plan', '/api/task-work', '/api/task-focus', '/api/session', '/api/timeline', '/api/sleep']);
-const writeRoutes = new Set([...taskRoutes, ...reminderRoutes, ...scheduleRoutes, '/api/cultivation', '/api/habits']);
+const writeRoutes = new Set([...taskRoutes, ...reminderRoutes, ...scheduleRoutes, '/api/cultivation', '/api/habits', '/api/game']);
 export async function miniAppApi(request: Request, env: Env, now = Date.now()): Promise<Response> {
     const receivedAt = Date.now();
     const url = new URL(request.url);
@@ -50,6 +51,8 @@ export async function miniAppApi(request: Request, env: Env, now = Date.now()): 
     }
     try {
         const context = { env, owner, now, healthy: new HealthyStore(env.DB) };
+        if (request.method === 'GET' && ['/api/game', '/api/game-catalog', '/api/practice-versions'].includes(url.pathname))
+            return await readGame(context, url);
         if (request.method === 'GET' && ['/api/habits', '/api/habit-history', '/api/habit-report'].includes(url.pathname))
             return await readHabits(context, url);
         if (request.method === 'GET' && url.pathname === '/api/bootstrap')
@@ -63,6 +66,7 @@ export async function miniAppApi(request: Request, env: Env, now = Date.now()): 
         const input = await readInput(request);
         if (input instanceof Response)
             return input;
+        if (url.pathname === '/api/game') return await handleGame({ ...context, now: now + Math.max(0, Date.now() - receivedAt) }, input);
         if (url.pathname === '/api/habits') return await handleHabits({ ...context, now: now + Math.max(0, Date.now() - receivedAt) }, input);
         if (taskRoutes.has(url.pathname))
             return await handleTasks(context, input, url.pathname) ?? json({ error: 'NOT_FOUND' }, 404);
@@ -74,6 +78,14 @@ export async function miniAppApi(request: Request, env: Env, now = Date.now()): 
     }
     catch (error) {
         const code = error instanceof Error ? error.message : '';
+        const gameErrors: Record<string, string> = {
+            GAME_CHANGED: 'Tiến độ vừa được cập nhật. Tải lại để tiếp tục nhé.', GAME_DAY_CLOSED: 'Ngày này đã kết thúc. Tải lại để chọn cho ngày hiện tại.',
+            TECHNIQUE_LOCKED: 'Cậu chưa có quyền học công pháp này.', CONFIRM_PRACTICE_RESTART: 'Xác nhận luyện một bản mới từ Nhập môn. Bản cũ vẫn được giữ.',
+            PRACTICE_NOT_FOUND: 'Không tìm thấy bản luyện này.', PRACTICE_COMPLETE: 'Bản này đã Viên mãn. Cậu có thể luyện bản mới nếu muốn cải thiện tinh thuần.',
+            PRACTICE_DAILY_LIMIT: 'Cậu đã tạo đủ 7 bản luyện mới trong ngày. Có thể tiếp tục bản đang có.',
+            BATTLE_ACTIVE: 'Kết thúc trận trước khi chọn lịch luyện mới.',
+        };
+        if (gameErrors[code]) return json({ error: code, message: gameErrors[code] }, 409);
         const habitErrors: Record<string, string> = {
             HABIT_CHANGED: 'Thói quen vừa thay đổi. Tải lại để tiếp tục nhé.', HABIT_LOG_CHANGED: 'Lần ghi này đã thay đổi ở một nơi khác. Tải lại để kiểm tra.',
             HABIT_DAY_CLOSED: 'Ngày này đã kết thúc. Cậu chỉ có thể ghi cho ngày hiện tại.', HABIT_ARCHIVED: 'Thói quen này đã có lịch lưu trữ.',

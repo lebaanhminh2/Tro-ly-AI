@@ -53,6 +53,35 @@ test('habit list keeps a fixed D1 query budget at 30 active habits and projects 
     } finally { await mf.dispose(); }
 });
 
+test('grouped settlement is bounded at 30 habits, concurrent retries converge and a failed batch publishes no partial sources', async () => {
+    const { mf, db, store, service } = await database();
+    try {
+        const day = (await store.today('123', monday)).day.day;
+        const statements = [];
+        for (let index = 0; index < 30; index++) {
+            const id = 'habit_batch_' + String(index).padStart(2, '0');
+            const value = { ...duration, target: 2000, unit: 'phút', note: '', commitmentFrom: day };
+            statements.push(db.prepare('INSERT INTO habits(id,owner,created_day,next_day,created,updated) VALUES(?,?,?,?,?,?)').bind(id, '123', day, day, monday, monday));
+            statements.push(db.prepare('INSERT INTO habit_revisions(owner,habit_id,from_day,definition_json) VALUES(?,?,?,?)').bind('123', id, day, JSON.stringify(value)));
+            statements.push(db.prepare('INSERT INTO habit_logs(owner,habit_id,day,value,note,updated) VALUES(?,?,?,?,?,?)').bind('123', id, day, 2000, '', monday));
+        }
+        await db.batch(statements);
+        const fault: Database = { prepare: sql => db.prepare(sql), batch: statements => db.batch([
+            ...statements.slice(0, 3), db.prepare('INSERT INTO transaction_guard(valid) VALUES(0)'), ...statements.slice(3),
+        ]) };
+        await assert.rejects(new D1HabitStore(fault).settleBatch('123', monday + DAY, 30));
+        assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM habit_outcomes').first<{ n: number }>())!.n, 0);
+        let count = 0;
+        const measured: Database = { prepare: sql => { count++; return db.prepare(sql); }, batch: items => db.batch(items) };
+        const result = await new D1HabitStore(measured).settleBatch('123', monday + DAY, 30);
+        assert.equal(result.processed, 30); assert.ok(count <= 20, 'Grouped settlement SQL budget: ' + count);
+        assert.equal((await db.prepare('SELECT SUM(successes) AS n FROM habit_outcomes').first<{ n: number }>())!.n, 30);
+        await Promise.all([store.settleBatch('123', monday + 2 * DAY, 30), store.settleBatch('123', monday + 2 * DAY, 30)]);
+        assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM habit_outcomes').first<{ n: number }>())!.n, 60);
+        await assert.rejects(service.execute('123', 'old_batch_log1', { operation: 'log', habitId: 'habit_batch_00', version: 1, logVersion: 1, day, value: 20 }, monday + 2 * DAY), /HABIT_DAY_CLOSED/);
+    } finally { await mf.dispose(); }
+});
+
 test('habit logs replace totals, preserve healthy state, serialize clients and replay committed requests after closure', async () => {
     const { mf, db, schedule, store, service } = await database();
     try {
