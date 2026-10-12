@@ -1,6 +1,7 @@
 import { habitDate } from '../models/habits.js';
 import { practiceNumber, practiceStatus, practiceTiers, purityLabel } from '../models/practice.js';
 import { renderJourney } from './journey.js';
+import { renderGameCollection } from './game-collection.js';
 
 export function renderGame(ui, state) {
     const { el, button, card, heading } = ui, root = el('section', undefined, 'game-page');
@@ -12,14 +13,15 @@ export function renderGame(ui, state) {
         if (state.gameLoading) root.setAttribute('aria-busy', 'true');
         return root;
     }
-    const navigation = el('div', undefined, 'habit-navigation');
+    const navigation = el('div', undefined, 'habit-navigation game-navigation');
     const selectedPanel = state.gamePanel ?? (data.current.mode === 'battle' ? 'journey' : 'practice');
-    for (const [panel, label] of [['practice', 'Tu luyện'], ['journey', 'Hành trình'], ['library', 'Công pháp']]) {
+    for (const [panel, label] of [['practice', 'Tu luyện'], ['journey', 'Hành trình'], ['library', 'Công pháp'], ['collection', 'Sưu tập']]) {
         const control = button(label, () => ui.showGamePanel(panel), 'text-button');
         control.setAttribute('aria-pressed', String(selectedPanel === panel)); navigation.append(control);
     }
     root.append(navigation);
-    if (selectedPanel === 'journey') { root.append(renderJourney(ui, data, catalog)); return root; }
+    if (selectedPanel === 'journey') { root.append(renderJourney(ui, data, catalog, state.gameChapter)); return root; }
+    if (selectedPanel === 'collection') { root.append(renderGameCollection(ui, data, catalog)); return root; }
     if (state.gamePanel === 'library') {
         const filters = el('div', undefined, 'game-school-filters');
         for (const [id, name] of [['owned', 'Đã mở'], ...catalog.schools.map(school => [school.id, school.name]), ['', 'Tất cả']]) {

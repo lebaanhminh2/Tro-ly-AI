@@ -5,6 +5,7 @@ import type { HabitDay } from '../../ports/habit-store.ts';
 import { battleJson, battleVictoryStatements, storedBattle, type BattleRow } from './battle-store.ts';
 import { query, type Database, type Statement } from './database.ts';
 import { HealthyStore } from './healthy-store.ts';
+import { supportsContentVersion } from '../../domain/game-content.ts';
 
 export async function prepareBattleSettlement(db: Database, owner: string, id: string, day: HabitDay, now: number, sources: PracticeSource[]) {
     const [row, choice] = await Promise.all([
@@ -14,7 +15,7 @@ export async function prepareBattleSettlement(db: Database, owner: string, id: s
     ]);
     if (!row) throw Error('BATTLE_NOT_FOUND');
     const battle = storedBattle(row);
-    if (battle.run.contentVersion !== 'than-lo-1') throw Error('GAME_CONTENT_UNSUPPORTED');
+    if (!supportsContentVersion(battle.run.contentVersion)) throw Error('GAME_CONTENT_UNSUPPORTED');
     const successes = sources.filter(source => source.successes > 0), mature = successes.filter(source => source.mature).length;
     const habits = successes.length ? 300 + 60 * Math.min(5, Math.max(0, mature - (mature === successes.length ? 1 : 0))) : 0;
     const tasks = battle.run.state.status === 'active' && choice ? (await query(db, `SELECT s.task_id,s.title FROM battle_task_sources s

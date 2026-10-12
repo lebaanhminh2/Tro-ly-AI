@@ -99,7 +99,7 @@ function renderHistory(ui, state, root) {
     }
     statusFilter.value = state.habitHistoryStatus ?? 'all'; statusFilter.disabled = !!state.habitHistoryLoading;
     statusFilter.addEventListener('change', () => ui.setHabitHistoryStatus(statusFilter.value));
-    tools.append(select, statusFilter, button('Xuất CSV', () => ui.exportHabits(), 'text-button')); root.append(tools);
+    tools.append(select, statusFilter, button('Xuất dữ liệu', () => ui.openHabitExport(), 'text-button')); root.append(tools);
     if (state.habitHistoryLoading && !history) root.append(el('p', 'Đang tải lịch sử…', 'hint'));
     if (!history) return root;
     const report = state.habitReport;

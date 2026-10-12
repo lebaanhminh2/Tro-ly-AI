@@ -1,6 +1,6 @@
 import { resolveBattleTurn, withdrawBattle, type BattleLogEntry, type BattleState, type BattleTurnInput } from './battle.ts';
 
-export type BattleRun = { id: string; bossId: string; contentVersion: string; combatRank: number; state: BattleState;
+export type BattleRun = { id: string; bossId: string; contentVersion: string; combatRank: number; weaponId?: string | null; state: BattleState;
     startsDay: number; lastDay: number | null; waitDays: number; rescueUntilDay: number | null; deathPaid: boolean };
 export type BattleDayResult = { run: BattleRun; entries: BattleLogEntry[]; fought: boolean; automaticDeath: boolean };
 

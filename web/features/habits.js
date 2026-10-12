@@ -1,6 +1,7 @@
 import { liveRequest } from '../core/http.js';
 import { cadenceLabel, habitDate, habitWeekdays, safeCsvCell } from '../models/habits.js';
 import { button, el, field } from '../ui/dom.js';
+import { habitJsonExport } from '../models/habit-export.js';
 
 export function createHabitActions(context) {
     const { state, runtime, render, toast, sheet, sheetContent, openSheet, performLive, confirm } = context;
@@ -177,26 +178,37 @@ export function createHabitActions(context) {
         });
         sheetContent.append(form);
     }
-    async function exportHabits() {
+    function openHabitExport() {
+        const span = state.habitReportSpan ?? 30;
+        openSheet('Xuất dữ liệu thói quen');
+        sheetContent.append(el('p', span + ' ngày theo bộ lọc hiện tại. CSV để đọc trong bảng tính; JSON giữ lịch cam kết và dữ liệu chi tiết.', 'hint'),
+            button('Tải CSV', () => exportHabits('csv'), 'secondary'), button('Tải JSON', () => exportHabits('json'), 'secondary'));
+    }
+    async function exportHabits(format = 'csv') {
         if (!state.live || !state.habitData) return;
-        const to = state.habitData.day.day, span = state.habitReportSpan ?? 30, rows = []; let before = null;
+        if (!['csv', 'json'].includes(format)) return;
+        const data = state.habitData, revision = runtime.revision, to = data.day.day, span = state.habitReportSpan ?? 30, rows = [];
+        const filters = { habitId: state.habitHistoryId ?? '', status: state.habitHistoryStatus ?? 'all' }; let before = null;
         try {
             do {
                 const params = new URLSearchParams({ from: String(to - span + 1), to: String(to), limit: '100' });
-                if (state.habitHistoryId) params.set('habitId', state.habitHistoryId);
-                if (state.habitHistoryStatus && state.habitHistoryStatus !== 'all') params.set('status', state.habitHistoryStatus);
+                if (filters.habitId) params.set('habitId', filters.habitId);
+                if (filters.status !== 'all') params.set('status', filters.status);
                 if (before) params.set('before', before);
                 const page = await liveRequest('habit-history?' + params); rows.push(...page.rows); before = page.next;
+                if (revision !== runtime.revision || !state.live) return;
             } while (before && rows.length < 3000);
+            if (before) { toast('Dữ liệu vượt giới hạn một lần xuất. Chọn khoảng ngắn hơn hoặc một thói quen nhé.'); return; }
             const header = ['Ngày', 'Thói quen', 'Đã làm', 'Mục tiêu', 'Đơn vị', 'Trạng thái', 'Ghi chú'];
             const csv = [header, ...rows.map(row => [new Date(row.day * 86400000).toISOString().slice(0, 10), row.name,
                 row.value / 100, row.definition.target / 100, row.definition.unit, row.status, row.note])]
                 .map(row => row.map(safeCsvCell).join(',')).join('\r\n');
-            const url = URL.createObjectURL(new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8' })), link = el('a');
-            link.href = url; link.download = 'thoi-quen-' + span + '-ngay.csv'; document.body.append(link); link.click(); link.remove();
+            const content = format === 'json' ? JSON.stringify(habitJsonExport(data, rows, { from: to - span + 1, to }, filters), null, 2) + '\n' : '\uFEFF' + csv;
+            const url = URL.createObjectURL(new Blob([content], { type: format === 'json' ? 'application/json;charset=utf-8' : 'text/csv;charset=utf-8' })), link = el('a');
+            link.href = url; link.download = 'thoi-quen-' + span + '-ngay.' + format; document.body.append(link); link.click(); link.remove();
             setTimeout(() => URL.revokeObjectURL(url), 10000);
             toast('Đã xuất lịch sử ' + span + ' ngày.');
         } catch (error) { toast(error.message); }
     }
-    return { loadHabits, openHabit, openHabitLog, openHabitSlot, showHabitInList, toggleHabit, setHabitFilter, showHabitPanel, loadHabitHistory, setHabitReportSpan, setHabitHistoryStatus, exportHabits };
+    return { loadHabits, openHabit, openHabitLog, openHabitSlot, showHabitInList, toggleHabit, setHabitFilter, showHabitPanel, loadHabitHistory, setHabitReportSpan, setHabitHistoryStatus, exportHabits, openHabitExport };
 }

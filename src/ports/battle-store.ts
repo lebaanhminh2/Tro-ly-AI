@@ -8,7 +8,7 @@ import type { HabitDay } from './habit-store.ts';
 export type StoredBattle = { run: BattleRun; content: GameBoss; version: number; status: string; created: number; resumePracticeId: string | null };
 export type BattleSnapshot = { day: HabitDay; gameVersion: number; nextSettlementDay: number; current: GameSelection; pending: GameSelection | null;
     healthy: { state: HealthyState; version: number }; restrictions: CombatRestrictions; battle: StoredBattle | null;
-    live: StoredBattle | null; victories: string[]; learned: string[]; loadout: EquippedTechnique[] };
+    live: StoredBattle | null; victories: string[]; learned: string[]; ownedWeapons: string[]; loadout: EquippedTechnique[] };
 export type BattleSaved = { saved: true; version: number; battleId: string; battleVersion: number; effectiveFrom?: number; qiSpent?: number; rankSpent?: number };
 export type BattleChange = { kind: 'prepare' | 'cancel' | 'choose' | 'withdraw' | 'rescue' | 'death' | 'exchange';
     battle: StoredBattle; selection?: GameSelection; choice?: { techniqueId: string; acceptCost: boolean };

@@ -1,7 +1,8 @@
 import { fighterForRank, payBattleDeath, payBattleRescue } from '../domain/battle-economy.ts';
 import { assertBattleCanChange } from '../domain/battle-run.ts';
-import { newBattleState, resolveBattleTurn, withdrawBattle } from '../domain/battle.ts';
+import { resolveBattleTurn, withdrawBattle } from '../domain/battle.ts';
 import { bossById, bossIntents, GAME_CONTENT_VERSION } from '../domain/game-content.ts';
+import { armedBattleState, battleWeapon } from '../domain/game-rewards.ts';
 import type { BattleChange, BattleSaved, BattleStore, StoredBattle } from '../ports/battle-store.ts';
 import type { GameSelection } from '../ports/game-store.ts';
 
@@ -10,7 +11,7 @@ export class BattleService {
     constructor(store: BattleStore) { this.store = store; }
     execute(owner: string, id: string, input: Record<string, unknown>, now: number): Promise<BattleSaved> {
         const fields: Record<string, string[]> = {
-            prepare_battle: ['bossId', 'versions'], cancel_battle: ['battleId', 'battleVersion'],
+            prepare_battle: ['bossId', 'versions', 'weaponId'], cancel_battle: ['battleId', 'battleVersion'],
             choose_battle: ['battleId', 'battleVersion', 'techniqueId', 'acceptCost'],
             withdraw_battle: ['battleId', 'battleVersion', 'confirm'],
             rescue_battle: ['battleId', 'battleVersion', 'kind', 'healthyVersion', 'acceptCost'],
@@ -26,6 +27,10 @@ export class BattleService {
                 input.versions.some(value => typeof value !== 'string' || !/^[a-zA-Z0-9_-]{8,110}$/.test(value)) ||
                 new Set(input.versions).size !== input.versions.length) throw Error('INVALID_BATTLE_LOADOUT');
             bossById(input.bossId);
+            if (input.weaponId !== undefined && input.weaponId !== null) {
+                if (typeof input.weaponId !== 'string') throw Error('INVALID_GAME_WEAPON');
+                battleWeapon(input.weaponId);
+            }
         } else if (typeof input.battleId !== 'string' || !/^[a-zA-Z0-9_-]{8,110}$/.test(input.battleId) ||
             !Number.isSafeInteger(input.battleVersion) || Number(input.battleVersion) < 1) throw Error('INVALID_BATTLE_ID');
         return this.store.mutateBattle(owner, id, input, now, snapshot => {
@@ -43,11 +48,13 @@ export class BattleService {
                 if (boss.requires.some(id => !snapshot.victories.includes(id)) || (boss.practicePrerequisites ?? []).some(id => !snapshot.learned.includes(id))) throw Error('BOSS_LOCKED');
                 if (snapshot.loadout.length !== (input.versions as string[]).length) throw Error('INVALID_BATTLE_LOADOUT');
                 const rank = snapshot.healthy.state.rank;
+                const weaponId = input.weaponId as string | null | undefined ?? null;
+                if (weaponId && !snapshot.ownedWeapons.includes(weaponId)) throw Error('GAME_WEAPON_LOCKED');
                 const previousSelection = snapshot.pending ?? snapshot.current;
                 battle = { version: 1, status: 'prepared', created: now, content: structuredClone(boss),
                     resumePracticeId: previousSelection.mode === 'practice' ? previousSelection.practiceId : null,
-                    run: { id: 'b_' + id, bossId: boss.id, contentVersion: GAME_CONTENT_VERSION, combatRank: rank,
-                        state: newBattleState(fighterForRank(rank), boss.fighter, snapshot.loadout, bossIntents(boss), boss.maxTurns, boss.revival),
+                    run: { id: 'b_' + id, bossId: boss.id, contentVersion: GAME_CONTENT_VERSION, combatRank: rank, weaponId,
+                        state: armedBattleState(fighterForRank(rank), boss, snapshot.loadout, bossIntents(boss), weaponId),
                         startsDay: day + 1, lastDay: null, waitDays: 0, rescueUntilDay: null, deathPaid: false } };
                 change = { kind: 'prepare', battle, selection: { fromDay: day + 1, mode: 'battle', practiceId: null, battleId: battle.run.id } };
             } else {

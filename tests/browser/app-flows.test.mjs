@@ -12,8 +12,10 @@ import { checkinProgress } from '../../web/models/cultivation.js';
 import { assessHabitDay, newHabitPeriod } from '../../src/domain/habits.ts';
 import { TECHNIQUES, SCHOOLS, INITIAL_TECHNIQUES } from '../../src/domain/techniques.ts';
 import { newPracticeVersion } from '../../src/domain/practice.ts';
-import { GAME_BOSSES, bossById, bossIntents } from '../../src/domain/game-content.ts';
+import { GAME_BOSSES, GAME_CHAPTERS, bossById, bossIntents, publicGameCatalog } from '../../src/domain/game-content.ts';
+import { GAME_CHARACTERS } from '../../src/domain/game-characters.ts';
 import { newBattleState, publicBattleState } from '../../src/domain/battle.ts';
+import { armedBattleState } from '../../src/domain/game-rewards.ts';
 import { fighterForRank, rescueQuote, payBattleRescue } from '../../src/domain/battle-economy.ts';
 // Real-browser smoke tests. Only localhost fixtures are used; no .env or cloud data.
 const browserBin = process.env.BROWSER_BIN || [
@@ -45,7 +47,7 @@ function fixture() {
         habits: { now, day: { day: operatingDay, startAt: start, endAt: start + 86400000 }, habits: [] },
         battleRuns: new Map(), practiceVersions: [], game: { now, day: { day: operatingDay, startAt: start, endAt: start + 86400000 }, version: 0,
             current: { fromDay: operatingDay, mode: 'idle', practiceId: null, battleId: null }, pending: null,
-            currentPractice: null, pendingPractice: null, owned: INITIAL_TECHNIQUES, settledThrough: operatingDay - 1, audits: [], recent: [], battles: [], victories: [], choices: [],
+            currentPractice: null, pendingPractice: null, owned: INITIAL_TECHNIQUES, settledThrough: operatingDay - 1, audits: [], recent: [], battles: [], victories: [], choices: [], rewards: [],
             combatEconomy: { healthyVersion: state.account.version, qi: state.account.state.qi, rank: state.account.state.rank, rankLockUntilDay: null } } };
     control.bootstrap = () => ({ ...state, checkin: checkinProgress(state.account.state, now) });
     control.mutate = (path, input) => {
@@ -60,10 +62,14 @@ function fixture() {
                 const game = control.game;
                 if (input.operation === 'prepare_battle') {
                     const content = bossById(input.bossId), id = 'b_' + input.id, combatRank = state.account.state.rank;
-                    const run = { id, bossId: content.id, contentVersion: 'than-lo-1', combatRank, state: newBattleState(fighterForRank(combatRank), content.fighter, [], bossIntents(content), content.maxTurns),
+                    const loadout = input.versions.map(id => control.practiceVersions.find(version => version.practice.id === id)?.practice).filter(Boolean)
+                        .map(practice => ({ id: practice.techniqueId, versionId: practice.id, tier: practice.tiers.length, purityBp: practice.tiers.at(-1).purityBp }));
+                    const run = { id, bossId: content.id, contentVersion: 'than-lo-2', combatRank, weaponId: input.weaponId ?? null,
+                        state: armedBattleState(fighterForRank(combatRank), content, loadout, bossIntents(content), input.weaponId ?? null),
                         startsDay: game.day.day + 1, lastDay: null, waitDays: 0, rescueUntilDay: null, deathPaid: false };
                     control.battleRuns.set(id, run);
-                    game.battles.unshift({ id, version: 1, status: 'prepared', startsDay: run.startsDay, content, state: publicBattleState(run.state), rescue: rescueQuote(state.account.state, combatRank) });
+                    game.battles.unshift({ id, version: 1, status: 'prepared', startsDay: run.startsDay, weaponId: run.weaponId, content,
+                        state: publicBattleState(run.state), rescue: rescueQuote(state.account.state, combatRank) });
                     game.pending = { fromDay: run.startsDay, mode: 'battle', practiceId: null, battleId: id };
                 } else {
                     const battle = game.battles.find(battle => battle.id === input.battleId), run = control.battleRuns.get(battle.id);
@@ -265,8 +271,26 @@ async function serve(control, baseline) {
                         response.end(JSON.stringify(control.bootstrap()));
                 }
                 else if (endpoint === 'game' && request.method === 'GET') response.end(JSON.stringify(control.game));
-                else if (endpoint === 'game-catalog') response.end(JSON.stringify({ schools: SCHOOLS, techniques: TECHNIQUES, bosses: GAME_BOSSES }));
-                else if (endpoint === 'battle-loadout') response.end(JSON.stringify({ versions: [] }));
+                else if (endpoint === 'game-catalog') response.end(JSON.stringify(publicGameCatalog()));
+                else if (endpoint === 'game-boss') {
+                    const boss = bossById(new URL(request.url, 'http://localhost').searchParams.get('bossId'));
+                    response.end(JSON.stringify({ boss: { ...boss, pattern: undefined, victory: control.game.victories.includes(boss.id) ? boss.victory : undefined } }));
+                }
+                else if (endpoint === 'game-chapter') {
+                    const chapter = GAME_CHAPTERS.find(value => value.number === Number(new URL(request.url, 'http://localhost').searchParams.get('chapter')));
+                    response.end(JSON.stringify({ chapter: { ...chapter, conclusion: chapter.encounters.every(id => control.game.victories.includes(id)) ? chapter.conclusion : undefined },
+                        characters: GAME_CHARACTERS.filter(character => chapter.characters.includes(character.id)) }));
+                }
+                else if (endpoint === 'battle-loadout') {
+                    const best = new Map();
+                    for (const entry of control.practiceVersions) {
+                        const practice = entry.practice, tier = practice.tiers.at(-1); if (!tier) continue;
+                        const value = { techniqueId: practice.techniqueId, versionId: practice.id, edition: practice.edition, tier: practice.tiers.length, purityBp: tier.purityBp }, previous = best.get(practice.techniqueId);
+                        if (!previous || value.tier > previous.tier || value.tier === previous.tier && value.purityBp > previous.purityBp) best.set(practice.techniqueId, value);
+                    }
+                    response.end(JSON.stringify({ versions: [...best.values()] }));
+                }
+                else if (endpoint === 'battles') response.end(JSON.stringify({ battles: control.game.battles, next: null }));
                 else if (endpoint === 'battle-history') response.end(JSON.stringify({ events: [], next: null }));
                 else if (endpoint === 'practice-versions') {
                     const id = new URL(request.url, 'http://localhost').searchParams.get('techniqueId');
@@ -274,8 +298,13 @@ async function serve(control, baseline) {
                 }
                 else if (endpoint === 'habits' && request.method === 'GET')
                     response.end(JSON.stringify(control.habits));
-                else if (endpoint === 'habit-history')
-                    response.end(JSON.stringify({ rows: [], next: null }));
+                else if (endpoint === 'habit-history') {
+                    const params = new URL(request.url, 'http://localhost').searchParams;
+                    const rows = control.habits.habits.filter(view => !params.get('habitId') || params.get('habitId') === view.habit.id)
+                        .map(view => ({ habitId: view.habit.id, day: control.habits.day.day, name: view.definition.name,
+                            definition: view.definition, value: view.log.value, note: view.log.note, status: 'processing', reason: 'day_open', successes: 0, misses: 0 }));
+                    response.end(JSON.stringify({ rows, next: null }));
+                }
                 else if (endpoint === 'habit-report')
                     response.end(JSON.stringify({ from: control.habits.day.day - 29, to: control.habits.day.day, successes: 0, misses: 0, neutral: 0, rate: null, days: [], totals: [] }));
                 else if (endpoint === 'history')
@@ -505,6 +534,113 @@ test('battle mobile flow prepares tomorrow, keeps choice pending, exposes rescue
     } finally { if (browser) await browser.close(); await server.close(); }
 });
 
+test('journey chapters keep future endings hidden, show original portraits and load boss details only for preparation', { skip: !browserBin, timeout: 90000 }, async () => {
+    const control = fixture(); control.game.victories = ['truy-lenh', 'song-nha', 'thu-lenh', 'thiet-lenh-su'];
+    const server = await serve(control); let browser;
+    try {
+        browser = await chrome(); await browser.navigate(server.url, 390);
+        await browser.wait("!!document.querySelector('.focus-flip-card')"); await browser.tap('[data-tab=game]');
+        await browser.wait("!!document.querySelector('.practice-intro')"); await browser.click('Hành trình');
+        await browser.wait("document.querySelector('.journey-chapter-picker select').value==='2'");
+        await browser.wait("document.querySelector('.journey-chapter-scene').complete && document.querySelector('.journey-chapter-scene').naturalWidth>0");
+        await browser.wait("[...document.querySelectorAll('.journey-boss img')].every(image=>image.complete && image.naturalWidth>0)");
+        assert.equal((await snapshot(browser)).overflow, false);
+        if (process.env.WEB_TEST_SCREENSHOT_PATH) await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, '-chapter02.png'));
+        await browser.click('Đọc truyện'); await browser.wait("!!document.querySelector('.game-story-people')");
+        assert.equal(await browser.evaluate("document.querySelector('#sheet').innerText.includes('Sau hành trình')"), false);
+        await browser.wait("[...document.querySelectorAll('.game-story-people img')].every(image=>image.complete && image.naturalWidth>0)");
+        if (process.env.WEB_TEST_SCREENSHOT_PATH) await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, '-chapter02-story.png'));
+        await browser.tap('[data-sheet-close]'); await browser.wait("!document.querySelector('#sheet').open");
+        await browser.evaluate("document.querySelector('.journey-chapter-picker select').value='3';document.querySelector('.journey-chapter-picker select').dispatchEvent(new Event('change'))");
+        assert.equal(await browser.evaluate("[...document.querySelectorAll('.journey-page button')].some(button=>button.innerText==='Đọc truyện')"), false);
+        assert.equal(await browser.evaluate("[...document.querySelectorAll('.journey-boss button')].every(button=>button.disabled)"), true);
+        await browser.evaluate("document.querySelector('.journey-chapter-picker select').value='1';document.querySelector('.journey-chapter-picker select').dispatchEvent(new Event('change'))");
+        await browser.click('Đọc truyện'); await browser.wait("document.querySelector('#sheet').innerText.includes('Sau hành trình')");
+        assert.deepEqual(browser.errors, []);
+    } finally { if (browser) await browser.close(); await server.close(); }
+});
+
+test('campaign images keep distinct chapter scenes and readable original cast crops in the journey and preparation sheets', { skip: !browserBin, timeout: 90000 }, async () => {
+    const control = fixture(); control.game.victories = GAME_BOSSES.map(boss => boss.id); control.game.learned = TECHNIQUES.map(technique => technique.id);
+    const server = await serve(control); let browser;
+    try {
+        browser = await chrome(); await browser.navigate(server.url, 390);
+        await browser.wait("!!document.querySelector('.focus-flip-card')"); await browser.tap('[data-tab=game]');
+        await browser.wait("!!document.querySelector('.practice-intro')"); await browser.click('Hành trình');
+        for (const chapter of [3, 4, 5, 6, 11]) {
+            await browser.evaluate("document.querySelector('.journey-chapter-picker select').value='" + chapter + "';document.querySelector('.journey-chapter-picker select').dispatchEvent(new Event('change'))");
+            await browser.wait("[...document.querySelectorAll('.journey-page img')].every(image=>image.complete && image.naturalWidth>0)");
+            assert.equal((await snapshot(browser)).overflow, false);
+            if (process.env.WEB_TEST_SCREENSHOT_PATH) await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, '-campaign-chapter-' + chapter + '.png'));
+            await browser.click('Đọc truyện');
+            await browser.wait("[...document.querySelectorAll('.game-story-people img')].every(image=>image.complete && image.naturalWidth>0)");
+            if (process.env.WEB_TEST_SCREENSHOT_PATH) await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, '-campaign-story-' + chapter + '.png'));
+            await browser.tap('[data-sheet-close]');
+            if (chapter < 11) {
+                await browser.evaluate("document.querySelector('.journey-boss button').click()");
+                await browser.wait("!!document.querySelector('.battle-preparation>.primary') && document.querySelector('.battle-preparation-art').complete && document.querySelector('.battle-preparation-art').naturalWidth>0");
+                if (process.env.WEB_TEST_SCREENSHOT_PATH) await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, '-campaign-prepare-' + chapter + '.png'));
+                await browser.tap('[data-sheet-close]');
+            }
+        }
+        assert.equal(control.posts.length, 0, 'Reading story and viewing preparation never grants rewards');
+        assert.deepEqual(browser.errors, []);
+    } finally { if (browser) await browser.close(); await server.close(); }
+});
+
+test('collection, equipment, alternative editions and full battle archive remain readable on mobile', { skip: !browserBin, timeout: 90000 }, async () => {
+    const control = fixture();
+    control.game.rewards = [{ kind: 'weapon', id: 'thach-tam' }, { kind: 'achievement', id: 'mo-loi' }];
+    control.game.victories = ['truy-lenh', 'song-nha', 'thu-lenh', 'thiet-lenh-su', 'ky-hanh-1'];
+    for (const [id, edition, tierCount, purityBp] of [['browser_oldbest', 1, 2, 8000], ['browser_newdraft', 2, 1, 10000]]) {
+        const practice = newPracticeVersion(id, 'kiem-y', control.game.day.day, 1000, edition);
+        practice.tiers = Array.from({ length: tierCount }, (_, index) => ({ tier: index + 1, purityBp, effortMilli: 3000, defectsMilli: 0,
+            startedDay: control.game.day.day, lockedDay: control.game.day.day }));
+        control.practiceVersions.push({ practice, version: 1, created: now });
+    }
+    const server = await serve(control); let browser;
+    try {
+        browser = await chrome(); await browser.navigate(server.url, 390);
+        await browser.wait("!!document.querySelector('.focus-flip-card')"); await browser.tap('[data-tab=game]');
+        await browser.wait("!!document.querySelector('.practice-intro')"); await browser.click('Sưu tập');
+        assert.equal(await browser.evaluate("document.querySelector('.game-collection').innerText.includes('Chiến tích · 1 / 11')"), true);
+        for (const [width, theme] of [[320, 'light'], [390, 'light'], [390, 'dark']]) {
+            await browser.resize(width, 844); await browser.evaluate("document.documentElement.dataset.theme='" + theme + "'");
+            await delay(220);
+            assert.equal((await snapshot(browser)).overflow, false);
+            if (process.env.WEB_TEST_SCREENSHOT_PATH) await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, '-collection-' + width + '-' + theme + '.png'));
+        }
+        await browser.evaluate("document.documentElement.dataset.theme='light'"); await browser.click('Hành trình');
+        await browser.wait("document.querySelector('.journey-chapter-picker select').value==='3'"); await browser.click('Đọc truyện');
+        await browser.wait("[...document.querySelectorAll('.game-story-people img')].some(image=>image.src.includes('moc-an') && image.complete && image.naturalWidth>0)");
+        if (process.env.WEB_TEST_SCREENSHOT_PATH) await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, '-moc-an-story.png'));
+        await browser.tap('[data-sheet-close]');
+        await browser.evaluate("document.querySelector('.journey-chapter-picker select').value='1';document.querySelector('.journey-chapter-picker select').dispatchEvent(new Event('change'))");
+        await browser.wait("document.querySelector('.journey-chapter-picker select').value==='1' && !!document.querySelector('.journey-boss button')");
+        await browser.evaluate("document.querySelector('.journey-boss button').click()");
+        await browser.wait("!!document.querySelector('.battle-loadout-form')");
+        assert.equal(await browser.evaluate("[...document.querySelector('.battle-loadout-form select').options].some(option=>option.value==='browser_oldbest')"), true);
+        await browser.evaluate("document.querySelector('.battle-version-picker').open=true");
+        await browser.wait("!!document.querySelector('.battle-edition-row')"); await browser.click('Thêm vào bộ chọn');
+        await browser.evaluate("document.querySelector('.battle-loadout-form select').value='browser_newdraft';document.querySelector('.battle-preparation>label select').value='thach-tam';document.querySelector('.battle-preparation>label select').dispatchEvent(new Event('change'))");
+        assert.equal(await browser.evaluate("document.querySelector('.battle-preparation').innerText.includes('60% lực công nền')"), true);
+        for (const width of [320, 390]) {
+            await browser.resize(width, 844); assert.equal((await snapshot(browser)).overflow, false);
+            if (process.env.WEB_TEST_SCREENSHOT_PATH) await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, '-equipment-' + width + '.png'));
+        }
+        await browser.click('Chuẩn bị xuất chiến'); await browser.wait("!!document.querySelector('.battle-card') && !document.querySelector('#sheet').open");
+        const battle = control.game.battles[0], run = control.battleRuns.get(battle.id);
+        assert.equal(run.weaponId, 'thach-tam'); assert.equal(run.state.loadout[0].versionId, 'browser_newdraft');
+        assert.equal(run.state.statuses.filter(status => status.key === 'weapon:thach-tam').length, 1);
+        assert.equal(await browser.evaluate("document.querySelector('.battle-card').innerText.includes('Thạch Tâm')"), true);
+        await browser.click('Lịch sử tất cả trận'); await browser.wait("document.querySelector('#sheet').innerText.includes('Đã chuẩn bị')");
+        assert.equal((await snapshot(browser)).overflow, false);
+        if (process.env.WEB_TEST_SCREENSHOT_PATH) await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, '-battle-archive.png'));
+        await browser.click('Xem nhật ký'); await browser.wait("document.querySelector('#sheet').innerText.includes('Chưa có lượt giao chiến')");
+        assert.deepEqual(browser.errors, []);
+    } finally { if (browser) await browser.close(); await server.close(); }
+});
+
 test('practice mobile flow selects a future version, shows pending quality, confirms a fresh edition and preserves old versions', { skip: !browserBin, timeout: 90000 }, async () => {
     const control = fixture(), server = await serve(control), healthy = clone(control.state.account), tasks = clone(control.state.tasks);
     let browser;
@@ -607,6 +743,18 @@ test('habit mobile flow creates three cadences, edits quantity without duplicate
         await browser.wait("!!document.querySelector('.habit-report')");
         await browser.resize(390, 844);
         if (process.env.WEB_TEST_SCREENSHOT_PATH) await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, '-habit-report.png'));
+        // Capture the actual download Blob; do not create files outside this
+        // localhost browser fixture or substitute a hand-built export payload.
+        await browser.evaluate("window.exportBlob=null;window.exportFilename=null;const originalCreate=URL.createObjectURL.bind(URL);URL.createObjectURL=blob=>{window.exportBlob=blob;return originalCreate(blob)};HTMLAnchorElement.prototype.click=function(){window.exportFilename=this.download}");
+        const writes = control.posts.length;
+        await browser.click('Xuất dữ liệu'); await browser.click('Tải JSON'); await browser.wait("!!window.exportBlob");
+        const exported = JSON.parse(await browser.evaluate("window.exportBlob.text()"));
+        assert.equal(exported.format, 'assistant-habits'); assert.equal(exported.version, 1); assert.equal(exported.valueScale, 100);
+        assert.equal(exported.range.to, control.habits.day.day); assert.equal(exported.habits.length, 3);
+        assert.ok(exported.history.some(row => row.value === 1500 && row.note === '<img src=x onerror=alert(1)>'));
+        assert.equal('account' in exported, false); assert.equal('tasks' in exported, false);
+        assert.equal(await browser.evaluate("window.exportFilename.endsWith('.json')"), true);
+        assert.equal(control.posts.length, writes, 'Export cannot mutate any habit or game reward');
         assert.deepEqual(control.state.account, original);
         assert.deepEqual(control.state.tasks, tasks);
         assert.deepEqual(browser.errors, []);

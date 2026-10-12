@@ -1,0 +1,62 @@
+{
+  "model": "Lykon/dreamshaper-8",
+  "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+  "variant": "fp16",
+  "style": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy",
+  "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage",
+  "assets": [
+    {
+      "id": "huyet-ha", "publishId": "huyet-ha", "contentId": "boss.huyet-ha", "role": "boss",
+      "alt": "Huyết Hà Đạo Nhân tóc cắt ngắn, áo ngà và nâu sẫm, nét mặt nghiêm.", "focalPoint": [0.5, 0.3],
+      "prompt": "bust portrait, stern East Asian male monk age 50, shaved head, pale weathered face, closed dark maroon robe, small bronze amulet, misty stone quay background",
+      "seed": 38101, "width": 448, "height": 640, "steps": 28, "guidance": 7, "conceptApproved": true, "qaNote": "Viewed source PNG 2026-10-12. Coherent short hair, lined stern face and ivory/brown robe. No amulet or maroon outer robe is claimed. Integrated QA pending."
+    },
+    {
+      "id": "truong-sinh", "publishId": "truong-sinh", "contentId": "character.ta-truong-sinh", "role": "character",
+      "alt": "Tạ Trường Sinh tóc bạc, áo ngà cổ đen và nụ cười nhẹ trên gương mặt nhiều nếp nhăn.", "focalPoint": [0.5, 0.3],
+      "prompt": "bust portrait, elderly East Asian male gatekeeper, thin white hair, lined tired face, patched brown charcoal linen robe, high collar, wooden prison door background, quiet smile",
+      "seed": 38102, "width": 448, "height": 640, "steps": 28, "guidance": 7, "conceptApproved": true, "qaNote": "Viewed source PNG 2026-10-12. Coherent elderly face, white hair, ivory outer robe and black inner collar, small tired smile. Patches/wooden token absent, not claimed. Accepted identity reconciled with story bible; integrated QA pending."
+    },
+    {
+      "id": "a-lac", "publishId": "a-lac", "contentId": "character.a-lac", "role": "character",
+      "alt": "A Lạc tóc đen ngang vai búi một phần phía sau, áo vải ngà và đai than.", "focalPoint": [0.5, 0.3],
+      "prompt": "bust portrait, young East Asian woman age 22, short black hair tied back, determined warm expression, plain ivory linen robe charcoal sash, worn stone arch background, high collar",
+      "seed": 38103, "width": 448, "height": 640, "steps": 28, "guidance": 7, "conceptApproved": true, "qaNote": "Viewed source PNG 2026-10-12. Original young face, shoulder-length black hair with tied side/back, ivory linen and charcoal sash; no hands in crop. Integrated QA pending."
+    },
+    {
+      "id": "khoi-loi", "publishId": "vo-anh", "contentId": "boss.vo-anh", "role": "boss",
+      "alt": "Vô Ảnh Sát Chủ đeo mặt nạ giáp màu đồng, khoác áo tối và giáp vai.", "focalPoint": [0.5, 0.38],
+      "prompt": "ancient humanoid wooden guardian puppet, carved blank ivory mask, jointed bronze shoulders, dark ragged cloak, standing in misty stone arena, chest portrait, no human skin",
+      "negative": "human face, smiling, woman, breasts, skin",
+      "seed": 38104, "width": 448, "height": 640, "steps": 28, "guidance": 7, "conceptApproved": true, "qaNote": "Viewed source PNG 2026-10-12. Rejected as wooden puppet: image has human neck and metal armor/mask. Repurposed deliberately to the masked assassin Vo Anh with truthful alt. No wooden anatomy claim. Khôi Lỗi still requires a separate generated asset. Integrated QA pending."
+    },
+    {
+      "id": "chapter03", "publishId": "chapter03", "contentId": "chapter.03", "role": "chapter",
+      "alt": "Bến đá Huyết Hà với nhà mái ngói bên dòng sông và núi mờ trong sương.", "focalPoint": [0.5, 0.55],
+      "prompt": "ancient stone quay beside dark river, closed wooden medicine house, rust red reeds, grey mist, mountain silhouettes, wide landscape, no people",
+      "negative": "person, human, woman, man, face, portrait, body",
+      "seed": 38105, "width": 640, "height": 448, "steps": 28, "guidance": 7, "conceptApproved": true, "qaNote": "Viewed source PNG 2026-10-12. Empty stone quay and riverside tiled buildings, layered mountain fog, coherent ink/ivory/grey palette. No red reeds or readable sign claimed. Integrated QA pending."
+    },
+    {
+      "id": "chapter04", "publishId": "chapter04", "contentId": "chapter.04", "role": "chapter",
+      "alt": "Cổng gỗ mái ngói trên lối núi, đèn lồng và bậc đá chìm trong sương.", "focalPoint": [0.5, 0.5],
+      "prompt": "massive weathered wooden prison gate in mountain cliff, broken bronze chains, stone stairs, single amber lantern, fog, wide landscape, no people",
+      "negative": "person, human, woman, man, face, portrait, body",
+      "seed": 38106, "width": 640, "height": 448, "steps": 28, "guidance": 7, "conceptApproved": true, "qaNote": "Viewed source PNG 2026-10-12. Coherent open wooden tiled gate, stone approach, lantern and misty mountain ridge. Represents the approach to the prison; does not claim closed barred door/chains. Integrated QA pending."
+    },
+    {
+      "id": "chapter05", "publishId": "chapter05", "contentId": "chapter.05", "role": "chapter",
+      "alt": "Đài đá và những cổng cổ của Bách Tông Đại Hội giữa núi rừng trong sương.", "focalPoint": [0.5, 0.5],
+      "prompt": "circular ancient stone tournament arena, five austere mountain pavilions, hanging ivory banners without writing, pine forest, misty dawn, wide landscape, no people",
+      "negative": "person, human, woman, man, face, portrait, body",
+      "seed": 38107, "width": 640, "height": 448, "steps": 28, "guidance": 7, "conceptApproved": true, "qaNote": "Viewed source PNG 2026-10-12. Empty rectangular stone arena/pavilion compound and mountain forest. Not a circle or five visible pavilions; alt describes actual output. Grey/ivory palette coherent. Integrated QA pending."
+    },
+    {
+      "id": "khoi-loi-v2", "publishId": "khoi-loi", "contentId": "boss.khoi-loi-dai-hoi", "role": "boss",
+      "alt": "Thiên Kiêu Khôi Lỗi với mặt trắng, khớp vai tròn, giáp chạm màu đồng và tóc dài tối.", "focalPoint": [0.5, 0.38],
+      "prompt": "wooden automaton, carved pale wood mask, visible jointed wooden neck and torso, bronze plates, mechanical puppet frame, chest view, misty stone arena",
+      "negative": "human, person, skin, woman, hair, smiling, clothes",
+      "seed": 38108, "width": 448, "height": 640, "steps": 28, "guidance": 7, "conceptApproved": true, "qaNote": "Viewed source PNG 2026-10-12. Accepted mechanical identity: pale doll face and round jointed shoulder/arm, decorated bronze chest plates, artificial smooth neck/body, dark long hair ornament. Alt avoids claiming visible wood grain. Distinct from human v1, which was repurposed as Vo Anh. Integrated QA pending."
+    }
+  ]
+}

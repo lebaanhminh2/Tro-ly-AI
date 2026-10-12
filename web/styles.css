@@ -483,10 +483,28 @@ dialog.task-sheet-open .task-actions>.task-plan-action{min-height:38px;font-size
 .battle-loadout-form{border:0;border-top:1px solid var(--line);padding:16px 0;margin:18px 0}
 .battle-loadout-form legend{font-size:13px;font-weight:600;padding-right:8px}
 .battle-loadout-form select{min-width:0;max-width:100%;width:100%;font-size:13px}
+.battle-editions{border-top:1px solid var(--line);padding-top:8px;margin-bottom:18px}
+.battle-editions>summary{min-height:44px;padding:12px 0;font-size:13px;color:var(--accent)}
+.battle-edition-row{padding:8px 0;border-bottom:1px solid var(--line)}
+.battle-edition-row p{margin:0}
+.battle-edition-row button{min-height:44px;font-size:12px}
 .battle-log-day{padding:15px 0;border-bottom:1px solid var(--line)}
 .battle-log-day h3{font-size:12px;color:var(--muted);margin:0 0 9px}
 .battle-log-day p{font-size:13px;line-height:1.65;margin:4px 0}
 .battle-log-day .hint{font-size:11px}
+.journey-chapter-picker{margin:0 0 4px}
+.game-story-people{display:flex;gap:16px;flex-wrap:wrap;margin:4px 0 18px}
+.game-story-people>div{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.game-story-people img{border-radius:8px;object-fit:cover;object-position:50% 25%}
+.game-collection{display:grid;gap:12px;min-width:0}
+.game-navigation{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:2px}
+.game-navigation button{min-width:0;min-height:44px;padding:10px 3px;font-size:12px;white-space:nowrap}
+.game-navigation button[aria-pressed="true"]{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--surface));border-radius:8px}
+.game-collection>h2:not(:first-child){margin-top:14px}
+.game-achievement{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.game-achievement h3{font-size:14px;line-height:1.5;margin-bottom:5px}
+.game-achievement .hint{font-size:12px;line-height:1.6}
+.game-achievement-mark{flex:0 0 24px;font-size:20px;color:var(--accent)}
 @media(max-width:360px){.battle-vitals{gap:12px}.battle-vitals>div>div{flex-direction:column;gap:4px}.battle-heading h2{font-size:20px}}
 @media(prefers-reduced-motion:reduce){.reward-cell{transition:none}}
 

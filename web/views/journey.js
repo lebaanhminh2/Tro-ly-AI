@@ -1,7 +1,7 @@
 import { habitDate } from '../models/habits.js';
 const statusNames = { won: 'Đã thắng', awaiting_rescue: 'Chờ cứu mạng', dead: 'Tử trận', expired: 'Hết lượt giao chiến', withdrawn: 'Đã rút lui', cancelled: 'Đã hủy chuẩn bị' };
 
-export function renderJourney(ui, data, catalog) {
+export function renderJourney(ui, data, catalog, selectedChapter) {
     const { el, button, card } = ui, root = el('div', undefined, 'journey-page');
     const current = (data.battles ?? []).find(battle => battle.id === data.current.battleId || battle.id === data.pending?.battleId)
         ?? (data.battles ?? []).find(battle => ['won', 'dead', 'expired', 'withdrawn'].includes(battle.status));
@@ -16,6 +16,7 @@ export function renderJourney(ui, data, catalog) {
             image.alt = current.content.name; image.loading = 'lazy'; header.append(image);
         }
         panel.append(header);
+        if (current.weaponId) panel.append(el('p', 'Thần binh · ' + (catalog.weapons?.find(weapon => weapon.id === current.weaponId)?.name ?? current.weaponId), 'hint'));
         if (current.startsDay > data.day.day) {
             panel.append(el('p', 'Bắt đầu từ ' + habitDate(current.startsDay) + '. Hôm nay vẫn theo lịch luyện đã chọn.', 'technique-description'),
                 button('Hủy chuẩn bị', () => ui.cancelBattle(current), 'text-button'));
@@ -65,22 +66,38 @@ export function renderJourney(ui, data, catalog) {
         panel.append(button('Nhật ký trận', () => ui.openBattleHistory(current), 'text-button')); root.append(panel);
     }
     const section = el('section', undefined, 'journey-boss-list');
-    const scene = el('img', undefined, 'journey-chapter-scene'); scene.src = './assets/than-lo/chapter01.webp';
-    scene.width = 640; scene.height = 448; scene.loading = 'lazy'; scene.alt = 'Cầu đá và cửa núi trong thung lũng mù sương.';
-    section.append(scene, el('p', 'HẮC LỆNH QUA THÔN', 'eyebrow'), el('h2', 'Đường lên cửa núi'));
-    for (const boss of catalog.bosses ?? []) {
+    const chapters = catalog.chapters ?? [{ number: 1, name: 'Hắc Lệnh Qua Thôn', scene: 'chapter01', encounters: ['truy-lenh', 'song-nha', 'thu-lenh', 'thiet-lenh-su'] }];
+    const next = chapters.find(chapter => chapter.encounters.some(id => !(data.victories ?? []).includes(id))) ?? chapters.at(-1);
+    const chapter = chapters.find(chapter => chapter.number === selectedChapter) ?? chapters.find(chapter => chapter.number === current?.content.chapter) ?? next;
+    const pickerWrap = el('label', 'Chương truyện', 'form-field journey-chapter-picker'), picker = el('select');
+    for (const value of chapters) {
+        const option = el('option', String(value.number).padStart(2, '0') + ' · ' + value.name); option.value = value.number; picker.append(option);
+    }
+    picker.value = chapter.number; picker.addEventListener('change', () => ui.selectGameChapter(Number(picker.value))); pickerWrap.append(picker); section.append(pickerWrap);
+    if (chapter.scene) {
+        const scene = el('img', undefined, 'journey-chapter-scene'); scene.src = './assets/than-lo/' + chapter.scene + '.webp';
+        scene.width = 640; scene.height = 448; scene.loading = 'lazy'; scene.alt = 'Cảnh ' + chapter.name; section.append(scene);
+    }
+    section.append(el('p', 'CHƯƠNG ' + String(chapter.number).padStart(2, '0'), 'eyebrow'), el('h2', chapter.name));
+    const firstBoss = (catalog.bosses ?? []).find(boss => boss.id === chapter.encounters[0]);
+    if (firstBoss && firstBoss.requires.every(id => (data.victories ?? []).includes(id))) section.append(button('Đọc truyện', () => ui.openGameChapter(chapter), 'text-button'));
+    for (const boss of (catalog.bosses ?? []).filter(boss => boss.chapter === chapter.number)) {
         const won = (data.victories ?? []).includes(boss.id), unlocked = boss.requires.every(id => (data.victories ?? []).includes(id))
             && (boss.practicePrerequisites ?? []).every(id => (data.learned ?? []).includes(id));
         const row = card('journey-boss' + (!unlocked ? ' is-locked' : ''));
         const heading = el('div', undefined, 'journey-boss-heading'), copy = el('div');
         const needsPractice = boss.requires.every(id => (data.victories ?? []).includes(id)) && !unlocked;
-        copy.append(el('p', won ? 'Đã vượt qua' : unlocked ? boss.maxTurns + ' lượt tối đa' : needsPractice ? 'Cần luyện đủ bốn môn thường' : 'Mở sau trận trước', 'eyebrow'), el('h3', boss.name));
+        copy.append(el('p', won ? 'Đã vượt qua' : unlocked ? boss.maxTurns + ' lượt tối đa' : needsPractice ? 'Cần luyện các môn yêu cầu' : 'Mở sau trận trước', 'eyebrow'), el('h3', boss.name));
         heading.append(copy);
         if (boss.artId) {
             const image = el('img'); image.src = './assets/than-lo/' + boss.artId + '-thumb.webp'; image.width = 56; image.height = 72;
             image.alt = ''; image.loading = 'lazy'; heading.append(image);
         }
         row.append(heading, el('p', boss.mechanics, 'hint'));
+        if (needsPractice) {
+            const missing = (boss.practicePrerequisites ?? []).filter(id => !(data.learned ?? []).includes(id));
+            row.append(el('p', 'Cần đạt Nhập môn: ' + missing.map(id => catalog.techniques.find(technique => technique.id === id)?.name ?? id).join(', ') + '.', 'hint'));
+        }
         const prepare = button(won ? 'Đánh lại' : 'Xem và chuẩn bị', () => ui.prepareBoss(boss), 'secondary');
         prepare.disabled = !unlocked || data.current.mode === 'battle' || !!current && ['active', 'awaiting_rescue'].includes(current.state.status) || current?.startsDay > data.day.day;
         row.append(prepare); section.append(row);
@@ -92,5 +109,6 @@ export function renderJourney(ui, data, catalog) {
         for (const battle of previous) history.append(button(battle.content.name + ' · ' + statusNames[battle.status], () => ui.openBattleHistory(battle), 'text-button'));
         root.append(history);
     }
+    root.append(button('Lịch sử tất cả trận', () => ui.openBattleArchive(), 'text-button'));
     return root;
 }

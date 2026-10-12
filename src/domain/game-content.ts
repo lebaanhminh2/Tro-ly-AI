@@ -1,17 +1,17 @@
-import type { BattleFighter, BossIntent } from './battle.ts';
-import { TECHNIQUES } from './techniques.ts';
+import type { BossIntent } from './battle.ts';
+import { INITIAL_TECHNIQUES, SCHOOLS, TECHNIQUES } from './techniques.ts';
+import { REALMS } from './healthy.ts';
+import { CAMPAIGN_BOSSES, GAME_CHAPTERS } from './game-campaign.ts';
+import { BRANCH_BOSSES } from './game-branches.ts';
+import { GAME_CHARACTERS } from './game-characters.ts';
+import { GAME_ACHIEVEMENTS, GAME_WEAPONS } from './game-rewards.ts';
+import { bossAction as action, contentFighter as fighter, type GameBoss, type GameChapter } from './game-content-model.ts';
+export type { GameBoss, GameChapter } from './game-content-model.ts';
+export { GAME_CHAPTERS } from './game-campaign.ts';
 
-export const GAME_CONTENT_VERSION = 'than-lo-1';
-export type GameBoss = { id: string; name: string; chapter: number; requires: string[]; recommendedRank: number;
-    kind?: 'main' | 'heritage'; practicePrerequisites?: string[];
-    maxTurns: number; fighter: BattleFighter; revival: { remaining: number; hpPercent: number };
-    pattern: { name: string; description: string; factors: number[]; heal: number; armorBuff: number; special: boolean }[];
-    introduction: string; victory: string; defeat: string; mechanics: string; advice: string[];
-    unlocks: string[]; artId: string | null };
-const fighter = (hp: number, attack: number, armor = 0): BattleFighter => ({ hp, maxHp: hp, attack, armor });
-const action = (name: string, description: string, factors: number[], special = false, heal = 0, armorBuff = 0) => ({
-    name, description, factors, special, heal, armorBuff,
-});
+export const GAME_CONTENT_VERSION = 'than-lo-2';
+export const SUPPORTED_CONTENT_VERSIONS = ['than-lo-1', 'than-lo-2'] as const;
+export const supportsContentVersion = (version: string): boolean => SUPPORTED_CONTENT_VERSIONS.some(value => value === version);
 export const GAME_BOSSES: GameBoss[] = [
     { id: 'truy-lenh', name: 'Người Truy Lệnh', chapter: 1, requires: [], recommendedRank: 0, maxTurns: 4,
         fighter: fighter(95, 12), revival: { remaining: 0, hpPercent: 350 },
@@ -69,12 +69,19 @@ export const GAME_BOSSES: GameBoss[] = [
         mechanics: 'Truyền thừa Thiên Kiếm: cần bốn môn thường đạt Nhập môn; đọc nhịp mạnh/nghỉ để thắng trong bảy lượt.',
         advice: ['Giữ đòn mạnh cho nhịp Mở sơ hở; Kiếm Ý và Liên Vân vẫn có giá trị khác nhau trước giáp.', 'Thắng chỉ mở quyền học trấn phái; không tự tặng một bản Viên mãn.'],
         unlocks: ['kiem-vuc'], artId: 'kiem-truyen' },
+    ...CAMPAIGN_BOSSES, ...BRANCH_BOSSES,
 ];
 
 export function bossById(id: string): GameBoss {
     const boss = GAME_BOSSES.find(value => value.id === id);
     if (!boss) throw Error('INVALID_GAME_BOSS');
     return boss;
+}
+export function publicGameCatalog() {
+    return { schools: SCHOOLS, techniques: TECHNIQUES, weapons: GAME_WEAPONS, achievements: GAME_ACHIEVEMENTS, contentVersion: GAME_CONTENT_VERSION,
+        chapters: GAME_CHAPTERS.map(({ number, name, scene, encounters }) => ({ number, name, scene, encounters })),
+        bosses: GAME_BOSSES.map(({ id, name, chapter, kind, requires, practicePrerequisites, recommendedRank, maxTurns, mechanics, artId }) =>
+            ({ id, name, chapter, kind: kind ?? 'main', requires, practicePrerequisites, recommendedRank, maxTurns, mechanics, artId })) };
 }
 export function bossIntents(boss: GameBoss): BossIntent[] {
     return Array.from({ length: boss.maxTurns }, (_, turn) => {
@@ -84,25 +91,53 @@ export function bossIntents(boss: GameBoss): BossIntent[] {
             special: action.special, heal: action.heal, armorBuff: action.armorBuff };
     });
 }
-export function validateGameContent(): void {
-    const ids = new Set(GAME_BOSSES.map(boss => boss.id));
-    if (ids.size !== GAME_BOSSES.length) throw Error('INVALID_GAME_CONTENT');
+export function validateGameContent(bosses = GAME_BOSSES, chapters: GameChapter[] = GAME_CHAPTERS): void {
+    const ids = new Set(bosses.map(boss => boss.id)), byId = new Map(bosses.map(boss => [boss.id, boss]));
+    if (ids.size !== bosses.length) throw Error('INVALID_GAME_CONTENT');
     const visiting = new Set<string>(), visited = new Set<string>();
     function walk(id: string) {
         if (visiting.has(id)) throw Error('CIRCULAR_GAME_CONTENT');
         if (visited.has(id)) return;
-        visiting.add(id); bossById(id).requires.forEach(walk); visiting.delete(id); visited.add(id);
+        const boss = byId.get(id);
+        if (!boss) throw Error('INVALID_GAME_CONTENT');
+        visiting.add(id); boss.requires.forEach(walk); visiting.delete(id); visited.add(id);
     }
-    for (const boss of GAME_BOSSES) {
+    for (const boss of bosses) {
         if (!/^[a-z0-9-]{1,80}$/.test(boss.id) || !Number.isInteger(boss.chapter) || boss.chapter < 1 || boss.chapter > 15 ||
+            !Number.isInteger(boss.recommendedRank) || boss.recommendedRank < 0 || boss.recommendedRank >= REALMS.length ||
+            !Number.isInteger(boss.revival.remaining) || boss.revival.remaining < 0 || boss.revival.remaining > 3 ||
+            !Number.isInteger(boss.revival.hpPercent) || boss.revival.hpPercent < 1 || boss.revival.hpPercent > 1000 ||
+            ![boss.fighter.hp, boss.fighter.maxHp, boss.fighter.attack, boss.fighter.armor].every(value => Number.isSafeInteger(value) && value >= 0 && value <= 1000000) ||
+            boss.fighter.hp !== boss.fighter.maxHp || boss.fighter.maxHp < 1 || boss.fighter.attack < 1 ||
             !Number.isInteger(boss.maxTurns) || boss.maxTurns < 1 || boss.maxTurns > 17 || !boss.pattern.length || boss.pattern.length > 17 ||
             boss.requires.some(id => !ids.has(id)) || [...boss.unlocks, ...(boss.practicePrerequisites ?? [])].some(id => !TECHNIQUES.some(technique => technique.id === id)) ||
-            new Set(boss.unlocks).size !== boss.unlocks.length ||
+            new Set(boss.unlocks).size !== boss.unlocks.length || new Set(boss.requires).size !== boss.requires.length ||
+            new Set(boss.practicePrerequisites ?? []).size !== (boss.practicePrerequisites ?? []).length ||
+            (boss.rewards?.weapons ?? []).some(id => !GAME_WEAPONS.some(value => value.id === id)) ||
+            (boss.rewards?.achievements ?? []).some(id => !GAME_ACHIEVEMENTS.some(value => value.id === id)) ||
             [boss.name, boss.introduction, boss.victory, boss.defeat, boss.mechanics, ...boss.advice].some(value => !value || value.length > 2500))
             throw Error('INVALID_GAME_CONTENT');
         for (const action of boss.pattern) if (action.factors.length < 1 || action.factors.length > 5 ||
+            !action.name || !action.description || action.name.length > 100 || action.description.length > 500 || typeof action.special !== 'boolean' ||
             ![...action.factors, action.heal, action.armorBuff].every(value => Number.isSafeInteger(value) && value >= 0 && value <= 5000))
             throw Error('INVALID_GAME_CONTENT');
         walk(boss.id);
     }
+    if (chapters.length !== 15 || new Set(chapters.map(value => value.number)).size !== 15) throw Error('INVALID_GAME_CHAPTERS');
+    const main = new Set(bosses.filter(boss => !boss.kind || boss.kind === 'main').map(boss => boss.id)), declared = new Set<string>();
+    for (const chapter of chapters) {
+        if (!Number.isInteger(chapter.number) || chapter.number < 1 || chapter.number > 15 || !chapter.name || !chapter.introduction || !chapter.conclusion ||
+            chapter.characters.some(id => !GAME_CHARACTERS.some(character => character.id === id)) ||
+            !chapter.encounters.length || chapter.encounters.some(id => !main.has(id) || declared.has(id) || byId.get(id)!.chapter !== chapter.number)) throw Error('INVALID_GAME_CHAPTERS');
+        chapter.encounters.forEach(id => declared.add(id));
+    }
+    if (declared.size !== main.size) throw Error('INVALID_GAME_CHAPTERS');
+    // Structural traversal assumes an unlocked technique can eventually be
+    // trained. Combat difficulty and actual DB progression need separate proof.
+    const reached = new Set<string>(), learnable = new Set(INITIAL_TECHNIQUES);
+    for (let pass = 0; pass < bosses.length; pass++) for (const boss of bosses) if (!reached.has(boss.id) &&
+        boss.requires.every(id => reached.has(id)) && (boss.practicePrerequisites ?? []).every(id => learnable.has(id))) {
+        reached.add(boss.id); boss.unlocks.forEach(id => learnable.add(id));
+    }
+    if (reached.size !== bosses.length || TECHNIQUES.some(technique => !learnable.has(technique.id))) throw Error('UNREACHABLE_GAME_CONTENT');
 }

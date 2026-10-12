@@ -51,7 +51,7 @@ export async function miniAppApi(request: Request, env: Env, now = Date.now()): 
     }
     try {
         const context = { env, owner, now, healthy: new HealthyStore(env.DB) };
-        if (request.method === 'GET' && ['/api/game', '/api/game-catalog', '/api/practice-versions', '/api/battle-history', '/api/battle-loadout'].includes(url.pathname))
+        if (request.method === 'GET' && ['/api/game', '/api/game-catalog', '/api/game-boss', '/api/game-chapter', '/api/practice-versions', '/api/battle-history', '/api/battle-loadout', '/api/battles'].includes(url.pathname))
             return await readGame(context, url);
         if (request.method === 'GET' && ['/api/habits', '/api/habit-history', '/api/habit-report'].includes(url.pathname))
             return await readHabits(context, url);
@@ -85,7 +85,8 @@ export async function miniAppApi(request: Request, env: Env, now = Date.now()): 
             PRACTICE_DAILY_LIMIT: 'Cậu đã tạo đủ 7 bản luyện mới trong ngày. Có thể tiếp tục bản đang có.',
             BATTLE_ACTIVE: 'Kết thúc trận trước khi chọn lịch luyện mới.',
             BATTLE_CHANGED: 'Trận vừa được cập nhật. Tải lại trước khi chọn tiếp.', BATTLE_NOT_FOUND: 'Không tìm thấy trận này.',
-            BOSS_LOCKED: 'Hoàn tất trận trước để mở đoạn hành trình này.', GAME_CATCHING_UP: 'Đang chốt ngày trước. Cập nhật kết quả rồi chọn tiếp nhé.',
+            BOSS_LOCKED: 'Chưa đủ điều kiện mở đoạn này. Xem trận trước và các môn cần luyện trong Hành trình nhé.', GAME_CATCHING_UP: 'Đang chốt ngày trước. Cập nhật kết quả rồi chọn tiếp nhé.',
+            GAME_WEAPON_LOCKED: 'Cậu chưa sở hữu thần binh này.',
             BATTLE_COST_NOT_ACCEPTED: 'Cần xác nhận cái giá trước khi chọn chiêu hoặc cứu mạng.',
             BATTLE_INSUFFICIENT_HP: 'HP hiện tại chưa đủ để trả giá thi triển chiêu này.', BATTLE_NOT_ACTIVE: 'Trận hiện không còn chờ chọn chiêu.',
             BATTLE_NOT_STARTED: 'Trận bắt đầu từ ngày sinh hoạt kế tiếp.', BATTLE_NOT_CURRENT: 'Trận này không thuộc chế độ của hôm nay.',

@@ -428,5 +428,599 @@
       "integrationEvidence": "D:/Tro-ly-AI-art/opening-final-boss-kiem-truyen.png; light390 viewed",
       "integrationReviewedAt": "2026-10-12"
     }
+  },
+  {
+    "id": "ky-hanh",
+    "contentId": "character.ky-hanh",
+    "alt": "Kỷ Hành, kiếm khách trẻ tóc đen buộc sau đầu, áo ngà viền than và giáp vai đồng.",
+    "role": "character",
+    "focalPoint": [
+      0.5,
+      0.3
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "ky-hanh",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 38001,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, bust portrait, East Asian male swordsman age 25, angular face, small scar over left eyebrow, long black hair tied high, charcoal linen robe ivory trim, straight sword sheath at shoulder, calm focused expression",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, ugly face, extra limbs, extra fingers, bad anatomy, blurry, low resolution, nude, cleavage",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 103.5,
+      "peakMiB": 4053,
+      "sha256": "936a95ded5f7c4f771de6a11121b4b4479782d5c7ab0325daa661a203f61a563",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/ky-hanh.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 25486,
+        "sha256": "5f916453c75f1eb52759835c041c7a9abebcf8ff04620e9bd6cadd542d4b6b77"
+      },
+      {
+        "path": "web/assets/than-lo/ky-hanh-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 5364,
+        "sha256": "8c1d5664818247cfd94be427f58beeb26f2ac2523998e060bf6725f6508d3d61"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed source PNG 2026-10-12. Coherent young face, tied hair, ivory/charcoal robe, bronze shoulders, visible blade behind shoulder and lower hands. Scar is not visible and is not claimed by alt; original identity accepted. Integrated QA pending.",
+      "integrationEvidence": "D:/Tro-ly-AI-art/campaign-qa-chapter02.png; D:/Tro-ly-AI-art/campaign-qa-chapter02-story.png; light390 viewed",
+      "integrationReviewedAt": "2026-10-12"
+    }
+  },
+  {
+    "id": "moc-an",
+    "contentId": "character.moc-an",
+    "alt": "Mộc An, y sĩ mặc áo xám ngà với tóc búi và những lọn tóc thả bên mặt.",
+    "role": "character",
+    "focalPoint": [
+      0.5,
+      0.3
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "moc-an",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 38002,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, bust portrait, East Asian female healer age 30, thoughtful face, dark hair in low bun, muted grey green linen robe, ivory high collar, small cloth medicine satchel strap, quiet resilient expression",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, ugly face, extra limbs, extra fingers, bad anatomy, blurry, low resolution, nude, cleavage",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 99.77,
+      "peakMiB": 4053,
+      "sha256": "1fae6667aa36b4f9020bf8cef830e4657695bf19c12454096d103b81e6c6b8af",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/moc-an.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 20126,
+        "sha256": "2e7de505434177e6ae9a1034f6120b77437604c6440ea7496757cc080fb44ef9"
+      },
+      {
+        "path": "web/assets/than-lo/moc-an-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 3624,
+        "sha256": "12d6bd3e129c1e19231253e638533c944dce6a87d8ef9555784d59c146a94f0c"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed source PNG 2026-10-12. Coherent profile, tied bun/loose hair, grey/ivory robe and resting hands. Medicine bag absent; no satchel or green dye claimed. Character identity uses plain robe and profile; integrated QA pending.",
+      "integrationEvidence": "D:\\Tro-ly-AI-art\\f5-rewards-final-moc-an-story.png; D:\\Tro-ly-AI-art\\f5-campaign-qa-campaign-story-4.png; light390 viewed",
+      "integrationReviewedAt": "2026-10-12"
+    }
+  },
+  {
+    "id": "chapter02",
+    "contentId": "chapter.02",
+    "alt": "Sân tỷ thí bằng đá trước thư các trên núi, trong sương sớm.",
+    "role": "chapter",
+    "focalPoint": [
+      0.5,
+      0.55
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "chapter02",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 38003,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, ancient stone training courtyard, mountain library with tiled roofs, grey mist, worn steps, bronze lantern, pine trees, dawn, wide landscape, no people",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, ugly face, extra limbs, extra fingers, bad anatomy, blurry, low resolution, nude, cleavage, person, human, woman, man, face, portrait, body",
+      "size": [
+        640,
+        448
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 98.69,
+      "peakMiB": 4053,
+      "sha256": "707b5cff22defde3c240a8251ae4a5434f732c7242d7ead3de3c7cf6ab1b400f",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/chapter02.webp",
+        "width": 640,
+        "height": 448,
+        "bytes": 62728,
+        "sha256": "ec0722e456d71decad419823ff25cd99f4f73f57a6a64a954f058645d8a46622"
+      },
+      {
+        "path": "web/assets/than-lo/chapter02-thumb.webp",
+        "width": 160,
+        "height": 112,
+        "bytes": 5276,
+        "sha256": "ce9f0a0b43d80d63db1e3871784d1aaa781875f716f924330cf7ec51ee9b51f4"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed source PNG 2026-10-12. Coherent stone courtyard/steps, old tiled-roof buildings, mountain mist and muted green foliage. Empty landscape, no people or readable inscriptions. Integrated crop QA pending.",
+      "integrationEvidence": "D:/Tro-ly-AI-art/campaign-qa-chapter02.png; D:/Tro-ly-AI-art/campaign-qa-chapter02-story.png; light390 viewed",
+      "integrationReviewedAt": "2026-10-12"
+    }
+  },
+  {
+    "id": "huyet-ha",
+    "contentId": "boss.huyet-ha",
+    "alt": "Huyết Hà Đạo Nhân tóc cắt ngắn, áo ngà và nâu sẫm, nét mặt nghiêm.",
+    "role": "boss",
+    "focalPoint": [
+      0.5,
+      0.3
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "huyet-ha",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 38101,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, bust portrait, stern East Asian male monk age 50, shaved head, pale weathered face, closed dark maroon robe, small bronze amulet, misty stone quay background",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 104.72,
+      "peakMiB": 4053,
+      "sha256": "2e20269099f852743241febc01b1fc9469cc75136707428cf5c0e4da701612fb",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/huyet-ha.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 22282,
+        "sha256": "2eb10ef56883b670aaa367ad21a94723bbb71c5bc6ee519b239282b292dbdb4a"
+      },
+      {
+        "path": "web/assets/than-lo/huyet-ha-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 3894,
+        "sha256": "642d5a9d1581b2f7602459ff702f5671e94a6229a74b19eec80fd652734a39c4"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed source PNG 2026-10-12. Coherent short hair, lined stern face and ivory/brown robe. No amulet or maroon outer robe is claimed. Integrated QA pending.",
+      "integrationEvidence": "D:\\Tro-ly-AI-art\\f5-campaign-qa-campaign-chapter-3.png; D:\\Tro-ly-AI-art\\f5-campaign-qa-campaign-prepare-3.png; light390 viewed",
+      "integrationReviewedAt": "2026-10-12"
+    }
+  },
+  {
+    "id": "truong-sinh",
+    "contentId": "character.ta-truong-sinh",
+    "alt": "Tạ Trường Sinh tóc bạc, áo ngà cổ đen và nụ cười nhẹ trên gương mặt nhiều nếp nhăn.",
+    "role": "character",
+    "focalPoint": [
+      0.5,
+      0.3
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "truong-sinh",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 38102,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, bust portrait, elderly East Asian male gatekeeper, thin white hair, lined tired face, patched brown charcoal linen robe, high collar, wooden prison door background, quiet smile",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 100.59,
+      "peakMiB": 4053,
+      "sha256": "511b224cceaeb91fd1c38968b1c701621b8a05f3ce3028ab3064986d407e558e",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/truong-sinh.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 42870,
+        "sha256": "6570e63afa9fd54df8c0c655474827d5d96bde988487f85eee3fbec171c75749"
+      },
+      {
+        "path": "web/assets/than-lo/truong-sinh-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 5848,
+        "sha256": "dcdca4ef20289388ba1d72534c7313ada7a2f6c59a403663c8d03b44967bac47"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed source PNG 2026-10-12. Coherent elderly face, white hair, ivory outer robe and black inner collar, small tired smile. Patches/wooden token absent, not claimed. Accepted identity reconciled with story bible; integrated QA pending.",
+      "integrationEvidence": "D:\\Tro-ly-AI-art\\f5-campaign-qa-campaign-prepare-4.png; D:\\Tro-ly-AI-art\\f5-campaign-qa-campaign-story-4.png; light390 viewed",
+      "integrationReviewedAt": "2026-10-12"
+    }
+  },
+  {
+    "id": "a-lac",
+    "contentId": "character.a-lac",
+    "alt": "A Lạc tóc đen ngang vai búi một phần phía sau, áo vải ngà và đai than.",
+    "role": "character",
+    "focalPoint": [
+      0.5,
+      0.3
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "a-lac",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 38103,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, bust portrait, young East Asian woman age 22, short black hair tied back, determined warm expression, plain ivory linen robe charcoal sash, worn stone arch background, high collar",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 99.33,
+      "peakMiB": 4053,
+      "sha256": "8ac3a06c1e38e3a5c4fe13878ca7a38275cb538a642f672994d1cda083691a25",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/a-lac.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 20104,
+        "sha256": "42cc0963cedfe9726fd01e714a7d03f83c2bd254bd48a4f8b8df63d7853355f4"
+      },
+      {
+        "path": "web/assets/than-lo/a-lac-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 3598,
+        "sha256": "720ede11eea7ec4f7d090f763bf02288e019eb9e23be97325b444d218ea4bc2c"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed source PNG 2026-10-12. Original young face, shoulder-length black hair with tied side/back, ivory linen and charcoal sash; no hands in crop. Integrated QA pending.",
+      "integrationEvidence": "D:\\Tro-ly-AI-art\\f5-campaign-qa-campaign-story-11.png; light390 viewed",
+      "integrationReviewedAt": "2026-10-12"
+    }
+  },
+  {
+    "id": "vo-anh",
+    "contentId": "boss.vo-anh",
+    "alt": "Vô Ảnh Sát Chủ đeo mặt nạ giáp màu đồng, khoác áo tối và giáp vai.",
+    "role": "boss",
+    "focalPoint": [
+      0.5,
+      0.38
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "khoi-loi",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 38104,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, ancient humanoid wooden guardian puppet, carved blank ivory mask, jointed bronze shoulders, dark ragged cloak, standing in misty stone arena, chest portrait, no human skin",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage, human face, smiling, woman, breasts, skin",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 99.08,
+      "peakMiB": 4053,
+      "sha256": "52a03c02cfbc9b13dbf9d6c3aa9d0b7961d2c9942aee080d673a3344c88f898c",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/vo-anh.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 38950,
+        "sha256": "a7188ec2aa06086aa3b56fbb8507e49c89b5c4682a1073ec57c17c3aa27d33b0"
+      },
+      {
+        "path": "web/assets/than-lo/vo-anh-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 7096,
+        "sha256": "c8b031d7983c5ff569a819fd94185a8710021331a622980e1c65099349007e55"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed source PNG 2026-10-12. Rejected as wooden puppet: image has human neck and metal armor/mask. Repurposed deliberately to the masked assassin Vo Anh with truthful alt. No wooden anatomy claim. Khôi Lỗi still requires a separate generated asset. Integrated QA pending.",
+      "integrationEvidence": "D:\\Tro-ly-AI-art\\f5-campaign-qa-campaign-chapter-6.png; D:\\Tro-ly-AI-art\\f5-campaign-qa-campaign-prepare-6.png; light390 viewed",
+      "integrationReviewedAt": "2026-10-12"
+    }
+  },
+  {
+    "id": "chapter03",
+    "contentId": "chapter.03",
+    "alt": "Bến đá Huyết Hà với nhà mái ngói bên dòng sông và núi mờ trong sương.",
+    "role": "chapter",
+    "focalPoint": [
+      0.5,
+      0.55
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "chapter03",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 38105,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, ancient stone quay beside dark river, closed wooden medicine house, rust red reeds, grey mist, mountain silhouettes, wide landscape, no people",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage, person, human, woman, man, face, portrait, body",
+      "size": [
+        640,
+        448
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 105.03,
+      "peakMiB": 4053,
+      "sha256": "477a27fbb71299a73b2a011296091e704157a8c4a130f644c843614db365ed80",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/chapter03.webp",
+        "width": 640,
+        "height": 448,
+        "bytes": 48220,
+        "sha256": "6e1656677598412961c86c745e080aeabfa098639fb13bbe5d3e2b0ae866d3aa"
+      },
+      {
+        "path": "web/assets/than-lo/chapter03-thumb.webp",
+        "width": 160,
+        "height": 112,
+        "bytes": 3404,
+        "sha256": "bac8828b1a7c27809d704997577c8dac018355c97120ac107eaa07973925016f"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed source PNG 2026-10-12. Empty stone quay and riverside tiled buildings, layered mountain fog, coherent ink/ivory/grey palette. No red reeds or readable sign claimed. Integrated QA pending.",
+      "integrationEvidence": "D:\\Tro-ly-AI-art\\f5-campaign-qa-campaign-chapter-3.png; light390 viewed",
+      "integrationReviewedAt": "2026-10-12"
+    }
+  },
+  {
+    "id": "chapter04",
+    "contentId": "chapter.04",
+    "alt": "Cổng gỗ mái ngói trên lối núi, đèn lồng và bậc đá chìm trong sương.",
+    "role": "chapter",
+    "focalPoint": [
+      0.5,
+      0.5
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "chapter04",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 38106,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, massive weathered wooden prison gate in mountain cliff, broken bronze chains, stone stairs, single amber lantern, fog, wide landscape, no people",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage, person, human, woman, man, face, portrait, body",
+      "size": [
+        640,
+        448
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 109.81,
+      "peakMiB": 4053,
+      "sha256": "0df383eacf0c0ab2bcabfabcda08eaf8cbe384ba7eb370f67743ce8c19581d50",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/chapter04.webp",
+        "width": 640,
+        "height": 448,
+        "bytes": 36908,
+        "sha256": "5b27441a29bd153e5a9b9681e4989c0068bdba9bfa20e778c310680e4601b357"
+      },
+      {
+        "path": "web/assets/than-lo/chapter04-thumb.webp",
+        "width": 160,
+        "height": 112,
+        "bytes": 3608,
+        "sha256": "4b044d52b9c2b54a5a32ee427b87eb0eadb13da63f28de2765038da0af7dc23e"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed source PNG 2026-10-12. Coherent open wooden tiled gate, stone approach, lantern and misty mountain ridge. Represents the approach to the prison; does not claim closed barred door/chains. Integrated QA pending.",
+      "integrationEvidence": "D:\\Tro-ly-AI-art\\f5-campaign-qa-campaign-chapter-4.png; light390 viewed",
+      "integrationReviewedAt": "2026-10-12"
+    }
+  },
+  {
+    "id": "chapter05",
+    "contentId": "chapter.05",
+    "alt": "Đài đá và những cổng cổ của Bách Tông Đại Hội giữa núi rừng trong sương.",
+    "role": "chapter",
+    "focalPoint": [
+      0.5,
+      0.5
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "chapter05",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 38107,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, circular ancient stone tournament arena, five austere mountain pavilions, hanging ivory banners without writing, pine forest, misty dawn, wide landscape, no people",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage, person, human, woman, man, face, portrait, body",
+      "size": [
+        640,
+        448
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 98.27,
+      "peakMiB": 4053,
+      "sha256": "674aa48f67522d6d7189f272bf31ca98c4541704facf6490f296f1f44c3bf3e3",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/chapter05.webp",
+        "width": 640,
+        "height": 448,
+        "bytes": 52358,
+        "sha256": "76887f3f768a29f2d7107a0bec4121100e8de6be2e2d806ebf094392b2a896ba"
+      },
+      {
+        "path": "web/assets/than-lo/chapter05-thumb.webp",
+        "width": 160,
+        "height": 112,
+        "bytes": 3944,
+        "sha256": "079fab67d3e407c4ebd4f11dc198388c65710342edd88b92cdce6b28e0c7dc3d"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed source PNG 2026-10-12. Empty rectangular stone arena/pavilion compound and mountain forest. Not a circle or five visible pavilions; alt describes actual output. Grey/ivory palette coherent. Integrated QA pending.",
+      "integrationEvidence": "D:\\Tro-ly-AI-art\\f5-campaign-qa-campaign-chapter-5.png; light390 viewed",
+      "integrationReviewedAt": "2026-10-12"
+    }
+  },
+  {
+    "id": "khoi-loi",
+    "contentId": "boss.khoi-loi-dai-hoi",
+    "alt": "Thiên Kiêu Khôi Lỗi với mặt trắng, khớp vai tròn, giáp chạm màu đồng và tóc dài tối.",
+    "role": "boss",
+    "focalPoint": [
+      0.5,
+      0.38
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "khoi-loi-v2",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 38108,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, wooden automaton, carved pale wood mask, visible jointed wooden neck and torso, bronze plates, mechanical puppet frame, chest view, misty stone arena",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage, human, person, skin, woman, hair, smiling, clothes",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 102.52,
+      "peakMiB": 4053,
+      "sha256": "fcd4ca81e1f2152309123f6a7af6132edb4c12e44eaad2906437e1157fca0f2f",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/khoi-loi.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 32614,
+        "sha256": "93fbb5df26b33ace97c95c4a2fe7768446741cac3d7823950af0b1e9ad49bc51"
+      },
+      {
+        "path": "web/assets/than-lo/khoi-loi-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 5828,
+        "sha256": "f8171453ad5e99425e70e010701e39969a9b97370b2a5cad103701ec94d48f1c"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed source PNG 2026-10-12. Accepted mechanical identity: pale doll face and round jointed shoulder/arm, decorated bronze chest plates, artificial smooth neck/body, dark long hair ornament. Alt avoids claiming visible wood grain. Distinct from human v1, which was repurposed as Vo Anh. Integrated QA pending.",
+      "integrationEvidence": "D:\\Tro-ly-AI-art\\f5-campaign-qa-campaign-chapter-5.png; D:\\Tro-ly-AI-art\\f5-campaign-qa-campaign-prepare-5.png; light390 viewed",
+      "integrationReviewedAt": "2026-10-12"
+    }
   }
 ]

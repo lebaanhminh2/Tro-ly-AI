@@ -22,9 +22,9 @@ const runtime = createRuntimeState();
 const content = document.querySelector('#content'), sheet = document.querySelector('#sheet'), sheetContent = document.querySelector('#sheet-content');
 const actions = {};
 const forward = {};
-for (const name of ['loadGame', 'showGamePanel', 'openTechnique', 'selectGameSchool', 'stopPractice', 'chooseBattle', 'cancelBattle', 'withdrawBattle', 'rescueBattle', 'acceptBattleDeath', 'prepareBoss', 'openBattleHistory', 'openBattleExchange'])
+for (const name of ['loadGame', 'showGamePanel', 'openTechnique', 'selectGameSchool', 'stopPractice', 'chooseBattle', 'cancelBattle', 'withdrawBattle', 'rescueBattle', 'acceptBattleDeath', 'prepareBoss', 'openBattleHistory', 'openBattleExchange', 'openGameChapter', 'selectGameChapter', 'openBattleArchive'])
     forward[name] = (...args) => actions[name](...args);
-for (const name of ['loadHabits', 'openHabit', 'openHabitLog', 'openHabitSlot', 'showHabitInList', 'toggleHabit', 'setHabitFilter', 'showHabitPanel', 'loadHabitHistory', 'setHabitReportSpan', 'setHabitHistoryStatus', 'exportHabits'])
+for (const name of ['loadHabits', 'openHabit', 'openHabitLog', 'openHabitSlot', 'showHabitInList', 'toggleHabit', 'setHabitFilter', 'showHabitPanel', 'loadHabitHistory', 'setHabitReportSpan', 'setHabitHistoryStatus', 'exportHabits', 'openHabitExport'])
     forward[name] = (...args) => actions[name](...args);
 forward.loadActiveTasks = (...args) => actions.loadActiveTasks(...args);
 forward.renderSleepControls = (...args) => actions.renderSleepControls(...args);
