@@ -1,10 +1,10 @@
 # Chiến đấu — quyết định A05/A06 và luật đang triển khai
 
-Cập nhật 2026-10-12. Engine/store/API/UI F4 đang chạy local; chưa release hoặc đủ nội dung F5. Phạm vi và luật user tại [GAMEPLAY](HABIT_GAME_GAMEPLAY.md), checkpoint tại [PROGRESS](HABIT_GAME_PROGRESS.md). Các số cân bằng là quyết định của agent; chỉnh theo bằng chứng và giữ version của trận đã bắt đầu.
+Cập nhật 2026-10-12. Engine/store/API/UI và toàn catalog đang chạy local; chưa release remote. Phạm vi và luật user tại [GAMEPLAY](HABIT_GAME_GAMEPLAY.md), checkpoint tại [PROGRESS](HABIT_GAME_PROGRESS.md). Các số cân bằng là quyết định của agent; chỉnh theo bằng chứng và giữ version của trận đã bắt đầu.
 
 ## Ngày và nguồn sức mạnh
 
-`battle-v1` / `than-lo-1`. Chuẩn bị từ hôm nay, Xuất Chiến từ ngày sinh hoạt kế tiếp. Mỗi ngày một chiêu, có thể đổi trước khi ngày kết thúc. Server chốt theo giá trị cuối cùng; ngủ không chốt lượt. Có backlog chưa kết toán thì chọn/rút/cứu chờ `GAME_CATCHING_UP`.
+`battle-v1` / content mới `than-lo-3`, đọc snapshots `than-lo-1/2/3`. Chuẩn bị từ hôm nay, Xuất Chiến từ ngày sinh hoạt kế tiếp. Mỗi ngày một chiêu, có thể đổi trước khi ngày kết thúc. Server chốt theo giá trị cuối cùng; ngủ không chốt lượt. Có backlog chưa kết toán thì chọn/rút/cứu chờ `GAME_CATCHING_UP`.
 
 | Nguồn | Luật |
 | --- | --- |
@@ -35,6 +35,8 @@ Người chơi đánh trước; boss chết thật không phản công. Hồi si
 Public DTO chỉ lộ intent kế tiếp. Quan Thiên cho biết hai hành động sắp tới. Swap giữ đủ hành động và không đẩy tuyệt kỹ ra ngoài lượt cuối. Vô Môn đổi một ô trước lựa chọn ngày sau, không reset HP/ấn/thời hạn/quyền cứu; đã chọn chiêu ngày đó thì chưa đổi ô.
 
 ## Cứu mạng, tử trận và đột phá
+
+Content3 thêm thế đọc chiêu: trừ bốn trận chính chương1, lặp chiêu đã thi triển lượt trước giảm toàn sát thương gây ra lượt này65/75/85% theo chương≤3/≤9/sau9. Đổi chiêu phá thế đọc, không giảm hiệu quả thủ/hồi máu hoặc giá hiến tế. Stance được chốt trước intent swap, gồm delayed/reflect; UI báo trước trong intent/lựa chọn. `repeatWard` optional lưu cùng intents, v1/v2 không có vẫn giữ damage cũ. Chi tiết bằng chứng trước/sau tại [BALANCE](HABIT_GAME_BALANCE.md).
 
 | Hành động | Cái giá và kết quả |
 | --- | --- |

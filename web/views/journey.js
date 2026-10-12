@@ -42,7 +42,9 @@ export function renderJourney(ui, data, catalog, selectedChapter) {
                 if (chosen) panel.append(el('p', 'Đã chọn ' + (battle.choices.find(choice => choice.id === chosen.techniqueId)?.name ?? chosen.techniqueId) + ' · có thể đổi trước khi ngày kết thúc.', 'hint'));
                 for (const choice of battle.choices) {
                     const control = button(choice.name, () => ui.chooseBattle(current, choice), 'secondary');
+                    control.dataset.choiceId = choice.id;
                     control.disabled = !choice.available || catchingUp; control.setAttribute('aria-pressed', String(chosen?.techniqueId === choice.id));
+                    if (choice.repeatDamagePenalty) control.append(el('small', 'Bị đọc chiêu · −' + choice.repeatDamagePenalty / 10 + '% sát thương'));
                     if (choice.warning) control.append(el('small', 'Có đánh đổi')); choices.append(control);
                 }
                 panel.append(choices, el('p', 'Chốt cuối ngày sinh hoạt. Habit đủ mục tiêu tăng sức mạnh; công việc góp thêm tối đa 10%.', 'hint'));
@@ -97,6 +99,7 @@ export function renderJourney(ui, data, catalog, selectedChapter) {
             if (boss.artPosition) image.style.objectPosition = boss.artPosition.map(value => value * 100 + '%').join(' ');
         }
         row.append(heading, el('p', boss.mechanics, 'hint'));
+        if (boss.repeatWard) row.append(el('p', 'Đọc chiêu lặp · đổi chiêu để giữ trọn sát thương.', 'hint'));
         if (needsPractice) {
             const missing = (boss.practicePrerequisites ?? []).filter(id => !(data.learned ?? []).includes(id));
             row.append(el('p', 'Cần đạt Nhập môn: ' + missing.map(id => catalog.techniques.find(technique => technique.id === id)?.name ?? id).join(', ') + '.', 'hint'));

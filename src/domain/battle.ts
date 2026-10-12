@@ -7,7 +7,7 @@ const MAX_STAT = 1000000;
 const STATUS_KINDS = ['shield', 'virtual_armor', 'reduction', 'reflect', 'bleed', 'attack_buff', 'mark', 'echo', 'seal'];
 const SWORD_SEALS = ['mountain', 'blood', 'storm', 'echo'];
 export type BossIntent = { id: string; name: string; hits: number[]; special: boolean;
-    heal: number; armorBuff: number; description: string };
+    heal: number; armorBuff: number; description: string; repeatWard?: number };
 export type BattleFighter = { hp: number; maxHp: number; attack: number; armor: number };
 export type EquippedTechnique = { id: string; versionId: string; tier: number; purityBp: number };
 export type BattleStatus = { key: string; kind: 'shield' | 'virtual_armor' | 'reduction' | 'reflect' | 'bleed' | 'attack_buff' | 'mark' | 'echo' | 'seal';
@@ -53,6 +53,7 @@ export function validateBattleState(state: BattleState): void {
         if (!/^[a-zA-Z0-9_-]{1,100}$/.test(intent.id) || typeof intent.name !== 'string' || intent.name.length < 1 || intent.name.length > 120 ||
             typeof intent.description !== 'string' || intent.description.length > 600 || typeof intent.special !== 'boolean' ||
             intent.hits.length < 1 || intent.hits.length > 5 ||
+            intent.repeatWard !== undefined && (!Number.isInteger(intent.repeatWard) || intent.repeatWard < 0 || intent.repeatWard > 850) ||
             ![...intent.hits, intent.heal, intent.armorBuff].every(value => Number.isSafeInteger(value) && value >= 0 && value <= MAX_STAT))
             throw Error('INVALID_BATTLE_INTENT');
     }
@@ -101,6 +102,12 @@ export function resolveBattleTurn(before: BattleState, input: BattleTurnInput): 
     state.statuses = state.statuses.filter(status => status.expiresTurn >= state.turn);
     let intent = state.intents[state.turn - 1]!;
     let rawPlayerDamage = 0, bossHpLost = 0, playerHpLost = 0, rankRescuePrepared = false, lifeSteal = 0, dodge = false;
+    // A defender's announced stance anticipates a repeated cast. Old saved
+    // intents have no ward and retain their exact battle-v1 behavior. The
+    // stance is fixed before an intent swap, and also covers delayed damage
+    // and reflect in this turn; switching casts breaks it completely.
+    const repeatWard = before.lastUses[input.techniqueId] === before.turn ? (intent.repeatWard ?? 0) : 0;
+    if (repeatWard) entries.push({ kind: 'effect', text: 'Đối thủ đọc được chiêu lặp: sát thương gây ra lượt này giảm ' + repeatWard / 10 + '%.' });
     const tierFactor = equipped ? 1000 + (equipped.tier - 1) * 180 : 1000;
     const purityFactor = equipped ? 400 + Math.floor(equipped.purityBp * .06) : 1000;
     const effortFactor = 1000 + input.contribution.habits + input.contribution.tasks;
@@ -120,6 +127,7 @@ export function resolveBattleTurn(before: BattleState, input: BattleTurnInput): 
         for (const status of active(kind, target)) { const used = Math.min(amount, status.value); status.value -= used; amount -= used; }
     }
     function hit(target: BattleStatus['target'], raw: number, pierce: number, source: string): number {
+        if (target === 'boss' && repeatWard) raw = scale(raw, 1000 - repeatWard);
         const fighter = state[target];
         const defense: BattleDefense = { hp: fighter.hp, armor: fighter.armor, shield: total('shield', target), virtualArmor: total('virtual_armor', target),
             reduction: Math.max(-500, Math.min(700, total('reduction', target))) };
@@ -286,6 +294,7 @@ export function publicBattleState(state: BattleState) {
             const spec = id === 'vo-ky' ? null : battleTechnique(id);
             const readyAfter = id === 'phong-than' && state.lastUses[id] !== undefined ? state.lastUses[id]! + 3 : 0;
             return { id, name: id === 'vo-ky' ? 'Võ Kỹ' : techniqueById(id).name, warning: spec?.warning ?? null,
+                repeatDamagePenalty: state.lastUses[id] === state.turn ? (state.intents[state.turn]?.repeatWard ?? 0) : 0,
                 available: state.status === 'active' && state.turn + 1 >= readyAfter,
                 readyTurn: readyAfter,
                 hpCost: spec ? scale(state.player.maxHp, spec.cost.hpPercent) : 0,

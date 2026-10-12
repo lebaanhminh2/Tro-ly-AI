@@ -6,7 +6,7 @@ Cập nhật 2026-10-12. Docs tách **source đang có**, **sản phẩm đích*
 
 - Tiếp tục công việc chung: [HANDOFF](HANDOFF.md), kiểm git status/HEAD rồi đọc phần liên quan.
 - Triển khai toàn Habit/Thần Lộ: [HABIT_GAME_IMPLEMENTATION](HABIT_GAME_IMPLEMENTATION.md), prompt `/goal` ở mục 8. Sau đó REVIEW/PRODUCT/PROGRESS và docs chuyên đề theo bước.
-- Phạm vi mới: habit/theo dõi, luyện/chiến đấu, **5 phái/39 môn/15 chương**, truyện/nhân vật/ảnh thật, UX và vận hành. Ngân sách bổ sung 0đ, ảnh local, quyền staging đã trao đổi; **chưa bắt đầu goal/chưa có code mới**.
+- Phạm vi mới: habit/theo dõi, luyện/chiến đấu, **5 phái/39 môn/15 chương**, truyện/nhân vật/ảnh thật, UX và vận hành. Ngân sách bổ sung0đ, ảnh local; goal active, source local đã triển khai và F6/R1 còn tiếp tục. Xem PROGRESS/git status; chưa release phần mới lên staging.
 
 ## Nguồn sở hữu từng chủ đề
 

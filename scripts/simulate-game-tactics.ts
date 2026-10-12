@@ -22,7 +22,7 @@ export function repeatTactic(before: BattleState, id: string, habits: number) {
 }
 
 export function simulateRepeatedTactics() {
-    const cases = [];
+    const cases: ({ boss: string; chapter: number; technique: string; tier: number; purityBp: number } & ReturnType<typeof repeatTactic>)[] = [];
     for (const boss of GAME_BOSSES) for (const purityBp of [6000, 10000]) for (const id of ['vo-ky', ...TECHNIQUES.map(value => value.id)]) {
         const tier = boss.chapter <= 3 ? 1 : boss.chapter <= 9 ? 2 : 3;
         const state = armedBattleState(fighterForRank(boss.recommendedRank), boss,

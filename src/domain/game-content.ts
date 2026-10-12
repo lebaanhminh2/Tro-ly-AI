@@ -6,14 +6,15 @@ import { BRANCH_BOSSES } from './game-branches.ts';
 import { GAME_CHARACTERS } from './game-characters.ts';
 import { GAME_ACHIEVEMENTS, GAME_WEAPONS } from './game-rewards.ts';
 import { battleTechnique } from './battle-techniques.ts';
+import { withReadStances } from './game-balance.ts';
 import { bossAction as action, contentFighter as fighter, type GameBoss, type GameChapter } from './game-content-model.ts';
 export type { GameBoss, GameChapter } from './game-content-model.ts';
 export { GAME_CHAPTERS } from './game-campaign.ts';
 
-export const GAME_CONTENT_VERSION = 'than-lo-2';
-export const SUPPORTED_CONTENT_VERSIONS = ['than-lo-1', 'than-lo-2'] as const;
+export const GAME_CONTENT_VERSION = 'than-lo-3';
+export const SUPPORTED_CONTENT_VERSIONS = ['than-lo-1', 'than-lo-2', 'than-lo-3'] as const;
 export const supportsContentVersion = (version: string): boolean => SUPPORTED_CONTENT_VERSIONS.some(value => value === version);
-export const GAME_BOSSES: GameBoss[] = [
+export const GAME_BOSSES: GameBoss[] = withReadStances([
     { id: 'truy-lenh', name: 'Người Truy Lệnh', chapter: 1, requires: [], recommendedRank: 0, maxTurns: 4,
         fighter: fighter(95, 12), revival: { remaining: 0, hpPercent: 350 },
         pattern: [action('Ép đường', 'Một đòn thẳng. Giữ nhịp đánh để mở lối qua cầu.', [1000]),
@@ -71,7 +72,7 @@ export const GAME_BOSSES: GameBoss[] = [
         advice: ['Giữ đòn mạnh cho nhịp Mở sơ hở; Kiếm Ý và Liên Vân vẫn có giá trị khác nhau trước giáp.', 'Thắng chỉ mở quyền học trấn phái; không tự tặng một bản Viên mãn.'],
         unlocks: ['kiem-vuc'], artId: 'kiem-truyen' },
     ...CAMPAIGN_BOSSES, ...BRANCH_BOSSES,
-];
+]);
 
 export function bossById(id: string): GameBoss {
     const boss = GAME_BOSSES.find(value => value.id === id);
@@ -84,15 +85,16 @@ export function publicGameCatalog() {
         availableInitially: INITIAL_TECHNIQUES.includes(technique.id), combatWarning: battleTechnique(technique.id).warning })),
         weapons: GAME_WEAPONS, achievements: GAME_ACHIEVEMENTS, contentVersion: GAME_CONTENT_VERSION,
         chapters: GAME_CHAPTERS.map(({ number, name, scene, encounters }) => ({ number, name, scene, encounters })),
-        bosses: GAME_BOSSES.map(({ id, name, chapter, kind, requires, practicePrerequisites, recommendedRank, maxTurns, mechanics, artId, artPosition }) =>
-            ({ id, name, chapter, kind: kind ?? 'main', requires, practicePrerequisites, recommendedRank, maxTurns, mechanics, artId, artPosition })) };
+        bosses: GAME_BOSSES.map(({ id, name, chapter, kind, requires, practicePrerequisites, recommendedRank, maxTurns, mechanics, artId, artPosition, repeatWard }) =>
+            ({ id, name, chapter, kind: kind ?? 'main', requires, practicePrerequisites, recommendedRank, maxTurns, mechanics, artId, artPosition, repeatWard })) };
 }
 export function bossIntents(boss: GameBoss): BossIntent[] {
     return Array.from({ length: boss.maxTurns }, (_, turn) => {
         const action = boss.pattern[turn % boss.pattern.length]!;
-        return { id: boss.id + '-' + turn, name: action.name, description: action.description,
+        return { id: boss.id + '-' + turn, name: action.name, description: action.description + (boss.repeatWard
+            ? ' Lặp chiêu của lượt trước: sát thương gây ra lượt này giảm ' + boss.repeatWard / 10 + '%; đổi chiêu để phá thế đọc.' : ''),
             hits: action.factors.map(factor => Math.floor(boss.fighter.attack * factor / 1000)),
-            special: action.special, heal: action.heal, armorBuff: action.armorBuff };
+            special: action.special, heal: action.heal, armorBuff: action.armorBuff, ...(boss.repeatWard ? { repeatWard: boss.repeatWard } : {}) };
     });
 }
 export function validateGameContent(bosses = GAME_BOSSES, chapters: GameChapter[] = GAME_CHAPTERS): void {
@@ -107,6 +109,7 @@ export function validateGameContent(bosses = GAME_BOSSES, chapters: GameChapter[
         visiting.add(id); boss.requires.forEach(walk); visiting.delete(id); visited.add(id);
     }
     for (const boss of bosses) {
+        if (boss.repeatWard !== undefined && (!Number.isInteger(boss.repeatWard) || boss.repeatWard < 0 || boss.repeatWard > 850)) throw Error('INVALID_GAME_CONTENT');
         if (boss.artPosition && (boss.artPosition.length !== 2 || boss.artPosition.some(value => !Number.isFinite(value) || value < 0 || value > 1))) throw Error('INVALID_GAME_CONTENT');
         if (!/^[a-z0-9-]{1,80}$/.test(boss.id) || !Number.isInteger(boss.chapter) || boss.chapter < 1 || boss.chapter > 15 ||
             !Number.isInteger(boss.recommendedRank) || boss.recommendedRank < 0 || boss.recommendedRank >= REALMS.length ||

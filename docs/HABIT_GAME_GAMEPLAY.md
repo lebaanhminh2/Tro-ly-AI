@@ -170,4 +170,4 @@ Trước khi mở rộng sau lát cắt đầu, AI tạo mẫu khai báo đủ c
 
 Mô phỏng một và 5–6 habit; nhịp hoàn thành 60–80%, tuần linh hoạt, ngày nghỉ và quay lại sau gián đoạn. Kiểm toàn catalog, từng phái, phối hợp, bản phẩm chất thấp/vừa/cao, cứu mạng, trấn phái/cấm thuật và endgame. Sửa chiến thuật thống trị hoặc nội dung không thể mở; không chỉ ghi thành “hạn chế”. Xem tiêu chí bằng chứng tại [ACCEPTANCE](HABIT_GAME_ACCEPTANCE.md).
 
-Evidence hiện tại và finding chiến thuật lặp ở [BALANCE](HABIT_GAME_BALANCE.md).30earned profiles và5mixed routes có đường thắng, nhưng chưa chứng minh F6 đạt: nhiều môn vẫn spam thắng toàntruyện trong tactical fixture. Giữ tinh thuần nghiêm; chỉnh nhịp/counter dựa trên evidence và bảo toàn snapshots cũ.
+Evidence trước/sau counter đọc chiêu của content3 ở [BALANCE](HABIT_GAME_BALANCE.md).30earned profiles và5mixed routes vẫn có đường thắng toàn40encounters; tactical fixture hiện không có chiêu lặp vượt toàntruyện. Thắng sau cứu đã có earned scenario. Những kết quả này không chứng minh F6 đạt toàn bộ: UX/art/network/release còn phải kiểm riêng. Giữ tinh thuần nghiêm và snapshots cũ.

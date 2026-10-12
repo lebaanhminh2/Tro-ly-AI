@@ -4,7 +4,7 @@ import { assessHabitDay, firstCommitmentDay, habitWeekday, newHabitPeriod, parse
 import { newPracticeVersion, settlePracticeDay, type PracticeSource, type PracticeVersion, type PracticeWeek } from '../src/domain/practice.ts';
 import { assessSleep, breakthrough, claimDailyReward, dailyCheckinProgress, dayWindow, initialHealthy, REALMS, type Charm } from '../src/domain/healthy.ts';
 import { armedBattleState, earnedBattleRewards } from '../src/domain/game-rewards.ts';
-import { fighterForRank } from '../src/domain/battle-economy.ts';
+import { fighterForRank, payBattleRescue } from '../src/domain/battle-economy.ts';
 import { battleHabitContribution } from '../src/domain/battle-run.ts';
 import { resolveBattleTurn } from '../src/domain/battle.ts';
 import { bossIntents, GAME_BOSSES, GAME_CONTENT_VERSION, validateGameContent } from '../src/domain/game-content.ts';
@@ -158,10 +158,53 @@ export function simulateProfileJourney(schoolId: SchoolId, profile: string, mixe
             && value.requires.every(id => victories.has(id)))) attempt(branch, true);
     }
     return { school: schoolId, profile, mixedBuild, seed, contentVersion: GAME_CONTENT_VERSION, days: day - startedDay,
+        currentDay: day, healthy, habitSnapshot: { startedDay, fixtures, periods: [...periods] },
         fixture: 'fresh domain, fixed habit profile, production weekly audit, checkin/on-time sleep every day, seeded breakthrough RNG and earned charms; early branches; no tasks/rescue/grants; complete-pattern solver; tactical failures do not commit a battle or loss; not expected human completion time or D1 proof',
         rank: healthy.rank, successes, misses, neutral, breakthroughAttempts, breakthroughFailures, mainWins: events.filter(event => !GAME_BOSSES.find(boss => boss.id === event.boss)!.kind || GAME_BOSSES.find(boss => boss.id === event.boss)!.kind === 'main').length,
         totalWins: victories.size, finalWon: victories.has('than-chu'), achievements: [...achievements], weapons: [...weapons], owned: [...owned],
         editions: versions.map(version => ({ id: version.id, techniqueId: version.techniqueId, tiers: version.tiers, defectsMilli: version.defectsMilli })), events, failures };
+}
+
+// A deliberate repeated risky opening followed by a paid recovery, from the exact
+// account and editions earned in the journey above. Replaying a boss does not
+// grant any additional entitlement or item. Calendar habit contributions are
+// continued from the saved period state; no sleep/checkin rewards are added
+// during this short isolated combat fixture.
+export function simulateEarnedRescue(journey: ReturnType<typeof simulateProfileJourney>) {
+    if (!journey.finalWon) throw Error('RESCUE_REQUIRES_EARNED_JOURNEY');
+    const { startedDay, fixtures } = journey.habitSnapshot;
+    const loadout = journey.editions.filter(version => techniqueById(version.techniqueId).school === journey.school && version.tiers.length)
+        .slice(0, 5).map(version => ({ id: version.techniqueId, versionId: version.id, tier: version.tiers.length, purityBp: version.tiers.at(-1)!.purityBp }));
+    const risky = loadout.some(skill => skill.id === 'vo-hoi') ? 'vo-hoi' : 'vo-ky';
+    for (const boss of GAME_BOSSES.filter(value => journey.events.some(event => event.boss === value.id)).reverse()) {
+        const periods = new Map(structuredClone(journey.habitSnapshot.periods)); let day = journey.currentDay;
+        outcomes(day++, fixtures, periods, startedDay); // preparation closes today
+        let state = armedBattleState(fighterForRank(journey.rank), boss, loadout, bossIntents(boss), null);
+        const opening: { day: number; techniqueId: string; contribution: number }[] = [];
+        while (state.status === 'active') {
+            const contribution = battleHabitContribution(outcomes(day, fixtures, periods, startedDay));
+            opening.push({ day: day++, techniqueId: risky, contribution });
+            state = resolveBattleTurn(state, { techniqueId: risky, acceptCost: true, contribution: { habits: contribution, tasks: 0 } }).state;
+        }
+        if (state.status !== 'awaiting_rescue') continue;
+        const paid = payBattleRescue(journey.healthy, state, 'qi', journey.rank, { rankLockUntilDay: null }, day);
+        const preview = structuredClone(periods), remaining = state.maxTurns - state.turn;
+        const contributions = Array.from({ length: remaining }, (_, index) => battleHabitContribution(outcomes(day + index, fixtures, preview, startedDay)));
+        const solution = searchBattle(paid.battle, contributions); if (!solution) continue;
+        state = paid.battle; const recovery: { day: number; techniqueId: string; contribution: number }[] = [];
+        for (const techniqueId of solution.sequence) {
+            const contribution = battleHabitContribution(outcomes(day, fixtures, periods, startedDay));
+            recovery.push({ day: day++, techniqueId, contribution });
+            state = resolveBattleTurn(state, { techniqueId, acceptCost: true, contribution: { habits: contribution, tasks: 0 } }).state;
+        }
+        if (state.status !== 'won') throw Error('EARNED_RESCUE_DIVERGED');
+        return { boss: boss.id, school: journey.school, profile: journey.profile, fixture: 'earned journey account/editions, deliberately repeated risky opening, qi rescue paid from existing balance, same calendar habit profile, full-pattern solver; no duplicate rewards, no D1 persistence or rank-rescue claim',
+            beforeQi: journey.healthy.qi, afterQi: paid.healthy.qi, qiSpent: paid.qiSpent, rank: paid.healthy.rank,
+            restoredHp: paid.battle.player.hp, hp: state.player.hp, turn: state.turn, status: state.status, rescueUsed: state.rescueUsed,
+            achievements: earnedBattleRewards(boss, state).achievements,
+            opening, recovery, loadout };
+    }
+    throw Error('EARNED_RESCUE_NO_VICTORY:' + journey.school + ':' + journey.profile);
 }
 
 if (process.argv[1]?.endsWith('simulate-game-profiles.ts')) {
@@ -172,7 +215,8 @@ if (process.argv[1]?.endsWith('simulate-game-profiles.ts')) {
     const journeys = [];
     for (const selected of SCHOOLS.filter(value => !school || value.id === school)) for (const name of Object.keys(JOURNEY_PROFILES).filter(value => !profile || value === profile)) {
         const journey = simulateProfileJourney(selected.id, name, process.argv.includes('--mixed'));
-        journeys.push(journey); console.log(JSON.stringify({ school: selected.id, profile: name, days: journey.days, wins: journey.totalWins, finalWon: journey.finalWon, failures: journey.failures }));
+        const rescue = process.argv.includes('--rescue') ? simulateEarnedRescue(journey) : null;
+        journeys.push({ ...journey, rescue }); console.log(JSON.stringify({ school: selected.id, profile: name, days: journey.days, wins: journey.totalWins, finalWon: journey.finalWon, failures: journey.failures, rescue: rescue ? { boss: rescue.boss, qiSpent: rescue.qiSpent, hp: rescue.hp } : null }));
     }
     const output = arg('--output'); if (output) writeFileSync(output, JSON.stringify({ journeys }, null, 2) + '\n', 'utf8');
 }

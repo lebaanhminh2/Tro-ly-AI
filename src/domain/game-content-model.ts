@@ -1,7 +1,7 @@
 import type { BattleFighter } from './battle.ts';
 
 export type BossAction = { name: string; description: string; factors: number[]; heal: number; armorBuff: number; special: boolean };
-export type GameBoss = { id: string; name: string; chapter: number; requires: string[]; recommendedRank: number;
+export type GameBoss = { id: string; name: string; chapter: number; requires: string[]; recommendedRank: number; repeatWard?: number;
     kind?: 'main' | 'heritage' | 'forbidden' | 'outside'; practicePrerequisites?: string[];
     maxTurns: number; fighter: BattleFighter; revival: { remaining: number; hpPercent: number }; pattern: BossAction[];
     introduction: string; victory: string; defeat: string; mechanics: string; advice: string[];

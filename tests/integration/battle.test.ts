@@ -16,7 +16,7 @@ import { readGame } from '../../src/entrypoints/mini-app/game.ts';
 import type { Env } from '../../src/config/env.ts';
 import { initialHealthy } from '../../src/domain/healthy.ts';
 import { fighterForRank } from '../../src/domain/battle-economy.ts';
-import { newBattleState } from '../../src/domain/battle.ts';
+import { newBattleState, resolveBattleTurn } from '../../src/domain/battle.ts';
 import { bossById, bossIntents } from '../../src/domain/game-content.ts';
 import { miniAppApi } from '../../src/entrypoints/mini-app.ts';
 import { searchBattle } from '../../scripts/simulate-game.ts';
@@ -60,6 +60,41 @@ test('prepare is tomorrow-only, canonical replay survives closure, forged loadou
         await service.execute('123', 'failed_cancel01', cancel, at);
         assert.equal((await store.readBattle('123', saved.battleId))!.status, 'cancelled');
         assert.deepEqual((await new HealthyStore(db).read('123')).state, initialHealthy());
+    } finally { await mf.dispose(); }
+});
+
+test('a saved v2 battle settles its original repeated cast after v3 read stances publish, without injecting current catalog defenses', async () => {
+    const { mf, db, game, store } = await database();
+    try {
+        const data = await game.read('123', at), day = data.day.day;
+        // Persistence fixture of a pre-publication battle, not an earned
+        // progression claim. Its complete state was saved without the field.
+        const content = structuredClone(bossById('ky-hanh-1')); delete content.repeatWard;
+        content.fighter.hp = content.fighter.maxHp = 3000;
+        const initial = newBattleState(fighterForRank(2), content.fighter,
+            [{ id: 'kiem-y', versionId: 'old_saved_edition', tier: 1, purityBp: 10000 }], bossIntents(content), content.maxTurns);
+        const input = { techniqueId: 'kiem-y', acceptCost: false, contribution: { habits: 0, tasks: 0 } };
+        const before = resolveBattleTurn(initial, input).state, expected = resolveBattleTurn(before, input);
+        const run = { id: 'legacy_stance_battle', bossId: content.id, contentVersion: 'than-lo-2', combatRank: 2, state: before,
+            startsDay: day - 1, lastDay: day - 1, waitDays: 0, rescueUntilDay: null, deathPaid: false };
+        await db.batch([
+            db.prepare("INSERT INTO game_accounts(owner,joined_day,anchor_start,next_day,updated) VALUES('123',?,?,?,?)")
+                .bind(day, data.day.startAt, day, at),
+            db.prepare('INSERT INTO battles(owner,id,boss_id,status,starts_day,state_json,content_json,created,updated) VALUES(?,?,?,?,?,?,?,?,?)')
+                .bind('123', run.id, content.id, 'active', run.startsDay, JSON.stringify({ run, resumePracticeId: null }), JSON.stringify(content), at - DAY, at),
+            db.prepare("INSERT INTO game_selections(owner,from_day,mode,practice_id,battle_id,created) VALUES('123',?,'battle',NULL,?,?) ON CONFLICT(owner,from_day) DO UPDATE SET mode='battle',practice_id=NULL,battle_id=excluded.battle_id")
+                .bind(day, run.id, at),
+            db.prepare("INSERT INTO battle_choices(owner,battle_id,day,technique_id,accept_cost,created) VALUES('123',?,?,'kiem-y',0,?)")
+                .bind(run.id, day, at),
+        ]);
+        assert.ok(bossById(content.id).repeatWard, 'New encounters have read stances');
+        assert.equal((await game.settle('123', at + DAY, 7)).processed, 1);
+        const saved = (await store.readBattle('123', run.id))!;
+        assert.equal(saved.run.contentVersion, 'than-lo-2'); assert.deepEqual(saved.run.state, expected.state);
+        assert.equal(saved.run.state.intents[1]!.repeatWard, undefined); assert.equal(saved.content.repeatWard, undefined);
+        const view = await store.overview('123', (await game.read('123', at + DAY)).day);
+        assert.equal(view.battles[0]!.state.choices.find(choice => choice.id === 'kiem-y')!.repeatDamagePenalty, 0);
+        assert.equal(await store.readBattle('456', run.id), null);
     } finally { await mf.dispose(); }
 });
 

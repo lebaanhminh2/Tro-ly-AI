@@ -14,7 +14,7 @@ import { TECHNIQUES, SCHOOLS, INITIAL_TECHNIQUES } from '../../src/domain/techni
 import { newPracticeVersion } from '../../src/domain/practice.ts';
 import { GAME_BOSSES, GAME_CHAPTERS, bossById, bossIntents, publicGameCatalog } from '../../src/domain/game-content.ts';
 import { GAME_CHARACTERS } from '../../src/domain/game-characters.ts';
-import { newBattleState, publicBattleState } from '../../src/domain/battle.ts';
+import { newBattleState, publicBattleState, resolveBattleTurn } from '../../src/domain/battle.ts';
 import { armedBattleState } from '../../src/domain/game-rewards.ts';
 import { fighterForRank, rescueQuote, payBattleRescue } from '../../src/domain/battle-economy.ts';
 import { GameExportService } from '../../src/application/game-export-service.ts';
@@ -572,6 +572,38 @@ test('battle mobile flow prepares tomorrow, keeps choice pending, exposes rescue
         await browser.wait("!document.querySelector('#toast').classList.contains('visible')");
         await browser.evaluate("document.documentElement.dataset.theme='dark'"); await browser.resize(390, 844); await delay(350);
         if (process.env.WEB_TEST_SCREENSHOT_PATH) await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, '-battle-dark.png'));
+        assert.deepEqual(browser.errors, []);
+    } finally { if (browser) await browser.close(); await server.close(); }
+});
+
+test('announced read stance marks the repeated choice and allows a different choice without resolving the day', { skip: !browserBin, timeout: 60000 }, async () => {
+    const control = fixture(), day = control.game.day.day, boss = bossById('ky-hanh-1'), id = 'read_browser_battle';
+    const initial = armedBattleState(fighterForRank(1), boss,
+        ['kiem-y', 'lien-van'].map(id => ({ id, versionId: 'browser_' + id, tier: 1, purityBp: 10000 })), bossIntents(boss), null);
+    const state = resolveBattleTurn(initial, { techniqueId: 'kiem-y', acceptCost: false, contribution: { habits: 300, tasks: 0 } }).state;
+    control.state.account.state.rank = 1;
+    control.game.current = { fromDay: day - 1, mode: 'battle', practiceId: null, battleId: id };
+    control.game.victories = ['truy-lenh', 'song-nha', 'thu-lenh', 'thiet-lenh-su'];
+    control.battleRuns.set(id, { id, bossId: boss.id, contentVersion: 'than-lo-3', combatRank: 1, state, startsDay: day - 1, lastDay: day - 1, waitDays: 0, rescueUntilDay: null, deathPaid: false });
+    control.game.battles = [{ id, version: 1, bossId: boss.id, status: 'active', startsDay: day - 1, waitDays: 0,
+        content: { ...boss, pattern: undefined, victory: undefined }, state: publicBattleState(state), rescue: rescueQuote(control.state.account.state, 1) }];
+    const before = clone(state), server = await serve(control); let browser;
+    try {
+        browser = await chrome(); await browser.navigate(server.url, 320); await browser.wait("!!document.querySelector('.focus-flip-card')");
+        await browser.tap('[data-tab=game]'); await browser.wait("!!document.querySelector('.battle-choices')");
+        assert.equal(await browser.evaluate("document.querySelector('[data-choice-id=kiem-y]').textContent.includes('−65%')"), true);
+        assert.equal(await browser.evaluate("document.querySelector('[data-choice-id=lien-van]').textContent.includes('Bị đọc chiêu')"), false);
+        assert.equal(await browser.evaluate("document.querySelector('.battle-intent').textContent.includes('Lặp chiêu')"), true);
+        for (const [width, theme] of [[320, 'light'], [390, 'dark']]) {
+            await browser.resize(width, 844); await browser.evaluate("document.documentElement.dataset.theme='" + theme + "';document.querySelector('.battle-intent').scrollIntoView({block:'start'})");
+            await browser.evaluate("new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))");
+            assert.equal((await snapshot(browser)).overflow, false);
+            if (process.env.UI_SCREENSHOT_DIR) await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'f6-read-stance-' + width + '-' + theme + '.png'));
+        }
+        await browser.tap('[data-choice-id=kiem-y]'); await browser.wait("document.querySelector('[data-choice-id=kiem-y]').getAttribute('aria-pressed')==='true'");
+        await browser.tap('[data-choice-id=lien-van]'); await browser.wait("document.querySelector('[data-choice-id=lien-van]').getAttribute('aria-pressed')==='true'");
+        assert.equal(control.game.choices[0].techniqueId, 'lien-van'); assert.deepEqual(state, before);
+        assert.equal(control.posts.length, 2); assert.ok(control.posts.every(post => post.input.operation === 'choose_battle'));
         assert.deepEqual(browser.errors, []);
     } finally { if (browser) await browser.close(); await server.close(); }
 });

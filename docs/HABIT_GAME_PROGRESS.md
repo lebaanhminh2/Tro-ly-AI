@@ -22,7 +22,7 @@ Cập nhật 2026-10-12. Đây là nơi giữ trạng thái ngắn để goal ti
 | F3 Luyện | Commit/push `d766e69`, chưa release | Domain9tests, D1practice6cases, versions/select/stop, API/UI/Chrome light-dark | Weekly integration/cân bằng qua battle |
 | F4 Lát cắt chơi hoàn chỉnh | Commit/push `699c69a`; chưa release | 271main+25experiments, browser20/0skip; 39specs/5encounters; truyền thừa luyện thật, guards/economy/art QA | Giữ hồi quy trong F5 |
 | F5 Toàn bộ game/nội dung | Checkpoint `8adf336` đã push | 40encounters/15chương/39quyền, rewards/presets/discovery/export/guide/settings; bot atomic receipts; đủ encounter/phái/weapon/39symbols | Earned rescue/đủ chiến tích và review toànflow |
-| F6 Hoàn thiện trải nghiệm | Đang triển khai, chưa đạt | Guidance/return UX;30earned profiles +5mixed routes thành công;3200repeated-tactic cases phát hiện spam mạnh | Sửa dominance/counter với snapshotcompatibility, fullUX/art/accessibility/performance |
+| F6 Hoàn thiện trải nghiệm | Đang triển khai, chưa đạt toàn bộ | Guidance/return UX; content3counter giữ30earned profiles/5mixed;3200repeatcases không vượt toàntruyện;earnedrescue thành công | FullUX/art/accessibility/network/performance và sleep investigation |
 | R1 Release/nghiệm thu | Chưa bắt đầu | Chưa có | Đủ gates, data/backup, staging và hướng dẫn |
 
 Agent thay dòng bằng trạng thái thật/HEAD/bằng chứng sau mỗi phần việc bền vững. Không đổi “đã test” nếu chỉ có file test hoặc một tool command chưa đọc output. F4 là bước nội bộ, không phải điểm dừng của goal.
@@ -135,6 +135,15 @@ Quyết định đáng giữ viết ngắn theo mẫu: `ID — vấn đề — l
 - Gates: typecheck/check:web45modules đạt;fullbrowser29pass/0skip tại f6-guidance-browser-all.log (trước mở rộng returnsummary cho latestbattle lâu ngày;3unit sau sửa đã đạt). Targeted actualbrowser1pass/no-write tại f6-next-goal-browser.log. Regression D1battle/domain/web tại f6-guidance-battle-regression.log **32pass/0skip**, exit0; session92043 terminal. Fullrelease gates còn sau balance/QA.
 - Rà outbox/schedule hiện tại: bedtime kiểm currentday/window/rest trước claim, rest kiểm lại sau claim; configuredreminders giữ pause/inactive riêng. `notificationAllowed` chưa recheck sau claim cho healthyday/window. Đây là khoảng có thể kiểm thêm, **chưa chứng minh là rootcause báo ngủ10/07**; audit trước vẫn chỉ thấy2nudge trướcreport. Không ghi đã sửa hoặc phát sinh messagefake.
 - Các simulations/typecheck/browser/art/regression đã terminal; không process live ở checkpoint. Việc sau balance: earnedrescue/đủ11chiến tích; fullUI/art/chữlớn/accessibility/network/performance; sleep investigation cóevidence; backuprestore/finalgates/staging. Giữ toàn goal active.
+
+### Checkpoint F6 — đọc chiêu và earned rescue, sau HEAD `b0c15c8`
+
+- Guidance checkpoint `b0c15c8` đã push. Content mới `than-lo-3` thêm optional read stance trong intents, trừ bốn trận chính chương1;65/75/85% theo chương. UI báo intent và badge trên lựa chọn lặp, đổi chiêu phá thế đọc. Giá/defense/tinh thuần không đổi; snapshots v1/v2 không có ward giữ exactdamage cũ, engine vẫn `battle-v1`.
+- Reports production engine ngoàiGit: `repeated-tactics-v3.json`3200cases/không candidate spam toàntruyện; Kiếm Vực10000bp21/40 và6000bp5/40, cảhai không thắng ba trận cuối. `earned-profiles-v3.json`30/30tới40wins/398–1138days; `earned-mixed-v3.json`5/5tới40wins/609–711days/actual Dị Giáo. Limits tại BALANCE; không expectedduration hoặc D1traversal.
+- `earned-rescue-v3.json`: Thiên Kiếm daily80, editions/account earned, Thần Chiến Vương đã thắng. LặpVô Hồi10lượt bịhạ; trả21qi(2985→2964), rank7giữ, hồi210HP; đổichiêu thắnglượt14/36HP. Unit replay wholeopening/payment/recovery kiểm actualtiers/purity/rank/delta/mutation. Union earnedpure/mixed/rescue reports đủ11IDschiến tích, D1atomic entitlement proof riêng.
+- Unit readstance/profiles/rescue7pass/0skip exit0 tại `f6-read-stance-rescue-unit.log`; typecheck/check:web45modules đạt. Earlier26unitcases gồm toàn5perfectearnedmain/collection đạt tại `f6-read-stance-unit.log`. D1inheritance với4trainededitions đạt tại `f6-read-stance-d1.log`; legacyfixture đầu thiếugameaccount khiếnfail, đãsửa setupexplicitaccount và isolatedcase pass tại `f6-read-stance-legacy-d1.log`. Không tính failedsetup là pass.
+- Fullbrowser30pass/0skip tại `f6-read-stance-browser-all.log`, gồm actualnewchoice/intent/no-write và preservedflows. Chrome screenshots `f6-read-stance-320-light.png`, `f6-read-stance-390-dark.png` đãxem, badge/text đọcđược/khôngoverflow. Fullsuite sourcegates/release còn sau các fixes F6/R1.
+- Next: sleepfinalsend boundary/race cóevidence; fullUI/art/chữlớn/accessibility/network/performance, backuprestore/finalgates và migration/deploy đúngstaging. Chưaremote0031–0037/deploy; goal active. Simulation/art/unit terminal; kiểmbrowserhandle53551/log trước nốitiếp nếu còn.
 
 Checkpoint cuối phần việc/phiên cần:
 
