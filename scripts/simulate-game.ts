@@ -79,11 +79,11 @@ export function simulateCampaign() {
 // Fresh state, only production domain transitions. No administrative grants:
 // rights come from victories, versions from settled habit days, rank from the
 // existing sleep/checkin/breakthrough economy. Persistence is tested separately.
-export function simulateEarnedJourney(schoolId: SchoolId) {
+export function simulateEarnedJourney(schoolId: SchoolId, collection = false) {
     let day = 20738, healthy = initialHealthy(), versions: PracticeVersion[] = [];
-    const startedDay = day, owned = new Set(INITIAL_TECHNIQUES), victories = new Set<string>(), achievements = new Set<string>();
+    const startedDay = day, owned = new Set(INITIAL_TECHNIQUES), victories = new Set<string>(), achievements = new Set<string>(), weapons = new Set<string>();
     const definition = parseHabitDefinition({ name: 'Journey fixture', metric: 'check', target: 1, cadence: { kind: 'daily' } }, day + 1);
-    const events: { boss: string; day: number; rank: number; turns: number; versions: string[]; unlocks: string[]; hp: number }[] = [];
+    const events: { boss: string; day: number; rank: number; turns: number; versions: string[]; unlocks: string[]; hp: number; learned: string[] }[] = [];
     const transitions: { day: number; kind: string; id?: string }[] = [];
     let practiceId: string | null = null;
     let pendingPractice: { id: string | null; fromDay: number } | null = null;
@@ -130,6 +130,7 @@ export function simulateEarnedJourney(schoolId: SchoolId) {
         const initial = newBattleState(fighterForRank(healthy.rank), boss.fighter, loadout, bossIntents(boss), boss.maxTurns, boss.revival);
         const solution = searchBattle(initial, 300);
         if (!solution) return false;
+        const learnedBefore = learned();
         pendingPractice = { id: null, fromDay: day + 1 }; closeDay(); // preparation applies tomorrow, current practice keeps today
         let state = initial;
         for (const techniqueId of solution.sequence) {
@@ -138,8 +139,9 @@ export function simulateEarnedJourney(schoolId: SchoolId) {
         }
         if (state.status !== 'won') throw Error('JOURNEY_NOT_WON:' + boss.id);
         victories.add(boss.id); boss.unlocks.forEach(id => owned.add(id));
-        earnedBattleRewards(boss, state).achievements.forEach(id => achievements.add(id));
-        events.push({ boss: boss.id, day, rank: healthy.rank, turns: state.turn, hp: state.player.hp, versions: loadout.map(skill => skill.versionId), unlocks: boss.unlocks });
+        const rewards = earnedBattleRewards(boss, state);
+        rewards.achievements.forEach(id => achievements.add(id)); rewards.weapons.forEach(id => weapons.add(id));
+        events.push({ boss: boss.id, day, rank: healthy.rank, turns: state.turn, hp: state.player.hp, versions: loadout.map(skill => skill.versionId), unlocks: boss.unlocks, learned: learnedBefore });
         return true;
     }
     // Main story needs no inheritance, forbidden technique, weapon or rescue.
@@ -162,19 +164,47 @@ export function simulateEarnedJourney(schoolId: SchoolId) {
             if (!won) throw Error('JOURNEY_NO_WIN:' + schoolId + ':' + boss.id);
         }
     }
+    if (collection) {
+        // A legitimate late-game collection route, after the main ending.
+        // Required editions are trained from owned rights; branch definitions
+        // and the earned school loadout remain the production combat rules.
+        const remaining = GAME_BOSSES.filter(boss => !victories.has(boss.id));
+        while (remaining.length) {
+            const index = remaining.findIndex(boss => boss.requires.every(id => victories.has(id)));
+            if (index < 0) throw Error('COLLECTION_BOSS_UNREACHABLE');
+            const boss = remaining.splice(index, 1)[0]!;
+            for (const id of boss.practicePrerequisites ?? []) if (!learned().includes(id)) train(id, 1);
+            reachRank(boss.recommendedRank);
+            let won = fight(boss);
+            for (let investment = 2; !won && investment <= 4; investment++) {
+                for (const technique of TECHNIQUES.filter(technique => technique.school === schoolId && technique.kind === 'ordinary'))
+                    if ((versions.find(version => version.techniqueId === technique.id)?.tiers.length ?? 0) < investment) train(technique.id, investment);
+                won = fight(boss);
+            }
+            if (!won) throw Error('COLLECTION_NO_WIN:' + schoolId + ':' + boss.id);
+        }
+        for (const technique of TECHNIQUES) if (!learned().includes(technique.id)) train(technique.id, 1);
+        if (owned.size !== 39 || learned().length !== 39) throw Error('COLLECTION_TECHNIQUES_MISSING');
+    }
     if (!victories.has('than-chu') || !achievements.has('diet-than')) throw Error('JOURNEY_FINAL_REWARD_MISSING');
-    return { school: schoolId, contentVersion: GAME_CONTENT_VERSION, rule: 'battle-v1', days: day - startedDay, mainWins: victories.size,
-        fixture: 'one daily habit always met, sleep on time and eligible checkin daily, favorable breakthrough RNG=0, no grants/weapons/rescue/inheritance; pure domain traversal, not D1 persistence or expected duration',
-        rank: healthy.rank, qi: healthy.qi, earned: healthy.earned, achievements: [...achievements], owned: [...owned], events, transitions };
+    const mainWins = GAME_BOSSES.filter(boss => victories.has(boss.id) && (!boss.kind || boss.kind === 'main')).length;
+    return { school: schoolId, contentVersion: GAME_CONTENT_VERSION, rule: 'battle-v1', days: day - startedDay, mainWins, branchWins: victories.size - mainWins,
+        fixture: 'one daily habit always met, sleep on time and eligible checkin daily, favorable breakthrough RNG=0, no grants/equipment/rescue; ' +
+            (collection ? 'side collection follows the main ending, all 39 editions trained from earned rights; ' : 'main story without inheritance; ') +
+            'pure domain traversal, not D1 persistence, imperfect/weekly balance or expected duration; tactical solver sees the complete pattern',
+        rank: healthy.rank, qi: healthy.qi, earned: healthy.earned, achievements: [...achievements], weapons: [...weapons], owned: [...owned],
+        editions: versions.map(version => ({ id: version.id, techniqueId: version.techniqueId, tiers: version.tiers.map(tier => ({ tier: tier.tier, purityBp: tier.purityBp, lockedDay: tier.lockedDay })) })),
+        events, transitions };
 }
 
 if (process.argv[1]?.endsWith('simulate-game.ts')) {
-    const result = process.argv.includes('--earned-journey') ? { journeys: SCHOOLS.map(school => simulateEarnedJourney(school.id)) }
+    const result = process.argv.includes('--earned-collection') ? { journeys: SCHOOLS.map(school => simulateEarnedJourney(school.id, true)) }
+        : process.argv.includes('--earned-journey') ? { journeys: SCHOOLS.map(school => simulateEarnedJourney(school.id)) }
         : process.argv.includes('--campaign') ? simulateCampaign() : simulateOpening(), output = process.argv.indexOf('--output');
     if (output >= 0) {
         if (!process.argv[output + 1]) throw Error('MISSING_SIMULATION_OUTPUT');
         writeFileSync(process.argv[output + 1]!, JSON.stringify(result, null, 2) + '\n', 'utf8');
     }
-    console.log(JSON.stringify('journeys' in result ? result.journeys.map(journey => ({ school: journey.school, days: journey.days, wins: journey.mainWins, rank: journey.rank }))
+    console.log(JSON.stringify('journeys' in result ? result.journeys.map(journey => ({ school: journey.school, days: journey.days, wins: journey.mainWins + journey.branchWins, rank: journey.rank, editions: journey.editions.length }))
         : { total: result.total, wins: result.wins, failures: result.failures }, null, 2));
 }

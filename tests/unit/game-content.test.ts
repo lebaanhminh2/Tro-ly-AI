@@ -62,3 +62,21 @@ test('each school reaches DIET THAN with earned ordinary versions and the existi
         assert.ok(journey.days < 2000);
     }
 });
+
+test('each school can earn all side rights and train all39 editions from fresh state without administrative grants', () => {
+    for (const school of SCHOOLS) {
+        const journey = simulateEarnedJourney(school.id, true), rights = new Set(INITIAL_TECHNIQUES), victories = new Set<string>();
+        assert.equal(journey.mainWins, 22); assert.equal(journey.branchWins, 18); assert.equal(journey.editions.length, 39);
+        assert.deepEqual(new Set(journey.owned), new Set(TECHNIQUES.map(technique => technique.id)));
+        assert.deepEqual(new Set(journey.weapons), new Set(['thach-tam', 'thuan-phong', 'dinh-tam']));
+        for (const event of journey.events) {
+            const boss = GAME_BOSSES.find(value => value.id === event.boss)!;
+            assert.ok(boss.requires.every(id => victories.has(id)));
+            assert.ok((boss.practicePrerequisites ?? []).every(id => rights.has(id) && event.learned.includes(id)));
+            assert.ok(event.versions.every(id => rights.has(id.slice('earned_'.length))));
+            assert.ok(event.hp > 0); victories.add(boss.id); boss.unlocks.forEach(id => rights.add(id));
+        }
+        assert.equal(victories.size, 40);
+        for (const edition of journey.editions) assert.ok(rights.has(edition.techniqueId) && edition.tiers.length > 0);
+    }
+});
