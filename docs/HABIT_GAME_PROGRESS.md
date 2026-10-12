@@ -5,12 +5,12 @@ Cập nhật 2026-10-12. Đây là nơi giữ trạng thái ngắn để goal ti
 ## 1. Trạng thái thực tế
 
 - **Goal đang active**, đã cấp quyền tự triển khai code/tests/assets/migration và publish staging sau gates; ngân sách bổ sung 0đ. Không cần duyệt từng file trong phạm vi goal.
-- F1 commit/push `5c8d90a`, F2 commit/push `656f06d` trên `review/p1-p3`. F3 luyện đang local; schema tới0034, chưa migration/deploy remote.
+- F1 commit/push `5c8d90a`, F2 `656f06d`, F3 `d766e69` trên `review/p1-p3`. F4 engine/store/API/UI local; schema tới0035, chưa migration/deploy remote.
 - Baseline DOM giả thiếu `firstElementChild` đã sửa theo DOM thật. Gate `npm.cmd run test:all` ở F2 trước tối ưu đọc nhóm/slot version: 225 bài chính +25 experiments đạt. Chạy lại các ca có rủi ro sau sửa; không dùng gate cũ để chứng minh code mới.
 - Domain habit: 896 mẫu tuần Q1–7 đã kiểm; D1 kiểm replacement/concurrency/replay qua ngày, weekly/archive/restore/catchup, revision/rollback, HTTP/auth/input, reminders khi ngủ/dedupe, slots/khả năng replan. Fixture30habit kiểm query budget ≤25 và weekly projection đạt; không phải benchmark CPU/remote.
 - Web: typecheck và 30module syntax/import đạt. Chrome thật tạo ba cadence, tick/log15/20/XSS, xếp12:00–12:20, nhìn trong Today và link về habit, sheet header trên viewport nhỏ, report/history đạt. Ảnh `D:\Tro-ly-AI-art\habit-qa-{habits-320,habits-390,habits-1440,habit-today-320,habit-today-390,habit-report}.png` đã xem; header lịch tháng được bổ sung sau lần chụp report đầu.
-- Art local `D:\Tro-ly-AI-art\venv`: Python3.12.10/CUDA12.4/GTX1650 4095MiB; DreamShaper8 revision `a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917`. Float32/offload448×640/640×448 ~100s/ảnh, peak4053MiB, ảnh hữu hạn. FP16/NaN đã loại. Concept Tịch Vân/Thiết Lệnh Sứ đã xem và publish WebP+thumb/manifest local; integrated UI QA pending. Không có art process đang chạy; chưa art toàn inventory.
-- Staging target: Worker `personal-assistant-staging`, DB `assistant-staging`/`5457c401-45d9-4b19-b76e-0eceec67a223`; URL `https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev`. Chưa áp0031–0033 hoặc phát hành phần mới.
+- Art local `D:\Tro-ly-AI-art\venv`: Python3.12.10/CUDA12.4/GTX1650 4095MiB; DreamShaper8 revision `a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917`. Float32/offload448×640/640×448 ~100s/ảnh, peak4053MiB. FP16/NaN đã loại. Tịch Vân,5bosses và cảnh cửa núi có WebP/thumb/manifest, đã xem integrated390/320 theo evidence. Cảnh trạm núi chưa tích hợp; hai thử Thư Lệnh thành người bị loại. Không art process chạy; toàn inventory còn F5/F6.
+- Staging target: Worker `personal-assistant-staging`, DB `assistant-staging`/`5457c401-45d9-4b19-b76e-0eceec67a223`; URL `https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev`. Chưa áp0031–0035 hoặc phát hành phần mới.
 - Issue nền ngủ: audit D1 read-only xác nhận báo ngủ 2026-10-07 23:05:39 UTC+7. Hai bedtime nudge trong khoảng kiểm tra đã gửi trước đó (22:45:14, 23:02:01); chưa có bằng chứng nudge sau báo ngủ trong nhóm này. Asset sleep staging khác local; chưa kết luận root cause/chưa sửa. Không gửi tin thử hoặc sửa dữ liệu cá nhân.
 
 | Mốc | Trạng thái | Bằng chứng thực hiện | Tiếp theo |
@@ -19,8 +19,8 @@ Cập nhật 2026-10-12. Đây là nơi giữ trạng thái ngắn để goal ti
 | P0 Khảo sát/thiết kế/ảnh thử | Đang làm | Baseline/audit D1/art venv; các quyết định bên dưới | Chốt hợp đồng lưu/đóng ngày, thử model local |
 | F1 Nền habit | Đạt lát cắt local; chưa release | `0031_habits.sql`, domain/service/port/store/auth API, web CRUD/log/history/export, unit/integration/Chrome QA | Tiếp tục F2, mở rộng cases HTTP/biên thời gian; release chung cuối goal |
 | F2 Lịch/nhắc/theo dõi | Commit/push `656f06d`, chưa release | API/report/history filters, CSV, recurrence opt-in, reservation; D1/Chrome tests | Onboarding/JSON export hoàn thiện trong flow tổng |
-| F3 Luyện | Lát cắt local chạy; chưa release/balance toàn game | Domain9tests, D1practice6cases, versions/select/stop, API/UI/Chrome light-dark | Gate sau cron group; commit/checkpoint rồi F4 engine |
-| F4 Lát cắt chơi hoàn chỉnh | Chưa bắt đầu | Chưa có | Một phái/chương đầu, engine/cost/art dùng thật |
+| F3 Luyện | Commit/push `d766e69`, chưa release | Domain9tests, D1practice6cases, versions/select/stop, API/UI/Chrome light-dark | Weekly integration/cân bằng qua battle |
+| F4 Lát cắt chơi hoàn chỉnh | Engine/store/API/UI/art local; gate tổng đạt, chưa release | 39 specs; 5 encounters; truyền thừa luyện thật, HTTP/cooldown/exchange/rollback/timeout; Chrome art QA | Commit/push checkpoint rồi F5 |
 | F5 Toàn bộ game/nội dung | Chưa bắt đầu | Chưa có | Đủ 39 môn/15 chương/tuyến phụ/thần binh |
 | F6 Hoàn thiện trải nghiệm | Chưa bắt đầu | Chưa có | Review UX/art/nhịp chơi toàn sản phẩm |
 | R1 Release/nghiệm thu | Chưa bắt đầu | Chưa có | Đủ gates, data/backup, staging và hướng dẫn |
@@ -61,7 +61,7 @@ Các quyết định này do AI tự làm trong phạm vi goal đã được use
 - Verification mới:6 D1 habit integration đạt sau tối ưu đọc nhóm; ca reservation chạy lại sau slot version đạt. Chrome flow/report/calendar chạy lại đạt; typecheck/check:web và29tests architecture/web/modules/migration đạt. Full225+25 là gate trước thay đổi cuối; cần full gate lại khi release. Process verification đã kết thúc, không terminal/app/art đang chạy ở checkpoint này.
 - Today dùng `renderDailyPlan`, không `renderTimeline`; reservation đã đưa vào màn thật. Giữ task focus/sleep/layout và những việc hoàn thành trong nhóm thu gọn.
 - Reminder habits là configured personal recurrence. Không chặn bởi asleep, nhưng manual pause/inactive giữ nguyên. Archive end date + lifecycle guard; dedupe cùng slot across revisions. Reservation không bật nhắc và giữ20%task buffer.
-- A03 luyện đã triển khai; mode battle chưa có engine, settlement chờ handler F4. Test truyền activeId=null chỉ chứng minh tạm dừng luyện, chưa chứng minh chiến đấu. F3 chưa cân bằng qua boss/toàn bộ 15 chương.
+- A03 luyện đã triển khai; F4 nối battle settlement/audit cùng batch. D1 weekly qua battle/absence chốt về bản gốc mà không nhận tiến độ trận. Cân bằng toàn15 chương còn phải làm.
 
 ### Checkpoint F3 trước engine
 
@@ -73,6 +73,18 @@ Các quyết định này do AI tự làm trong phạm vi goal đã được use
 
 
 Quyết định đáng giữ viết ngắn theo mẫu: `ID — vấn đề — lựa chọn — lý do/alternatives — ảnh hưởng dữ liệu/UX — case kiểm chứng — docs/code liên quan — trạng thái`. Cập nhật đặc tả sở hữu chủ đề khi quyết định đổi; quyết định không được chỉ nằm trong chat/summary.
+
+### Checkpoint F4 engine và mở đầu
+
+- A05/A06 tại [BATTLE_RULES](HABIT_GAME_BATTLE_RULES.md);0035/API/guards tại ARCHITECTURE. Engine/store/API/UI local, chưa phải full game hoặc release. Năm encounters chương01 gồm truyền thừa có story/intents/reward snapshots/art.
+- Full `test:all` đạt266main+25experiments trước thêm2 cases mới. Sau đó D1 weekly qua battle/absence và GETgame30weekly≤50SQL/<50KB đều đạt; typecheck/check:web35modules/diff đạt. Full browser20 đạt; staging dry-run49assets/bundle543KiB/gzip127KiB. Source cuối vẫn cần final gate sauF5/F6.
+- D1: prepare ngày sau/retry/owner/concurrency/rollback;4ngày thắng/unlock một lần; task snapshot/global once-only; rescue rank/account/lock/battle cùng batch; second death trừ một lần. Domain936mẫu và cases giáp/chiêu trễ/giá thắng/đồng quy/revival/intent/seal đạt.
+- `scripts/simulate-game.ts` dùng engine production; report `D:\Tro-ly-AI-art\opening-simulation.json`:100case/93thắng, cả5phái thắng với một habit. Fixture được cấp4môn thường/tầng1/rank gợi ý, không traversal unlock thật.7case khônghabit cần luyện thêm.
+- Chrome screenshots `D:\Tro-ly-AI-art\game-qa-battle-{320,390,1440,rescue,dark}.png`: đã xem active390/rescue390/dark390; portrait Thiết Lệnh Sứ tích hợp thật. Tịch Vân đã QA introF3. Manifest cần cập nhật integrated QA.
+- Art chapter01 đã publish:5boss identities và cảnh cửa núi tích hợp. Ảnh `opening-final-{journey,boss-song-nha,boss-thu-lenh,boss-kiem-truyen,battle-preparation}.png` tại thư mục art ngoàiGit đã xem390; manifest cập nhật QA. Song Nha portrait là một canh thú, alt không giả hai đầu; Thư Lệnh v3 là cổ thư/ấn sẫm, hai bản người đã loại. Cảnh trạm núi còn pending integration.
+- Gate mới: truyền thừa D1 luyện thật4môn/1habit đạt; HTTP projection/cooldown đạt; rescue rollback/rank guard đạt; exchange/rescue timeout đạt; browser battle/art đạt. Typecheck/check:web35modules và staging dry-run61assets/546KiB/gzip128KiB đạt. Full `test:all` và `test:browser` đạt exit0; logs ngoàiGit `f4-test-all.log`/`f4-test-browser.log`, browser20pass/0skip. Chưa remote migration/deploy.
+- F5 chuẩn bị story bible tại `HABIT_GAME_STORY_BIBLE.md`; art batch `docs/art/campaign.json` gồm Kỷ Hành/Mộc An/cảnh02 đang tạo tại venv ngoàiGit. Không publish cho đến khi xem/duyệt concept và QA màn thật. Kiểm process session95440 trước nối tiếp.
+- Việc tới: commit/push checkpointF4 sau gate, F5 toàn content/graph/version registry và weapon/achievement/side paths, paging loadout, art; đủ toànF5–F6/R1. Issue sleep vẫn chưa có root cause. Không complete ở đây.
 
 Checkpoint cuối phần việc/phiên cần:
 

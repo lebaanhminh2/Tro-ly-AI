@@ -31,7 +31,7 @@ export async function historyPage(offset = 0) {
 }
 export function mapAccount(account, day) {
     const c = account.state;
-    return { ...c, totalEarned: c.earned, active: { heart: c.heartDay === day, peace: c.peaceDay === day }, log: [], rewardedTasks: [] };
+    return { ...c, rankLockUntilDay: account.combatRestrictions?.rankLockUntilDay ?? null, totalEarned: c.earned, active: { heart: c.heartDay === day, peace: c.peaceDay === day }, log: [], rewardedTasks: [] };
 }
 export async function activeTaskPage(offset = 0) {
     const response = await liveRequest('tasks-page?offset=' + Math.max(0, Math.floor(offset)));

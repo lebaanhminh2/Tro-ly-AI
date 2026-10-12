@@ -444,6 +444,50 @@ dialog.task-sheet-open .task-actions>.task-plan-action{min-height:38px;font-size
  .reminder-badge{padding:5px 6px;font-size:9px}
  .reminder-list .chevron{display:none}
 }
+
+/* Combat uses the same calm cards and typography as daily focus and rank. */
+.journey-page{display:grid;gap:18px;min-width:0}
+.battle-heading{display:flex;justify-content:space-between;align-items:center;gap:16px}
+.battle-heading>div{min-width:0}
+.battle-heading h2{font-size:22px;line-height:1.35;margin:7px 0}
+.battle-heading img{flex:0 0 76px;border-radius:12px;object-fit:cover;object-position:50% 20%}
+.battle-vitals{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.battle-vitals>div>div{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted)}
+.battle-vitals strong{font-weight:600;color:var(--text);font-variant-numeric:tabular-nums;white-space:nowrap}
+.battle-vitals progress{display:block;width:100%;height:5px;margin-top:8px;accent-color:var(--accent)}
+.battle-intent{padding:14px 0;border-top:1px solid var(--line)}
+.battle-intent p{margin:0;line-height:1.55}
+.battle-intent-name{font-size:14px;font-weight:600}
+.battle-intent .hint{margin-top:5px;font-size:12px}
+.battle-intent-damage{font-size:11px;color:var(--muted);margin-top:6px!important}
+.battle-choice-title{font-size:14px;margin:16px 0 10px}
+.battle-choices{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.battle-choices button{min-height:48px;padding:10px;text-align:left;overflow-wrap:anywhere}
+.battle-choices button[aria-pressed=true]{border-color:var(--accent);background:var(--soft)}
+.battle-choices small{display:block;font-size:10px;font-weight:400;color:var(--muted);margin-top:4px}
+.battle-card>.hint{font-size:12px;line-height:1.6;margin:14px 0 0}
+.battle-story{font-size:14px;line-height:1.75;margin:16px 0;overflow-wrap:anywhere;max-width:60ch}
+.battle-rescue-actions{display:grid;gap:8px;margin-top:16px}
+.journey-boss-list{display:grid;gap:12px}
+.journey-boss-list>h2{font-size:19px;margin:0 0 4px}
+.journey-boss-list>.eyebrow{margin:0}
+.journey-chapter-scene{display:block;width:100%;height:130px;object-fit:cover;object-position:50% 50%;border-radius:14px;margin-bottom:3px}
+.journey-boss-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.journey-boss-heading>div{min-width:0}
+.journey-boss-heading img{flex:0 0 56px;object-fit:cover;object-position:50% 25%;border-radius:9px}
+.battle-preparation-art{display:block;width:100%;max-height:190px;object-fit:cover;object-position:50% 25%;border-radius:12px;margin-bottom:16px}
+.journey-boss h3{font-size:16px;line-height:1.5;margin:8px 0}
+.journey-boss .hint{font-size:12px;line-height:1.6;margin:8px 0 14px}
+.journey-boss.is-locked{background:var(--bg)}
+.battle-preparation>.primary{width:100%;min-height:48px;margin-top:16px}
+.battle-loadout-form{border:0;border-top:1px solid var(--line);padding:16px 0;margin:18px 0}
+.battle-loadout-form legend{font-size:13px;font-weight:600;padding-right:8px}
+.battle-loadout-form select{min-width:0;max-width:100%;width:100%;font-size:13px}
+.battle-log-day{padding:15px 0;border-bottom:1px solid var(--line)}
+.battle-log-day h3{font-size:12px;color:var(--muted);margin:0 0 9px}
+.battle-log-day p{font-size:13px;line-height:1.65;margin:4px 0}
+.battle-log-day .hint{font-size:11px}
+@media(max-width:360px){.battle-vitals{gap:12px}.battle-vitals>div>div{flex-direction:column;gap:4px}.battle-heading h2{font-size:20px}}
 @media(prefers-reduced-motion:reduce){.reward-cell{transition:none}}
 
 /* Both Today modes share the same frame, toolbar and work-row geometry. */

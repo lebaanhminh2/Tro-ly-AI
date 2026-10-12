@@ -51,7 +51,7 @@ export async function miniAppApi(request: Request, env: Env, now = Date.now()): 
     }
     try {
         const context = { env, owner, now, healthy: new HealthyStore(env.DB) };
-        if (request.method === 'GET' && ['/api/game', '/api/game-catalog', '/api/practice-versions'].includes(url.pathname))
+        if (request.method === 'GET' && ['/api/game', '/api/game-catalog', '/api/practice-versions', '/api/battle-history', '/api/battle-loadout'].includes(url.pathname))
             return await readGame(context, url);
         if (request.method === 'GET' && ['/api/habits', '/api/habit-history', '/api/habit-report'].includes(url.pathname))
             return await readHabits(context, url);
@@ -84,6 +84,19 @@ export async function miniAppApi(request: Request, env: Env, now = Date.now()): 
             PRACTICE_NOT_FOUND: 'Không tìm thấy bản luyện này.', PRACTICE_COMPLETE: 'Bản này đã Viên mãn. Cậu có thể luyện bản mới nếu muốn cải thiện tinh thuần.',
             PRACTICE_DAILY_LIMIT: 'Cậu đã tạo đủ 7 bản luyện mới trong ngày. Có thể tiếp tục bản đang có.',
             BATTLE_ACTIVE: 'Kết thúc trận trước khi chọn lịch luyện mới.',
+            BATTLE_CHANGED: 'Trận vừa được cập nhật. Tải lại trước khi chọn tiếp.', BATTLE_NOT_FOUND: 'Không tìm thấy trận này.',
+            BOSS_LOCKED: 'Hoàn tất trận trước để mở đoạn hành trình này.', GAME_CATCHING_UP: 'Đang chốt ngày trước. Cập nhật kết quả rồi chọn tiếp nhé.',
+            BATTLE_COST_NOT_ACCEPTED: 'Cần xác nhận cái giá trước khi chọn chiêu hoặc cứu mạng.',
+            BATTLE_INSUFFICIENT_HP: 'HP hiện tại chưa đủ để trả giá thi triển chiêu này.', BATTLE_NOT_ACTIVE: 'Trận hiện không còn chờ chọn chiêu.',
+            BATTLE_NOT_STARTED: 'Trận bắt đầu từ ngày sinh hoạt kế tiếp.', BATTLE_NOT_CURRENT: 'Trận này không thuộc chế độ của hôm nay.',
+            BATTLE_RESCUE_UNAFFORDABLE: 'Chưa đủ Tu Vi hoặc cảnh giới để cứu theo cách này.', BATTLE_RESCUE_UNAVAILABLE: 'Quyền cứu này không còn dùng được trong trận.',
+            BATTLE_RESCUE_EXPIRED: 'Đã hết thời gian quyết định cứu mạng.', BATTLE_CANCEL_UNAVAILABLE: 'Chỉ hủy chuẩn bị trước ngày xuất chiến.',
+            BATTLE_WITHDRAWAL_UNAVAILABLE: 'Chỉ rút trước lượt; sau khi hết HP cần chọn cứu hoặc chấp nhận tử trận.',
+            BATTLE_TECHNIQUE_COOLDOWN: 'Chiêu này còn đang hồi. Chọn một chiêu khác cho lượt hôm nay.',
+            HEALTHY_CHANGED: 'Tu Vi hoặc cảnh giới vừa thay đổi. Tải lại để xem cái giá hiện tại.',
+            BREAKTHROUGH_COMBAT_COOLDOWN: 'Nghịch Mệnh còn đang hồi; chưa thể đột phá lại trong những ngày này.',
+            CONFIRM_BATTLE_WITHDRAWAL: 'Xác nhận rút lui trước lượt hôm nay.', CONFIRM_BATTLE_DEATH: 'Xác nhận tử trận và khoản tổn thất trước khi tiếp tục.',
+            BATTLE_DEATH_UNAVAILABLE: 'Trận không còn chờ quyết định tử trận.', BATTLE_EXCHANGE_UNAVAILABLE: 'Lượt hiện tại chưa mở quyền đổi một ô công pháp.',
         };
         if (gameErrors[code]) return json({ error: code, message: gameErrors[code] }, 409);
         const habitErrors: Record<string, string> = {

@@ -47,8 +47,10 @@
     ],
     "qa": {
       "concept": "approved",
-      "integratedUi": "pending",
-      "review": "Viewed original PNG 2026-10-12. Face, eyes, silhouette, cloth and mountain background coherent; monochrome slate/ivory/bronze. Scroll not visible, removed from identity requirements. Hands intentionally outside portrait crop. UI integration still pending."
+      "integratedUi": "approved",
+      "review": "Viewed original PNG 2026-10-12. Face, eyes, silhouette, cloth and mountain background coherent; monochrome slate/ivory/bronze. Scroll not visible, removed from identity requirements. Hands intentionally outside portrait crop. UI integration still pending.",
+      "integrationEvidence": "D:/Tro-ly-AI-art/game-qa-practice-intro.png; light390 viewed in F3",
+      "integrationReviewedAt": "2026-10-12"
     }
   },
   {
@@ -99,8 +101,332 @@
     ],
     "qa": {
       "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed original PNG 2026-10-12. Readable masked silhouette and consistent bronze/gray palette. Classified as character/boss artwork, not a bridge scene; no claimed visible sword. Masked hands remain unobtrusive in card crop. UI integration still pending.",
+      "integrationEvidence": "D:/Tro-ly-AI-art/opening-final-battle-preparation.png; light390 viewed; battle320/390/dark390 viewed",
+      "integrationReviewedAt": "2026-10-12"
+    }
+  },
+  {
+    "id": "truy-lenh",
+    "contentId": "boss.truy-lenh",
+    "alt": "Người Truy Lệnh mặc áo đen viền đồng, ánh nhìn nghiêm nghị.",
+    "role": "boss",
+    "focalPoint": [
+      0.5,
+      0.3
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "truy-lenh",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 37102,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, bust portrait, stern East Asian male guard age 35, tied black hair, charcoal linen uniform, small bronze token at collar, misty wooden bridge background",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, ugly face, extra limbs, extra fingers, bad anatomy, blurry, low resolution, nude, cleavage",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 102.03,
+      "peakMiB": 4053,
+      "sha256": "ac124f2c9418632866aa50bb189ba670c3725e7a4b34aa5f510137c927ff4a30",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/truy-lenh.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 26794,
+        "sha256": "7cca4c267158af066b8a57416a9ac110a90bb1deb8bcce8b8f118da90b5e18b1"
+      },
+      {
+        "path": "web/assets/than-lo/truy-lenh-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 4310,
+        "sha256": "306cf2c2f5305a38264180efd189098bafe7d793433a5cd8b3c1aa1185ba8b0b"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed source PNG 2026-10-12. Coherent face/eyes/hair, charcoal robe and bronze accents; glove-covered hands at lower crop. No visible token or bridge is claimed. Integrated crop QA pending.",
+      "integrationEvidence": "D:/Tro-ly-AI-art/opening-final-journey.png; light390 viewed",
+      "integrationReviewedAt": "2026-10-12"
+    }
+  },
+  {
+    "id": "tram-nui",
+    "contentId": "chapter.01.tram-nui",
+    "alt": "Trạm núi bỏ hoang bên rừng mù sương, với hai bóng canh thú ở xa.",
+    "role": "chapter",
+    "focalPoint": [
+      0.5,
+      0.55
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "song-nha",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 37103,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, two black mountain wolves, standing side by side, natural canine anatomy, bronze collars, abandoned stone gate, misty forest, quiet threatening silhouettes, wide shot",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, ugly face, extra limbs, extra fingers, bad anatomy, blurry, low resolution, nude, cleavage",
+      "size": [
+        640,
+        448
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 99.41,
+      "peakMiB": 4053,
+      "sha256": "adc2c76cf9edb6d137b2951f03b26ac4413f678ace762576bcbf25f89453e5d0",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/tram-nui.webp",
+        "width": 640,
+        "height": 448,
+        "bytes": 41268,
+        "sha256": "74813d61d089ddc4dc4458cf56947efd1c21a66b64f3fd39ea6f2d3d0159c500"
+      },
+      {
+        "path": "web/assets/than-lo/tram-nui-thumb.webp",
+        "width": 160,
+        "height": 112,
+        "bytes": 3408,
+        "sha256": "c7037019110cc18ab124065d6b40a0bc513cb0713fbd098c078396779a7028ba"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
       "integratedUi": "pending",
-      "review": "Viewed original PNG 2026-10-12. Readable masked silhouette and consistent bronze/gray palette. Classified as character/boss artwork, not a bridge scene; no claimed visible sword. Masked hands remain unobtrusive in card crop. UI integration still pending."
+      "review": "Viewed source PNG 2026-10-12. Strong consistent ink/stone/forest landscape. Wolves are tiny and unsuitable for a boss thumbnail; repurposed as a chapter scene. No close creature anatomy approval."
+    }
+  },
+  {
+    "id": "chapter01",
+    "contentId": "chapter.01",
+    "alt": "Cầu đá nối hai cụm nhà cổ trong thung lũng núi mù sương, trên đường đến cửa núi.",
+    "role": "chapter",
+    "focalPoint": [
+      0.5,
+      0.5
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "chapter01",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 37105,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, abandoned mountain village, wooden bridge over ravine, stone gate in distant mist, ancient lanterns, dawn, no people, quiet landscape, wide shot",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, ugly face, extra limbs, extra fingers, bad anatomy, blurry, low resolution, nude, cleavage",
+      "size": [
+        640,
+        448
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 97.77,
+      "peakMiB": 4053,
+      "sha256": "71a0f2dc91ae7fae87bcb368ec962624ea8222f310eaf9e6fc5d03bbdd6f3b11",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/chapter01.webp",
+        "width": 640,
+        "height": 448,
+        "bytes": 32372,
+        "sha256": "ea6c1b80c774fb5d989fb2de8f5ec85f4f3aa0b73a47e839caecb04ff2a4a3ab"
+      },
+      {
+        "path": "web/assets/than-lo/chapter01-thumb.webp",
+        "width": 160,
+        "height": 112,
+        "bytes": 2640,
+        "sha256": "6962b56744a470a1008faba50e50eba0a8de11ae87c9656bf0efc785da986a79"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed source PNG 2026-10-12. Coherent valley/stone bridge/architecture, slate/ivory/warm bronze. No people or wooden bridge claimed. Chapter landscape approved; integrated crop pending.",
+      "integrationEvidence": "D:/Tro-ly-AI-art/opening-final-journey.png; light390 viewed",
+      "integrationReviewedAt": "2026-10-12"
+    }
+  },
+  {
+    "id": "song-nha",
+    "contentId": "boss.song-nha",
+    "alt": "Chân dung một canh thú Song Nha, lông đen pha xám và ánh mắt màu đồng.",
+    "role": "boss",
+    "focalPoint": [
+      0.5,
+      0.4
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "song-nha-v2",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 37203,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, close view, two black wolves shoulder to shoulder, both heads large, pale eyes, bronze collars, front paws visible, stone steps, fog, creature portrait",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, ugly face, extra limbs, extra fingers, bad anatomy, blurry, low resolution, nude, cleavage",
+      "size": [
+        640,
+        448
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 101.31,
+      "peakMiB": 4053,
+      "sha256": "05f944099569e6303c6e7e669b964b60cd803db320f5c4894f1926274d7105b8",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/song-nha.webp",
+        "width": 640,
+        "height": 448,
+        "bytes": 40780,
+        "sha256": "eb4841316a1f2af004e60eb2df331c2821a4d2500391af80790b0b3dfc1023bc"
+      },
+      {
+        "path": "web/assets/than-lo/song-nha-thumb.webp",
+        "width": 160,
+        "height": 112,
+        "bytes": 2820,
+        "sha256": "139db8ad277e4b488fb000b3d47ba12b50043c17d6885ce90a6ab700c1f3c3fa"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed source PNG 2026-10-12. One coherent wolf portrait, readable eyes/muzzle/fur, matching ink palette. Portrait represents one of the two guards; no second head or bronze collar is claimed. Integrated crop pending.",
+      "integrationEvidence": "D:/Tro-ly-AI-art/opening-final-boss-song-nha.png; light390 viewed",
+      "integrationReviewedAt": "2026-10-12"
+    }
+  },
+  {
+    "id": "thu-lenh",
+    "contentId": "boss.thu-lenh",
+    "alt": "Thư lệnh cổ có ấn đồng sẫm đặt trên những trang giấy ngà.",
+    "role": "boss",
+    "focalPoint": [
+      0.5,
+      0.45
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "thu-lenh-v3",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 37304,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, antique parchment scroll, floating above a stone altar, curled ivory paper edges, black calligraphic ink, dark red wax seal, dim ancient cave, still life, paper texture, close view",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, ugly face, extra limbs, extra fingers, bad anatomy, blurry, low resolution, nude, cleavage, person, human, woman, man, face, portrait, body",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 103.92,
+      "peakMiB": 4053,
+      "sha256": "269fba4f724c3fd1d7ddf9de3433488e894cfb39ca5aaccb44d7eb3af21927c5",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/thu-lenh.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 51720,
+        "sha256": "59ba35ebb4fac3c9b62ea0ad8c7c00df83f356934ccb9ff3527ca2f1a34fd90b"
+      },
+      {
+        "path": "web/assets/than-lo/thu-lenh-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 6608,
+        "sha256": "7b90b6de27a4677ea62bb4079305f2de34bc4c93a50e38edc9f4c693114371e4"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed source PNG 2026-10-12. Coherent dark seal tablet/codex and ivory pages, matching slate/bronze palette. Accepted as the animated registry's artifact identity; no human, floating scroll or red seal is claimed. Integrated crop pending.",
+      "integrationEvidence": "D:/Tro-ly-AI-art/opening-final-boss-thu-lenh.png; light390 viewed",
+      "integrationReviewedAt": "2026-10-12"
+    }
+  },
+  {
+    "id": "kiem-truyen",
+    "contentId": "boss.kiem-truyen",
+    "alt": "Người Giữ Kiếm Trầm, một kiếm khách lớn tuổi với tóc bạc buộc sau đầu và áo xám.",
+    "role": "boss",
+    "focalPoint": [
+      0.5,
+      0.3
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "kiem-truyen",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 37305,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, bust portrait, elderly East Asian swordsman age 65, weathered narrow face, grey beard, long grey hair tied back, simple grey linen robe, bamboo sheath at shoulder, misty mountain path",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, ugly face, extra limbs, extra fingers, bad anatomy, blurry, low resolution, nude, cleavage",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 100.16,
+      "peakMiB": 4053,
+      "sha256": "8a78f8bcaf623a05d5c2812d752d2f36d7ddd0d36c26d141238badeb77c70e17",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/kiem-truyen.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 42214,
+        "sha256": "fabe3b85d4284567e5fd042ef5e3587cae538fe54c4244c2f81c1e9932ec8067"
+      },
+      {
+        "path": "web/assets/than-lo/kiem-truyen-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 5260,
+        "sha256": "a7dba1200d6b0d21d478778eacf472cc7889d80fefa32e1475b7cc88ed16c83e"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "approved",
+      "review": "Viewed source PNG 2026-10-12. Coherent aged face, grey tied hair/beard, layered slate/ivory robe. No visible sword, sheath or mountain is claimed. Identity distinct from young guard and Tich Van; integrated crop pending.",
+      "integrationEvidence": "D:/Tro-ly-AI-art/opening-final-boss-kiem-truyen.png; light390 viewed",
+      "integrationReviewedAt": "2026-10-12"
     }
   }
 ]

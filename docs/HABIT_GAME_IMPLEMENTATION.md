@@ -1,6 +1,6 @@
 # Giao việc cho AI: hoàn thiện Habit và Thần Lộ
 
-Cập nhật **2026-10-12**. Đây là điểm vào duy nhất cho nhiệm vụ và prompt `/goal`. Goal đang hoạt động; F1 đã commit/push `5c8d90a`, F2 đang triển khai local, chưa release remote. Trạng thái, quyết định và bằng chứng mới nhất tại [PROGRESS](HABIT_GAME_PROGRESS.md); kiểm git status/HEAD trước khi tiếp tục.
+Cập nhật **2026-10-12**. Đây là điểm vào duy nhất cho nhiệm vụ và prompt `/goal`. Goal đang hoạt động; F1/F2/F3 đã commit/push, F4 đang local, chưa release remote. Trạng thái, quyết định và bằng chứng mới nhất tại [PROGRESS](HABIT_GAME_PROGRESS.md); kiểm git status/HEAD trước khi tiếp tục.
 
 ## 1. Nhiệm vụ cuối cùng
 
@@ -35,6 +35,7 @@ Quyền/ngân sách đã trao đổi:
 | [PRODUCT](HABIT_GAME_PRODUCT.md) | Phạm vi đầy đủ, hành trình/bổ sung, độ mở | Bắt đầu và kiểm scope |
 | [HABITS](HABIT_GAME_HABITS.md) | Cam kết, lịch tuần linh hoạt, quyền sửa, báo cáo/lịch | P0/F1/F2 và integration |
 | [GAMEPLAY](HABIT_GAME_GAMEPLAY.md) | Luyện, engine, giá, catalog 39, khung 15 chương | P0/F3/F4/F5 |
+| [BATTLE_RULES](HABIT_GAME_BATTLE_RULES.md) | Quyết định A05/A06 đang triển khai, giá/thứ tự/nguồn/cứu | F4/F5, review và simulation |
 | [ARCHITECTURE](HABIT_GAME_ARCHITECTURE.md) | Layers, dữ liệu/API/transaction/time/version/performance | Trước code/migration và review kỹ thuật |
 | [CREATIVE_BRIEF](HABIT_GAME_CREATIVE_BRIEF.md) | UX, cast/cốt truyện, style/asset standards | Thiết kế và review mỗi lát cắt |
 | [LOCAL_ART](HABIT_GAME_LOCAL_ART.md) | Pipeline ảnh miễn phí, preflight, production/QA | P0 và art batches |

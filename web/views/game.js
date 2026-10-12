@@ -1,5 +1,6 @@
 import { habitDate } from '../models/habits.js';
 import { practiceNumber, practiceStatus, practiceTiers, purityLabel } from '../models/practice.js';
+import { renderJourney } from './journey.js';
 
 export function renderGame(ui, state) {
     const { el, button, card, heading } = ui, root = el('section', undefined, 'game-page');
@@ -12,11 +13,13 @@ export function renderGame(ui, state) {
         return root;
     }
     const navigation = el('div', undefined, 'habit-navigation');
-    for (const [panel, label] of [['practice', 'Tu luyện'], ['library', 'Công pháp']]) {
+    const selectedPanel = state.gamePanel ?? (data.current.mode === 'battle' ? 'journey' : 'practice');
+    for (const [panel, label] of [['practice', 'Tu luyện'], ['journey', 'Hành trình'], ['library', 'Công pháp']]) {
         const control = button(label, () => ui.showGamePanel(panel), 'text-button');
-        control.setAttribute('aria-pressed', String((state.gamePanel ?? 'practice') === panel)); navigation.append(control);
+        control.setAttribute('aria-pressed', String(selectedPanel === panel)); navigation.append(control);
     }
     root.append(navigation);
+    if (selectedPanel === 'journey') { root.append(renderJourney(ui, data, catalog)); return root; }
     if (state.gamePanel === 'library') {
         const filters = el('div', undefined, 'game-school-filters');
         for (const [id, name] of [['owned', 'Đã mở'], ...catalog.schools.map(school => [school.id, school.name]), ['', 'Tất cả']]) {
@@ -36,7 +39,7 @@ export function renderGame(ui, state) {
     if (data.pending) {
         const pending = card('game-pending');
         const name = catalog.techniques.find(technique => technique.id === data.pendingPractice?.practice.techniqueId)?.name;
-        pending.append(el('p', data.pending.mode === 'practice' ? 'Từ ' + habitDate(data.pending.fromDay) + ' · ' + name + ' · bản ' + data.pendingPractice?.practice.edition : 'Dừng luyện từ ' + habitDate(data.pending.fromDay)));
+        pending.append(el('p', data.pending.mode === 'practice' ? 'Từ ' + habitDate(data.pending.fromDay) + ' · ' + name + ' · bản ' + data.pendingPractice?.practice.edition : data.pending.mode === 'battle' ? 'Xuất chiến từ ' + habitDate(data.pending.fromDay) : 'Dừng luyện từ ' + habitDate(data.pending.fromDay)));
         root.append(pending);
     }
     if (data.settledThrough !== null && data.settledThrough < data.day.day - 1) {
@@ -45,6 +48,10 @@ export function renderGame(ui, state) {
     }
     const version = data.currentPractice?.practice;
     const practice = card('practice-card');
+    if (data.current.mode === 'battle') {
+        practice.append(el('h2', 'Đang xuất chiến'), el('p', 'Luyện tạm dừng trong trận. Cam kết tuần đã dùng để luyện vẫn chốt khi đến hạn.', 'technique-description'), button('Mở trận hiện tại', () => ui.showGamePanel('journey'), 'primary'));
+        root.append(practice); return root;
+    }
     if (!version) {
         const intro = el('div', undefined, 'practice-intro'), portrait = el('img');
         portrait.src = './assets/than-lo/tich-van-thumb.webp'; portrait.width = 64; portrait.height = 64; portrait.alt = 'Tịch Vân, người giữ thư các'; portrait.loading = 'lazy';

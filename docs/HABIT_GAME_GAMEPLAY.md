@@ -1,6 +1,6 @@
 # Thần Lộ — luyện, chiến đấu và toàn bộ nội dung
 
-Cập nhật 2026-10-12. Đặc tả đích, chưa có engine/nội dung chạy thật. [PRODUCT](HABIT_GAME_PRODUCT.md) sở hữu phạm vi; [HABITS](HABIT_GAME_HABITS.md) sở hữu cam kết; [CREATIVE_BRIEF](HABIT_GAME_CREATIVE_BRIEF.md) sở hữu trải nghiệm/mỹ thuật.
+Cập nhật 2026-10-12. F3 đã commit/push; engine và mở đầu F4 chạy local, chưa release hoặc đủ toàn bộ nội dung. [PRODUCT](HABIT_GAME_PRODUCT.md) sở hữu phạm vi; [HABITS](HABIT_GAME_HABITS.md) sở hữu cam kết; [CREATIVE_BRIEF](HABIT_GAME_CREATIVE_BRIEF.md) sở hữu trải nghiệm/mỹ thuật.
 
 Danh mục bên dưới chuẩn hóa bản nháp để agent thiết kế sản phẩm đầy đủ. Tên, lore, chỉ số và cách triển khai có thể được AI biên tập; không tự xem mọi con số/đề xuất trong [BUSINESS_DRAFT](HABIT_GAME_BUSINESS_DRAFT.md) là luật đã duyệt.
 
@@ -80,6 +80,8 @@ Boss có thể phản ứng với lịch sử các ngày trước, không sửa 
 - Chỉ số nền của trận có snapshot/rule rõ. Rank thay đổi ngoài trận, lời nguyền và hy sinh trong trận không được UI và engine hiểu khác nhau. Ngủ/undo không tự chốt lượt hoặc hoàn nguyên cả tài khoản.
 
 ## 5. Hệ hiệu ứng hữu hạn
+
+Quyết định A05/A06 cho `battle-v1`, giá, thứ tự và bằng chứng hiện tại tại [BATTLE_RULES](HABIT_GAME_BATTLE_RULES.md). Khung dưới đây vẫn áp dụng khi mở rộng toàn nội dung.
 
 Nội dung khai báo bằng ID/type và tham số đã validate, không script tùy ý. Mỗi hiệu ứng có nguồn, thời điểm bắt đầu, mốc hết hạn theo ngày giao chiến, quy tắc stack/replace, trần, đối tượng và dòng giải thích. Tối thiểu hỗ trợ những nhóm cần cho catalog: đánh đơn/nhiều hit/xuyên giáp, khiên/giáp ảo, né/giảm, hút/hồi HP, HP tối đa, phản thương, chảy máu/đòn trễ, buff/debuff, Cương Kình/Hư Ảnh, dấu ấn, echo, đổi bộ chiêu, soi/đổi intent, phong ấn và cứu mạng.
 

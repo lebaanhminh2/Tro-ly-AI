@@ -1,6 +1,6 @@
 # Habit/Thần Lộ — kiến trúc và hợp đồng kỹ thuật
 
-Cập nhật 2026-10-12. Hợp đồng habit F1/F2 đã chạy local; các phần game còn là khung thiết kế. F1 tại `5c8d90a`; kiểm HEAD/schema và [PROGRESS](HABIT_GAME_PROGRESS.md) khi tiếp tục, không suy từ tài liệu rằng remote đã migration/deploy.
+Cập nhật 2026-10-12. Habit F1/F2 và luyện F3 đã commit/push; battle F4 có engine/store/API/UI local. Toàn nội dung và release đang làm. Kiểm HEAD/schema và [PROGRESS](HABIT_GAME_PROGRESS.md), không suy từ tài liệu rằng remote đã migration/deploy.
 
 ## 1. Tiếp nối kiến trúc
 
@@ -53,10 +53,21 @@ Các schema/API phần game phía dưới còn là khung cần hoàn thiện, kh
 - `0034_practice.sql`: `game_accounts` giữ version/joined-day/next-day riêng; `game_selections` effective-day; `technique_unlocks`; `practice_versions` JSON≤8KB +edition unique; `practice_week_audits`; `game_days` immutable và `game_receipts`. Không nhét nội dung/phiên bản vào healthy account.
 - `PracticeService` điều phối input whitelist/start/continue/stop. `D1GameStore` guard/version/receipt canonical; cùngID khácpayload conflict. Không khởi tạo game chỉ vì mở tab, không luyện bù trước joined-day. Một ngày bắt đầu với mode đã lựa chọn, đổi effective ngày sau.
 - `GET /api/game` chốt tối đa1 ngày từ outcomes đã immutable rồi trả overview; catalog lazy tại `/api/game-catalog`; history theo technique/cursor tại `/api/practice-versions`; POST `/api/game` có day/version. Auth/Origin/body cap dùng chung; không owner/time/purity/rewards từ client.
-- Settlement chờ tất cả habit của ngày, guard game+habit và next-day ở commit; cập nhật versions/audits/game_days/source receiver/game_applied cùng batch. Không mutation healthy hoặc vé từ luyện. Mode battle hiện chờ handler F4, không tự chuyển nguồn sang practice.
-- Catalog39 hiện có identity/name/group/description/factor; **chưa có engine/effects/unlock toàn nội dung**. Năm môn đầu phái cho chọn luyện; quy hoạch quyền mở còn hoàn thiện ở F4/F5. Không gọi data catalog là game đã hoàn thành.
+- Settlement chờ tất cả habit của ngày, guard game+habit và next-day ở commit; cập nhật versions/audits/game_days/source receiver/game_applied cùng batch. Battle dùng handler F4 và vẫn chốt audit tuần; không chuyển nguồn thành tiến độ luyện. Luyện không mutation healthy/vé; death/rescue có delta cùng batch.
+- Catalog39 có identity/name/group/description/factor và finite effects F4. Năm môn đầu phái cho chọn luyện; unlock graph và tình huống dùng toàn39 môn vẫn cần F4/F5. Không gọi data catalog là game đã hoàn thành.
 - Chính sách tinh thuần/weekly audit/cost do [GAMEPLAY mục2](HABIT_GAME_GAMEPLAY.md) sở hữu; weekly audit của bản không active vẫn chốt. Outcome có named source trong game_days để UI giải thích ngày/habit góp luyện.
 - Habit closure cùng oldest-day được đọc/ghi theo nhóm≤30 (`settleBatch`); wrapper `settle` chỉ lặp tới limit cho maintenance/local. Cron phase3 luân phiên legacy/habit/game mỗi12phút, các phase thông báo giữ4phút. Không xếp6habit-days cộng game trong một invocation. Integration kiểm30habit grouped≤20SQL, GETgame≤50SQL/<50KB và hai maintenance invocation≤50SQL. Giới hạn Free được đối chiếu [Cloudflare D1 limits](https://developers.cloudflare.com/d1/platform/limits/); CPU/latency thật và backlog nhiều năm còn là gate release.
+
+### Hợp đồng chiến đấu F4 đang triển khai local
+
+- `0035_battles.sql`: battle snapshot/version/content (JSON≤24KB), một trận live/owner; choices unique battle/day; sequence audit events; unique boss victories; frozen task sources/global unique task awards; cooldown rank trong game account.
+- `BattleService` và port `BattleStore` validate whitelist/day/version/cost. Adapter đọc game version trước dữ liệu phụ thuộc; guard game/battle/healthy/schedule-day cùng canonical game receipt. Failed batch không có delta/receipt một phần.
+- `prepareBattleSettlement` trong batch game closure phối hợp practice audits/versions, battle turn/event, task sources, victory/unlocks, mode day+1 và game_day/receivers/next-day. Auto death thêm healthy guard/delta. Sleep không gọi handler.
+- POST `/api/game`: prepare/cancel/choose/withdraw/rescue/death/exchange. GET `/api/game` thêm public summary/victories/choices/quote trong một query ghép bounded, không lộ future intents. Lazy `/api/battle-loadout` hiện100 bản có tầng mới nhất (paging/best-version picker còn phải làm); `/api/battle-history` owner/keyset/≤50 events.
+- Content snapshot trong trận không đổi khi publish. `game-content.ts` hiện có5 encounters chương01 (4 tuyến chính và truyền thừa Thiên Kiếm), graph/story/intents; version registry cho nhiều lần publish và toàn content/cast/art vẫn phải hoàn thiện. Public overview loại `pattern` khỏi content snapshot, chỉ công bố intents qua projection của engine.
+- Healthy giữ kinh tế cũ. Cooldown combat được endpoint breakthrough/SQL guard kiểm lại, odds/penalties/charms thường không đổi. Bootstrap thêm restriction vào account read DTO; UI nói ngày thử lại. Cứu cần healthy version; undo ngủ giữ delta/guards.
+- Task không clone: roots khi prepare, completion source chuẩn, chỉ2/ngày và global once-only. Steps/work-log/estimate/task mới không thành sức mạnh vô hạn. Giá/order/absence tại [BATTLE_RULES](HABIT_GAME_BATTLE_RULES.md).
+- Local30 nguồn battle: GETgame cùng closure≤50 SQL/<50KB. CPU/latency remote, backlog dài và staging còn là release gates.
 
 | Nhóm | Dữ liệu/trách nhiệm | Bất biến |
 | --- | --- | --- |

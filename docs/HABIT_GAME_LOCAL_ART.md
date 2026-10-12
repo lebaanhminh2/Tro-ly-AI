@@ -20,7 +20,7 @@ User cho tải model/cài môi trường art riêng khi bắt đầu goal; AI t�
 
 Setup/download/inference thực hiện trong goal đang active. Script `scripts/art-local.py`, dependency pin `scripts/art-requirements.txt`, trial manifest `docs/art/trials.json`; metadata/finals tại `docs/art/assets.json` và `web/assets/than-lo`.
 
-Workflow đang dùng `Lykon/dreamshaper-8`, revision `a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917`, license `creativeml-openrail-m`. DPM++ Karras28steps, float32 với CPU offload/attention slicing/VAE slicing/tiling. Trial fp16 tạo NaN/ảnh đen và prompt cắt: đã loại bỏ. Script kiểm CLIP token budget, finite latents và ảnh suy biến; không publish output lỗi. Hai asset Tịch Vân/Thiết Lệnh Sứ có WebP + thumbnail, concept QA đã xem, integrated UI QA pending. Chưa bắt đầu batch toàn cast/chương.
+Workflow đang dùng `Lykon/dreamshaper-8`, revision `a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917`, license `creativeml-openrail-m`. DPM++ Karras28steps, float32 với CPU offload/attention slicing/VAE slicing/tiling. Trial fp16 tạo NaN/ảnh đen và prompt cắt đã loại. Script kiểm CLIP token budget, finite latents/ảnh suy biến, hỗ trợ negative riêng cho chủ thể không phải người; không publish output lỗi. Tịch Vân/5bosses/cảnh cửa núi có WebP/thumbnail và QA tích hợp thật trong `docs/art/assets.json`. Cảnh trạm núi chưa tích hợp; toàn cast/15chương chưa hoàn tất.
 
 ## 3. Backend và model
 

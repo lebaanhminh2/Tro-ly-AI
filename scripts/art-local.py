@@ -69,7 +69,8 @@ def main():
             print("Already generated: " + item["id"], flush=True)
             continue
         prompt = manifest["style"] + ", " + item["prompt"]
-        for value in [prompt, manifest["negative"]]:
+        negative = manifest["negative"] + (", " + item["negative"] if item.get("negative") else "")
+        for value in [prompt, negative]:
             if len(pipeline.tokenizer(value).input_ids) > pipeline.tokenizer.model_max_length:
                 raise RuntimeError("Prompt exceeds CLIP token limit: " + item["id"])
         def finite_step(_pipeline, _index, _time, tensors):
@@ -80,7 +81,7 @@ def main():
         start = time.monotonic()
         result = pipeline(
             prompt=prompt,
-            negative_prompt=manifest["negative"],
+            negative_prompt=negative,
             width=item.get("width", 512), height=item.get("height", 768),
             num_inference_steps=item.get("steps", 28), guidance_scale=item.get("guidance", 7.0),
             generator=torch.Generator(device="cpu").manual_seed(item["seed"]),
@@ -91,7 +92,7 @@ def main():
         result.save(destination)
         metadata = {"id": item["id"], "model": MODEL, "revision": manifest["revision"],
                     "seed": item["seed"], "prompt": manifest["style"] + ", " + item["prompt"],
-                    "negative": manifest["negative"], "size": result.size,
+                    "negative": negative, "size": result.size,
                     "steps": item.get("steps", 28), "guidance": item.get("guidance", 7.0),
                     "precision": args.precision,
                     "seconds": round(time.monotonic() - start, 2),

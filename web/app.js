@@ -12,6 +12,7 @@ import { createTaskActions } from './features/tasks.js';
 import { createTodayPlanActions } from './features/today-plan.js';
 import { createHabitActions } from './features/habits.js';
 import { createGameActions } from './features/game.js';
+import { createBattleActions } from './features/battle.js';
 import * as dom from './ui/dom.js';
 import { createFeedback } from './ui/feedback.js';
 import { createSheets } from './ui/sheets.js';
@@ -21,7 +22,7 @@ const runtime = createRuntimeState();
 const content = document.querySelector('#content'), sheet = document.querySelector('#sheet'), sheetContent = document.querySelector('#sheet-content');
 const actions = {};
 const forward = {};
-for (const name of ['loadGame', 'showGamePanel', 'openTechnique', 'selectGameSchool', 'stopPractice'])
+for (const name of ['loadGame', 'showGamePanel', 'openTechnique', 'selectGameSchool', 'stopPractice', 'chooseBattle', 'cancelBattle', 'withdrawBattle', 'rescueBattle', 'acceptBattleDeath', 'prepareBoss', 'openBattleHistory', 'openBattleExchange'])
     forward[name] = (...args) => actions[name](...args);
 for (const name of ['loadHabits', 'openHabit', 'openHabitLog', 'openHabitSlot', 'showHabitInList', 'toggleHabit', 'setHabitFilter', 'showHabitPanel', 'loadHabitHistory', 'setHabitReportSpan', 'setHabitHistoryStatus', 'exportHabits'])
     forward[name] = (...args) => actions[name](...args);
@@ -45,6 +46,7 @@ Object.assign(actions, createSleepActions(context));
 Object.assign(actions, createCultivationActions(context));
 Object.assign(actions, createHabitActions(context));
 Object.assign(actions, createGameActions(context));
+Object.assign(actions, createBattleActions(context));
 Object.assign(actions, createBrowserLoginActions(context));
 Object.assign(actions, createLifecycle(context));
 applyTheme();
