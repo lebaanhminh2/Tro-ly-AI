@@ -1,5 +1,15 @@
 # Bàn giao Habit và Tu luyện
 
+## Cập nhật 13/10/2026: icon và bản thử Tu luyện
+
+User duyệt `web/index.html`, `web/styles.css` để sửa icon Thói quen thành SVG ô tick và tạo duy nhất `docs/prototypes/cultivation/index.html` để chốt lại UX Tu luyện. Commit **`b419934`** đã push trên `review/p1-p3`. Icon đã lên staging, version **`d4990393-e797-4e8c-ba9d-fcd822af51aa`**; HTML/CSS live HTTP200 và SHA256 khớp local. Deploy readiness4/4, dry-run và check:web45 đạt. Không có migration.
+
+Bản HTML có **Hiện tại → Công pháp → Vượt tầng → Thành tựu**; 39 công pháp/40 boss lấy từ catalog dự án, 22 trận chính thành tầng và 18 cơ duyên. Thử chọn/luyện lại bản, chuẩn bị tối đa5môn, chiêu theo ngày, mở bí tịch, cứu/tử trận và chiến tích. Bỏ Thần binh khỏi phương án; dùng dấu ấn thay chỗ, chưa làm lại art. [Thiết kế và cách thử](HABIT_GAME_CULTIVATION_UX.md) ghi đầy đủ thay đổi, phần discovery mới và tương thích vũ khí cần xử lý sau.
+
+Chrome kiểm các luồng chính, màn hình320–1440, chữ200%, keyboard/dark/short sheet và icon app thật; HTML không tải tài nguyên ngoài. Đây là emulation/dữ liệu mẫu. **Tab Tu luyện thật chưa được thay theo HTML.** Việc tiếp theo là user mở bản thử, góp ý/duyệt luồng; lập inventory và xin duyệt code riêng trước khi áp dụng. Không chạy lại triển khai toàn game hoặc sinh art ở bước này.
+
+`docs/HABIT_GAME_UX_REVIEW.md` và `docs/prototypes/habits/` có thay đổi từ vòng trước, vẫn nằm ngoài hai commit của vòng icon/HTML này.
+
 ## Cập nhật ngày 13/10/2026: áp dụng demo đã duyệt vào app
 
 User đã duyệt 10 file cho phần Thói quen, push/deploy staging; sau đó duyệt thêm 4 file để đổi thứ tự thanh tab và tên Tu luyện. Runtime commit **`6c2da9d`** đã push trên `review/p1-p3` và deploy Worker `personal-assistant-staging`, version **`09ee5a4c-aba8-44f8-b85d-6d7b3de1f86f`**. URL nghiệm thu: https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev/app/ . Không cần migration trong vòng này.

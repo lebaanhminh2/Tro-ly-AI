@@ -177,3 +177,5 @@ Các yêu cầu kỹ thuật của vòng triển khai:
 - Kiểm staging: ba kiểm tra cấu hình và dry-run bundle đạt. Sandbox chặn đường ghi log Wrangler mặc định; thao tác phát hành dùng đường log trong workspace.
 
 Ảnh kiểm tra cục bộ ở `.wrangler/cultivation-qa/` (ngoài Git). Đây là Chrome emulation; chưa thay cho nghiệm thu cảm giác sử dụng trên điện thoại thật của người dùng. Không dùng dữ liệu cá nhân để thử các thao tác.
+
+**Phát hành icon:** commit `b419934` đã push lên `review/p1-p3`; Worker staging version `d4990393-e797-4e8c-ba9d-fcd822af51aa`, readiness 4/4, deploy exit0. `/app/` và `/app/styles.css` HTTP200, SHA256 khớp local. Bản HTML nằm trong `docs/`, không được đóng gói vào app. Tab Tu luyện thật vẫn dùng UI trước vòng này.
