@@ -58,6 +58,12 @@ export async function flushOutbox(env: Env, transport: typeof fetch = fetch, now
     if(row.id.startsWith('nudge:')||row.id.startsWith('task-nudge:')&&!await nudgeAllowed(env.DB,env.TELEGRAM_USER_ID,row.id,currentTime())||row.id.startsWith('task-plan:')&&!await new TaskDayStore(env.DB).notificationAllowed(env.TELEGRAM_USER_ID,row.id,currentTime())){
       await query(env.DB,"UPDATE outbox SET state='failed' WHERE id=? AND claim_token=?",row.id,token).run();continue;
     }
+    // Claiming does not freeze a healthy prompt's phase, operating day or sleep
+    // status. Revalidate immediately before transport after the other awaits.
+    // Explicit personal reminders have their independent delivery rules above.
+    if(env.ASSETS&&!await schedule.notificationAllowed(env.TELEGRAM_USER_ID,row.id,currentTime())){
+      await query(env.DB,"UPDATE outbox SET state='failed' WHERE id=? AND claim_token=?",row.id,token).run();continue;
+    }
     const payload=JSON.parse(row.payload);delete payload._nudge;delete payload._taskNudge;
     try { result = await deliver(env.TELEGRAM_BOT_TOKEN!, payload, transport); }
     catch { result = { state: 'failed' as const }; }

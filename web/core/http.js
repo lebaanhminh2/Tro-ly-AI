@@ -24,7 +24,17 @@ export async function liveRequest(path, body) {
             pendingRequests.set(key, { ...body, id: crypto.randomUUID() });
         request = pendingRequests.get(key);
     }
-    const response = await fetch('/api/' + path, { method: body ? 'POST' : 'GET', credentials: 'same-origin', headers: { ...(initData ? { 'X-Telegram-Init-Data': initData } : { 'X-Minh-Anh-Request': '1' }), 'Content-Type': 'application/json' }, body: body ? JSON.stringify(request) : undefined, signal: AbortSignal.timeout(15000) });
+    let response;
+    try {
+        response = await fetch('/api/' + path, { method: body ? 'POST' : 'GET', credentials: 'same-origin', headers: { ...(initData ? { 'X-Telegram-Init-Data': initData } : { 'X-Minh-Anh-Request': '1' }), 'Content-Type': 'application/json' }, body: body ? JSON.stringify(request) : undefined, signal: AbortSignal.timeout(15000) });
+    } catch {
+        // A transport failure does not prove that a write failed to commit.
+        // Keep the same request identity so an unchanged retry can recover it.
+        const error = Error(body ? 'Chưa xác nhận được lần lưu. Kiểm tra kết nối rồi thử lại thao tác này với thông tin giữ nguyên.'
+            : 'Chưa kết nối được. Kiểm tra mạng rồi tải lại nhé.');
+        error.code = body ? 'NETWORK_UNCONFIRMED' : 'NETWORK_UNAVAILABLE';
+        throw error;
+    }
     const result = await response.json();
     if (!response.ok) {
         if (response.status < 500 && key)

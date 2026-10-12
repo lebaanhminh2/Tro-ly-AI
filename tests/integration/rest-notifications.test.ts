@@ -12,6 +12,51 @@ import {DatabaseSync} from 'node:sqlite';
 import {RecurrenceStore} from '../../src/adapters/d1/recurrence-store.ts';
 import {queueWorkNudge} from '../../src/adapters/d1/work-nudges.ts';
 
+for(const scenario of ['phase-boundary','sleep-race']){
+ test('bedtime delivery revalidates after claim: '+scenario,async()=>{
+  const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+  try{
+   const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+   for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
+   const now=Date.parse(scenario==='phase-boundary'?'2026-10-07T22:29:59.990+07:00':'2026-10-07T22:15:00+07:00');
+   const schedule=new ScheduleStore(db);await schedule.configure('123','04:30','22:30',0,now);
+   await schedule.queueCheckIns('123',now);
+   const row=(await db.prepare("SELECT id FROM outbox WHERE id LIKE 'healthy:bedtime:%'").first<{id:string}>())!;
+   assert.ok(row);assert.equal(await schedule.notificationAllowed('123',row.id,now),true);
+   let claimed=false,raced=false,current=now;
+   const guarded:Database={batch:statements=>db.batch(statements),prepare:sql=>{
+    const wrap=(statement:ReturnType<Database['prepare']>):ReturnType<Database['prepare']>=>({
+     bind:(...values)=>wrap(statement.bind(...values)),all:()=>statement.all(),
+     first:async<T>()=>{
+      const result=await statement.first<T>();
+      if(scenario==='sleep-race'&&claimed&&!raced&&sql==='SELECT reported_at FROM sleep_reports WHERE owner=?'){
+       raced=true;await schedule.reportSleep('123',current);
+      }
+      return result;
+     },run:async()=>{
+      const result=await statement.run();
+      if(sql.includes("SET state='sending',attempts")&&result.meta.changes){
+       claimed=true;if(scenario==='phase-boundary')current=now+20;
+      }
+      return result;
+     }
+    });return wrap(db.prepare(sql));
+   }};
+   const env={DB:guarded,TELEGRAM_USER_ID:'123',TELEGRAM_WEBHOOK_SECRET:'x'.repeat(24),TELEGRAM_BOT_TOKEN:'123:fake',DELIVERY_MODE:'outbox' as const,ASSETS:{fetch:async()=>new Response('')}};
+   const sent:string[]=[];
+   const transport:typeof fetch=async(_url,init)=>{sent.push(JSON.parse(String(init?.body)).text);return Response.json({ok:true,result:{message_id:100+sent.length}});};
+   await flushOutbox(env,transport,now,()=>current,row.id);
+   assert.equal(claimed,true);assert.equal(raced,scenario==='sleep-race');
+   assert.deepEqual(sent,[],scenario+': stale proactive sleep message must not reach transport');
+   assert.equal((await db.prepare('SELECT state FROM outbox WHERE id=?').bind(row.id).first<{state:string}>())!.state,'failed');
+   await db.prepare("INSERT INTO task_appointments(id,owner,subject,message,due) VALUES('race-personal','123','Thuốc','Uống thuốc',?)").bind(current).run();
+   await queueAppointments(db,'123',current);
+   await flushOutbox(env,transport,current,()=>current);
+   assert.deepEqual(sent,['Uống thuốc'],'Explicit configured reminder is independent of sleep/bedtime phase');
+  }finally{await mf.dispose();}
+ });
+}
+
 test('undo restores current work notifications without delivering old queued prompts or cancelling personal reminders',async()=>{
  const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
  try{

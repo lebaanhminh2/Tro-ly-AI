@@ -10,14 +10,14 @@ Cập nhật 2026-10-12. Goal Habit/Thần Lộ đang active, AI tự triển kh
 
 ## Trạng thái thật
 
-- F1–F5 checkpoints đã push; HEAD `b0c15c8`, branch `review/p1-p3`. F6 đọcchiêu/earnedrescue đang trong worktree; kiểm git status/HEAD và PROGRESS trước nối tiếp.
+- F1–F5 checkpoints đã push; HEAD `487e821`, branch `review/p1-p3`, gồmF6đọcchiêu/earnedrescue. Finalsend/UIchữlớn đang trongworktree; kiểm git status/HEAD và PROGRESS trước nối tiếp.
 - Habit/luyện/battle/economy/bot chạy local; schema0031–0037. Đủ40encounters/15chương/39quyền/presets/discovery/export/settings. Content3readstance chặn lặpchiêu toàntruyện trong3200cases, vẫn giữ30earned imperfect/weekly/earlybranch và5mixed routes tới40wins; earnedqi rescue đãthắng. Xem HABIT_GAME_BALANCE, không coi toànF6 đạt.
 - Full gate checkpoint bot/art:300main+25experiments/28browser,44webmodules. Guidance browser29pass;9unit+typecheck/check:web45modules. Regression D1 hiện tại xem PROGRESS/handle; không coi gate cũ là finalrelease.
 - Phạm vi mới: habit/tracking/lịch-nhắc, luyện/chiến đấu, đủ 5 phái/39 môn/15 chương tới DIỆT THẦN, tuyến phụ/thần binh/chiến tích, cast/art/UI và vận hành. Một phái/chương đầu chỉ là cổng nội bộ.
 - Source đã có task/planner/sleep5min undo/focus/checkin/healthy/Chrome auth/reminders; giữ nguyên. Remote chưa áp migration0031–0037.
 - `72d0424` bổ sung export Thần Lộ JSON một snapshot/read-only, guide bỏ qua/mở lại, ẩn game/giảm chuyển động device-local và12asset cuối truyện. Gate290main/25experiments +27browser đạt;43webmodules. `npm test` giữ concurrency2 cho máy local; logs và giới hạn ở PROGRESS. Chưa release remote.
 - Không artprocess live. Finals toàn40encounters/15cảnh/nămphái/baweapon và39symbols đã publish/sourceQA; branch prepare light390/dark320, school headers light390 vàweapon light320/dark390 đã xem. Fullvisual/network/staging QA cònF6/R1. Venv/models/sourcePNG ở D:/Tro-ly-AI-art, ngoàiGit.
-- Issue nền: đã báo ngủ sớm bằng web nhưng còn nhận nudge ngủ. Root cause **chưa xác định/chưa sửa**; điều tra và regression trong goal.
+- Issue nền: báo ngủ sớm nhưng thấy nudge. Rootcause lịch sử chưa xácđịnh; hai finalsendrace đãreproduceD1local vàfixrechecktrướctransport,22rest/healthycases đạt. Không gửi tinthử; xem PROGRESS/OPERATIONS để phânbiệt evidencecode với audit lịch sử.
 
 ## Quyền và giới hạn
 

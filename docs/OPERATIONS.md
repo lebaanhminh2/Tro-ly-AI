@@ -6,7 +6,7 @@ Cập nhật 2026-10-12. Source/commands đã đọc local; không audit/deploy 
 
 TypeScript strict, Cloudflare Workers/D1/Cron, Telegram và web modules hiện có; Gemini direct adapter. Domain/application/ports không SQL/fetch/config, adapters triển khai persistence/provider. Schema từ migrations, interfaces từ source; không dùng bảng prototype trong docs cũ để thay state thật.
 
-Source migrations hiện tới 0030; số migration đã áp cloud phải kiểm lại bằng listing đúng target, không suy từ số file. Runtime các feature mới chưa có ở bước chuẩn bị. Kiến trúc mở rộng tại [HABIT_GAME_ARCHITECTURE](HABIT_GAME_ARCHITECTURE.md).
+Source migrations hiện tới0037; số migration đã áp cloud phải kiểm lại bằng listing đúng target, không suy từ số file. Habit/luyện/battle đã có runtime local, remote release còn phải kiểm riêng. Kiến trúc mở rộng tại [HABIT_GAME_ARCHITECTURE](HABIT_GAME_ARCHITECTURE.md).
 
 ## Commands local
 
@@ -58,6 +58,6 @@ Rollback code/config hoặc feature off có chủ đích, tương thích schema/
 
 Đi từ inbound/auth → application → DB/receipt → job/outbox → provider; ưu tiên status/count/version trước đọc nội dung. Phân biệt chưa commit/đã commit, sent/failed/uncertain. Không reset uncertain rồi gửi lại hàng loạt; replay kết quả khác thực thi lại nghiệp vụ.
 
-Issue ngủ sớm vẫn bị nudge còn chưa xác định nguyên nhân ở bước docs; xem sleep day/generation/suppression/final-send/context trước sửa, giữ regression đúng nguyên nhân. Checkpoint nêu việc còn và evidence, không ghi “đã sửa” từ giả thuyết.
+Issue user nhận nudge sau báo ngủ: audit lịch sử chưa chứng minh tin sau report. D1local đã tái hiện hai lỗi final-send: phase hết hạn sau claim và report được commit ngay sau rest-read sau claim. Outbox nay recheck `notificationAllowed` trước transport, hai ca từ fail→pass và personal reminders vẫn gửi. Không gọi đây là rootcause lịch sử đã xác nhận hoặc bảo đảm atomic giữa D1 và Telegram; tin đã vào transport không thu hồi được bằng `/ngu`. Evidence/commands tại PROGRESS.
 
 Release gates/bảo toàn dữ liệu/hiệu năng/visual/bàn giao xem [HABIT_GAME_ACCEPTANCE](HABIT_GAME_ACCEPTANCE.md). Local art/model không runtime dependency; vận hành pipeline tại [HABIT_GAME_LOCAL_ART](HABIT_GAME_LOCAL_ART.md).

@@ -12,7 +12,7 @@ import { checkinProgress } from '../../web/models/cultivation.js';
 import { assessHabitDay, newHabitPeriod } from '../../src/domain/habits.ts';
 import { TECHNIQUES, SCHOOLS, INITIAL_TECHNIQUES } from '../../src/domain/techniques.ts';
 import { newPracticeVersion } from '../../src/domain/practice.ts';
-import { GAME_BOSSES, GAME_CHAPTERS, bossById, bossIntents, publicGameCatalog } from '../../src/domain/game-content.ts';
+import { GAME_BOSSES, GAME_CHAPTERS, GAME_CONTENT_VERSION, bossById, bossIntents, publicGameCatalog } from '../../src/domain/game-content.ts';
 import { GAME_CHARACTERS } from '../../src/domain/game-characters.ts';
 import { newBattleState, publicBattleState, resolveBattleTurn } from '../../src/domain/battle.ts';
 import { armedBattleState } from '../../src/domain/game-rewards.ts';
@@ -75,7 +75,7 @@ function fixture() {
                     const content = bossById(input.bossId), id = 'b_' + input.id, combatRank = state.account.state.rank;
                     const loadout = input.versions.map(id => control.practiceVersions.find(version => version.practice.id === id)?.practice).filter(Boolean)
                         .map(practice => ({ id: practice.techniqueId, versionId: practice.id, tier: practice.tiers.length, purityBp: practice.tiers.at(-1).purityBp }));
-                    const run = { id, bossId: content.id, contentVersion: 'than-lo-2', combatRank, weaponId: input.weaponId ?? null,
+                    const run = { id, bossId: content.id, contentVersion: GAME_CONTENT_VERSION, combatRank, weaponId: input.weaponId ?? null,
                         state: armedBattleState(fighterForRank(combatRank), content, loadout, bossIntents(content), input.weaponId ?? null),
                         startsDay: game.day.day + 1, lastDay: null, waitDays: 0, rescueUntilDay: null, deathPaid: false };
                     control.battleRuns.set(id, run);
@@ -472,6 +472,18 @@ async function chrome() {
         };
         return {
             errors, evaluate, wait,
+            async networkConditions(offline = false, latency = 150, bytesPerSecond = 102400) {
+                await call('Network.enable');
+                await call('Network.emulateNetworkConditions', { offline, latency, downloadThroughput: bytesPerSecond,
+                    uploadThroughput: bytesPerSecond, connectionType: 'cellular3g' });
+            },
+            async press(key, code = key) {
+                const windowsVirtualKeyCode = { Enter: 13, Escape: 27, Tab: 9 }[key];
+                await call('Emulation.setFocusEmulationEnabled', { enabled: true });
+                await call('Input.dispatchKeyEvent', { type: 'rawKeyDown', key, code, windowsVirtualKeyCode });
+                if (key === 'Enter') await call('Input.dispatchKeyEvent', { type: 'char', key, code, text: '\r', unmodifiedText: '\r', windowsVirtualKeyCode });
+                await call('Input.dispatchKeyEvent', { type: 'keyUp', key, code, windowsVirtualKeyCode });
+            },
             async colorScheme(value) {
                 await call('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value }] });
             },
@@ -513,6 +525,74 @@ async function chrome() {
 async function snapshot(browser) {
     return browser.evaluate(`(() => { const root=document.querySelector('#content');const rect=root.getBoundingClientRect();return {text:root.innerText,buttons:[...root.querySelectorAll('button')].map(b=>({text:b.innerText,disabled:b.disabled})),geometry:{x:Math.round(rect.x),y:Math.round(rect.y),width:Math.round(rect.width),height:Math.round(rect.height)},overflow:document.documentElement.scrollWidth>innerWidth+1};})()`);
 }
+
+test('six habits and game screens remain usable with large text, keyboard and a slow offline recovery', { skip: !browserBin, timeout: 120000 }, async () => {
+    const control = fixture();
+    for (let index = 0; index < 6; index++) control.mutate('habits', { id: 'large_habit_' + index, operation: 'create',
+        definition: { name: index ? ['Thiền buổi sáng', 'Đọc sách', 'Đi bộ', 'Viết nhật ký', 'Uống nước'][index - 1]
+            : 'Luyện tập vận động nhẹ và ghi lại điều mình học được trong ngày', metric: 'check', target: 1,
+            cadence: index === 5 ? { kind: 'weekly', quota: 3 } : { kind: 'daily' } } });
+    const writes = control.posts.length, server = await serve(control); let browser;
+    try {
+        browser = await chrome(); await browser.networkConditions(); await browser.navigate(server.url, 390);
+        await browser.wait("!!document.querySelector('.focus-flip-card')");
+        const initial = await browser.evaluate("({ duration: performance.now(), resources: performance.getEntriesByType('resource').map(r=>({url:new URL(r.name).pathname,bytes:r.encodedBodySize})) })");
+        assert.ok(initial.resources.reduce((total, resource) => total + resource.bytes, 0) < 1024 * 1024, 'Cold Today load stays below 1 MiB uncompressed fixture resources');
+        assert.ok(!initial.resources.some(resource => /\/art\/.*(?:boss|chapter)/.test(resource.url)), 'Today does not preload the story art');
+        const measurements = [{ screen: 'today-cold', ...initial }];
+        const scaleText = async () => {
+            await browser.evaluate("{ document.querySelectorAll('[data-large-qa]').forEach(node=>{node.style.fontSize='';delete node.dataset.largeQa});const sizes=[...document.querySelectorAll('body *')].map(node=>[node,parseFloat(getComputedStyle(node).fontSize)]);sizes.forEach(([node,size])=>{node.style.fontSize=(size*2)+'px';node.dataset.largeQa='true'}) }");
+            await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+        };
+        for (const [width, theme] of [[360, 'light'], [390, 'dark'], [414, 'light'], [1440, 'light']]) {
+            await browser.resize(width, width < 900 ? 844 : 1000); await browser.colorScheme(theme);
+            await browser.evaluate(`document.documentElement.dataset.theme=${JSON.stringify(theme)}`);
+            for (const tab of ['today', 'habits', 'game', 'reminders', 'achievements']) {
+                await browser.evaluate(`document.querySelector('[data-tab=${tab}]').click()`);
+                await browser.wait("!document.querySelector('#content [aria-busy=true]') && !!document.querySelector('#content section')");
+                if (tab === 'habits') await browser.wait("document.querySelectorAll('.habit-card').length===6");
+                await scaleText(); const view = await snapshot(browser);
+                assert.equal(view.overflow, false, tab + ' / text 200% / ' + width + ' / ' + theme);
+                const labelsOutside = await browser.evaluate("[...document.querySelectorAll('.bottom-nav button,.game-navigation button,.habit-filters button,.habit-navigation button')].filter(button=>{const rect=button.getBoundingClientRect();if(!rect.width)return false;const range=document.createRange();range.selectNodeContents(button);return [...range.getClientRects()].some(text=>text.left<rect.left-1||text.right>rect.right+1)}).map(button=>button.textContent)");
+                assert.deepEqual(labelsOutside, [], 'Navigation labels must fit their touch controls at large text: ' + tab + '/' + width);
+                if (process.env.UI_SCREENSHOT_DIR && width < 900) await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'f6-large-' + tab + '-' + width + '-' + theme + '.png'));
+                measurements.push({ screen: tab, width, theme, textScale: 2, geometry: view.geometry });
+            }
+        }
+        await browser.resize(390, 844); await browser.evaluate("document.querySelector('#settings').focus()");
+        assert.equal(await browser.evaluate('document.activeElement.id'), 'settings'); await browser.press('Enter');
+        await browser.wait("document.querySelector('#sheet').open");
+        assert.equal(await browser.evaluate("document.querySelector('#sheet').contains(document.activeElement)"), true, 'Dialog moves keyboard focus inside');
+        await browser.press('Escape'); await browser.wait("!document.querySelector('#sheet').open");
+        assert.equal(await browser.evaluate("document.activeElement.id"), 'settings', 'Closing returns focus to opener');
+        await browser.networkConditions(true); await browser.navigate(server.url, 390);
+        await browser.networkConditions(false); await browser.navigate(server.url, 390); await browser.wait("!!document.querySelector('.focus-flip-card')");
+        assert.equal(control.posts.length, writes, 'Navigation, accessibility checks and recovery do not write personal data');
+        assert.deepEqual(browser.errors, []);
+        if (process.env.UI_SCREENSHOT_DIR) await writeFile(join(process.env.UI_SCREENSHOT_DIR, 'f6-ui-network-metrics.json'), JSON.stringify({ fixture: 'localhost, Chrome emulation, 150ms latency/100KiB per second, synthetic text 200%; no device or remote latency claim', measurements }, null, 2));
+    } finally { if (browser) await browser.close(); await server.close(); }
+});
+
+test('offline habit form preserves its draft and retry identity without reporting a successful save', { skip: !browserBin, timeout: 60000 }, async () => {
+    const control = fixture(), server = await serve(control); let browser;
+    try {
+        browser = await chrome(); await browser.navigate(server.url, 390); await browser.wait("!!document.querySelector('.focus-flip-card')");
+        await browser.tap('[data-tab=habits]'); await browser.wait("!!document.querySelector('.habits-page') && !document.querySelector('[aria-busy=true]')");
+        await browser.tap('[aria-label="Thêm thói quen"]');
+        await browser.evaluate("document.querySelector('.habit-form input').value='Đọc sách sau bữa sáng';window.habitAttempts=[];const actualFetch=window.fetch;window.fetch=(url,init)=>{if(String(url)==='/api/habits'&&init?.method==='POST')habitAttempts.push(JSON.parse(init.body));return actualFetch(url,init)}");
+        await browser.networkConditions(true); await browser.evaluate("document.querySelector('.habit-form').requestSubmit()");
+        await browser.wait("document.querySelector('#sheet-feedback').textContent.includes('Chưa xác nhận được lần lưu') && !document.querySelector('.habit-form button[type=submit]').disabled");
+        assert.equal(control.posts.length, 0); assert.equal(control.habits.habits.length, 0);
+        assert.equal(await browser.evaluate("document.querySelector('#sheet').open"), true);
+        assert.equal(await browser.evaluate("document.querySelector('.habit-form input').value"), 'Đọc sách sau bữa sáng');
+        if (process.env.UI_SCREENSHOT_DIR) await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'f6-offline-habit-draft-390.png'));
+        await browser.networkConditions(false); await browser.evaluate("document.querySelector('.habit-form').requestSubmit()");
+        await browser.wait("!document.querySelector('#sheet').open && document.querySelectorAll('.habit-card').length===1");
+        const attempts = await browser.evaluate('habitAttempts'); assert.equal(attempts.length, 2); assert.deepEqual(attempts[0], attempts[1]);
+        assert.equal(control.posts.length, 1); assert.equal(control.habits.habits.length, 1);
+        assert.equal(control.habits.habits[0].definition.name, 'Đọc sách sau bữa sáng'); assert.deepEqual(browser.errors, []);
+    } finally { if (browser) await browser.close(); await server.close(); }
+});
 
 test('battle mobile flow prepares tomorrow, keeps choice pending, exposes rescue costs and retains navigation at narrow widths', { skip: !browserBin, timeout: 90000 }, async () => {
     const control = fixture(); control.state.account.state.rank = 1;
