@@ -161,7 +161,7 @@ Triển khai có preview; quyết định chi tiết dựa trên màn thật và
 
 ## 9. Vòng sửa UX hiện tại
 
-### Đã triển khai trong worktree
+### Đã triển khai và phát hành staging
 
 - Thói quen: heading/thêm/tóm tắt ngày, một danh sách có hàng ổn định; tiến độ và ghi nhận là trọng tâm. Chi tiết mở từ tên/`···`; lịch sử/báo cáo và lưu trữ nằm sau danh sách. Form ghi tổng hôm nay và tạo habit thu gọn ghi chú/giờ nhắc.
 - Thần Lộ: màn chính phục vụ trạng thái luyện/trận; intro gộp hướng dẫn, có lối chuẩn bị trận đầu. Ba lối Hành trình/Công pháp/Sưu tập nằm sau thẻ chính; các màn bên trong có quay lại. Tầng/tinh thuần mở thêm, giải thích chờ tuần nằm cạnh tiến độ.
@@ -184,8 +184,10 @@ Triển khai có preview; quyết định chi tiết dựa trên màn thật và
 - `check:web` (45 modules), typecheck và staging dry-run đã chạy lại trên source cuối và qua; staging config 3/3, bundle 662,11KiB/gzip153,91KiB,224 assets. Không có migration mới.
 - Công cụ từ chối mở Chrome với profile có sẵn (`blocked by policy`). Không lấy cookie/key hay tạo dữ liệu cá nhân để thay thế. Chưa có phép đo mới từ phiên đăng nhập staging của user; Server-Timing và read-only natural tail phục vụ quan sát sau deploy. Không gọi số đo localhost là độ trễ trên điện thoại thật.
 
-### Còn lại trước bàn giao
+### Phát hành và nghiệm thu
 
-1. Xem ảnh cuối và kết quả mọi gate đang chạy, sửa nếu có lỗi thật.
-2. Ghi rõ kết quả/giới hạn, commit/push và deploy staging khi gates đạt.
-3. Kiểm asset/auth/version sau deploy; giao URL và luồng test ngắn. Không tự xác nhận user đã nghiệm thu thiết kế.
+- Source `59517aa`, push trên `review/p1-p3`; deploy staging exit0, Worker version `662c9da0-304c-4141-9f90-2ff32a5ae985`. Log `D:/Tro-ly-AI-art/ux-staging-deploy.log`; không migration/thay secrets/webhook/cron.
+- Kiểm public sau deploy:215 file tĩnh200 và SHA256 khớp local; route `/app/`200/index khớp. Sáu GET API không auth trả401; POST với foreign Origin trả403 trước mutation. Report `ux-staging-public-smoke.json` ngoài Git. Không có owner write hoặc tin thử.
+- Natural tail60giây quan sát một cron trên đúng version mới:outcome `ok`,CPU7ms/wall2637ms,parseErrors0 (`ux-staging-natural-runtime.json`). Tiến trình tail được dừng đúng hạn; childExitCode1 là do timed stop. Không có owner request trong mẫu nên chưa có số đo API đăng nhập mới; cron không chứng minh tốc độ hai tab.
+- URL nghiệm thu: https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev/app/ . Tải lại app, thử ghi/sửa tổng habit rồi mở Thần Lộ: trạng thái hiện tại→Hành trình→xem chuẩn bị trận, hoặc Công pháp→xem/chọn luyện. Các ghi nhận thật chỉ do user quyết định.
+- Đã tự xem ảnh thực tế của browser fixture qua nhiều vòng sửa; kiểm màn nhỏ/sáng/tối/chữ200% và đối chiếu ba tab cũ. User vẫn cần đánh giá độ dễ dùng/hình thức trên máy thật; không tự xác nhận đã nghiệm thu thiết kế.
