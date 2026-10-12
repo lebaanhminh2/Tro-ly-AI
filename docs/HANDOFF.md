@@ -1,6 +1,24 @@
-# Bàn giao Habit và Thần Lộ
+# Bàn giao Habit và Tu luyện
 
-Cập nhật 2026-10-12. Toàn scope đã triển khai, migrate/deploy staging và kiểm sau publish; sẵn sàng để user nghiệm thu. Các checkpoint cũ là lịch sử, không bắt đầu lại từ đầu.
+## Cập nhật ngày 13/10/2026: áp dụng demo đã duyệt vào app
+
+User đã duyệt 10 file cho phần Thói quen, push/deploy staging; sau đó duyệt thêm 4 file để đổi thứ tự thanh tab và tên Tu luyện. Runtime commit **`6c2da9d`** đã push trên `review/p1-p3` và deploy Worker `personal-assistant-staging`, version **`09ee5a4c-aba8-44f8-b85d-6d7b3de1f86f`**. URL nghiệm thu: https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev/app/ . Không cần migration trong vòng này.
+
+- Thanh tab: **Hôm nay → Thói quen → Lời nhắc → Tu luyện → Thành tích**. Tên Tu luyện đã đồng bộ ở tiêu đề, quay lại, cài đặt và hướng dẫn; ID/API của game giữ nguyên.
+- Mỗi habit có tick đầu dòng. Tick đặt đúng mục tiêu của metric, bỏ tick về 0. Nút tiến độ của thời lượng/số lượng cùng kiểu chữ, nền, viền; chỉ số đã làm nhấn nhẹ.
+- Dưới tên có đúng một dòng phụ, ưu tiên nghĩa vụ cần đạt hôm nay, chưa bắt đầu/ngoài lịch, rồi giờ xếp và tiến độ tuần/lịch lặp. Dòng dài dùng dấu ba chấm; `+N` luôn còn chỗ, mở các thông tin còn lại trong chi tiết.
+- Slider/bộ đếm nằm trong bảng ghi nhận, giữ ô nhập chính xác. Các thay đổi là nháp đến khi Lưu, thay tổng hôm nay; hỗ trợ số lẻ và vượt mục tiêu. Thêm/sửa dùng lựa chọn gọn, giữ nháp khi đổi loại và có header/footer cố định.
+- Toast **Hoàn tác** ghi nhận tồn tại 6 giây, phục hồi đúng tổng và ghi chú trước thao tác, kể cả partial/vượt mục tiêu. Kiểm tra ngày sinh hoạt, phiên đăng nhập/revision, version habit/log và refresh chưa hoàn tất trước khi gửi; backend tiếp tục xác thực ngày/version. Đây là Hoàn tác habit, độc lập với cơ chế Hoàn tác ngủ 5 phút.
+- Tiến bộ 7 ngày là một bảng chung; 30 ngày là tỷ lệ và số ngày đạt/cam kết từng habit. Chỉ lấy ngày đã kết thúc; trung tính loại khỏi mẫu số, chưa có kết quả dùng dấu `—`. Lịch sử/bộ lọc/xuất dữ liệu vẫn truy cập được.
+- Report bổ sung `byHabit` trong API chung, hai truy vấn D1 cho toàn bộ danh sách. Chỉ tải khi mở Tiến bộ, gộp yêu cầu đang chờ, cache tối đa 60 giây, bỏ response lỗi thời và vô hiệu hóa sau ghi. Không dùng số đo fixture làm bằng chứng tốc độ trên điện thoại thật.
+
+**Kiểm chứng vòng này:** `check:web` 45 modules, typecheck, **318 main tests + 37 browser tests, 0 fail/skip**, staging dry run và readiness/deploy đạt. Kiểm riêng sau đổi tab/tên: 3 browser flows đạt. Đã xem ảnh app với dữ liệu mẫu ở `D:/Tro-ly-AI-art/habit-production/`, gồm sáng/tối, danh sách, ghi thời lượng/số lượng, thêm habit và tiến bộ. Browser kiểm mạng chậm/mất mạng, chữ lớn, version và đổi ngày; đây là Chrome emulation/local fixtures, chưa phải nghiệm thu trên máy user.
+
+**Sau deploy:** trang `/app/` và 8 asset sửa đều HTTP 200, SHA256 khớp bản local; thanh tab/tên mới đúng. API report khi chưa đăng nhập trả 401. Chưa kiểm owner report bằng phiên đăng nhập staging trong vòng này và không tạo dữ liệu cá nhân thử. Bản prototype và phần UX_REVIEW đã sửa từ trước vẫn ở working tree riêng, không gộp vào commit runtime này.
+
+## Bàn giao trước vòng 13/10
+
+Cập nhật trước: 2026-10-12. Toàn scope đã triển khai, migrate/deploy staging và kiểm sau publish. Các checkpoint dưới đây là lịch sử, không bắt đầu lại từ đầu.
 
 **Vòng sửa sau phản hồi nghiệm thu:** user đánh giá UI/UX/luồng và tốc độ của **hai tab Thói quen/Thần Lộ** chưa đạt, rồi cho phép agent tự chụp, đánh giá và sửa sau khi trình inventory. [UX_REVIEW](HABIT_GAME_UX_REVIEW.md) ghi findings, luồng, inventory và bằng chứng. Bản sửa đã qua **317 main +25 experiments +37 browser,0fail/skip**, typecheck/check:web45modules/staging:check; đã push/deploy staging. Các gates kỹ thuật không thay nghiệm thu trải nghiệm của user.
 
