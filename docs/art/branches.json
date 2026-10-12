@@ -22,7 +22,7 @@
     },
     {
       "id": "cam-thau-thien",
-      "alt": "Ng??i ?o?t Huy?t t?c ?en bu?c sau, ?o x?m than v? c? ?o ?en cao.",
+      "alt": "Người Đoạt Huyết tóc đen buộc sau, áo xám than và cổ áo đen cao.",
       "prompt": "bust portrait, mature East Asian male ascetic, narrow severe eyes, shaved scalp, charcoal layered robe, tiny muted crimson collar, tarnished bronze ring clasp, plain grey background",
       "seed": 40301,
       "publishId": "cam-thau-thien",
@@ -41,7 +41,7 @@
     },
     {
       "id": "cam-tang-nhat",
-      "alt": "Ng??i Gi? Nh?t T?n t?c b?c t?t d?i, tr?m ??ng v? ?o x?m ng?.",
+      "alt": "Người Giữ Nhật Tàn tóc bạc tết dài, trâm đồng và áo xám ngà.",
       "prompt": "bust portrait, older East Asian woman, long silver grey braid, weathered patient face, ash grey closed robe, bronze sun medallion, plain grey background",
       "seed": 40302,
       "publishId": "cam-tang-nhat",
@@ -60,7 +60,7 @@
     },
     {
       "id": "cam-dong-menh",
-      "alt": "Ng??i Gi? Song Kh? trong ?o x?m v?i gi?p vai ??ng v? t?c ?en bu?c sau.",
+      "alt": "Người Giữ Song Khế trong áo xám với giáp vai đồng và tóc đen buộc sau.",
       "prompt": "bust portrait, middle aged East Asian male scholar, tied black hair, solemn face, ivory charcoal layered robe, two small bronze collar clasps, plain grey background",
       "seed": 40303,
       "publishId": "cam-dong-menh",
@@ -79,7 +79,7 @@
     },
     {
       "id": "cam-cuu-u",
-      "alt": "Ng??i Gi? D?u H?n t?c ?en d?i, v?ng trang s?c ??ng tr?n ??u v? gi?p vai ??ng.",
+      "alt": "Người Giữ Dấu Hồn tóc đen dài, vòng trang sức đồng trên đầu và giáp vai đồng.",
       "prompt": "bust portrait, East Asian woman age forty, pale calm face, black hair pinned high, charcoal hood resting on shoulders, antique bronze neck ornament, plain grey background",
       "seed": 40304,
       "publishId": "cam-cuu-u",
@@ -98,7 +98,7 @@
     },
     {
       "id": "cam-phong-than",
-      "alt": "Ng??i Gi? Ni?m ?n t?c ?en ng?n, c? ?o ng? v? gi?p vai ??ng kh?c hoa v?n.",
+      "alt": "Người Giữ Niêm Ấn tóc đen ngắn, cổ áo ngà và giáp vai đồng khắc hoa văn.",
       "prompt": "bust portrait, mature East Asian female warden, dark short tied hair, steady eyes, ivory high collar, charcoal robe, rectangular bronze brooch, plain grey background",
       "seed": 40305,
       "publishId": "cam-phong-than",
@@ -117,7 +117,7 @@
     },
     {
       "id": "cam-tam-nhat",
-      "alt": "Ng??i Gi? T? ?n v?i r?u b?c, m? tr?m ng? v? ?o x?m than.",
+      "alt": "Người Giữ Tử Ấn với râu bạc, mũ trùm ngà và áo xám than.",
       "prompt": "bust portrait, elderly East Asian male hermit, long grey beard, grey cloth hood, lined face, ivory inner robe, small round bronze clasp, plain grey background",
       "seed": 40306,
       "publishId": "cam-tam-nhat",
