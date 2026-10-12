@@ -18,5 +18,7 @@ export function renderGameCollection(ui, data, catalog) {
         row.append(el('span', owned ? '✓' : '·', 'game-achievement-mark'), copy);
         row.setAttribute('aria-label', achievement.name + (owned ? ' · đã đạt' : ' · chưa đạt')); root.append(row);
     }
-    return root;
+    const exportBox = el('section', undefined, 'game-export-controls');
+    exportBox.append(el('h2', 'Lưu hành trình'), el('p', 'Xuất hồ sơ và nhật ký để giữ lại nhịp đã đi.', 'hint'), button('Xuất hành trình', () => ui.openGameExport(), 'secondary'));
+    root.append(exportBox); return root;
 }

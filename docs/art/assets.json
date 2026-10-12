@@ -1734,5 +1734,641 @@
         "review": "Source and integrated contact sheets viewed; thumb and preparation URLs loaded in Chrome. Thu Mo forehead/eyes crop was corrected and final full screenshot viewed."
       }
     }
+  },
+  {
+    "id": "tru-thach",
+    "contentId": "boss.tru-thach",
+    "alt": "Thần Tướng Thạch Trụ, tượng bán thân màu đá bạc với giáp đồng.",
+    "role": "boss",
+    "focalPoint": [
+      0.5,
+      0.3
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "tru-thach",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 40201,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, bust portrait, middle aged East Asian stone guardian, square weathered face, shaved head, heavy charcoal stone shoulder plates, bronze clasps, closed high collar",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 102.84,
+      "peakMiB": 4053,
+      "sha256": "82221512039b404497bebbce213f1275ad29e9626758ba2f0ff12e975914e8d2",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/tru-thach.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 30360,
+        "sha256": "932efdb4ac508b7f89c1b404f4914259b42613b34be1053a37f0b492e86893dc"
+      },
+      {
+        "path": "web/assets/than-lo/tru-thach-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 4638,
+        "sha256": "059a2db141704a34982b71c6c2779ebe410739e966c6da1a58a71c8119f5f93d"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "pending",
+      "review": "Viewed full portrait sources and chapter contact sheet 2026-10-12. Coherent anatomy or constructed silhouette, restrained slate/ivory/bronze and truthful alt. Integrated UI review still pending.",
+      "integrationEvidence": "D:/Tro-ly-AI-art/f5-finalcampaign-campaign-chapter-11.png; chapter-12 through chapter-15; prepare-11,12,14 and story-15. Real Chrome light390 screenshots; selected overview and settings screenshots viewed. Full dark/320 and lower-fold crop QA pending F6."
+    }
+  },
+  {
+    "id": "tru-thuy",
+    "contentId": "boss.tru-thuy",
+    "alt": "Thần Tướng Thủy Trụ với tóc đen tết dài, áo xám lam và giáp vai bạc.",
+    "role": "boss",
+    "focalPoint": [
+      0.5,
+      0.3
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "tru-thuy",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 40202,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, bust portrait, mature East Asian female water guardian, black hair tight braid, composed face, slate blue grey layered closed robe, silver shoulder armor",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 99.62,
+      "peakMiB": 4053,
+      "sha256": "5637e8ee7253e1a4a9e9b4458d4284a017dcd5f9b42ab3c2da85b8abda18002f",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/tru-thuy.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 23282,
+        "sha256": "6fdf51b395e1e7b2fd823811592da82440cc9d59fed2a19bc3a3a5c829a93345"
+      },
+      {
+        "path": "web/assets/than-lo/tru-thuy-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 4274,
+        "sha256": "25440f8f35caac84e50009701747ae2dd1cd96d4d042ba0e558369dab6fff92f"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "pending",
+      "review": "Viewed full portrait sources and chapter contact sheet 2026-10-12. Coherent anatomy or constructed silhouette, restrained slate/ivory/bronze and truthful alt. Integrated UI review still pending.",
+      "integrationEvidence": "D:/Tro-ly-AI-art/f5-finalcampaign-campaign-chapter-11.png; chapter-12 through chapter-15; prepare-11,12,14 and story-15. Real Chrome light390 screenshots; selected overview and settings screenshots viewed. Full dark/320 and lower-fold crop QA pending F6."
+    }
+  },
+  {
+    "id": "tru-am",
+    "contentId": "boss.tru-am",
+    "alt": "Thần Tướng Âm Trụ dưới mũ trùm đen với giáp vai đồng.",
+    "role": "boss",
+    "focalPoint": [
+      0.5,
+      0.3
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "tru-am",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 40203,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, bust portrait, lean East Asian male shadow guardian, narrowed eyes, black cloth hood, lower face dark veil, segmented charcoal bronze shoulder armor",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 98.95,
+      "peakMiB": 4053,
+      "sha256": "46a54b688d4e14d48aecb85f750e9e05daf7466bb7adb1264d35358c3886f66b",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/tru-am.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 22876,
+        "sha256": "f73edad5fbf2e80b475808ab70fd84b470d223fe09f7b9210a10b82f83b0f548"
+      },
+      {
+        "path": "web/assets/than-lo/tru-am-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 4724,
+        "sha256": "d40c93761de580f06847d1a82bb6c2988abd8bc244acea8de93bfdceb12df2c5"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "pending",
+      "review": "Viewed full portrait sources and chapter contact sheet 2026-10-12. Coherent anatomy or constructed silhouette, restrained slate/ivory/bronze and truthful alt. Integrated UI review still pending.",
+      "integrationEvidence": "D:/Tro-ly-AI-art/f5-finalcampaign-campaign-chapter-11.png; chapter-12 through chapter-15; prepare-11,12,14 and story-15. Real Chrome light390 screenshots; selected overview and settings screenshots viewed. Full dark/320 and lower-fold crop QA pending F6."
+    }
+  },
+  {
+    "id": "van-phap-khoi",
+    "contentId": "boss.van-phap-khoi",
+    "alt": "Vạn Pháp Thần Khôi với mặt nạ kim loại, khớp cổ và giáp đồng sẫm.",
+    "role": "boss",
+    "focalPoint": [
+      0.5,
+      0.3
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "van-phap-khoi",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 40204,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, nonhuman mechanical golem bust, featureless ivory ceramic mask, segmented bronze neck joints, angular dark bronze chest plates, ceremonial statue, plain grey background",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage, human skin, person, woman, man, naked, nude",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 99.3,
+      "peakMiB": 4053,
+      "sha256": "a73a776f9da81d68e9f1ca30690265be44a900ff84c29bbb98ebb9ee1b08c9a3",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/van-phap-khoi.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 31300,
+        "sha256": "1b938560f944b5129b9fd6903f514ad597b57d45759da584a675238ec57297a3"
+      },
+      {
+        "path": "web/assets/than-lo/van-phap-khoi-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 6322,
+        "sha256": "835f96bff94b05d8a70e738f045f465c57d0f54089220d19d6f1e0b7da88d53b"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "pending",
+      "review": "Viewed full portrait sources and chapter contact sheet 2026-10-12. Coherent anatomy or constructed silhouette, restrained slate/ivory/bronze and truthful alt. Integrated UI review still pending.",
+      "integrationEvidence": "D:/Tro-ly-AI-art/f5-finalcampaign-campaign-chapter-11.png; chapter-12 through chapter-15; prepare-11,12,14 and story-15. Real Chrome light390 screenshots; selected overview and settings screenshots viewed. Full dark/320 and lower-fold crop QA pending F6."
+    }
+  },
+  {
+    "id": "than-chien-vuong",
+    "contentId": "boss.than-chien-vuong",
+    "alt": "Thần Chiến Vương với tóc bạc búi cao, gương mặt phong sương và giáp cổ đồng đen.",
+    "role": "boss",
+    "focalPoint": [
+      0.5,
+      0.3
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "than-chien-vuong",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 40205,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, bust portrait, older East Asian male war guardian, grey hair tied back, weathered determined face, aged bronze lamellar armor, charcoal closed collar",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 99.25,
+      "peakMiB": 4053,
+      "sha256": "c26e0ef82dd7359be5c919062883fb255709c24176c6a2e632eea54a35790446",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/than-chien-vuong.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 46780,
+        "sha256": "fc97f8fc1d68b53c63a049239e91d4714e7672142d6d9905d3def0c2c2b828bb"
+      },
+      {
+        "path": "web/assets/than-lo/than-chien-vuong-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 7470,
+        "sha256": "235d9013a51e0ff2df4fa8967093f77f0b3c1ee22bc0602a8f475f61056d6977"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "pending",
+      "review": "Viewed full portrait sources and chapter contact sheet 2026-10-12. Coherent anatomy or constructed silhouette, restrained slate/ivory/bronze and truthful alt. Integrated UI review still pending.",
+      "integrationEvidence": "D:/Tro-ly-AI-art/f5-finalcampaign-campaign-chapter-11.png; chapter-12 through chapter-15; prepare-11,12,14 and story-15. Real Chrome light390 screenshots; selected overview and settings screenshots viewed. Full dark/320 and lower-fold crop QA pending F6."
+    }
+  },
+  {
+    "id": "than-the",
+    "contentId": "boss.than-the",
+    "alt": "Thiên Mệnh Thần Thể với tóc trắng, mặt nạ đồng và giáp bạc.",
+    "role": "boss",
+    "focalPoint": [
+      0.5,
+      0.3
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "than-the",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 40207,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, nonhuman ivory marble armored deity bust, featureless sculpted mask, long carved white hair, full marble chest armor, dark bronze trim, plain grey background",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage, human skin, person, woman, man, naked, nude",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 99.23,
+      "peakMiB": 4053,
+      "sha256": "8fe5110dc2715545cf9e8da7a01dc49b42249ed0a1420cd72dada4ca08d413b0",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/than-the.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 35550,
+        "sha256": "5c6805b147eba80162ddbb9996c512c718cb1ef906b286c3e3921b08abdb8d59"
+      },
+      {
+        "path": "web/assets/than-lo/than-the-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 7554,
+        "sha256": "5733aef9a2f4d38b2e95e90d999b1272034097c0ed4bc05b53053ca7c43a820f"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "pending",
+      "review": "Viewed full portrait sources and chapter contact sheet 2026-10-12. Coherent anatomy or constructed silhouette, restrained slate/ivory/bronze and truthful alt. Integrated UI review still pending.",
+      "integrationEvidence": "D:/Tro-ly-AI-art/f5-finalcampaign-campaign-chapter-11.png; chapter-12 through chapter-15; prepare-11,12,14 and story-15. Real Chrome light390 screenshots; selected overview and settings screenshots viewed. Full dark/320 and lower-fold crop QA pending F6."
+    }
+  },
+  {
+    "id": "than-chu",
+    "contentId": "character.than-chu",
+    "alt": "Thần Chủ tóc trắng dài, áo ngà với cổ áo than và đai đồng.",
+    "role": "character",
+    "focalPoint": [
+      0.5,
+      0.3
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "than-chu",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 40208,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, bust portrait, mature East Asian male immortal, long white hair, calm cold expression, ivory ceremonial robe, charcoal closed collar, small bronze ring clasp",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage",
+      "size": [
+        448,
+        640
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 104.75,
+      "peakMiB": 4053,
+      "sha256": "722d460c57d78c767c5a7d2bdc2a997b4c6fb20dbfa30c96780360402478febe",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/than-chu.webp",
+        "width": 448,
+        "height": 640,
+        "bytes": 26614,
+        "sha256": "e79c40b8a003f8e01d12d7db6dc09b4c55355eba35dc81fef14c8811cc2a4d8e"
+      },
+      {
+        "path": "web/assets/than-lo/than-chu-thumb.webp",
+        "width": 160,
+        "height": 229,
+        "bytes": 4982,
+        "sha256": "2edbb6b0a81cc1353ade7c36450ddc302b35d9826bd050458d9192b7e967888a"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "pending",
+      "review": "Viewed full portrait sources and chapter contact sheet 2026-10-12. Coherent anatomy or constructed silhouette, restrained slate/ivory/bronze and truthful alt. Integrated UI review still pending.",
+      "integrationEvidence": "D:/Tro-ly-AI-art/f5-finalcampaign-campaign-chapter-11.png; chapter-12 through chapter-15; prepare-11,12,14 and story-15. Real Chrome light390 screenshots; selected overview and settings screenshots viewed. Full dark/320 and lower-fold crop QA pending F6."
+    }
+  },
+  {
+    "id": "chapter11",
+    "contentId": "chapter.11",
+    "alt": "Sân đá và cửa vòm giữa các mái ngói xám của Cửu Trụ Thiên Ngục.",
+    "role": "chapter",
+    "focalPoint": [
+      0.5,
+      0.5
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "chapter11",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 40209,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, ancient prison courtyard, immense nine stone towers, barred gate, narrow empty walkway, grey storm clouds, pale mist, wide landscape, no people",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage, human, person, face, woman, man, skin, naked, nude",
+      "size": [
+        640,
+        448
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 107.66,
+      "peakMiB": 4053,
+      "sha256": "bc02672dca076323b4f7d0865a21b8299928238104286726e811884f58a4f1bc",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/chapter11.webp",
+        "width": 640,
+        "height": 448,
+        "bytes": 44286,
+        "sha256": "7099e76e94854f449a3607fba7b48e5058be11684039e082124b8a195eda51bf"
+      },
+      {
+        "path": "web/assets/than-lo/chapter11-thumb.webp",
+        "width": 160,
+        "height": 112,
+        "bytes": 3822,
+        "sha256": "12998066c9f551d92e40a0e209352f30792920bc1bf9413ade4f7487d516f45a"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "pending",
+      "review": "Viewed full portrait sources and chapter contact sheet 2026-10-12. Coherent anatomy or constructed silhouette, restrained slate/ivory/bronze and truthful alt. Integrated UI review still pending.",
+      "integrationEvidence": "D:/Tro-ly-AI-art/f5-finalcampaign-campaign-chapter-11.png; chapter-12 through chapter-15; prepare-11,12,14 and story-15. Real Chrome light390 screenshots; selected overview and settings screenshots viewed. Full dark/320 and lower-fold crop QA pending F6."
+    }
+  },
+  {
+    "id": "chapter12",
+    "contentId": "chapter.12",
+    "alt": "Gian điện tròn với các cột đá và khoảng trời sáng phía trên ở Vạn Đạo Thần Thể.",
+    "role": "chapter",
+    "focalPoint": [
+      0.5,
+      0.5
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "chapter12",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 40210,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, abandoned subterranean bronze altar, monumental ivory marble pillars, rock cavern, soft shafts of light, still dark water, wide landscape, no people",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage, human, person, face, woman, man, skin, naked, nude",
+      "size": [
+        640,
+        448
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 111.88,
+      "peakMiB": 4053,
+      "sha256": "43e0937e7cf087609a65d6082fd50866a8108646b2b5a58a40c7e1b476dbc127",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/chapter12.webp",
+        "width": 640,
+        "height": 448,
+        "bytes": 43758,
+        "sha256": "0d2afd7dde3790b9483b0a4bc5ad158f4ea4af610edd417785dc759af93f8f5d"
+      },
+      {
+        "path": "web/assets/than-lo/chapter12-thumb.webp",
+        "width": 160,
+        "height": 112,
+        "bytes": 3404,
+        "sha256": "0233cedc05a12aabd07bf382dd8dde61fa2803a731b64a5846dff4aaa6232518"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "pending",
+      "review": "Viewed full portrait sources and chapter contact sheet 2026-10-12. Coherent anatomy or constructed silhouette, restrained slate/ivory/bronze and truthful alt. Integrated UI review still pending.",
+      "integrationEvidence": "D:/Tro-ly-AI-art/f5-finalcampaign-campaign-chapter-11.png; chapter-12 through chapter-15; prepare-11,12,14 and story-15. Real Chrome light390 screenshots; selected overview and settings screenshots viewed. Full dark/320 and lower-fold crop QA pending F6."
+    }
+  },
+  {
+    "id": "chapter13",
+    "contentId": "chapter.13",
+    "alt": "Sân điện và cổng đá mở về núi mây của Thiên Môn.",
+    "role": "chapter",
+    "focalPoint": [
+      0.5,
+      0.5
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "chapter13",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 40211,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, immense ancient stone gate above mountain clouds, long narrow staircase, bronze door hinges, distant tiled temple, pale dawn, wide landscape, no people",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage, human, person, face, woman, man, skin, naked, nude",
+      "size": [
+        640,
+        448
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 110.16,
+      "peakMiB": 4053,
+      "sha256": "0f3b5eb026de881a655c74427dae5971ed1e69b4618e5e6ef6e1c482828dcdea",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/chapter13.webp",
+        "width": 640,
+        "height": 448,
+        "bytes": 41374,
+        "sha256": "60e43e7a690f36253eb558cc7ed2ad7d926435406d3f7d7b4e41281b337d1fb3"
+      },
+      {
+        "path": "web/assets/than-lo/chapter13-thumb.webp",
+        "width": 160,
+        "height": 112,
+        "bytes": 4128,
+        "sha256": "c9770945b0bf2318dc48c477ef41139b6e33a426519a8e5a23e6ee30feed5ced"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "pending",
+      "review": "Viewed full portrait sources and chapter contact sheet 2026-10-12. Coherent anatomy or constructed silhouette, restrained slate/ivory/bronze and truthful alt. Integrated UI review still pending.",
+      "integrationEvidence": "D:/Tro-ly-AI-art/f5-finalcampaign-campaign-chapter-11.png; chapter-12 through chapter-15; prepare-11,12,14 and story-15. Real Chrome light390 screenshots; selected overview and settings screenshots viewed. Full dark/320 and lower-fold crop QA pending F6."
+    }
+  },
+  {
+    "id": "chapter14",
+    "contentId": "chapter.14",
+    "alt": "Những bức tường và cột đá đổ giữa đồng cỏ mù sương trên Cổ Thần Chiến Trường.",
+    "role": "chapter",
+    "focalPoint": [
+      0.5,
+      0.5
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "chapter14",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 40212,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, empty ancient battlefield, broken stone steles and fallen bronze spear shafts, ruined walls, sparse grass, grey morning fog, wide landscape, no people",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage, human, person, face, woman, man, skin, naked, nude",
+      "size": [
+        640,
+        448
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 109.55,
+      "peakMiB": 4053,
+      "sha256": "aed72f68a9ad602378676dfb0f8419df7adab2b9cf67c242b9bf83d7a4377f05",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/chapter14.webp",
+        "width": 640,
+        "height": 448,
+        "bytes": 24892,
+        "sha256": "04b1d8e0ab8857bbe0597cecac22f17f5fb7c46c79fd69ffe3d18add35f0349c"
+      },
+      {
+        "path": "web/assets/than-lo/chapter14-thumb.webp",
+        "width": 160,
+        "height": 112,
+        "bytes": 2600,
+        "sha256": "bcbb3da166a81a319e9262e276f9f681c30487602492fb88e5ef5de9d461e7c3"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "pending",
+      "review": "Viewed full portrait sources and chapter contact sheet 2026-10-12. Coherent anatomy or constructed silhouette, restrained slate/ivory/bronze and truthful alt. Integrated UI review still pending.",
+      "integrationEvidence": "D:/Tro-ly-AI-art/f5-finalcampaign-campaign-chapter-11.png; chapter-12 through chapter-15; prepare-11,12,14 and story-15. Real Chrome light390 screenshots; selected overview and settings screenshots viewed. Full dark/320 and lower-fold crop QA pending F6."
+    }
+  },
+  {
+    "id": "chapter15",
+    "contentId": "chapter.15",
+    "alt": "Cầu đá cong qua mặt nước, điện cổ và núi mù sương dưới trăng nhạt.",
+    "role": "chapter",
+    "focalPoint": [
+      0.5,
+      0.5
+    ],
+    "modelLicense": "creativeml-openrail-m",
+    "workflow": "scripts/art-local.py",
+    "source": {
+      "id": "chapter15",
+      "model": "Lykon/dreamshaper-8",
+      "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+      "seed": 40213,
+      "prompt": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy, ancient stone bridge toward ruined temple, immense broken circular stone arch, pale moon above mountain clouds, muted grey night, wide landscape, no people",
+      "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage, human, person, face, woman, man, skin, naked, nude",
+      "size": [
+        640,
+        448
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "precision": "float32",
+      "seconds": 108.06,
+      "peakMiB": 4053,
+      "sha256": "7f1d2de2b8af2556d261328882c986ee4e148d27e147f01afc58bc7033ed3ecd",
+      "qa": "pending"
+    },
+    "files": [
+      {
+        "path": "web/assets/than-lo/chapter15.webp",
+        "width": 640,
+        "height": 448,
+        "bytes": 35192,
+        "sha256": "3635f71447f15ac99828d96a5d95d6423d390eb7dde098753c1a0545ff8f241e"
+      },
+      {
+        "path": "web/assets/than-lo/chapter15-thumb.webp",
+        "width": 160,
+        "height": 112,
+        "bytes": 2932,
+        "sha256": "cfe373e1a9a2f8dfb7b9959fafad64156ad6bebadaf0770e689b5e5505ae7862"
+      }
+    ],
+    "qa": {
+      "concept": "approved",
+      "integratedUi": "pending",
+      "review": "Viewed full portrait sources and chapter contact sheet 2026-10-12. Coherent anatomy or constructed silhouette, restrained slate/ivory/bronze and truthful alt. Integrated UI review still pending.",
+      "integrationEvidence": "D:/Tro-ly-AI-art/f5-finalcampaign-campaign-chapter-11.png; chapter-12 through chapter-15; prepare-11,12,14 and story-15. Real Chrome light390 screenshots; selected overview and settings screenshots viewed. Full dark/320 and lower-fold crop QA pending F6."
+    }
   }
 ]

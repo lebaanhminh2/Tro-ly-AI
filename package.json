@@ -6,7 +6,7 @@
     "node": ">=24.0.0"
   },
   "scripts": {
-    "test": "node --test tests/unit/*.test.ts tests/integration/*.test.ts",
+    "test": "node --test --test-concurrency=2 tests/unit/*.test.ts tests/integration/*.test.ts",
     "test:experiments": "node --test experiments/ai-trial/*.test.ts",
     "test:all": "npm run test && npm run test:experiments",
     "dev": "wrangler dev --local",

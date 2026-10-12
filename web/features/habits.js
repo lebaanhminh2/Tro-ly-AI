@@ -2,6 +2,7 @@ import { liveRequest } from '../core/http.js';
 import { cadenceLabel, habitDate, habitWeekdays, safeCsvCell } from '../models/habits.js';
 import { button, el, field } from '../ui/dom.js';
 import { habitJsonExport } from '../models/habit-export.js';
+import { prefersReducedMotion } from '../core/experience.js';
 
 export function createHabitActions(context) {
     const { state, runtime, render, toast, sheet, sheetContent, openSheet, performLive, confirm } = context;
@@ -114,7 +115,7 @@ export function createHabitActions(context) {
         state.tab = 'habits'; state.habitPanel = 'today'; state.habitFilter = 'active'; render();
         await loadHabits();
         document.querySelector('[data-habit-id="' + CSS.escape(habitId) + '"]')?.scrollIntoView({
-            block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+            block: 'center', behavior: prefersReducedMotion() ? 'instant' : 'smooth' });
     }
     function openHabit(view) {
         const initial = view?.pending?.definition ?? view?.definition;

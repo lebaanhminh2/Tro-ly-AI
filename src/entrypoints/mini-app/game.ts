@@ -4,12 +4,19 @@ import { BattleService } from '../../application/battle-service.ts';
 import { D1BattleStore } from '../../adapters/d1/battle-store.ts';
 import { D1GamePresetStore } from '../../adapters/d1/game-preset-store.ts';
 import { GamePresetService } from '../../application/game-preset-service.ts';
+import { GameExportService } from '../../application/game-export-service.ts';
+import { D1GameExportStore } from '../../adapters/d1/game-export-store.ts';
 import { bossById, GAME_CHAPTERS, publicGameCatalog } from '../../domain/game-content.ts';
 import { GAME_CHARACTERS } from '../../domain/game-characters.ts';
 import { json, type MiniAppContext, type MiniAppInput } from './context.ts';
 
 export async function readGame({ env, owner, now }: MiniAppContext, url: URL): Promise<Response> {
     if (url.pathname === '/api/game-catalog') return json(publicGameCatalog());
+    if (url.pathname === '/api/game-export') {
+        if (!/^\d+$/.test(url.searchParams.get('from') ?? '') || !/^\d+$/.test(url.searchParams.get('to') ?? '')) throw Error('INVALID_GAME_EXPORT');
+        return json(await new GameExportService(new D1GameExportStore(env.DB))
+            .read(owner, Number(url.searchParams.get('from')), Number(url.searchParams.get('to')), now));
+    }
     if (url.pathname === '/api/game-presets') return json(await new D1GamePresetStore(env.DB).read(owner));
     const store = new D1GameStore(env.DB);
     const battles = new D1BattleStore(env.DB);

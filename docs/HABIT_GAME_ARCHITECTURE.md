@@ -127,6 +127,19 @@ Tên endpoint/DTO do AI quyết định, không cần cố đóng băng URL từ
 | Cứu/nhận kết quả | Trận, quyền cứu, expected state/request ID | Delta/cost/result nguyên tử; không rút sau HP 0 |
 | Library/story/log | IDs có quyền xem, cursor | Nội dung đã mở, spoiler policy, rule/content version |
 
+### Xuất hành trình đang triển khai
+
+`GET /api/game-export?from=...&to=...` gọi `GameExportService` → `GameExportStore`, format `assistant-than-lo` version1. Khoảng bao gồm hai đầu, tối đa366 ngày sinh hoạt. Một SELECT/CTE owner-scoped đọc snapshot SQLite nhất quán; không gọi `ensureDay`, settlement hoặc mutation. Có thể xuất hồ sơ đã lưu dù hiện chưa có ngày hoạt động.
+
+- Hồ sơ hiện có: account/lệnh khóa cảnh giới, cultivation, quyền học, chiến tích/thần binh, bộ chiêu và các bản luyện. Nhật ký theo khoảng: lựa chọn, ngày đã chốt, trận/log và nghĩa vụ tuần; lựa chọn ngay trước khoảng được giữ làm mốc. Trận đang sống cũng được giữ khi bắt đầu trước khoảng.
+- Không gửi `content_json`, raw `state_json`, future intents hoặc ending chưa mở. Battle được chiếu qua `publicBattleState`; victory chỉ được đọc khi trận đã thắng. Không xuất receipts, secrets hoặc dữ liệu owner khác.
+- Giới hạn số dòng và tổng số ký tự mỗi nhóm trước JSON aggregate; tối đa2MiB UTF-8 ở application. Nếu vượt thì từ chối, không cắt âm thầm. UI chọn30/90/365 ngày, tải JSON; habit vẫn có CSV/JSON riêng.
+- Đây là dữ liệu để đọc/lưu giữ. Operational DB backup/restore vẫn riêng; không thêm nút nhập đè hoặc cấp thưởng từ file xuất.
+
+### Tùy chỉnh giao diện và hướng dẫn
+
+`web/core/experience.js` giữ lựa chọn device-local `gameVisible`, `motion` và việc bỏ qua hướng dẫn. Ẩn game chỉ đổi điều hướng; không đổi mode, ngừng trận, miễn nghĩa vụ hoặc gọi API ghi. Habit vẫn truy cập độc lập. Giảm chuyển động tôn trọng hệ điều hành và tùy chọn app, áp dụng cả CSS/scroll/độ trễ của presentation effects. Settings giữ form đang chỉnh dở và header/nút đóng cố định. Guide có thể bỏ qua/mở lại; không tự tạo habit hoặc tự xuất chiến.
+
 Mọi endpoint kiểm owner từ auth context. Giữ Telegram initData/HMAC/TTL, browser auth/cookie/Origin và error semantics hiện có. Request API hiện có cap 4 KB; nếu payload mới cần đổi cap, chứng minh nhu cầu và vẫn có giới hạn. Không cho AI arbitrary SQL/code/network hay chọn owner/thời gian kết toán.
 
 Tool chỉ ghi khi user có yêu cầu rõ trong cơ chế hiện tại. Hỏi tình trạng không tự tạo habit/đổi chế độ/chọn cấm thuật. Context gồm ngày server, sleep/focus/notification state, tóm tắt habit/chế độ/trận liên quan với revision; không đưa cả catalog/history hoặc dựa summary để suy quyền. Khi Gemini lỗi/quota, web và luật/kết toán vẫn dùng được.

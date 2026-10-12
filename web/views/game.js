@@ -3,10 +3,12 @@ import { practiceNumber, practiceStatus, practiceTiers, purityLabel } from '../m
 import { renderJourney } from './journey.js';
 import { renderGameCollection } from './game-collection.js';
 import { matchingTechniques } from '../models/game-library.js';
+import { experiencePreferences } from '../core/experience.js';
 
 export function renderGame(ui, state) {
     const { el, button, card, heading } = ui, root = el('section', undefined, 'game-page');
-    root.append(heading('Thần Lộ', 'Tu luyện từ những cam kết ngoài đời.'));
+    const top = heading('Thần Lộ', 'Tu luyện từ những cam kết ngoài đời.');
+    top.append(button('Cách chơi', () => ui.openGameGuide(), 'text-button')); root.append(top);
     if (state.gameError) root.append(el('p', state.gameError, 'hint'), button('Tải lại', () => ui.loadGame(), 'secondary'));
     const data = state.gameData, catalog = state.gameCatalog;
     if (!data || !catalog) {
@@ -21,6 +23,13 @@ export function renderGame(ui, state) {
         control.setAttribute('aria-pressed', String(selectedPanel === panel)); navigation.append(control);
     }
     root.append(navigation);
+    if (!experiencePreferences().gameGuideDismissed && !data.currentPractice && !data.pendingPractice && data.current.mode === 'idle'
+        && !data.recent.length && !(data.victories ?? []).length && !(data.battles ?? []).length) {
+        const guide = el('aside', undefined, 'game-start-guide');
+        guide.append(el('p', 'Mới tới thư các? Một cam kết vừa sức và Võ Kỹ là đủ để bắt đầu.'),
+            button('Xem hướng dẫn', () => ui.openGameGuide(), 'text-button'), button('Để sau', () => ui.dismissGameGuide(), 'text-button'));
+        root.append(guide);
+    }
     if (selectedPanel === 'journey') { root.append(renderJourney(ui, data, catalog, state.gameChapter)); return root; }
     if (selectedPanel === 'collection') { root.append(renderGameCollection(ui, data, catalog)); return root; }
     if (state.gamePanel === 'library') {

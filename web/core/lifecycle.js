@@ -9,6 +9,7 @@ import { renderGame } from '../views/game.js';
 import { settleRequest } from './http.js';
 import { connectLive, refreshLive } from './live-data.js';
 import { applySnapshot } from './state.js';
+import { experiencePreferences } from './experience.js';
 export function createLifecycle({ state, runtime, ui, content, sheet, renderBrowserLogin, showBrowserLogin, connected, toast }) {
     let focusExpiryTimer, refreshing = false, lastRefresh = 0;
     async function expireTaskFocus() {
@@ -37,11 +38,14 @@ export function createLifecycle({ state, runtime, ui, content, sheet, renderBrow
         if (runtime.focusAnimating)
             return;
         clearTimeout(focusExpiryTimer);
+        const gameVisible = experiencePreferences().gameVisible;
+        if (!gameVisible && state.tab === 'game') state.tab = 'today';
         const previousScroll = document.querySelector('.time-scroll');
         if (previousScroll)
             state.timelineScroll = previousScroll.scrollTop;
         content.removeAttribute('aria-busy');
         for (const b of document.querySelectorAll('[data-tab]')) {
+            if (b.dataset.tab === 'game') b.hidden = !gameVisible;
             if (b.dataset.tab === state.tab)
                 b.setAttribute('aria-current', 'page');
             else

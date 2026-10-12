@@ -1,0 +1,276 @@
+{
+  "assets": [
+    {
+      "id": "than-so-v2",
+      "publishId": "than-so",
+      "alt": "Thiên Mệnh Thần Sổ.",
+      "prompt": "still life, open ancient blank book, thick ivory parchment pages, dark brown leather cover, bronze clasps, resting on low black stone pedestal, plain grey background, no writing",
+      "negative": "pagoda, tower, building, human, person, face",
+      "seed": 40300,
+      "contentId": "boss.than-so",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": false,
+      "qaNote": "Rejected: seated human statue instead of a book. No publication. Revisions tracked in relics.json."
+    },
+    {
+      "id": "cam-thau-thien",
+      "alt": "Ng??i ?o?t Huy?t t?c ?en bu?c sau, ?o x?m than v? c? ?o ?en cao.",
+      "prompt": "bust portrait, mature East Asian male ascetic, narrow severe eyes, shaved scalp, charcoal layered robe, tiny muted crimson collar, tarnished bronze ring clasp, plain grey background",
+      "seed": 40301,
+      "publishId": "cam-thau-thien",
+      "contentId": "boss.cam-thau-thien",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": true,
+      "qaNote": "Viewed full source PNG 2026-10-12. Face, silhouette, cloth and bronze detail coherent; alt records the actual image. Sources selected but not yet published or integrated."
+    },
+    {
+      "id": "cam-tang-nhat",
+      "alt": "Ng??i Gi? Nh?t T?n t?c b?c t?t d?i, tr?m ??ng v? ?o x?m ng?.",
+      "prompt": "bust portrait, older East Asian woman, long silver grey braid, weathered patient face, ash grey closed robe, bronze sun medallion, plain grey background",
+      "seed": 40302,
+      "publishId": "cam-tang-nhat",
+      "contentId": "boss.cam-tang-nhat",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": true,
+      "qaNote": "Viewed full source PNG 2026-10-12. Face, silhouette, cloth and bronze detail coherent; alt records the actual image. Sources selected but not yet published or integrated."
+    },
+    {
+      "id": "cam-dong-menh",
+      "alt": "Ng??i Gi? Song Kh? trong ?o x?m v?i gi?p vai ??ng v? t?c ?en bu?c sau.",
+      "prompt": "bust portrait, middle aged East Asian male scholar, tied black hair, solemn face, ivory charcoal layered robe, two small bronze collar clasps, plain grey background",
+      "seed": 40303,
+      "publishId": "cam-dong-menh",
+      "contentId": "boss.cam-dong-menh",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": true,
+      "qaNote": "Viewed full source PNG 2026-10-12. Face, silhouette, cloth and bronze detail coherent; alt records the actual image. Sources selected but not yet published or integrated."
+    },
+    {
+      "id": "cam-cuu-u",
+      "alt": "Ng??i Gi? D?u H?n t?c ?en d?i, v?ng trang s?c ??ng tr?n ??u v? gi?p vai ??ng.",
+      "prompt": "bust portrait, East Asian woman age forty, pale calm face, black hair pinned high, charcoal hood resting on shoulders, antique bronze neck ornament, plain grey background",
+      "seed": 40304,
+      "publishId": "cam-cuu-u",
+      "contentId": "boss.cam-cuu-u",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": true,
+      "qaNote": "Viewed full source PNG 2026-10-12. Face, silhouette, cloth and bronze detail coherent; alt records the actual image. Sources selected but not yet published or integrated."
+    },
+    {
+      "id": "cam-phong-than",
+      "alt": "Ng??i Gi? Ni?m ?n t?c ?en ng?n, c? ?o ng? v? gi?p vai ??ng kh?c hoa v?n.",
+      "prompt": "bust portrait, mature East Asian female warden, dark short tied hair, steady eyes, ivory high collar, charcoal robe, rectangular bronze brooch, plain grey background",
+      "seed": 40305,
+      "publishId": "cam-phong-than",
+      "contentId": "boss.cam-phong-than",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": true,
+      "qaNote": "Viewed full source PNG 2026-10-12. Face, silhouette, cloth and bronze detail coherent; alt records the actual image. Sources selected but not yet published or integrated."
+    },
+    {
+      "id": "cam-tam-nhat",
+      "alt": "Ng??i Gi? T? ?n v?i r?u b?c, m? tr?m ng? v? ?o x?m than.",
+      "prompt": "bust portrait, elderly East Asian male hermit, long grey beard, grey cloth hood, lined face, ivory inner robe, small round bronze clasp, plain grey background",
+      "seed": 40306,
+      "publishId": "cam-tam-nhat",
+      "contentId": "boss.cam-tam-nhat",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": true,
+      "qaNote": "Viewed full source PNG 2026-10-12. Face, silhouette, cloth and bronze detail coherent; alt records the actual image. Sources selected but not yet published or integrated."
+    },
+    {
+      "id": "cam-nghich-luan",
+      "alt": "Người Giữ Luân Khuyết.",
+      "prompt": "bust portrait, older East Asian female archivist, grey hair tight bun, tired observant eyes, layered closed slate robe, simple bronze ring pendant, plain grey background",
+      "seed": 40307,
+      "publishId": "cam-nghich-luan",
+      "contentId": "boss.cam-nghich-luan",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": false,
+      "qaNote": "Pending source/identity and integrated review."
+    },
+    {
+      "id": "di-san-vo-mon",
+      "alt": "Khách Không Môn.",
+      "prompt": "bust portrait, mature East Asian male wanderer, short messy black hair, relaxed thoughtful face, worn ash grey closed robe, charcoal scarf, plain grey background",
+      "seed": 40308,
+      "publishId": "di-san-vo-mon",
+      "contentId": "boss.di-san-vo-mon",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": false,
+      "qaNote": "Pending source/identity and integrated review."
+    },
+    {
+      "id": "di-san-son-ha",
+      "alt": "Người Giữ Sơn Hà.",
+      "prompt": "bust portrait, older East Asian male mountain keeper, broad weathered face, grey beard, charcoal stone shoulder armor, ivory collar, bronze clasp, plain grey background",
+      "seed": 40309,
+      "publishId": "di-san-son-ha",
+      "contentId": "boss.di-san-son-ha",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": false,
+      "qaNote": "Pending source/identity and integrated review."
+    },
+    {
+      "id": "di-san-huyet-trieu",
+      "alt": "Người Giữ Huyết Triều.",
+      "prompt": "bust portrait, mature East Asian female river guardian, black braided hair, stern face, closed slate robe, muted crimson sash, silver shoulder plates, plain grey background",
+      "seed": 40310,
+      "publishId": "di-san-huyet-trieu",
+      "contentId": "boss.di-san-huyet-trieu",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": false,
+      "qaNote": "Pending source/identity and integrated review."
+    },
+    {
+      "id": "di-san-kiep-dong",
+      "alt": "Người Giữ Kiếp Thanh.",
+      "prompt": "bust portrait, East Asian man age forty, long dark hair tied back, calm intense eyes, charcoal lamellar armor, ivory scarf, small bronze ornament, plain grey background",
+      "seed": 40311,
+      "publishId": "di-san-kiep-dong",
+      "contentId": "boss.di-san-kiep-dong",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": false,
+      "qaNote": "Pending source/identity and integrated review."
+    },
+    {
+      "id": "di-san-van-co",
+      "alt": "Người Giữ Kiếm Âm.",
+      "prompt": "bust portrait, older East Asian female sword keeper, straight grey hair tied back, serious face, ivory closed scholar robe, dark shoulder mantle, bronze clasp, plain grey background",
+      "seed": 40312,
+      "publishId": "di-san-van-co",
+      "contentId": "boss.di-san-van-co",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": false,
+      "qaNote": "Pending source/identity and integrated review."
+    },
+    {
+      "id": "di-san-van-thien",
+      "alt": "Người Giữ Tứ Ấn.",
+      "prompt": "bust portrait, elderly East Asian male keeper, white hair tight bun, short white beard, charcoal ivory layered high collar robe, round bronze chest seal, plain grey background",
+      "seed": 40313,
+      "publishId": "di-san-van-thien",
+      "contentId": "boss.di-san-van-thien",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": false,
+      "qaNote": "Pending source/identity and integrated review."
+    }
+  ],
+  "model": "Lykon/dreamshaper-8",
+  "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+  "variant": "fp16",
+  "style": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy",
+  "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage"
+}

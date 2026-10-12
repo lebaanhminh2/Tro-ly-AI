@@ -1,5 +1,6 @@
 import { setThemePreference, themePreference } from '../core/theme.js';
 import { button, el, field } from '../ui/dom.js';
+import { renderExperienceControls } from './experience.js';
 export function createScheduleActions(context) {
     const { state, sheet, sheetContent, openSheet, performLive, render, toast, renderSleepControls } = context;
     function openHelp() {
@@ -56,7 +57,7 @@ export function createScheduleActions(context) {
         body.tabIndex = 0;
         body.setAttribute('role', 'region');
         body.setAttribute('aria-label', 'Nội dung cài đặt');
-        body.append(form, renderSleepControls(), themeLabel, button('Hướng dẫn nhanh', openHelp, 'secondary'));
+        body.append(form, renderSleepControls(), themeLabel, renderExperienceControls(context), button('Hướng dẫn nhanh', openHelp, 'secondary'));
         sheetContent.append(body);
     }
     function openAvailability() {

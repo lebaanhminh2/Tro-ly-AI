@@ -17,6 +17,7 @@ import { GAME_CHARACTERS } from '../../src/domain/game-characters.ts';
 import { newBattleState, publicBattleState } from '../../src/domain/battle.ts';
 import { armedBattleState } from '../../src/domain/game-rewards.ts';
 import { fighterForRank, rescueQuote, payBattleRescue } from '../../src/domain/battle-economy.ts';
+import { GameExportService } from '../../src/application/game-export-service.ts';
 // Real-browser smoke tests. Only localhost fixtures are used; no .env or cloud data.
 const browserBin = process.env.BROWSER_BIN || [
     'C:/Program Files/Google/Chrome/Application/chrome.exe',
@@ -282,6 +283,16 @@ async function serve(control, baseline) {
                 }
                 else if (endpoint === 'game' && request.method === 'GET') response.end(JSON.stringify(control.game));
                 else if (endpoint === 'game-catalog') response.end(JSON.stringify(publicGameCatalog()));
+                else if (endpoint === 'game-export') {
+                    if (control.failGameExport) {
+                        response.statusCode = 409; response.end(JSON.stringify({ error: 'GAME_EXPORT_TOO_LARGE', message: 'Dữ liệu vượt giới hạn một lần xuất.' })); return;
+                    }
+                    const params = new URL(request.url, 'http://localhost').searchParams;
+                    const service = new GameExportService({ read: async () => ({ profile: { account: null, cultivation: control.state.account.state,
+                        owned: control.game.owned, victories: control.game.victories, entitlements: control.game.rewards, presets: control.presets.presets },
+                        selections: [], practiceVersions: control.practiceVersions, days: [], battles: [], events: [], weeklyAudits: [] }) });
+                    response.end(JSON.stringify(await service.read('123', Number(params.get('from')), Number(params.get('to')), now)));
+                }
                 else if (endpoint === 'game-presets' && request.method === 'GET') response.end(JSON.stringify(control.presets));
                 else if (endpoint === 'game-boss') {
                     const boss = bossById(new URL(request.url, 'http://localhost').searchParams.get('bossId'));
@@ -596,7 +607,7 @@ test('campaign images keep distinct chapter scenes and readable original cast cr
         browser = await chrome(); await browser.navigate(server.url, 390);
         await browser.wait("!!document.querySelector('.focus-flip-card')"); await browser.tap('[data-tab=game]');
         await browser.wait("!!document.querySelector('.practice-intro')"); await browser.click('Hành trình');
-        for (const chapter of [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]) {
+        for (const chapter of [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]) {
             await browser.evaluate("document.querySelector('.journey-chapter-picker select').value='" + chapter + "';document.querySelector('.journey-chapter-picker select').dispatchEvent(new Event('change'))");
             await browser.wait("[...document.querySelectorAll('.journey-page img')].every(image=>image.complete && image.naturalWidth>0)");
             assert.equal((await snapshot(browser)).overflow, false);
@@ -605,7 +616,7 @@ test('campaign images keep distinct chapter scenes and readable original cast cr
             await browser.wait("[...document.querySelectorAll('.game-story-people img')].every(image=>image.complete && image.naturalWidth>0)");
             if (process.env.WEB_TEST_SCREENSHOT_PATH) await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, '-campaign-story-' + chapter + '.png'));
             await browser.tap('[data-sheet-close]');
-            if (chapter < 11) {
+            if (chapter !== 15) {
                 await browser.evaluate("document.querySelector('.journey-boss button').click()");
                 await browser.wait("!!document.querySelector('.battle-preparation>.primary') && document.querySelector('.battle-preparation-art').complete && document.querySelector('.battle-preparation-art').naturalWidth>0");
                 if (process.env.WEB_TEST_SCREENSHOT_PATH) await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, '-campaign-prepare-' + chapter + '.png'));
@@ -1465,6 +1476,64 @@ test('plan editor reorders only unfinished tasks and preserves completed minutes
             await browser.close();
         await server.close();
     }
+});
+
+test('experience choices persist without writes, keep settings drafts and make the game guide optional', { skip: !browserBin, timeout: 60000 }, async () => {
+    const control = fixture(), server = await serve(control); let browser;
+    try {
+        browser = await chrome(); await browser.navigate(server.url, 320);
+        await browser.wait("!!document.querySelector('.focus-flip-card')");
+        const writes = control.posts.length;
+        await browser.evaluate("document.querySelector('[data-tab=game]').click()");
+        await browser.wait("!!document.querySelector('.game-start-guide')");
+        await browser.click('Xem hướng dẫn');
+        await browser.wait("document.querySelectorAll('.game-guide-steps li').length===3");
+        assert.equal((await snapshot(browser)).overflow, false);
+        await browser.evaluate("document.querySelector('[data-sheet-close]').click()"); await browser.click('Để sau');
+        assert.equal(await browser.evaluate("!!document.querySelector('.game-start-guide')"), false);
+        await browser.evaluate("document.querySelector('#settings').click();document.querySelector('#sheet input[type=time]').value='06:00'; document.querySelector('#sheet input[type=time]').dispatchEvent(new Event('input')); const select=document.querySelector('.settings-experience select');select.value='hide';select.dispatchEvent(new Event('change'))");
+        assert.equal(await browser.evaluate("getComputedStyle(document.querySelector('[data-tab=game]')).display"), 'none');
+        assert.equal(await browser.evaluate("document.querySelector('#sheet input[type=time]').value"), '06:00');
+        await browser.evaluate("{ const select=document.querySelectorAll('.settings-experience select')[1];select.value='reduce';select.dispatchEvent(new Event('change')); }");
+        assert.equal(await browser.evaluate("document.documentElement.dataset.motion"), 'reduce');
+        assert.equal(await browser.evaluate("getComputedStyle(document.querySelector('.focus-flip-card')).transitionDuration"), '0s');
+        await browser.evaluate("document.querySelector('.settings-sheet-body').scrollTop=document.querySelector('.settings-sheet-body').scrollHeight");
+        if (process.env.UI_SCREENSHOT_DIR) await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'f5-experience-settings-320-light.png'));
+        await browser.navigate(server.url, 320); await browser.wait("!!document.querySelector('.focus-flip-card')");
+        assert.equal(await browser.evaluate("document.querySelector('[data-tab=game]').hidden"), true);
+        assert.equal(await browser.evaluate("document.documentElement.dataset.motion"), 'reduce');
+        await browser.evaluate("{ document.querySelector('#settings').click(); const select=document.querySelector('.settings-experience select');select.value='show';select.dispatchEvent(new Event('change'));document.querySelector('[data-sheet-close]').click();document.querySelector('[data-tab=game]').click(); }");
+        await browser.wait("!!document.querySelector('.practice-card')");
+        assert.equal(await browser.evaluate("!!document.querySelector('.game-start-guide')"), false);
+        await browser.click('Cách chơi'); await browser.click('Đến Thói quen');
+        await browser.wait("!!document.querySelector('.habits-page')");
+        assert.equal((await snapshot(browser)).overflow, false);
+        assert.equal(control.posts.length, writes); assert.deepEqual(browser.errors, []);
+    } finally { if (browser) await browser.close(); await server.close(); }
+});
+
+test('game export downloads a versioned JSON snapshot, preserves editions and recovers from a bounded export error without writes', { skip: !browserBin, timeout: 60000 }, async () => {
+    const control = fixture(), practice = newPracticeVersion('export_browser01', 'kiem-y', control.game.day.day, 1000, 1);
+    control.practiceVersions.push({ practice, version: 1, created: now });
+    const server = await serve(control); let browser;
+    try {
+        browser = await chrome(); await browser.navigate(server.url, 320); await browser.wait("!!document.querySelector('.focus-flip-card')");
+        await browser.evaluate("document.querySelector('[data-tab=game]').click()"); await browser.wait("!!document.querySelector('.practice-card')");
+        await browser.click('Sưu tập'); await browser.click('Xuất hành trình');
+        assert.equal((await snapshot(browser)).overflow, false);
+        await browser.evaluate("window.gameExportBlob=null;window.gameExportName=null;const exportCreate=URL.createObjectURL.bind(URL);URL.createObjectURL=blob=>{window.gameExportBlob=blob;return exportCreate(blob)};HTMLAnchorElement.prototype.click=function(){window.gameExportName=this.download};document.querySelector('#sheet select').value='365';document.querySelector('#sheet select').dispatchEvent(new Event('change'))");
+        if (process.env.UI_SCREENSHOT_DIR) await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'f5-game-export-320-light.png'));
+        await browser.click('Tải JSON'); await browser.wait("!!window.gameExportBlob");
+        const exported = JSON.parse(await browser.evaluate("gameExportBlob.text()"));
+        assert.equal(exported.format, 'assistant-than-lo'); assert.equal(exported.version, 1);
+        assert.equal(exported.range.to - exported.range.from, 364); assert.deepEqual(exported.practiceVersions[0].practice, practice);
+        assert.equal(await browser.evaluate("gameExportName"), 'than-lo-365-ngay.json');
+        control.failGameExport = true; await browser.evaluate("window.gameExportBlob=null"); await browser.click('Tải JSON');
+        await browser.wait("document.querySelector('#toast').textContent.includes('vượt giới hạn')");
+        assert.equal(await browser.evaluate("window.gameExportBlob"), null);
+        assert.equal(await browser.evaluate("[...document.querySelectorAll('#sheet button')].find(button=>button.textContent==='Tải JSON').disabled"), false);
+        assert.equal(control.posts.length, 0); assert.deepEqual(browser.errors, []);
+    } finally { if (browser) await browser.close(); await server.close(); }
 });
 
 test('real browser preserves desktop/mobile UI and feature flows', { skip: !browserBin, timeout: 120000 }, async (t) => {

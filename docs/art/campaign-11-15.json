@@ -10,7 +10,7 @@
       "publishId": "tru-thach",
       "contentId": "boss.tru-thach",
       "role": "boss",
-      "alt": "Th?n T??ng Th?ch Tr?.",
+      "alt": "Thần Tướng Thạch Trụ, tượng bán thân màu đá bạc với giáp đồng.",
       "focalPoint": [
         0.5,
         0.3
@@ -21,15 +21,15 @@
       "height": 640,
       "steps": 28,
       "guidance": 7,
-      "conceptApproved": false,
-      "qaNote": "Pending source/identity and integrated review."
+      "conceptApproved": true,
+      "qaNote": "Viewed full portrait sources and chapter contact sheet 2026-10-12. Coherent anatomy or constructed silhouette, restrained slate/ivory/bronze and truthful alt. Integrated UI review still pending."
     },
     {
       "id": "tru-thuy",
       "publishId": "tru-thuy",
       "contentId": "boss.tru-thuy",
       "role": "boss",
-      "alt": "Th?n T??ng Th?y Tr?.",
+      "alt": "Thần Tướng Thủy Trụ với tóc đen tết dài, áo xám lam và giáp vai bạc.",
       "focalPoint": [
         0.5,
         0.3
@@ -40,15 +40,15 @@
       "height": 640,
       "steps": 28,
       "guidance": 7,
-      "conceptApproved": false,
-      "qaNote": "Pending source/identity and integrated review."
+      "conceptApproved": true,
+      "qaNote": "Viewed full portrait sources and chapter contact sheet 2026-10-12. Coherent anatomy or constructed silhouette, restrained slate/ivory/bronze and truthful alt. Integrated UI review still pending."
     },
     {
       "id": "tru-am",
       "publishId": "tru-am",
       "contentId": "boss.tru-am",
       "role": "boss",
-      "alt": "Th?n T??ng ?m Tr?.",
+      "alt": "Thần Tướng Âm Trụ dưới mũ trùm đen với giáp vai đồng.",
       "focalPoint": [
         0.5,
         0.3
@@ -59,15 +59,15 @@
       "height": 640,
       "steps": 28,
       "guidance": 7,
-      "conceptApproved": false,
-      "qaNote": "Pending source/identity and integrated review."
+      "conceptApproved": true,
+      "qaNote": "Viewed full portrait sources and chapter contact sheet 2026-10-12. Coherent anatomy or constructed silhouette, restrained slate/ivory/bronze and truthful alt. Integrated UI review still pending."
     },
     {
       "id": "van-phap-khoi",
       "publishId": "van-phap-khoi",
       "contentId": "boss.van-phap-khoi",
       "role": "boss",
-      "alt": "V?n ??o Th?n Kh?i.",
+      "alt": "Vạn Pháp Thần Khôi với mặt nạ kim loại, khớp cổ và giáp đồng sẫm.",
       "focalPoint": [
         0.5,
         0.3
@@ -78,8 +78,8 @@
       "height": 640,
       "steps": 28,
       "guidance": 7,
-      "conceptApproved": false,
-      "qaNote": "Pending source/identity and integrated review.",
+      "conceptApproved": true,
+      "qaNote": "Viewed full portrait sources and chapter contact sheet 2026-10-12. Coherent anatomy or constructed silhouette, restrained slate/ivory/bronze and truthful alt. Integrated UI review still pending.",
       "negative": "human skin, person, woman, man, naked, nude"
     },
     {
@@ -87,7 +87,7 @@
       "publishId": "than-chien-vuong",
       "contentId": "boss.than-chien-vuong",
       "role": "boss",
-      "alt": "Th?n Chi?n V??ng.",
+      "alt": "Thần Chiến Vương với tóc bạc búi cao, gương mặt phong sương và giáp cổ đồng đen.",
       "focalPoint": [
         0.5,
         0.3
@@ -98,15 +98,15 @@
       "height": 640,
       "steps": 28,
       "guidance": 7,
-      "conceptApproved": false,
-      "qaNote": "Pending source/identity and integrated review."
+      "conceptApproved": true,
+      "qaNote": "Viewed full portrait sources and chapter contact sheet 2026-10-12. Coherent anatomy or constructed silhouette, restrained slate/ivory/bronze and truthful alt. Integrated UI review still pending."
     },
     {
       "id": "than-so",
       "publishId": "than-so",
       "contentId": "boss.than-so",
       "role": "boss",
-      "alt": "Thi?n M?nh Th?n S?.",
+      "alt": "Thiên Mệnh Thần Sổ, bản đầu bị loại vì chỉ thể hiện một tháp đá.",
       "focalPoint": [
         0.5,
         0.5
@@ -118,7 +118,7 @@
       "steps": 28,
       "guidance": 7,
       "conceptApproved": false,
-      "qaNote": "Pending source/identity and integrated review.",
+      "qaNote": "Rejected: source is a stone pagoda, not a book. Replaced by than-so-v2 in branches.json.",
       "negative": "human, person, face, woman, man, skin, naked, nude"
     },
     {
@@ -126,7 +126,7 @@
       "publishId": "than-the",
       "contentId": "boss.than-the",
       "role": "boss",
-      "alt": "Thi?n M?nh Th?n Th?.",
+      "alt": "Thiên Mệnh Thần Thể với tóc trắng, mặt nạ đồng và giáp bạc.",
       "focalPoint": [
         0.5,
         0.3
@@ -137,8 +137,8 @@
       "height": 640,
       "steps": 28,
       "guidance": 7,
-      "conceptApproved": false,
-      "qaNote": "Pending source/identity and integrated review.",
+      "conceptApproved": true,
+      "qaNote": "Viewed full portrait sources and chapter contact sheet 2026-10-12. Coherent anatomy or constructed silhouette, restrained slate/ivory/bronze and truthful alt. Integrated UI review still pending.",
       "negative": "human skin, person, woman, man, naked, nude"
     },
     {
@@ -146,7 +146,7 @@
       "publishId": "than-chu",
       "contentId": "character.than-chu",
       "role": "character",
-      "alt": "Th?n Ch?.",
+      "alt": "Thần Chủ tóc trắng dài, áo ngà với cổ áo than và đai đồng.",
       "focalPoint": [
         0.5,
         0.3
@@ -157,15 +157,15 @@
       "height": 640,
       "steps": 28,
       "guidance": 7,
-      "conceptApproved": false,
-      "qaNote": "Pending source/identity and integrated review."
+      "conceptApproved": true,
+      "qaNote": "Viewed full portrait sources and chapter contact sheet 2026-10-12. Coherent anatomy or constructed silhouette, restrained slate/ivory/bronze and truthful alt. Integrated UI review still pending."
     },
     {
       "id": "chapter11",
       "publishId": "chapter11",
       "contentId": "chapter.11",
       "role": "chapter",
-      "alt": "C?u Tr? Thi?n Ng?c.",
+      "alt": "Sân đá và cửa vòm giữa các mái ngói xám của Cửu Trụ Thiên Ngục.",
       "focalPoint": [
         0.5,
         0.5
@@ -176,8 +176,8 @@
       "height": 448,
       "steps": 28,
       "guidance": 7,
-      "conceptApproved": false,
-      "qaNote": "Pending source/identity and integrated review.",
+      "conceptApproved": true,
+      "qaNote": "Viewed full portrait sources and chapter contact sheet 2026-10-12. Coherent anatomy or constructed silhouette, restrained slate/ivory/bronze and truthful alt. Integrated UI review still pending.",
       "negative": "human, person, face, woman, man, skin, naked, nude"
     },
     {
@@ -185,7 +185,7 @@
       "publishId": "chapter12",
       "contentId": "chapter.12",
       "role": "chapter",
-      "alt": "V?n ??o Th?n Th?.",
+      "alt": "Gian điện tròn với các cột đá và khoảng trời sáng phía trên ở Vạn Đạo Thần Thể.",
       "focalPoint": [
         0.5,
         0.5
@@ -196,8 +196,8 @@
       "height": 448,
       "steps": 28,
       "guidance": 7,
-      "conceptApproved": false,
-      "qaNote": "Pending source/identity and integrated review.",
+      "conceptApproved": true,
+      "qaNote": "Viewed full portrait sources and chapter contact sheet 2026-10-12. Coherent anatomy or constructed silhouette, restrained slate/ivory/bronze and truthful alt. Integrated UI review still pending.",
       "negative": "human, person, face, woman, man, skin, naked, nude"
     },
     {
@@ -205,7 +205,7 @@
       "publishId": "chapter13",
       "contentId": "chapter.13",
       "role": "chapter",
-      "alt": "Thi?n M?n Ph?n Chi?n.",
+      "alt": "Sân điện và cổng đá mở về núi mây của Thiên Môn.",
       "focalPoint": [
         0.5,
         0.5
@@ -216,8 +216,8 @@
       "height": 448,
       "steps": 28,
       "guidance": 7,
-      "conceptApproved": false,
-      "qaNote": "Pending source/identity and integrated review.",
+      "conceptApproved": true,
+      "qaNote": "Viewed full portrait sources and chapter contact sheet 2026-10-12. Coherent anatomy or constructed silhouette, restrained slate/ivory/bronze and truthful alt. Integrated UI review still pending.",
       "negative": "human, person, face, woman, man, skin, naked, nude"
     },
     {
@@ -225,7 +225,7 @@
       "publishId": "chapter14",
       "contentId": "chapter.14",
       "role": "chapter",
-      "alt": "C? Th?n Chi?n Tr??ng.",
+      "alt": "Những bức tường và cột đá đổ giữa đồng cỏ mù sương trên Cổ Thần Chiến Trường.",
       "focalPoint": [
         0.5,
         0.5
@@ -236,8 +236,8 @@
       "height": 448,
       "steps": 28,
       "guidance": 7,
-      "conceptApproved": false,
-      "qaNote": "Pending source/identity and integrated review.",
+      "conceptApproved": true,
+      "qaNote": "Viewed full portrait sources and chapter contact sheet 2026-10-12. Coherent anatomy or constructed silhouette, restrained slate/ivory/bronze and truthful alt. Integrated UI review still pending.",
       "negative": "human, person, face, woman, man, skin, naked, nude"
     },
     {
@@ -245,7 +245,7 @@
       "publishId": "chapter15",
       "contentId": "chapter.15",
       "role": "chapter",
-      "alt": "Thi?n M?nh Th?n Ch?.",
+      "alt": "Cầu đá cong qua mặt nước, điện cổ và núi mù sương dưới trăng nhạt.",
       "focalPoint": [
         0.5,
         0.5
@@ -256,8 +256,8 @@
       "height": 448,
       "steps": 28,
       "guidance": 7,
-      "conceptApproved": false,
-      "qaNote": "Pending source/identity and integrated review.",
+      "conceptApproved": true,
+      "qaNote": "Viewed full portrait sources and chapter contact sheet 2026-10-12. Coherent anatomy or constructed silhouette, restrained slate/ivory/bronze and truthful alt. Integrated UI review still pending.",
       "negative": "human, person, face, woman, man, skin, naked, nude"
     }
   ]

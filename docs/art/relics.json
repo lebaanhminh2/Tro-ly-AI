@@ -1,0 +1,209 @@
+{
+  "assets": [
+    {
+      "id": "than-so-v3",
+      "publishId": "than-so",
+      "contentId": "boss.than-so",
+      "role": "boss",
+      "alt": "Thiên Mệnh Thần Sổ.",
+      "prompt": "antique parchment scroll, floating above a stone altar, curled ivory paper edges, bronze corner clasps, dim ancient cave, still life, paper texture, close view",
+      "negative": "person, human, woman, man, face, portrait, body, statue, pagoda, tower",
+      "seed": 40501,
+      "width": 448,
+      "height": 640,
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": false,
+      "qaNote": "Rejected: source is a stone marker with pseudo-writing, not a book. Prior than-so-v1 was a pagoda; v2 was a seated person. Next revision uses a proven book-oriented composition; no rejected source has been published."
+    },
+    {
+      "id": "weapon-thach-tam",
+      "contentId": "weapon.thach-tam",
+      "role": "weapon",
+      "alt": "Thạch Tâm.",
+      "prompt": "still life, circular antique bronze shield medallion with rough dark stone center, angular raised protective rim, resting on charcoal cloth, ivory background",
+      "seed": 40502,
+      "width": 448,
+      "height": 448,
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "publishId": "weapon-thach-tam",
+      "negative": "person, human, woman, man, face, portrait, body, statue",
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": false,
+      "qaNote": "Pending source, identity and integrated review."
+    },
+    {
+      "id": "weapon-thuan-phong",
+      "contentId": "weapon.thuan-phong",
+      "role": "weapon",
+      "alt": "Thuận Phong.",
+      "prompt": "still life, ancient slender bronze straight sword and scabbard, black wrapped hilt, small ivory cloth tassel, resting diagonally on charcoal cloth, ivory background",
+      "seed": 40503,
+      "width": 448,
+      "height": 448,
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "publishId": "weapon-thuan-phong",
+      "negative": "person, human, woman, man, face, portrait, body, statue",
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": false,
+      "qaNote": "Pending source, identity and integrated review."
+    },
+    {
+      "id": "weapon-dinh-tam",
+      "contentId": "weapon.dinh-tam",
+      "role": "weapon",
+      "alt": "Định Tâm.",
+      "prompt": "still life, ancient bronze rectangular seal pendant, black stone inset, thin dark cord, resting on ivory linen, weathered metal, close view",
+      "seed": 40504,
+      "width": 448,
+      "height": 448,
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "publishId": "weapon-dinh-tam",
+      "negative": "person, human, woman, man, face, portrait, body, statue",
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": false,
+      "qaNote": "Pending source, identity and integrated review."
+    },
+    {
+      "id": "school-thien-kiem",
+      "contentId": "school.thien-kiem",
+      "role": "school",
+      "alt": "Bí tịch Thiên Kiếm.",
+      "prompt": "still life, old charcoal cloth bound book, single small bronze straight sword ornament on cover, worn ivory pages, bronze corner protectors, resting on plain ivory linen",
+      "seed": 40505,
+      "width": 448,
+      "height": 448,
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "publishId": "school-thien-kiem",
+      "negative": "person, human, woman, man, face, portrait, body, statue",
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": false,
+      "qaNote": "Pending source, identity and integrated review."
+    },
+    {
+      "id": "school-bat-diet",
+      "contentId": "school.bat-diet",
+      "role": "school",
+      "alt": "Bí tịch Bất Diệt.",
+      "prompt": "still life, old charcoal cloth bound book, small angular bronze shield ornament on cover, thick worn ivory pages, bronze corner protectors, resting on plain ivory linen",
+      "seed": 40506,
+      "width": 448,
+      "height": 448,
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "publishId": "school-bat-diet",
+      "negative": "person, human, woman, man, face, portrait, body, statue",
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": false,
+      "qaNote": "Pending source, identity and integrated review."
+    },
+    {
+      "id": "school-u-minh",
+      "contentId": "school.u-minh",
+      "role": "school",
+      "alt": "Bí tịch U Minh.",
+      "prompt": "still life, old charcoal cloth bound book, bronze circular moon ornament on cover, tiny muted crimson seal, worn ivory pages, resting on plain ivory linen",
+      "seed": 40507,
+      "width": 448,
+      "height": 448,
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "publishId": "school-u-minh",
+      "negative": "person, human, woman, man, face, portrait, body, statue",
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": false,
+      "qaNote": "Pending source, identity and integrated review."
+    },
+    {
+      "id": "school-thai-hu",
+      "contentId": "school.thai-hu",
+      "role": "school",
+      "alt": "Bí tịch Thái Hư.",
+      "prompt": "still life, old charcoal cloth bound book, small open bronze ring ornament on cover, worn ivory pages, bronze corner protectors, resting on plain ivory linen",
+      "seed": 40508,
+      "width": 448,
+      "height": 448,
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "publishId": "school-thai-hu",
+      "negative": "person, human, woman, man, face, portrait, body, statue",
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": false,
+      "qaNote": "Pending source, identity and integrated review."
+    },
+    {
+      "id": "school-thien-co",
+      "contentId": "school.thien-co",
+      "role": "school",
+      "alt": "Bí tịch Thiên Cơ.",
+      "prompt": "still life, old charcoal cloth bound book, small bronze compass ornament on cover, worn ivory pages, bronze corner protectors, resting on plain ivory linen",
+      "seed": 40509,
+      "width": 448,
+      "height": 448,
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "publishId": "school-thien-co",
+      "negative": "person, human, woman, man, face, portrait, body, statue",
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": false,
+      "qaNote": "Pending source, identity and integrated review."
+    },
+    {
+      "id": "than-so-v4",
+      "publishId": "than-so",
+      "contentId": "boss.than-so",
+      "role": "boss",
+      "alt": "Thiên Mệnh Thần Sổ.",
+      "prompt": "antique leather bound book, dark bronze circular seal on cover, thick ivory paper edges, resting on a stone altar, dim ancient cave, still life, paper texture, close view",
+      "negative": "person, human, woman, man, face, portrait, body, pagoda, tower",
+      "seed": 37304,
+      "width": 448,
+      "height": 640,
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "steps": 28,
+      "guidance": 7,
+      "conceptApproved": false,
+      "qaNote": "Pending source identity and integrated review."
+    }
+  ],
+  "model": "Lykon/dreamshaper-8",
+  "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+  "variant": "fp16",
+  "style": "original wuxia concept art, ink wash painting, muted slate and ivory, bronze accents, cinematic soft light, realistic anatomy",
+  "negative": "text, watermark, signature, logo, neon, oversaturated, anime, cartoon, photo, modern clothes, gun, deformed, disfigured, extra limbs, extra fingers, bad anatomy, blurry, nude, cleavage"
+}

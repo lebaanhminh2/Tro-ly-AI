@@ -51,7 +51,7 @@ export async function miniAppApi(request: Request, env: Env, now = Date.now()): 
     }
     try {
         const context = { env, owner, now, healthy: new HealthyStore(env.DB) };
-        if (request.method === 'GET' && ['/api/game', '/api/game-catalog', '/api/game-boss', '/api/game-chapter', '/api/game-presets', '/api/practice-versions', '/api/battle-history', '/api/battle-loadout', '/api/battles'].includes(url.pathname))
+        if (request.method === 'GET' && ['/api/game', '/api/game-catalog', '/api/game-boss', '/api/game-chapter', '/api/game-presets', '/api/game-export', '/api/practice-versions', '/api/battle-history', '/api/battle-loadout', '/api/battles'].includes(url.pathname))
             return await readGame(context, url);
         if (request.method === 'GET' && ['/api/habits', '/api/habit-history', '/api/habit-report'].includes(url.pathname))
             return await readHabits(context, url);
@@ -80,6 +80,8 @@ export async function miniAppApi(request: Request, env: Env, now = Date.now()): 
     catch (error) {
         const code = error instanceof Error ? error.message : '';
         const gameErrors: Record<string, string> = {
+            GAME_EXPORT_TOO_LARGE: 'Dữ liệu vượt giới hạn một lần xuất. Chọn khoảng ngắn hơn để xuất nhật ký nhé.',
+            GAME_EXPORT_UNAVAILABLE: 'Chưa xuất được hành trình. Cậu thử lại nhé.',
             GAME_CHANGED: 'Tiến độ vừa được cập nhật. Tải lại để tiếp tục nhé.', GAME_DAY_CLOSED: 'Ngày này đã kết thúc. Tải lại để chọn cho ngày hiện tại.',
             TECHNIQUE_LOCKED: 'Cậu chưa có quyền học công pháp này.', CONFIRM_PRACTICE_RESTART: 'Xác nhận luyện một bản mới từ Nhập môn. Bản cũ vẫn được giữ.',
             PRACTICE_NOT_FOUND: 'Không tìm thấy bản luyện này.', PRACTICE_COMPLETE: 'Bản này đã Viên mãn. Cậu có thể luyện bản mới nếu muốn cải thiện tinh thuần.',
