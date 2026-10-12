@@ -10,7 +10,7 @@ Cập nhật 2026-10-12. Goal Habit/Thần Lộ đang active, AI tự triển kh
 
 ## Trạng thái thật
 
-- F1 commit/push `5c8d90a`, F2 `656f06d`, F3 `d766e69`, F4 `699c69a`, branch `review/p1-p3`; F5 đang local. Luôn kiểm git status/HEAD.
+- F1 commit/push `5c8d90a`, F2 `656f06d`, F3 `d766e69`, F4 `699c69a`, checkpoint F5 `306ed28`, branch `review/p1-p3`; còn F5–F6/R1. Luôn kiểm git status/HEAD.
 - Habit/luyện/battle/economy chạy local; schema0031–0036. F5 có 40encounters/15chương/39quyền và thần binh/chiến tích, lazy story, archive và bộ chọn bản cũ. Toàn art/tuyến phụ/UX/vận hành vẫn chưa hoàn tất hoặc release remote. Luật tại BATTLE_RULES.
 - Full gate và targeted cases mới xem PROGRESS. Chrome mobile screenshot đã xem. Art pipeline local đã tích hợp Tịch Vân/5bosses/cảnh cửa núi và cập nhật QA; toàn inventory còn phải làm.
 - Phạm vi mới: habit/tracking/lịch-nhắc, luyện/chiến đấu, đủ 5 phái/39 môn/15 chương tới DIỆT THẦN, tuyến phụ/thần binh/chiến tích, cast/art/UI và vận hành. Một phái/chương đầu chỉ là cổng nội bộ.

@@ -5,7 +5,7 @@ Cập nhật 2026-10-12. Đây là nơi giữ trạng thái ngắn để goal ti
 ## 1. Trạng thái thực tế
 
 - **Goal đang active**, đã cấp quyền tự triển khai code/tests/assets/migration và publish staging sau gates; ngân sách bổ sung 0đ. Không cần duyệt từng file trong phạm vi goal.
-- F1 commit/push `5c8d90a`, F2 `656f06d`, F3 `d766e69`, F4 `699c69a` trên `review/p1-p3`. F5 đang local; schema tới0036, chưa migration/deploy remote.
+- F1 commit/push `5c8d90a`, F2 `656f06d`, F3 `d766e69`, F4 `699c69a`, checkpoint F5 `306ed28` trên `review/p1-p3`. F5 vẫn chưa hoàn tất; schema tới0036, chưa migration/deploy remote.
 - Baseline DOM giả thiếu `firstElementChild` đã sửa theo DOM thật. Gate `npm.cmd run test:all` ở F2 trước tối ưu đọc nhóm/slot version: 225 bài chính +25 experiments đạt. Chạy lại các ca có rủi ro sau sửa; không dùng gate cũ để chứng minh code mới.
 - Domain habit: 896 mẫu tuần Q1–7 đã kiểm; D1 kiểm replacement/concurrency/replay qua ngày, weekly/archive/restore/catchup, revision/rollback, HTTP/auth/input, reminders khi ngủ/dedupe, slots/khả năng replan. Fixture30habit kiểm query budget ≤25 và weekly projection đạt; không phải benchmark CPU/remote.
 - Web: typecheck và 30module syntax/import đạt. Chrome thật tạo ba cadence, tick/log15/20/XSS, xếp12:00–12:20, nhìn trong Today và link về habit, sheet header trên viewport nhỏ, report/history đạt. Ảnh `D:\Tro-ly-AI-art\habit-qa-{habits-320,habits-390,habits-1440,habit-today-320,habit-today-390,habit-report}.png` đã xem; header lịch tháng được bổ sung sau lần chụp report đầu.
@@ -21,7 +21,7 @@ Cập nhật 2026-10-12. Đây là nơi giữ trạng thái ngắn để goal ti
 | F2 Lịch/nhắc/theo dõi | Commit/push `656f06d`, chưa release | API/report/history filters, CSV, recurrence opt-in, reservation; D1/Chrome tests | Onboarding/JSON export hoàn thiện trong flow tổng |
 | F3 Luyện | Commit/push `d766e69`, chưa release | Domain9tests, D1practice6cases, versions/select/stop, API/UI/Chrome light-dark | Weekly integration/cân bằng qua battle |
 | F4 Lát cắt chơi hoàn chỉnh | Commit/push `699c69a`; chưa release | 271main+25experiments, browser20/0skip; 39specs/5encounters; truyền thừa luyện thật, guards/economy/art QA | Giữ hồi quy trong F5 |
-| F5 Toàn bộ game/nội dung | Đang triển khai local | 40encounters/15chương/39quyền, content registry2, rewards/weapon snapshots, lazy story, archive/best-edition picker; domain earned traversal cả5phái | Toàn tuyến phụ, presets/search/export/onboarding/bot/settings, art còn thiếu, QA/gates |
+| F5 Toàn bộ game/nội dung | Checkpoint `306ed28` đã push; còn triển khai | 40encounters/15chương/39quyền, content registry2, rewards/weapon snapshots, lazy story, archive/best-edition picker; domain earned traversal cả5phái | Toàn tuyến phụ, presets/search/game-export/onboarding/bot/settings, art còn thiếu, QA/gates |
 | F6 Hoàn thiện trải nghiệm | Chưa bắt đầu | Chưa có | Review UX/art/nhịp chơi toàn sản phẩm |
 | R1 Release/nghiệm thu | Chưa bắt đầu | Chưa có | Đủ gates, data/backup, staging và hướng dẫn |
 
@@ -86,7 +86,7 @@ Quyết định đáng giữ viết ngắn theo mẫu: `ID — vấn đề — l
 - F4 đã commit/push `699c69a`. Art batch `campaign.json` Kỷ Hành/Mộc An/cảnh02 đã tạo/publish; source và integrated QA được ghi tại inventory. Process95440 đã kết thúc.
 - Tiếp theo toànF5–F6/R1; checkpoint F5 dưới đây thay next action cũ. Issue sleep vẫn chưa có root cause. Không complete ở đây.
 
-### Checkpoint F5 — catalog, rewards, progression và art đang local
+### Checkpoint F5 — `306ed28` đã commit/push, chưa release
 
 - Content `than-lo-2`:40encounters (22main/5heritage/7forbidden/6outside), 15chương và39quyền. Cấm thuật Nghịch Mệnh từ main Tạ Trường Sinh. Registry chấp nhận v1/v2; snapshot F4 vẫn chốt được. Validator references/cycles/stats/coverage/reachability đạt; không coi validator là combat traversal.
 - Chương/truyện lazy theo quyền; chỉ hiện ending sau thắng. Catalog dưới40KB, không pattern/introduction/victory/rewards; chapter/boss endpoint kiểm quyền. Không preload toàn truyện/art. Các trận Cửu Trụ và ba pha cuối là encounter riêng.
@@ -97,7 +97,7 @@ Quyết định đáng giữ viết ngắn theo mẫu: `ID — vấn đề — l
 - `--earned-journey`:cả5phái tới22mainwins/DIỆT THẦN từ initialHealthy và5quyền nhập môn; không grant rank/versions/unlocks. Versions chỉ qua settle habit, quyền qua thắng, rank qua sleep/checkin/breakthrough; mode hiệu lực ngày sau. Không cần heritage/forbidden/weapon/rescue. Một số phái phải luyện thêm tầng thay vì tier fixture cố định. **Giới hạn**:pure domain (D1 được kiểm riêng), một dailyhabit luôn đạt/ngủ đúng, RNGđột phá0, solver nhìn pattern khi tìm đường; không thời gian chơi kỳ vọng hoặc proof của imperfect/weekly profiles. Reports `earned-journey.json`, `campaign-simulation.json` ngoàiGit.
 - Gate checkpoint: `test:all`280main+25experiments đạt/0skip; fullbrowser23đạt/0skip. Sau source art/UI thêm: targetedcollection/equipment/campaign2đạt, JSONexportflow đạt, typecheck/check:web37modules và7content/rewardcases đạt. Full gates release vẫn phải chạy trên source cuối. Logs ngoàiGit `f5-test-all.log`, `f5-browser-final.log`; staging dry-run623KiB/gzip144KiB, chưa publish.
 - Art đã tạo/publish thêm Kỷ Hành/Mộc An/chapter02, Huyết Hà/Tạ Trường Sinh/A Lạc/Khôi Lỗi/Vô Ảnh/chapter03–05; sources và WebP/thumb/provenance có thật. V1khôi lỗi ra người giáp, chuyển có chủ đích sang Vô Ảnh; v2 có khớp vai/cơ thể cơ khí, accepted với alt thật. Story bible đồng bộ trang phục/identity đã tạo. Integrated source/screenshot QA tại inventory, light390; collection/equipment light320/390 và dark390 đã xem. Ảnh `f5-campaign-qa-campaign-*`, `f5-rewards-final-*` ngoàiGit. Toàn bộ art sau chương05 và nhiều boss/nhánh vẫn thiếu.
-- Việc kế tiếp: đồng bộ checkpoint/commit, toàn side-path earned traversal/mixed & imperfect/weekly balance; presets/search/dossier/onboarding/settings/game-hide/bot tools và game exports; art còn lại/QA mobile toàn flow; điều tra sleep; F6/R1 backup/restore/performance/fullgates/migration/deploy staging. Không gọi F5 hoàn thành bằng catalog hoặc main traversal. Không remote0031–0036.
+- Việc kế tiếp: toàn side-path earned traversal/mixed & imperfect/weekly balance; presets/search/dossier/onboarding/settings/game-hide/bot tools và game exports; art còn lại/QA mobile toàn flow; điều tra sleep; F6/R1 backup/restore/performance/fullgates/migration/deploy staging. Không gọi F5 hoàn thành bằng catalog hoặc main traversal. Không remote0031–0036. Không còn art/test process chạy ở checkpoint; venv/model/drafts giữ ngoàiGit. Working tree sạch sau commit docs checkpoint.
 
 Checkpoint cuối phần việc/phiên cần:
 
