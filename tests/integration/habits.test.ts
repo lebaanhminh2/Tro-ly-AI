@@ -79,6 +79,14 @@ test('grouped settlement is bounded at 30 habits, concurrent retries converge an
         const result = await new D1HabitStore(measured).settleBatch('123', monday + DAY, 30);
         assert.equal(result.processed, 30); assert.ok(count <= 20, 'Grouped settlement SQL budget: ' + count);
         assert.equal((await db.prepare('SELECT SUM(successes) AS n FROM habit_outcomes').first<{ n: number }>())!.n, 30);
+        count = 0;
+        const report = await new D1HabitStore(measured).report('123', day, day, null);
+        assert.equal(count, 2, 'All habit reports share two reads regardless of habit count');
+        assert.equal(report.byHabit.length, 30);
+        assert.ok(report.byHabit.every(habit => habit.successes === 1 && habit.rate === 100 && habit.days[0]!.status === 'achieved'));
+        assert.equal(report.byHabit.reduce((sum, habit) => sum + habit.successes, 0), report.successes);
+        const privateReport = await store.report('456', day, day, null);
+        assert.deepEqual(privateReport.byHabit, []); assert.equal(privateReport.rate, null);
         await Promise.all([store.settleBatch('123', monday + 2 * DAY, 30), store.settleBatch('123', monday + 2 * DAY, 30)]);
         assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM habit_outcomes').first<{ n: number }>())!.n, 60);
         await assert.rejects(service.execute('123', 'old_batch_log1', { operation: 'log', habitId: 'habit_batch_00', version: 1, logVersion: 1, day, value: 20 }, monday + 2 * DAY), /HABIT_DAY_CLOSED/);
@@ -139,6 +147,11 @@ test('weekly commitments survive future edits and archive, settle missing days a
         const report = await store.report('123', day, day + 6, created.habitId);
         assert.equal(report.successes, 1); assert.equal(report.misses, 2); assert.equal(report.rate, 33);
         assert.equal(report.neutral, 4); assert.equal(report.totals[0]!.value, 2000);
+        assert.equal(report.byHabit.length, 1);
+        assert.equal(report.byHabit[0]!.habitId, created.habitId);
+        assert.equal(report.byHabit[0]!.rate, 33);
+        assert.equal(report.byHabit[0]!.neutral, 4);
+        assert.deepEqual(report.byHabit[0]!.days.filter(row => row.status === 'missed').map(row => row.day), [day + 5, day + 6]);
         assert.equal((await store.today('123', nextMonday + 7 * DAY)).habits.length, 0);
         const page1 = await store.history('123', day, day + 6, null, null, 3);
         const page2 = await store.history('123', day, day + 6, null, page1.next, 3);

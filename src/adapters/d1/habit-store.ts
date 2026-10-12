@@ -337,10 +337,28 @@ export class D1HabitStore implements HabitStore {
     }
     async report(owner: string, from: number, to: number, habitId: string | null): Promise<HabitReport> {
         if (![from, to].every(Number.isInteger) || from < 0 || to < from || to - from > 366) throw Error('INVALID_HABIT_HISTORY');
-        const days = (await query(this.db, `SELECT day,SUM(successes) AS successes,SUM(misses) AS misses,
-            SUM(CASE WHEN status='neutral' THEN 1 ELSE 0 END) AS neutral FROM habit_outcomes
-            WHERE owner=? AND day BETWEEN ? AND ? AND (? IS NULL OR habit_id=?) GROUP BY day ORDER BY day`,
-            owner, from, to, habitId, habitId).all<HabitReport['days'][number]>()).results;
+        const outcomes = (await query(this.db, `SELECT o.habit_id AS habitId,o.day,o.status,o.successes,o.misses,
+            json_extract(r.definition_json,'$.name') AS name FROM habit_outcomes o JOIN habit_revisions r
+            ON r.owner=o.owner AND r.habit_id=o.habit_id AND r.from_day=(SELECT MAX(from_day) FROM habit_revisions
+                WHERE owner=o.owner AND habit_id=o.habit_id AND from_day<=o.day)
+            WHERE o.owner=? AND o.day BETWEEN ? AND ? AND (? IS NULL OR o.habit_id=?) ORDER BY o.day,o.habit_id`,
+            owner, from, to, habitId, habitId).all<{ habitId: string; name: string; day: number;
+                status: 'achieved' | 'missed' | 'neutral'; successes: number; misses: number }>()).results;
+        const dayMap = new Map<number, HabitReport['days'][number]>();
+        const habitMap = new Map<string, HabitReport['byHabit'][number]>();
+        for (const outcome of outcomes) {
+            const day = dayMap.get(outcome.day) ?? { day: outcome.day, successes: 0, misses: 0, neutral: 0 };
+            const habit = habitMap.get(outcome.habitId) ?? { habitId: outcome.habitId, name: outcome.name,
+                successes: 0, misses: 0, neutral: 0, rate: null, days: [] };
+            const neutral = outcome.status === 'neutral' ? 1 : 0;
+            day.successes += outcome.successes; day.misses += outcome.misses; day.neutral += neutral;
+            habit.name = outcome.name; habit.successes += outcome.successes; habit.misses += outcome.misses; habit.neutral += neutral;
+            habit.days.push({ day: outcome.day, status: outcome.status, successes: outcome.successes, misses: outcome.misses });
+            dayMap.set(outcome.day, day); habitMap.set(outcome.habitId, habit);
+        }
+        const days = [...dayMap.values()], byHabit = [...habitMap.values()];
+        for (const habit of byHabit) habit.rate = habit.successes + habit.misses
+            ? Math.round(100 * habit.successes / (habit.successes + habit.misses)) : null;
         // Different units/metrics in revisions are deliberately separate totals.
         const totals = (await query(this.db, `SELECT l.habit_id AS habitId,json_extract(r.definition_json,'$.name') AS name,
             json_extract(r.definition_json,'$.metric') AS metric,json_extract(r.definition_json,'$.unit') AS unit,
@@ -352,6 +370,6 @@ export class D1HabitStore implements HabitStore {
             .all<HabitReport['totals'][number]>()).results;
         const successes = days.reduce((sum, day) => sum + day.successes, 0), misses = days.reduce((sum, day) => sum + day.misses, 0);
         return { from, to, successes, misses, neutral: days.reduce((sum, day) => sum + day.neutral, 0),
-            rate: successes + misses ? Math.round(100 * successes / (successes + misses)) : null, days, totals };
+            rate: successes + misses ? Math.round(100 * successes / (successes + misses)) : null, days, totals, byHabit };
     }
 }

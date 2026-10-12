@@ -1,4 +1,4 @@
-import { cadenceLabel, habitDate, habitNumber, habitStatus } from '../models/habits.js';
+import { cadenceLabel, habitDate, habitNumber, habitSummary } from '../models/habits.js';
 
 export function renderHabits(ui, state) {
     const { el, button, card, heading } = ui, root = el('section', undefined, 'habits-page');
@@ -18,6 +18,13 @@ export function renderHabits(ui, state) {
         return root;
     }
     if (state.habitPanel === 'history') return renderHistory(ui, state, root);
+    const navigation = el('div', undefined, 'segment habit-tabs');
+    for (const [panel, label] of [['today', 'Hôm nay'], ['progress', 'Tiến bộ']]) {
+        const control = button(label, () => ui.showHabitPanel(panel));
+        control.setAttribute('aria-pressed', String((state.habitPanel ?? 'today') === panel)); navigation.append(control);
+    }
+    root.append(navigation);
+    if (state.habitPanel === 'progress') return renderProgress(ui, state, root);
     const day = state.habitData.day.day, all = state.habitData.habits;
     const list = all.filter(view => state.habitFilter === 'archived'
         ? view.habit.archivedFrom !== null && day >= view.habit.archivedFrom
@@ -30,52 +37,38 @@ export function renderHabits(ui, state) {
     if (!list.length) root.append(el('p', state.habitFilter === 'archived' ? 'Chưa có thói quen lưu trữ.' : 'Một cam kết vừa sức là đủ để bắt đầu. Cậu có thể chọn các ngày hoặc linh hoạt theo tuần.', 'hint habit-empty'));
     const container = el('div', undefined, 'habit-list');
     for (const view of list) {
-        const { habit, definition, pending, log, preview } = view;
+        const { habit, definition, log } = view;
         const archived = habit.archivedFrom !== null && day >= habit.archivedFrom;
         const met = log.value >= definition.target;
         const row = card('habit-card' + (met ? ' is-met' : '') + (archived ? ' is-archived' : ''));
         row.dataset.habitId = habit.id;
         const head = el('div', undefined, 'habit-card-head'), copy = el('div', undefined, 'habit-copy');
         const name = button(definition.name, () => ui.openHabitDetails(view), 'habit-name');
-        const title = el('div', undefined, 'habit-title'); title.append(name); copy.append(title);
-        const schedule = definition.cadence.kind === 'weekly' && preview && day >= definition.commitmentFrom
-            ? 'Tuần này ' + preview.period.completedDays.length + ' / ' + definition.cadence.quota + ' ngày'
-            : cadenceLabel(definition.cadence);
-        copy.append(el('p', schedule, 'habit-cadence'));
-        const edit = button('···', () => ui.openHabitDetails(view), 'icon-button');
-        edit.setAttribute('aria-label', 'Tùy chọn ' + definition.name); title.append(edit); head.append(copy); row.append(head);
-        const body = el('div', undefined, 'habit-card-body'), progress = el('div');
-        if (definition.metric !== 'check') {
-            const value = el('p', undefined, 'habit-value');
-            value.append(el('strong', habitNumber(log.value)), el('span', ' / ' + habitNumber(definition.target) + ' ' + definition.unit));
-            progress.append(value);
+        copy.append(name);
+        const { primary, extra } = habitSummary(view, day), meta = el('div', undefined, 'habit-meta');
+        const line = el('span', primary.text, 'habit-meta-text' + (primary.urgent ? ' urgent' : '')); line.title = primary.text;
+        meta.append(line);
+        if (extra) {
+            const more = button('+' + extra, () => ui.openHabitDetails(view), 'habit-more');
+            more.setAttribute('aria-label', extra + ' thông tin khác về ' + definition.name); meta.append(more);
         }
-        const status = habitStatus(view, day);
-        if (!['Chưa đạt hôm nay', 'Đã đạt hôm nay', 'Linh hoạt trong tuần'].includes(status)) progress.append(el('p', status, 'habit-status'));
-        if (definition.cadence.kind === 'weekly' && day >= definition.commitmentFrom && !archived && preview) {
-            const count = preview.period.completedDays.length;
-            if (preview.misses) progress.append(el('p', 'Hôm nay chưa đạt sẽ thiếu thêm 1 ngày.', 'habit-week'));
+        copy.append(meta);
+        const check = button(met ? '✓' : '', () => ui.toggleHabit(view), 'habit-check' + (met ? ' checked' : ''));
+        check.setAttribute('aria-label', (met ? 'Bỏ đánh dấu ' : 'Hoàn thành ') + definition.name);
+        check.setAttribute('aria-pressed', String(met)); check.dataset.write = 'habit-log'; check.disabled = archived || !!state.featureSaving;
+        if (state.featureSaving?.habitId === habit.id) {
+            check.setAttribute('aria-busy', 'true'); check.textContent = 'Đang lưu…';
         }
-        body.append(progress);
+        head.append(check, copy);
         if (!archived) {
-            const control = definition.metric === 'check'
-                ? button(met ? '✓ Đã làm' : 'Đánh dấu', () => ui.toggleHabit(view), 'habit-check' + (met ? ' checked' : ''))
-                : button(met ? 'Điều chỉnh' : 'Ghi nhận', () => ui.openHabitLog(view), 'secondary habit-log-button');
-            if (definition.metric === 'check') control.setAttribute('aria-pressed', String(met));
-            control.dataset.write = 'habit-log';
-            if (state.featureSaving) {
-                control.disabled = true;
-                if (state.featureSaving.habitId === habit.id) { control.textContent = 'Đang lưu…'; control.setAttribute('aria-busy', 'true'); }
+            if (definition.metric !== 'check') {
+                const control = button('', () => ui.openHabitLog(view), 'habit-log-button');
+                control.append(el('strong', habitNumber(log.value)), el('span', '/' + habitNumber(definition.target) + ' ' + definition.unit));
+                control.setAttribute('aria-label', 'Ghi nhận ' + definition.name + ': ' + habitNumber(log.value) + '/' + habitNumber(definition.target) + ' ' + definition.unit);
+                control.disabled = !!state.featureSaving; head.append(control);
             }
-            head.append(control);
         }
-        if (progress.childElementCount) row.append(body);
-        if (!archived && view.slot) {
-            const slotLabel = view.slot ? new Date(view.slot.startAt).toLocaleTimeString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit' }) + ' · ' + view.slot.minutes + ' phút' : 'Xếp thời gian';
-            row.append(button(slotLabel, () => ui.openHabitSlot(view), 'text-button habit-slot-link'));
-        }
-        if (pending && pending.archivedFrom == null && !archived) row.append(el('p', 'Đã hẹn thay đổi · ' + habitDate(pending.fromDay), 'habit-pending'));
-        if (habit.archivedFrom !== null && day < habit.archivedFrom) row.append(el('p', 'Lưu trữ từ ' + habitDate(habit.archivedFrom), 'habit-pending'));
+        row.append(head);
         container.append(row);
     }
     root.append(container);
@@ -83,6 +76,60 @@ export function renderHabits(ui, state) {
     tools.append(button('Lịch sử & báo cáo', () => ui.showHabitPanel('history'), 'text-button'),
         button(state.habitFilter === 'archived' ? 'Đang theo dõi' : 'Đã lưu trữ', () => ui.setHabitFilter(state.habitFilter === 'archived' ? 'active' : 'archived'), 'text-button'));
     root.append(tools);
+    return root;
+}
+
+function renderProgress(ui, state, root) {
+    const { el, button } = ui, ranges = el('div', undefined, 'habit-progress-toolbar');
+    const report = state.habitProgress, span = state.habitProgressSpan ?? 7;
+    for (const count of [7, 30]) {
+        const control = button(count + ' ngày', () => ui.setHabitReportSpan(count), 'text-button');
+        control.setAttribute('aria-pressed', String(span === count)); ranges.append(control);
+    }
+    ranges.append(button('Lịch sử & xuất dữ liệu', () => ui.showHabitPanel('history'), 'text-button habit-history-link'));
+    root.append(ranges, el('p', 'Các ngày đã kết thúc. Ngày ngoài cam kết không tính vào tỷ lệ đạt.', 'hint habit-progress-intro'));
+    if (state.habitProgressLoading) root.append(el('p', 'Đang tải tiến bộ…', 'hint'));
+    if (state.habitProgressError) root.append(el('p', state.habitProgressError, 'hint'), button('Thử lại', () => ui.showHabitPanel('progress'), 'secondary'));
+    if (!report) return root;
+    const reports = new Map((report.byHabit ?? []).map(item => [item.habitId, item]));
+    const habits = new Map(state.habitData.habits.filter(view => view.habit.archivedFrom === null
+        || state.habitData.day.day < view.habit.archivedFrom || reports.has(view.habit.id)).map(view => [view.habit.id, view.definition.name]));
+    for (const item of reports.values()) if (!habits.has(item.habitId)) habits.set(item.habitId, item.name);
+    if (!habits.size) { root.append(el('p', 'Tiến bộ sẽ hiện ở đây khi cậu bắt đầu theo dõi.', 'habit-empty hint')); return root; }
+    if (span === 7) {
+        const table = el('table', undefined, 'habit-progress-table');
+        const caption = el('caption', 'Tiến bộ ' + habitDate(report.from) + ' – ' + habitDate(report.to)); table.append(caption);
+        const head = el('thead'), tr = el('tr'), first = el('th', 'Thói quen'); first.scope = 'col'; tr.append(first);
+        for (let day = report.from; day <= report.to; day++) {
+            const th = el('th'); th.scope = 'col';
+            th.append(el('small', ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'][new Date(day * 86400000).getUTCDay()]),
+                el('span', String(new Date(day * 86400000).getUTCDate()))); tr.append(th);
+        }
+        head.append(tr); table.append(head);
+        const body = el('tbody');
+        for (const [id, name] of habits) {
+            const row = el('tr'), label = el('th', name); label.scope = 'row'; row.append(label);
+            const days = new Map((reports.get(id)?.days ?? []).map(item => [item.day, item]));
+            for (let day = report.from; day <= report.to; day++) {
+                const status = days.get(day)?.status, cell = el('td'), mark = el('span', status === 'achieved' ? '✓' : status === 'missed' ? '×' : '—',
+                    'habit-day-mark ' + (status ?? 'unknown'));
+                const text = habitDate(day) + ': ' + ({ achieved: 'Đạt', missed: 'Thiếu', neutral: 'Ngoài cam kết' }[status] ?? 'Chưa có kết quả');
+                mark.title = text; mark.setAttribute('aria-label', text); cell.append(mark); row.append(cell);
+            }
+            body.append(row);
+        }
+        table.append(body); root.append(table);
+        const key = el('p', '✓ Đạt    × Thiếu    — Ngoài cam kết / chưa có kết quả', 'hint habit-progress-key'); root.append(key);
+    } else {
+        const list = el('div', undefined, 'habit-rates');
+        for (const [id, name] of habits) {
+            const item = reports.get(id), count = (item?.successes ?? 0) + (item?.misses ?? 0), row = el('article', undefined, 'habit-rate');
+            const head = el('div', undefined, 'habit-rate-head'); head.append(el('h3', name), el('span', count ? item.rate + '%' : '—'));
+            const bar = el('progress'); bar.max = 100; bar.value = item?.rate ?? 0; bar.setAttribute('aria-label', name + ': ' + (count ? item.rate + '% đạt cam kết' : 'Chưa có cam kết đã kết toán'));
+            row.append(head, bar, el('p', count ? item.successes + '/' + count + ' ngày cam kết đạt mục tiêu' : 'Chưa có cam kết đã kết toán', 'hint')); list.append(row);
+        }
+        root.append(el('p', habitDate(report.from) + ' – ' + habitDate(report.to), 'hint'), list);
+    }
     return root;
 }
 

@@ -4,7 +4,7 @@ import { button, el } from '../ui/dom.js';
 export function createGameGuideActions({ state, sheet, sheetContent, openSheet, render, loadHabits, loadGame }) {
     function dismissGameGuide() { setExperiencePreferences({ gameGuideDismissed: true }); render(); }
     function openGameGuide() {
-        openSheet('Bắt đầu Thần Lộ'); sheet.classList.add('settings-sheet-open');
+        openSheet('Bắt đầu Tu luyện'); sheet.classList.add('settings-sheet-open');
         const body = el('div', undefined, 'settings-sheet-body game-guide');
         body.append(el('p', 'Tịch Vân giữ đường tới thư các. Cậu chọn cam kết vừa sức, luyện môn mình thích rồi tự quyết khi nào xuất chiến.', 'technique-description'));
         const steps = el('ol', undefined, 'game-guide-steps');

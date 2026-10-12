@@ -9,7 +9,7 @@ import { nearestGameGoal, returnGameSummary } from '../models/game-goal.js';
 
 export function renderGame(ui, state) {
     const { el, button, card, heading } = ui, root = el('section', undefined, 'game-page');
-    const top = heading('Thần Lộ', 'Một hành trình từ những việc nhỏ mỗi ngày.');
+    const top = heading('Tu luyện', 'Một hành trình từ những việc nhỏ mỗi ngày.');
     top.append(button('Cách chơi', () => ui.openGameGuide(), 'text-button')); root.append(top);
     if (state.featureSaving) root.append(el('p', 'Đang lưu thao tác…', 'feature-saving hint'));
     if (state.gameError) root.append(el('p', state.gameError, 'hint'), button('Tải lại', () => ui.loadGame(), 'secondary'));
@@ -25,7 +25,7 @@ export function renderGame(ui, state) {
         const control = button(label, () => ui.showGamePanel(panel), 'text-button');
         control.setAttribute('aria-pressed', String(selectedPanel === panel)); navigation.append(control);
     }
-    if (selectedPanel !== 'practice') root.append(button('‹ Thần Lộ', () => ui.showGamePanel('practice'), 'text-button feature-back'), navigation);
+    if (selectedPanel !== 'practice') root.append(button('‹ Tu luyện', () => ui.showGamePanel('practice'), 'text-button feature-back'), navigation);
     if (selectedPanel === 'journey') { root.append(renderJourney(ui, data, catalog, state.gameChapter)); return root; }
     if (selectedPanel === 'collection') { root.append(renderGameCollection(ui, data, catalog)); return root; }
     if (state.gamePanel === 'library') {

@@ -339,8 +339,23 @@ async function serve(control, baseline) {
                             definition: view.definition, value: view.log.value, note: view.log.note, status: 'processing', reason: 'day_open', successes: 0, misses: 0 }));
                     response.end(JSON.stringify({ rows, next: null }));
                 }
-                else if (endpoint === 'habit-report')
-                    response.end(JSON.stringify({ from: control.habits.day.day - 29, to: control.habits.day.day, successes: 0, misses: 0, neutral: 0, rate: null, days: [], totals: [] }));
+                else if (endpoint === 'habit-report') {
+                    const params = new URL(request.url, 'http://localhost').searchParams, from = Number(params.get('from')), to = Number(params.get('to'));
+                    const outcomes = (control.habitOutcomes ?? []).filter(row => row.day >= from && row.day <= to
+                        && (!params.get('habitId') || row.habitId === params.get('habitId')));
+                    const byHabit = [], days = [];
+                    for (const row of outcomes) {
+                        let habit = byHabit.find(item => item.habitId === row.habitId), day = days.find(item => item.day === row.day);
+                        if (!habit) { habit = { habitId: row.habitId, name: row.name, successes: 0, misses: 0, neutral: 0, rate: null, days: [] }; byHabit.push(habit); }
+                        if (!day) { day = { day: row.day, successes: 0, misses: 0, neutral: 0 }; days.push(day); }
+                        habit.successes += row.successes; habit.misses += row.misses; habit.neutral += +(row.status === 'neutral'); habit.days.push(row);
+                        day.successes += row.successes; day.misses += row.misses; day.neutral += +(row.status === 'neutral');
+                    }
+                    for (const habit of byHabit) habit.rate = habit.successes + habit.misses ? Math.round(100 * habit.successes / (habit.successes + habit.misses)) : null;
+                    const successes = days.reduce((sum, row) => sum + row.successes, 0), misses = days.reduce((sum, row) => sum + row.misses, 0);
+                    response.end(JSON.stringify({ from, to, successes, misses, neutral: days.reduce((sum, row) => sum + row.neutral, 0),
+                        rate: successes + misses ? Math.round(100 * successes / (successes + misses)) : null, days, totals: [], byHabit }));
+                }
                 else if (endpoint === 'history')
                     response.end(JSON.stringify({ result: { items: [], offset: 0, total: 0, hasMore: false } }));
                 else if (endpoint === 'tasks-page') {
@@ -1090,7 +1105,7 @@ test('returning player sees the real next goal, opens its screen and habit audit
         // tracking. Navigation itself never fills a log or changes practice.
         control.game.currentPractice.practice.tiers = []; control.game.currentPractice.practice.progressMilli = 3000;
         control.game.currentPractice.practice.pendingWeeks = ['audit_week'];
-        await browser.tap('[data-tab=game]'); await browser.click('‹ Thần Lộ');
+        await browser.tap('[data-tab=game]'); await browser.click('‹ Tu luyện');
         await browser.wait("document.querySelector('.game-next-step h3').textContent==='Tới Nhập môn'");
         assert.equal(await browser.evaluate("document.querySelector('.practice-wait-note').textContent.includes('cam kết tuần')"), true);
         await browser.click('Xem thói quen'); await browser.wait("!!document.querySelector('.habits-page')");
@@ -1162,6 +1177,9 @@ test('practice mobile flow selects a future version, shows pending quality, conf
     let browser;
     try {
         browser = await chrome(); await browser.navigate(server.url, 390);
+        await browser.wait("document.querySelectorAll('.bottom-nav button').length===5");
+        assert.deepEqual(await browser.evaluate("[...document.querySelectorAll('.bottom-nav button')].map(node=>node.dataset.tab)"), ['today', 'habits', 'reminders', 'game', 'achievements']);
+        assert.match(await browser.evaluate("document.querySelector('[data-tab=game]').textContent"), /Tu luyện/);
         await browser.wait("!!document.querySelector('.focus-flip-card')");
         await browser.tap('[data-tab=game]'); await browser.wait("!!document.querySelector('.practice-intro img')");
         await browser.wait("document.querySelector('.practice-intro img').complete && document.querySelector('.practice-intro img').naturalWidth>0");
@@ -1199,6 +1217,117 @@ test('practice mobile flow selects a future version, shows pending quality, conf
         assert.deepEqual(control.state.account, healthy); assert.deepEqual(control.state.tasks, tasks); assert.deepEqual(browser.errors, []);
     } finally { if (browser) await browser.close(); await server.close(); }
 });
+test('habit rows keep one secondary line, log controls draft changes and Undo respects versions and day boundaries', { skip: !browserBin, timeout: 90000 }, async () => {
+    const control = fixture(), day = control.habits.day.day;
+    for (const [id, name, metric, target, unit] of [['read', 'Đọc sách', 'duration', 20, 'phút'], ['water', 'Uống nước', 'quantity', 8, 'ly'], ['check', 'Thiền', 'check', 1, 'lần']]) {
+        control.mutate('habits', { id, operation: 'create', definition: { name, metric, target, unit, cadence: { kind: 'daily' }, note: '' }, reminderTime: '19:00' });
+        const view = control.habits.habits.at(-1); view.definition.commitmentFrom = day - 10;
+        view.habit.revisions[0].definition = view.definition;
+    }
+    const read = control.habits.habits[0], water = control.habits.habits[1];
+    control.mutate('habits', { id: 'partial', operation: 'log', habitId: read.habit.id, value: 15.25, note: 'Trang 42' });
+    read.slot = { startAt: Date.parse('2026-10-05T19:00:00+07:00'), minutes: 20, version: 1 };
+    read.pending = { fromDay: day + 1, definition: { ...read.definition, name: 'Đọc mỗi tối' } };
+    control.habitOutcomes = [];
+    for (const view of control.habits.habits) {
+        for (let ended = day - 7; ended < day; ended++) {
+            const result = assessHabitDay(view.definition, ended, ended % 2 ? view.definition.target : 0, newHabitPeriod(view.definition, ended), null);
+            control.habitOutcomes.push({ habitId: view.habit.id, name: view.definition.name, day: ended, ...result });
+        }
+    }
+    const server = await serve(control); let browser;
+    try {
+        browser = await chrome(); await browser.navigate(server.url, 390);
+        await browser.wait("!!document.querySelector('.focus-flip-card')"); await browser.tap('[data-tab=habits]');
+        await browser.wait("document.querySelectorAll('.habit-card').length===3");
+        assert.equal(control.calls.some(call => call.startsWith('GET habit-report')), false);
+        assert.equal(await browser.evaluate("document.querySelectorAll('.habit-check').length"), 3);
+        assert.equal(await browser.evaluate("document.querySelector('.habit-more').textContent"), '+4');
+        await browser.tap('.habit-more');
+        assert.match(await browser.evaluate("document.querySelector('.habit-detail').innerText"), /Lịch 19:00.*Mỗi ngày.*Nhắc lúc 19:00.*Thay đổi từ.*Trang 42/s);
+        if (process.env.UI_SCREENSHOT_DIR) await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'habit-details-390.png'));
+        await browser.tap('[data-sheet-close]');
+        for (const width of [320, 360, 390, 414, 1440]) {
+            await browser.resize(width, 844);
+            assert.equal((await snapshot(browser)).overflow, false);
+            assert.equal(await browser.evaluate("[...document.querySelectorAll('.habit-meta')].every(node=>node.getBoundingClientRect().height===24)"), true);
+        }
+        await browser.resize(390, 844);
+        if (process.env.UI_SCREENSHOT_DIR) {
+            await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'habit-list-390.png'));
+            await browser.resize(360, 844); await browser.evaluate("import('/app/core/theme.js').then(theme=>theme.setThemePreference('dark'))");
+            await browser.evaluate("new Promise(resolve=>setTimeout(resolve,300))");
+            await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'habit-list-dark-360.png'));
+            await browser.evaluate("import('/app/core/theme.js').then(theme=>theme.setThemePreference('light'))"); await browser.resize(390, 844);
+        }
+        await browser.tap('.habit-log-button');
+        if (process.env.UI_SCREENSHOT_DIR) await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'habit-duration-390.png'));
+        await browser.evaluate("const range=document.querySelector('.habit-form input[type=range]');range.value='12.5';range.dispatchEvent(new Event('input'))");
+        assert.equal(await browser.evaluate("document.querySelector('[name=amount]').value"), '12.5');
+        await browser.evaluate("const amount=document.querySelector('[name=amount]');amount.value='25.75';amount.dispatchEvent(new Event('input'))");
+        assert.equal(await browser.evaluate("document.querySelector('.habit-form input[type=range]').value"), '25.75');
+        await browser.tap('[data-sheet-close]'); assert.equal(read.log.value, 1525, 'Closing preserves the authoritative partial value');
+        await browser.tap('.habit-check'); await browser.wait("!!document.querySelector('#toast button')");
+        assert.equal(read.log.value, 2000, 'Tick completes the actual duration target');
+        await browser.tap('#toast button'); await browser.wait("document.querySelector('.habit-log-button').textContent.includes('15,25')");
+        assert.equal(read.log.value, 1525); assert.equal(read.log.note, 'Trang 42');
+        await browser.tap('.habit-card:nth-child(2) .habit-log-button');
+        if (process.env.UI_SCREENSHOT_DIR) await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'habit-quantity-390.png'));
+        await browser.click('+1', '.habit-counter button'); await browser.click('+1', '.habit-counter button'); await browser.click('−', '.habit-counter button');
+        assert.equal(await browser.evaluate("document.querySelector('[name=amount]').value"), '1');
+        assert.equal(water.log.value, 0, 'Counter changes are drafts until Save');
+        await browser.evaluate("document.querySelector('[name=amount]').value='9.5';document.querySelector('.habit-form').requestSubmit()");
+        await browser.wait("!document.querySelector('#sheet').open && !!document.querySelector('#toast button')"); assert.equal(water.log.value, 950);
+        await browser.tap('.habit-card:nth-child(2) .habit-check'); await browser.wait("!document.querySelector('[aria-busy=true]') && !!document.querySelector('#toast button')");
+        assert.equal(water.log.value, 0); await browser.tap('#toast button');
+        await browser.wait("document.querySelector('.habit-card:nth-child(2) .habit-log-button').textContent.includes('9,5')");
+        assert.equal(water.log.value, 950, 'Untick Undo preserves over-target progress');
+        await browser.tap('.habit-check'); await browser.wait("!!document.querySelector('#toast button')");
+        read.log.version++; const writes = control.posts.length;
+        await browser.tap('[data-tab=today]'); await browser.tap('[data-tab=habits]');
+        await browser.wait("!document.querySelector('.feature-updating')");
+        await browser.tap('#toast button'); assert.equal(control.posts.length, writes, 'Undo must not overwrite a newer external log');
+        await browser.click('Tiến bộ', '.habit-tabs button'); await browser.wait("!!document.querySelector('.habit-progress-table')");
+        assert.equal(await browser.evaluate("document.querySelectorAll('.habit-progress-table tbody tr').length"), 3);
+        assert.equal(await browser.evaluate("document.querySelectorAll('.habit-progress-table thead th').length"), 8);
+        assert.equal(await browser.evaluate("document.querySelectorAll('.habit-day-mark.achieved').length"), control.habitOutcomes.filter(row => row.status === 'achieved').length);
+        if (process.env.UI_SCREENSHOT_DIR) await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'habit-progress-7-390.png'));
+        const reports = control.calls.filter(call => call.startsWith('GET habit-report')).length;
+        await browser.click('Hôm nay', '.habit-tabs button'); await browser.click('Tiến bộ', '.habit-tabs button');
+        assert.equal(control.calls.filter(call => call.startsWith('GET habit-report')).length, reports, 'Cached progress needs no new report request');
+        await browser.click('30 ngày', '.habit-progress-toolbar button'); await browser.wait("document.querySelectorAll('.habit-rate').length===3");
+        assert.match(await browser.evaluate("document.querySelector('.habit-rate .hint').textContent"), /[34]\/7 ngày/);
+        if (process.env.UI_SCREENSHOT_DIR) await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'habit-progress-30-390.png'));
+        await browser.click('Hôm nay', '.habit-tabs button');
+        await browser.tap('.habit-check'); await browser.wait("!!document.querySelector('#toast button')");
+        control.habits.day.day++; control.habits.day.endAt += 86400000;
+        await browser.tap('[data-tab=today]'); await browser.tap('[data-tab=habits]'); await browser.wait("!document.querySelector('.feature-updating')");
+        const beforeClosedUndo = control.posts.length; await browser.tap('#toast button');
+        assert.equal(control.posts.length, beforeClosedUndo, 'Undo cannot edit a closed operating day');
+        await browser.tap('[aria-label="Thêm thói quen"]');
+        await browser.click('Thời lượng', '.habit-choices button');
+        await browser.evaluate("document.querySelector('[name=target]').value='35.5'");
+        await browser.click('Số lượng', '.habit-choices button');
+        await browser.evaluate("document.querySelector('[name=target]').value='9';document.querySelector('[name=unit]').value='ly'");
+        await browser.click('Thời lượng', '.habit-choices button');
+        assert.equal(await browser.evaluate("document.querySelector('[name=target]').value"), '35.5');
+        assert.deepEqual(await browser.evaluate("[...document.querySelector('.habit-choices').children].filter(node=>node.getAttribute('aria-pressed')==='true').map(node=>node.dataset.value)"), ['duration']);
+        await browser.click('X ngày/tuần', '.habit-choices button');
+        await browser.evaluate("document.querySelector('.habit-form input[min=\"1\"]').value='0'");
+        await browser.click('Hằng ngày', '.habit-choices button');
+        await browser.evaluate("document.querySelector('[name=name]').value='Đọc buổi sáng';document.querySelector('.habit-form-fields').scrollTop=9999");
+        assert.equal(await browser.evaluate("document.querySelector('.habit-form').checkValidity()"), true, 'Inactive fields cannot block a valid draft');
+        assert.equal(await browser.evaluate("(() => {const r=document.querySelector('.habit-form-footer button[type=submit]').getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight})()"), true);
+        if (process.env.UI_SCREENSHOT_DIR) {
+            await browser.evaluate("document.querySelector('.habit-form-fields').scrollTop=0");
+            await browser.evaluate("new Promise(resolve=>setTimeout(resolve,300))");
+            await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'habit-composer-390.png'));
+        }
+        await browser.tap('[data-sheet-close]');
+        assert.deepEqual(browser.errors, []);
+    } finally { if (browser) await browser.close(); await server.close(); }
+});
+
 test('habit mobile flow creates three cadences, edits quantity without duplicate rewards and preserves fixed modal controls', { skip: !browserBin, timeout: 90000 }, async () => {
     const control = fixture(), server = await serve(control), original = clone(control.state.account), tasks = clone(control.state.tasks);
     let browser;
@@ -1222,7 +1351,7 @@ test('habit mobile flow creates three cadences, edits quantity without duplicate
         await browser.evaluate("document.querySelector('.habit-card .habit-check').click()");
         await browser.wait("document.querySelector('.habit-check')?.getAttribute('aria-pressed')==='true'");
         assert.equal(control.habits.habits[0].log.value, 100);
-        await browser.click('Ghi nhận', '.habit-card button');
+        await browser.tap('.habit-log-button');
         await browser.evaluate("document.querySelector('.habit-form input[type=number]').value='15';document.querySelector('.habit-form input[type=text]').value='<img src=x onerror=alert(1)>';document.querySelector('.habit-form').requestSubmit()");
         await browser.wait("!document.querySelector('#sheet').open");
         assert.equal(control.habits.habits[1].log.value, 1500);
@@ -1255,7 +1384,7 @@ test('habit mobile flow creates three cadences, edits quantity without duplicate
             if (process.env.WEB_TEST_SCREENSHOT_PATH) await browser.screenshot(process.env.WEB_TEST_SCREENSHOT_PATH.replace(/\.png$/, '-habits-' + width + '.png'));
         }
         await browser.resize(320, 460);
-        await browser.evaluate("document.querySelector('.habit-card .icon-button').click()");
+        await browser.evaluate("document.querySelector('.habit-card .habit-name').click()");
         await browser.click('Chỉnh thói quen');
         await browser.evaluate("document.querySelector('.habit-form').scrollTop=9999");
         assert.equal(await browser.evaluate("(() => {const r=document.querySelector('[data-sheet-close]').getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight})()"), true);

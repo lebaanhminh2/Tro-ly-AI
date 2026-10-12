@@ -10,6 +10,27 @@ const livePath = '../../web/core/live-data.js';
 const statePath = '../../web/core/state.js';
 const lifecyclePath = '../../web/core/lifecycle.js';
 const mutationPath = '../../web/core/mutations.js';
+test('habit summary keeps one primary fact, counts hidden facts and prioritizes weekly risk', async () => {
+    const path = '../../web/models/habits.js';
+    const { habitSummary, habitFacts } = await import(path);
+    const day = 20731;
+    const view = { habit: { archivedFrom: null }, definition: { name: 'Đọc sách', target: 2000, metric: 'duration', unit: 'phút',
+        cadence: { kind: 'weekly', quota: 3 }, commitmentFrom: day - 7, note: '' },
+        log: { value: 1500, note: '' }, preview: { misses: 0, period: { completedDays: [day - 2] } },
+        slot: { startAt: Date.parse('2026-10-05T19:00:00+07:00'), minutes: 20 }, reminderTime: '18:55',
+        pending: { fromDay: day + 7, definition: {} } };
+    assert.deepEqual(habitSummary(view, day), { primary: { key: 'slot', text: 'Lịch 19:00 · 20 phút', priority: 20, urgent: false }, extra: 3 });
+    assert.equal(habitFacts(view, day).length, 4);
+    view.preview.misses = 1;
+    assert.equal(habitSummary(view, day).primary.urgent, true);
+    assert.equal(habitSummary(view, day).extra, 4);
+    view.definition.commitmentFrom = day + 1;
+    assert.equal(habitSummary(view, day).primary.key, 'status');
+    assert.match(habitSummary(view, day).primary.text, /Cam kết từ/);
+    view.habit.archivedFrom = day as any;
+    assert.equal(habitSummary(view, day).primary.text, 'Đã lưu trữ');
+    assert.ok(!habitFacts(view, day).some((fact: any) => ['slot', 'reminder'].includes(fact.key)));
+});
 test('compatibility facade keeps every public frontend export', async () => {
     const api = await import(modulePath);
     assert.deepEqual(Object.keys(api).sort(), ['flameLevels', 'flameLevel', 'createDemo', 'breakthroughPenalties', 'dailyRewards', 'checkinProgress', 'dailyRewardLabel', 'demoCheckin', 'taskBuckets', 'realms', 'loot', 'talismans', 'demoDraw', 'demoCompleteTask', 'demoFuse', 'demoBreakthrough', 'themePreference', 'applyTheme', 'setThemePreference', 'connectLive', 'browserAuthRequest', 'historyPage', 'refreshLive', 'liveMutation'].sort());

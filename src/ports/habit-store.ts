@@ -27,6 +27,8 @@ export type HabitReport = {
     from: number; to: number; successes: number; misses: number; neutral: number;
     rate: number | null;
     days: { day: number; successes: number; misses: number; neutral: number }[];
+    byHabit: { habitId: string; name: string; successes: number; misses: number; neutral: number; rate: number | null;
+        days: { day: number; status: 'achieved' | 'missed' | 'neutral'; successes: number; misses: number }[] }[];
     totals: { habitId: string; name: string; metric: string; unit: string; value: number; loggedDays: number }[];
 };
 export interface HabitStore {

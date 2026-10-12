@@ -9,12 +9,12 @@ export function renderExperienceControls({ state, render, openGameGuide }) {
         for (const [value, name] of values) { const option = el('option', name); option.value = value; select.append(option); }
         select.value = selected; select.addEventListener('change', () => onChange(select.value)); wrap.append(select); return wrap;
     }
-    section.append(choice('Thần Lộ', [['show', 'Hiển thị'], ['hide', 'Ẩn khỏi thanh điều hướng']], preferences.gameVisible ? 'show' : 'hide', value => {
+    section.append(choice('Tu luyện', [['show', 'Hiển thị'], ['hide', 'Ẩn khỏi thanh điều hướng']], preferences.gameVisible ? 'show' : 'hide', value => {
         setExperiencePreferences({ gameVisible: value === 'show' });
         if (value === 'hide' && state.tab === 'game') state.tab = 'today';
         render();
     }), el('p', 'Ẩn giao diện vẫn giữ tiến độ và kết quả của trận, cam kết đang có.', 'hint'),
     choice('Chuyển động', [['system', 'Theo hệ thống'], ['reduce', 'Giảm chuyển động']], preferences.motion, value => setExperiencePreferences({ motion: value })),
-    button('Cách chơi Thần Lộ', openGameGuide, 'text-button'));
+    button('Cách chơi Tu luyện', openGameGuide, 'text-button'));
     return section;
 }
