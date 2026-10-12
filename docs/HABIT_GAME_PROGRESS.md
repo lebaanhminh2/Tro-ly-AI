@@ -4,30 +4,26 @@ Cập nhật 2026-10-12. Đây là nơi giữ trạng thái ngắn để goal ti
 
 ## 1. Trạng thái thực tế
 
-- **Goal đang active**, đã cấp quyền tự triển khai code/tests/assets/migration và publish staging sau gates; ngân sách bổ sung 0đ. Không cần duyệt từng file trong phạm vi goal.
-- F1 commit/push `5c8d90a`, F2 `656f06d`, F3 `d766e69`, F4 `699c69a`; F5 có checkpoint `306ed28`, `c99ed03` và `017b545` đã push trên `review/p1-p3`. F5 vẫn chưa hoàn tất; schema tới0037, chưa migration/deploy remote.
-- Baseline DOM giả thiếu `firstElementChild` đã sửa theo DOM thật. Gate `npm.cmd run test:all` ở F2 trước tối ưu đọc nhóm/slot version: 225 bài chính +25 experiments đạt. Chạy lại các ca có rủi ro sau sửa; không dùng gate cũ để chứng minh code mới.
-- Domain habit: 896 mẫu tuần Q1–7 đã kiểm; D1 kiểm replacement/concurrency/replay qua ngày, weekly/archive/restore/catchup, revision/rollback, HTTP/auth/input, reminders khi ngủ/dedupe, slots/khả năng replan. Fixture30habit kiểm query budget ≤25 và weekly projection đạt; không phải benchmark CPU/remote.
-- F5 mới `72d0424` đã commit/push: xuất hành trình JSON, guide tùy chọn, ẩn game/giảm chuyển động device-local và12asset chương11–15. Gate290main/25experiments và27browser đạt; typecheck/check:web43modules đạt. Test main giới hạn concurrency2 sau kết quả không ổn định khi hai full suites chồng nhau trên máy local; không bỏ assertions/cases. Evidence/phạm vi ở checkpoint cuối.
-- Art local `D:\Tro-ly-AI-art\venv`: Python3.12.10/CUDA12.4/GTX1650 4095MiB; DreamShaper8 revision `a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917`. Đủ final cho40encounters/cảnh01–15/nămphái/baweapon,39biểu tượng SVG riêng.13nhánh vàThần Sổv4 đã publish/sourceQA, preparation light390/dark320 đã xem. Nămphái header light390 vàweapon light320/dark390 đã xem. QA toànflow/light-dark/chữlớn/network cònF6. **Không art process live**;98972 và các revisions terminal. Venv/model/sources ngoàiGit.
-- Staging target: Worker `personal-assistant-staging`, DB `assistant-staging`/`5457c401-45d9-4b19-b76e-0eceec67a223`; URL `https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev`. Chưa áp0031–0037 hoặc phát hành phần mới.
-- Checkpoint mới trên HEAD `fb3e76f`: full campaign light360/dark414 và33browser đạt; sửa queued dialog close; rehearsal/restore production flows và D1largehistory đạt. Benchmark offline drain365ngày đúng một lần, max18SQL/call. Typecheck/check:web45modules/build/staging dry-run đạt. Main gate đầu314/315, lỗi source-string assertion được thay bằng hành vi close thật; **full recheck317main+25experiments/0skip đạt exit0**. Chi tiết ở checkpoint cuối và RELEASE.
-- Auth10000 đã được giải bằng `wrangler login` do agent chạy theo yêu cầu user; đúng DB staging verified. Backup thật đã export/restore/rehearse0031–0037,72legacytables/1011rows giữproof; productionreadflows trên restoredcopy không đổi tableproof. Remote migration/deploy/smoke còn chờ main gate. Không có GPU/art process live; không tạo dữ liệu thật để test.
-- Issue nền ngủ: audit D1 read-only xác nhận báo ngủ 2026-10-07 23:05:39 UTC+7. Hai bedtime nudge trong khoảng kiểm tra đã gửi trước đó (22:45:14, 23:02:01); chưa có bằng chứng nudge sau báo ngủ trong nhóm này. Asset sleep staging khác local; chưa kết luận root cause/chưa sửa. Không gửi tin thử hoặc sửa dữ liệu cá nhân.
+- **Toàn scope đã triển khai và phát hành staging, sẵn sàng nghiệm thu.** Runtime release bcd22bb đã push trên review/p1-p3; các cập nhật bàn giao sau đó chỉ đổi docs. Xem [RELEASE](HABIT_GAME_RELEASE.md) cho version/backup/gates/smoke/giới hạn và [USER_GUIDE](HABIT_GAME_USER_GUIDE.md) để dùng.
+- Đủ habit/tracking/lịch-nhắc, luyện/chiến đấu, 5 phái/39 công pháp/15 chương tới DIỆT THẦN,40encounters/tuyến phụ/3thần binh/11chiến tích, onboarding/library/history/export/settings/bot. Không thu scope xuống MVP.
+- Art tạo local trên GTX1650: finals130WebP/39SVG; QA source và flow thật light/dark/large text/network đã xem. Toàn file ảnh/module/CSS trên staging SHA256 khớp source; model/venv/backup/drafts giữ ngoàiGit. Không art process live, ngân sách bổ sung0đ.
+- Target: Worker personal-assistant-staging, D1 assistant-staging/5457c401-45d9-4b19-b76e-0eceec67a223; version d3923c51-3959-474d-8e9a-6d4bfbaf7415.0031–0037 đã áp; listing không còn pending. User xác nhận đã mở app và đăng nhập được.
+- Gates cuối: **317main+25experiments+33browser,0fail/0skip**, typecheck/check:web45modules/build:check/staging:check đạt. Data upgrade/actualbackuprestore/D1scale/bounded365daydrain và liveownerAPIs/cron đã kiểm; không tạo dữ liệu thật hoặc gửi tin thử.
+- Live sample có latency bootstrap6,2–6,6giây/CPU23–35ms; API habit1,2–1,4giây, game1,5–2,3giây. Không cam kết mọi Workercall<10ms hoặc thiết bị thật. Đây là hạn chế đã biết; không sửa cơ chế cũ/nâng gói để ép con số.
+- Issue ngủ lịch sử chưa có rootcause đã chứng minh. Hai finalsendrace thực tế đã reproduceD1/fix/fail-before-pass-after và đã deploy; personal reminders vẫn gửi. Không nói fixrace là bằng chứng nguyên nhân tin lịch sử hoặc thu hồi tin đã dispatch.
 
-| Mốc | Trạng thái | Bằng chứng thực hiện | Tiếp theo |
-| --- | --- | --- | --- |
-| D0 Bộ tài liệu | Đã commit/push `66da16e`; goal đã bắt đầu | Relative links/encoding và `git diff --check` đạt; prompt goal dưới4.000 ký tự | Đồng bộ docs theo code thật |
-| P0 Khảo sát/thiết kế/ảnh thử | Đang làm | Baseline/audit D1/art venv; các quyết định bên dưới | Chốt hợp đồng lưu/đóng ngày, thử model local |
-| F1 Nền habit | Đạt lát cắt local; chưa release | `0031_habits.sql`, domain/service/port/store/auth API, web CRUD/log/history/export, unit/integration/Chrome QA | Tiếp tục F2, mở rộng cases HTTP/biên thời gian; release chung cuối goal |
-| F2 Lịch/nhắc/theo dõi | Commit/push `656f06d`, chưa release | API/report/history filters, CSV, recurrence opt-in, reservation; D1/Chrome tests | Onboarding/JSON export hoàn thiện trong flow tổng |
-| F3 Luyện | Commit/push `d766e69`, chưa release | Domain9tests, D1practice6cases, versions/select/stop, API/UI/Chrome light-dark | Weekly integration/cân bằng qua battle |
-| F4 Lát cắt chơi hoàn chỉnh | Commit/push `699c69a`; chưa release | 271main+25experiments, browser20/0skip; 39specs/5encounters; truyền thừa luyện thật, guards/economy/art QA | Giữ hồi quy trong F5 |
-| F5 Toàn bộ game/nội dung | Checkpoint `8adf336` đã push | 40encounters/15chương/39quyền, rewards/presets/discovery/export/guide/settings; bot atomic receipts; đủ encounter/phái/weapon/39symbols | Earned rescue/đủ chiến tích và review toànflow |
-| F6 Hoàn thiện trải nghiệm | Đang triển khai, chưa đạt toàn bộ | Guidance/return UX; content3counter giữ30earned profiles/5mixed;3200repeatcases không vượt toàntruyện;earnedrescue thành công | FullUX/art/accessibility/network/performance và sleep investigation |
-| R1 Release/nghiệm thu | Chưa bắt đầu | Chưa có | Đủ gates, data/backup, staging và hướng dẫn |
+| Mốc | Trạng thái cuối | Bằng chứng |
+| --- | --- | --- |
+| D0/P0 | Đã hoàn thiện khung và A01–A10 | Docs/decisions/source theo RELEASE; modellocal chạy thật |
+| F1 | Đã phát hành | Habitdomain/store/API/CRUD/log/revisions/time/896weeklypatterns/D1/Chrome |
+| F2 | Đã phát hành | Report/history/filter/notes/JSON/CSV/nhắc/slots/buffer/receipt |
+| F3 | Đã phát hành | Một môn/bốn tầng/bản mới/tinh thuần/weeklyaudit/mode/rulesversion |
+| F4 | Đã phát hành | Engine/economy/intent/order/choose/withdraw/death/rescue/rewards/UI |
+| F5 | Đã phát hành đủ scope |40encounters/15chương/39quyền/5phái/3weapons/11achievements/art/bot |
+| F6 | QA và findings đã xử lý | Earned30profiles/5mixed/rescue,3200repeatcases,80previews/30chapters/30endings, mobile/accessibility/offline |
+| R1 | Đã migrate/deploy/smoke/bàn giao | Backup thật/restore/gates/215staticfiles+indexroute/liveownerAPI200/cronok/guide/ops |
 
-Agent thay dòng bằng trạng thái thật/HEAD/bằng chứng sau mỗi phần việc bền vững. Không đổi “đã test” nếu chỉ có file test hoặc một tool command chưa đọc output. F4 là bước nội bộ, không phải điểm dừng của goal.
+Các checkpoint phía dưới là **lịch sử tại thời điểm thực hiện**, không là danh sách việc còn thiếu. Để nối tiếp dùng release/checkpoint cuối, không chạy lại từ F1 hoặc suy remote hiện tại từ một câu “chưa deploy” cũ.
 
 ## 2. Quyết định cần AI hoàn thiện trong P0
 
@@ -181,3 +177,12 @@ Checkpoint cuối phần việc/phiên cần:
 5. Dịch vụ local đang chạy/model cache ở đâu và cách dừng/resume, không để công cụ art tiếp tục ngoài ý muốn.
 
 Giữ một bảng trạng thái hiện tại và các quyết định đang hiệu lực; lịch sử nằm trong Git. Chi tiết kiểm thử lặp dài/ảnh/model logs lưu artifact có giới hạn, docs chỉ dẫn vị trí. Lệnh tiếp tục cùng mục tiêu: đọc checkpoint, kiểm source/workspace rồi làm next action, không khởi động lại từ đầu hoặc rút xuống demo.
+
+### R1 — phát hành và bàn giao hoàn chỉnh
+
+- Runtime bcd22bb đã commit/push; migrations0031–0037 áp remote thành công, Worker version d3923c51-3959-474d-8e9a-6d4bfbaf7415. Backup thực/restore/rehearse và toàn gates đã đạt trước publish; không pending migration.
+- Static smoke215files200/SHA256khớp; index1775bytes ở /app/200/SHA256khớp, /app/index.html404 do canonicalrouting. Auth6GET401/foreignOriginPOST403; không authtoken/SQL/privatecontent trong artifacts.
+- Tail52events/0parseerror: owner bootstrap/habits/game/catalog/history/report/chapter200. User xác nhận đã mở/đăng nhập được. Tail thứhai9events có3cronoutcomeokCPU5–8ms; thêm ownerreads200. Không seededdata/messages; remote writes không được coi đã test chỉ từ GET200.
+- Actual countcheckrowswritten0: tasks20/sleepreports1/healthyaccounts1 khớp backup, newhabit/game/battle0. Hành vi writes được chứng minh bằng productionD1local và actualrestoredcopy, không sửa dữ liệu user để smoke.
+- AuditPRODUCT/REVIEW/ACCEPTANCE kết thúc: H01–H11/G01–G14, toànscope/A01–A10 có evidence ở RELEASE. USER_GUIDE/tour/backup/compatiblecode recovery và knownlimitations đã bàn giao. Chromeemulation/providerfixtures/solver không được gọi thiết bịthật/livemodel/người chơi nhiềutháng; historicnudge rootcause vẫn unconfirmed.
+- Các updates bàn giao sau runtimecommit chỉ tài liệu; doclinks/manifest/hash/diff đã kiểm. Goal kết thúc triển khai theo evidence thật khi finalhandover đã push; user nghiệm thu trải nghiệm và gửi findings cho vòng tiếp theo, không tự mở phạm vi vô hạn.

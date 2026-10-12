@@ -1,12 +1,12 @@
 # Vận hành và ranh giới kỹ thuật
 
-Cập nhật 2026-10-12. Source/commands đã đọc local; không audit/deploy cloud trong phiên docs. Trạng thái goal/release tại [HANDOFF](HANDOFF.md) và [HABIT_GAME_PROGRESS](HABIT_GAME_PROGRESS.md).
+Cập nhật 2026-10-12. Habit/Thần Lộ đã migrate/deploy staging và kiểm sau publish; bằng chứng/version/giới hạn tại [RELEASE](HABIT_GAME_RELEASE.md). Trạng thái bàn giao tại [HANDOFF](HANDOFF.md) và [HABIT_GAME_PROGRESS](HABIT_GAME_PROGRESS.md).
 
 ## Stack và nguồn chuẩn
 
 TypeScript strict, Cloudflare Workers/D1/Cron, Telegram và web modules hiện có; Gemini direct adapter. Domain/application/ports không SQL/fetch/config, adapters triển khai persistence/provider. Schema từ migrations, interfaces từ source; không dùng bảng prototype trong docs cũ để thay state thật.
 
-Source migrations hiện tới0037; số migration đã áp cloud phải kiểm lại bằng listing đúng target, không suy từ số file. Habit/luyện/battle đã có runtime local, remote release còn phải kiểm riêng. Kiến trúc mở rộng tại [HABIT_GAME_ARCHITECTURE](HABIT_GAME_ARCHITECTURE.md).
+Source migrations hiện tới0037;0031–0037 đã áp staging, listing sau release không còn pending. Trước đợt vận hành mới vẫn kiểm listing đúng target, không suy từ số file. Habit/luyện/battle đã phát hành và có owner API smoke200. Kiến trúc mở rộng tại [HABIT_GAME_ARCHITECTURE](HABIT_GAME_ARCHITECTURE.md).
 
 ## Commands local
 
@@ -44,6 +44,12 @@ User đã cho tự commit/push/migrate/deploy staging cho nhiệm vụ Habit/Th�
 5. Ghi commit/migration/Worker version/target/backup/commands/evidence. Nếu fail, xác định đã commit/applied phần nào trước retry; không phát lại thưởng/tin uncertain.
 
 Rollback code/config hoặc feature off có chủ đích, tương thích schema/data/jobs đang có. Không rollback schema bằng xóa dữ liệu hoặc deploy binary không hiểu state mới. Backup phục vụ phục hồi có kiểm chứng, không là nút ghi đè tự động vào data thật.
+
+### Phục hồi bản đã phát hành
+
+Runtime release `bcd22bb`, Worker `d3923c51-3959-474d-8e9a-6d4bfbaf7415`, schema0037. Nếu lỗi ở thay đổi mới, ưu tiên fix tiến tới và chạy gates. Khi cần dựng lại release, tạo checkout/worktree riêng ở commit đó, cài dependencies bằng `npm.cmd ci`, kiểm đúng config/target và chạy gates trước `npm.cmd run deploy:staging`. Không reset worktree của user; không áp lại/down migration0031–0037. Candidate `fb3e76f` có cùng backend/schema/rules, chỉ khác runtime UI `web/ui/sheets.js`; sẽ bỏ queued-close fix, cần review lỗi cụ thể trước dùng. Chưa có version cloud của candidate nên không gọi `wrangler rollback` với ID giả hoặc tự chọn version pre-habit.
+
+Backup trước release: `D:/Tro-ly-AI-art/staging-before-habits-20261012-1.sql`, SHA256 trong RELEASE. Backup này **không có các ghi nhận sau release**. Restore riêng đã kiểm integrity/FK/legacyhash và productionreadflows; không chạy cron/outbox trên bản restore. Nếu có sự cố dữ liệu, export trạng thái hiện tại sang file mới trước, khoanh vùng delta/receipt và viết repair có kiểm chứng; không import backup cũ đè DB đang dùng hoặc phát lại thưởng/tin uncertain. Phục hồi mất dữ liệu thực sự cần kế hoạch bảo toàn các writes mới và quyền cụ thể của user.
 
 ### Backup và rehearsal offline
 

@@ -1,6 +1,6 @@
 # Habit và Thần Lộ — khung sản phẩm đầy đủ
 
-Cập nhật 2026-10-12. Đây là đặc tả đích cho phiên triển khai tương lai, chưa phải mô tả tính năng đang chạy. Đọc nhiệm vụ/quyền tại [IMPLEMENTATION](HABIT_GAME_IMPLEMENTATION.md), quyết định của user tại [REVIEW](HABIT_GAME_REVIEW.md).
+Cập nhật 2026-10-12. Đây là khung sản phẩm đầy đủ đã triển khai và phát hành staging; bằng chứng/giới hạn tại [RELEASE](HABIT_GAME_RELEASE.md). Đọc nhiệm vụ/quyền tại [IMPLEMENTATION](HABIT_GAME_IMPLEMENTATION.md), quyết định của user tại [REVIEW](HABIT_GAME_REVIEW.md).
 
 ## 1. Kết quả cần giao
 

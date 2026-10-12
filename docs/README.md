@@ -6,7 +6,7 @@ Cập nhật 2026-10-12. Docs tách **source đang có**, **sản phẩm đích*
 
 - Tiếp tục công việc chung: [HANDOFF](HANDOFF.md), kiểm git status/HEAD rồi đọc phần liên quan.
 - Triển khai toàn Habit/Thần Lộ: [HABIT_GAME_IMPLEMENTATION](HABIT_GAME_IMPLEMENTATION.md), prompt `/goal` ở mục 8. Sau đó REVIEW/PRODUCT/PROGRESS và docs chuyên đề theo bước.
-- Phạm vi mới: habit/theo dõi, luyện/chiến đấu, **5 phái/39 môn/15 chương**, truyện/nhân vật/ảnh thật, UX và vận hành. Ngân sách bổ sung0đ, ảnh local; goal active, source local đã triển khai và F6/R1 còn tiếp tục. Xem PROGRESS/git status; chưa release phần mới lên staging.
+- Phạm vi mới đã phát hành staging: habit/theo dõi, luyện/chiến đấu, **5 phái/39 môn/15 chương**, truyện/nhân vật/ảnh thật, UX và vận hành. Ngân sách bổ sung0đ, ảnh local; xem [USER_GUIDE](HABIT_GAME_USER_GUIDE.md) để dùng và [RELEASE](HABIT_GAME_RELEASE.md) để nghiệm thu/bằng chứng.
 
 ## Nguồn sở hữu từng chủ đề
 
@@ -26,7 +26,7 @@ Cập nhật 2026-10-12. Docs tách **source đang có**, **sản phẩm đích*
 | [HABIT_GAME_CREATIVE_BRIEF](HABIT_GAME_CREATIVE_BRIEF.md) | Trải nghiệm/cast/lore/style và asset inventory standards |
 | [HABIT_GAME_LOCAL_ART](HABIT_GAME_LOCAL_ART.md) | Preflight, model/backend local miễn phí, production/manifest/QA |
 | [HABIT_GAME_ACCEPTANCE](HABIT_GAME_ACCEPTANCE.md) | Test/simulation/visual/data/release gates và điều kiện complete |
-| [HABIT_GAME_RELEASE](HABIT_GAME_RELEASE.md) | Đối chiếu yêu cầu/bằng chứng, target và các gate phát hành còn thiếu |
+| [HABIT_GAME_RELEASE](HABIT_GAME_RELEASE.md) | Đối chiếu yêu cầu/bằng chứng, bản staging, tour nghiệm thu và giới hạn |
 | [HABIT_GAME_USER_GUIDE](HABIT_GAME_USER_GUIDE.md) | Hướng dẫn thao tác habit/luyện/trận/cứu và lỗi mạng cho người dùng |
 | [HABIT_GAME_PROGRESS](HABIT_GAME_PROGRESS.md) | Checkpoint, quyết định AI, evidence và cách resume |
 | [HABIT_GAME_BUSINESS_DRAFT](HABIT_GAME_BUSINESS_DRAFT.md) | Nháp nguồn lịch sử, tham khảo có chọn lọc; không là lệnh cấp quyền |

@@ -1,6 +1,6 @@
 # Thần Lộ — luyện, chiến đấu và toàn bộ nội dung
 
-Cập nhật 2026-10-12. F3 đã commit/push; engine và mở đầu F4 chạy local, chưa release hoặc đủ toàn bộ nội dung. [PRODUCT](HABIT_GAME_PRODUCT.md) sở hữu phạm vi; [HABITS](HABIT_GAME_HABITS.md) sở hữu cam kết; [CREATIVE_BRIEF](HABIT_GAME_CREATIVE_BRIEF.md) sở hữu trải nghiệm/mỹ thuật.
+Cập nhật 2026-10-12. Luyện/engine và toàn nội dung đã triển khai, phát hành staging; bằng chứng tại [RELEASE](HABIT_GAME_RELEASE.md). [PRODUCT](HABIT_GAME_PRODUCT.md) sở hữu phạm vi; [HABITS](HABIT_GAME_HABITS.md) sở hữu cam kết; [CREATIVE_BRIEF](HABIT_GAME_CREATIVE_BRIEF.md) sở hữu trải nghiệm/mỹ thuật.
 
 Danh mục bên dưới chuẩn hóa bản nháp để agent thiết kế sản phẩm đầy đủ. Tên, lore, chỉ số và cách triển khai có thể được AI biên tập; không tự xem mọi con số/đề xuất trong [BUSINESS_DRAFT](HABIT_GAME_BUSINESS_DRAFT.md) là luật đã duyệt.
 

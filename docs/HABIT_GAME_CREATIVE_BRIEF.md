@@ -1,6 +1,6 @@
 # Thần Lộ — trải nghiệm, cốt truyện và chuẩn mỹ thuật
 
-Cập nhật 2026-10-12. Đặc tả sáng tạo cho **toàn sản phẩm**. Hai concept Tịch Vân/Thiết Lệnh Sứ đã tạo và xem; art/game tích hợp chưa hoàn tất. AI sở hữu thiết kế chi tiết và tự QA; user nghiệm thu cuối. Phạm vi tại [PRODUCT](HABIT_GAME_PRODUCT.md), catalog/truyện tại [GAMEPLAY](HABIT_GAME_GAMEPLAY.md), sản xuất ảnh tại [LOCAL_ART](HABIT_GAME_LOCAL_ART.md).
+Cập nhật 2026-10-12. Chuẩn sáng tạo cho **toàn sản phẩm**; nhân vật/truyện/art đã tích hợp và QA, phát hành staging, bằng chứng ở [RELEASE](HABIT_GAME_RELEASE.md). AI sở hữu thiết kế chi tiết và tự QA; user nghiệm thu cuối. Phạm vi tại [PRODUCT](HABIT_GAME_PRODUCT.md), catalog/truyện tại [GAMEPLAY](HABIT_GAME_GAMEPLAY.md), sản xuất ảnh tại [LOCAL_ART](HABIT_GAME_LOCAL_ART.md).
 
 ## 1. Cảm giác cần tạo
 

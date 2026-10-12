@@ -1,6 +1,6 @@
 # Habit/Thần Lộ — kiến trúc và hợp đồng kỹ thuật
 
-Cập nhật 2026-10-12. F1–F4 đã commit/push; F5 đang local với catalog/version registry/rewards và archive. Toàn nội dung/art/UX và release đang làm. Kiểm HEAD/schema và [PROGRESS](HABIT_GAME_PROGRESS.md), không suy từ tài liệu rằng remote đã migration/deploy.
+Cập nhật 2026-10-12. Toàn habit/luyện/battle/catalog/art/UX đã triển khai và phát hành staging; schema0037, runtime `bcd22bb`. Bằng chứng/giới hạn tại [RELEASE](HABIT_GAME_RELEASE.md), lịch sử quyết định tại [PROGRESS](HABIT_GAME_PROGRESS.md). Trước thao tác remote mới luôn kiểm target/HEAD/listing.
 
 ## 1. Tiếp nối kiến trúc
 
@@ -43,7 +43,7 @@ F2 bổ sung:
 - `0032_habit_reminders.sql`: link tới recurrence rule chuẩn, ID SHA256 owner/habit. `reminderTime` optional khi create/update, lưu cùng receipt. Nhắc là lời nhắc cá nhân đã cấu hình, tiếp tục khi ngủ; không tick habit hoặc thưởng. Ngày chọn thứ được dịch nếu giờ nhắc nằm trước mốc ngày sinh hoạt. Archive có end date và guard lifecycle; không gửi lại cùng slot đã sending/sent/uncertain khi đổi revision.
 - `0033_habit_slots.sql`: mỗi habit/ngày tối đa một reservation 5–240 phút, bước 5 phút. `slot/remove_slot` có expected day/version; thay slot tăng version habit để tab cũ không ghi đè. Atomic guards gồm aggregate habit, healthy/day/settings/plan/events/tasks; giữ khung task đã xếp, dự trữ thời gian khi replan. Slot không bật nhắc, tạo task hay ghi nhận hoàn thành.
 - `GET /api/habit-report?from=…&to=…&habitId=…`: totals, ngày, tỷ lệ từ successes/(successes+misses); neutral không vào mẫu số. Tổng lượng tách theo metric/unit qua revision. History hỗ trợ `status` và keyset; CSV tôn trọng bộ lọc.
-- `today()` đọc nhóm definitions/logs/reminders/slots với số query cố định; tuần preview tối đa 7 ngày. Integration 30 habit kiểm tổng prepare ≤25, có headroom dưới ngân sách 50. Chưa đo CPU/runtime remote hoặc lịch sử nhiều năm.
+- `today()` đọc nhóm definitions/logs/reminders/slots với số query cố định; tuần preview tối đa 7 ngày. Integration 30 habit kiểm tổng prepare ≤25, có headroom dưới ngân sách 50. D1scale kiểm3nămlogs; local benchmark và mẫu CPU/wall remote ở RELEASE, không suy mọi workload từ sample nhỏ.
 - Today thực tế dùng `renderDailyPlan`; reservation hiển thị tại đây và link về danh sách habit. `renderTimeline` cũng nhận DTO nhưng không thay layout Today đã duyệt.
 
 Các hợp đồng đã triển khai được đánh dấu theo F3/F4/F5; các thiết kế mở phía sau không chứng minh tính năng đã chạy.
@@ -56,7 +56,7 @@ Các hợp đồng đã triển khai được đánh dấu theo F3/F4/F5; các t
 - Settlement chờ tất cả habit của ngày, guard game+habit và next-day ở commit; cập nhật versions/audits/game_days/source receiver/game_applied cùng batch. Battle dùng handler F4 và vẫn chốt audit tuần; không chuyển nguồn thành tiến độ luyện. Luyện không mutation healthy/vé; death/rescue có delta cùng batch.
 - Catalog39 có identity/name/group/description/factor và finite effects F4. Năm môn đầu phái cho chọn luyện; unlock graph và tình huống dùng toàn39 môn vẫn cần F4/F5. Không gọi data catalog là game đã hoàn thành.
 - Chính sách tinh thuần/weekly audit/cost do [GAMEPLAY mục2](HABIT_GAME_GAMEPLAY.md) sở hữu; weekly audit của bản không active vẫn chốt. Outcome có named source trong game_days để UI giải thích ngày/habit góp luyện.
-- Habit closure cùng oldest-day được đọc/ghi theo nhóm≤30 (`settleBatch`); wrapper `settle` chỉ lặp tới limit cho maintenance/local. Cron phase3 luân phiên legacy/habit/game mỗi12phút, các phase thông báo giữ4phút. Không xếp6habit-days cộng game trong một invocation. Integration kiểm30habit grouped≤20SQL, GETgame≤50SQL/<50KB và hai maintenance invocation≤50SQL. Giới hạn Free được đối chiếu [Cloudflare D1 limits](https://developers.cloudflare.com/d1/platform/limits/); CPU/latency thật và backlog nhiều năm còn là gate release.
+- Habit closure cùng oldest-day được đọc/ghi theo nhóm≤30 (`settleBatch`); wrapper `settle` chỉ lặp tới limit cho maintenance/local. Cron phase3 luân phiên legacy/habit/game mỗi12phút, các phase thông báo giữ4phút. Không xếp6habit-days cộng game trong một invocation. Integration kiểm30habit grouped≤20SQL, GETgame≤50SQL/<50KB và hai maintenance invocation≤50SQL. Giới hạn Free được đối chiếu [Cloudflare D1 limits](https://developers.cloudflare.com/d1/platform/limits/); D1scale/local365daydrain/liveCPUwall và giới hạn đã kiểm tại RELEASE.
 
 ### Hợp đồng chiến đấu F4 đã commit/push; F5 đang mở rộng local
 
@@ -79,7 +79,7 @@ Các hợp đồng đã triển khai được đánh dấu theo F3/F4/F5; các t
 - Content snapshot trong trận không đổi khi publish. F4 có5encounters mở đầu; F5 đã mở graph40encounters/15chương với version registry. Art/cast/UX toàn inventory vẫn phải hoàn thiện. Public overview loại `pattern` khỏi snapshot và chỉ hiện victory sau thắng; intents công bố qua projection của engine.
 - Healthy giữ kinh tế cũ. Cooldown combat được endpoint breakthrough/SQL guard kiểm lại, odds/penalties/charms thường không đổi. Bootstrap thêm restriction vào account read DTO; UI nói ngày thử lại. Cứu cần healthy version; undo ngủ giữ delta/guards.
 - Task không clone: roots khi prepare, completion source chuẩn, chỉ2/ngày và global once-only. Steps/work-log/estimate/task mới không thành sức mạnh vô hạn. Giá/order/absence tại [BATTLE_RULES](HABIT_GAME_BATTLE_RULES.md).
-- Local30 nguồn battle: GETgame cùng closure≤50 SQL/<50KB. CPU/latency remote, backlog dài và staging còn là release gates.
+- Local30 nguồn battle: GETgame cùng closure≤50 SQL/<50KB. CPU/latency remote sample, backlog dài và staging smoke đã kiểm; xem RELEASE để phân biệt localscale và traffic thật, không tuyên bố30nguồn đã benchmark trên DB user.
 
 | Nhóm | Dữ liệu/trách nhiệm | Bất biến |
 | --- | --- | --- |

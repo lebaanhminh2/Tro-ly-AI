@@ -1,6 +1,6 @@
 # Chiến đấu — quyết định A05/A06 và luật đang triển khai
 
-Cập nhật 2026-10-12. Engine/store/API/UI và toàn catalog đang chạy local; chưa release remote. Phạm vi và luật user tại [GAMEPLAY](HABIT_GAME_GAMEPLAY.md), checkpoint tại [PROGRESS](HABIT_GAME_PROGRESS.md). Các số cân bằng là quyết định của agent; chỉnh theo bằng chứng và giữ version của trận đã bắt đầu.
+Cập nhật 2026-10-12. Engine/store/API/UI và toàn catalog đã phát hành staging; bằng chứng tại [RELEASE](HABIT_GAME_RELEASE.md). Phạm vi và luật user tại [GAMEPLAY](HABIT_GAME_GAMEPLAY.md), checkpoint tại [PROGRESS](HABIT_GAME_PROGRESS.md). Các số cân bằng là quyết định của agent; chỉnh theo bằng chứng và giữ version của trận đã bắt đầu.
 
 ## Ngày và nguồn sức mạnh
 

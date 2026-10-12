@@ -1,6 +1,6 @@
 # Habit — cam kết, ghi nhận và theo dõi
 
-Cập nhật 2026-10-12. Đặc tả đích; chưa triển khai. Luật user nằm tại [REVIEW](HABIT_GAME_REVIEW.md); giao dịch tại [ARCHITECTURE](HABIT_GAME_ARCHITECTURE.md), phần game tại [GAMEPLAY](HABIT_GAME_GAMEPLAY.md).
+Cập nhật 2026-10-12. Hợp đồng habit đã triển khai và phát hành staging; bằng chứng tại [RELEASE](HABIT_GAME_RELEASE.md). Luật user nằm tại [REVIEW](HABIT_GAME_REVIEW.md); giao dịch tại [ARCHITECTURE](HABIT_GAME_ARCHITECTURE.md), phần game tại [GAMEPLAY](HABIT_GAME_GAMEPLAY.md).
 
 ## 1. Định nghĩa và dữ liệu người dùng
 

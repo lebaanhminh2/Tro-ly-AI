@@ -1,35 +1,38 @@
-# Tiếp tục từ đây
+# Bàn giao Habit và Thần Lộ
 
-Cập nhật 2026-10-12. Goal Habit/Thần Lộ đang active, AI tự triển khai đến sản phẩm staging để user nghiệm thu cuối. Đọc checkpoint trước khi nối tiếp; không bắt đầu lại từ đầu.
+Cập nhật 2026-10-12. Toàn scope đã triển khai, migrate/deploy staging và kiểm sau publish; sẵn sàng để user nghiệm thu. Các checkpoint cũ là lịch sử, không bắt đầu lại từ đầu.
 
-## Đường vào
+## Bản đã phát hành
 
-- Đọc [HABIT_GAME_IMPLEMENTATION](HABIT_GAME_IMPLEMENTATION.md); prompt `/goal` ở mục 8.
-- [PRODUCT](HABIT_GAME_PRODUCT.md) sở hữu full scope; [REVIEW](HABIT_GAME_REVIEW.md) giữ luật user; [PROGRESS](HABIT_GAME_PROGRESS.md) giữ checkpoint/decisions/evidence.
-- [README](README.md) chỉ đúng tài liệu chuyên đề; không cần đọc toàn bộ docs mỗi phiên.
+- App: https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev/app/
+- Runtime commit `bcd22bb`, đã push trên `review/p1-p3`. Các cập nhật bàn giao tiếp theo chỉ đổi tài liệu; kiểm `git status`/HEAD trước vòng mới.
+- Worker `personal-assistant-staging`, version `d3923c51-3959-474d-8e9a-6d4bfbaf7415`.
+- D1 `assistant-staging`, ID `5457c401-45d9-4b19-b76e-0eceec67a223`;0031–0037 áp thành công, listing không còn pending. Cron/webhook/secrets giữ cấu hình hiện có.
+- User đã xác nhận **mở app và đăng nhập được**. Owner APIs mới/cũ được quan sát200 trên đúng version; auth401/Origin403 và static assets SHA256 khớp.
 
-## Trạng thái thật
+## Phạm vi và bằng chứng
 
-- F1–F5/F6 checkpoints đã push; HEAD `fb3e76f`, branch `review/p1-p3`, gồm đọc chiêu/earned rescue/final-send/chữ lớn/offline UX. Worktree hiện có queued dialog close/fullcampaign QA/restore và runtime tools/docs; kiểm git status và PROGRESS trước nối tiếp.
-- Habit/luyện/battle/economy/bot chạy local; schema0031–0037. Đủ40encounters/15chương/39quyền/presets/discovery/export/settings. Content3readstance chặn lặpchiêu toàntruyện trong3200cases, vẫn giữ30earned imperfect/weekly/earlybranch và5mixed routes tới40wins; earnedqi rescue đãthắng. Xem HABIT_GAME_BALANCE, không coi toànF6 đạt.
-- Full gate checkpoint bot/art:300main+25experiments/28browser,44webmodules. Guidance browser29pass;9unit+typecheck/check:web45modules. Regression D1 hiện tại xem PROGRESS/handle; không coi gate cũ là finalrelease.
-- Phạm vi mới: habit/tracking/lịch-nhắc, luyện/chiến đấu, đủ 5 phái/39 môn/15 chương tới DIỆT THẦN, tuyến phụ/thần binh/chiến tích, cast/art/UI và vận hành. Một phái/chương đầu chỉ là cổng nội bộ.
-- Source đã có task/planner/sleep5min undo/focus/checkin/healthy/Chrome auth/reminders; giữ nguyên. Remote chưa áp migration0031–0037.
-- `72d0424` bổ sung export Thần Lộ JSON một snapshot/read-only, guide bỏ qua/mở lại, ẩn game/giảm chuyển động device-local và12asset cuối truyện. Gate290main/25experiments +27browser đạt;43webmodules. `npm test` giữ concurrency2 cho máy local; logs và giới hạn ở PROGRESS. Chưa release remote.
-- Không artprocess live. Finals toàn40encounters/15cảnh/nămphái/baweapon và39symbols đã publish/sourceQA; branch prepare light390/dark320, school headers light390 vàweapon light320/dark390 đã xem. Fullvisual/network/staging QA cònF6/R1. Venv/models/sourcePNG ở D:/Tro-ly-AI-art, ngoàiGit.
-- Issue nền: báo ngủ sớm nhưng thấy nudge. Rootcause lịch sử chưa xácđịnh; hai finalsendrace đãreproduceD1local vàfixrechecktrướctransport,22rest/healthycases đạt. Không gửi tinthử; xem PROGRESS/OPERATIONS để phânbiệt evidencecode với audit lịch sử.
-- Mới nhất: fullbrowser33pass; campaign80encounterpreviews/30chapter/30storyend screens light360/dark414 đã kiểm geometry và xem contacts. Rehearsal2cases/D1scale1case đạt; offline365daydrain max18SQL/call, không đổihealthy. Typecheck/check:web45modules vàdry-runs đạt. **Main full recheck317main+25experiments/0skip đạt**, session96739 terminal; staticclosefragment thay bằng behavior regression có bằng chứng.
-- Auth10000 đã giải bằng agent chạylogin theo user; targetDB/pending0031–0037 verified. Backup thật1.56MB đã restore/rehearse:72legacytables/1011rows count/hash giữ,27newtables; actualrestore productionreadflows khôngwrite/dispatch. Remoteapply/deploy/smoke vẫn chờ maingate. [RELEASE](HABIT_GAME_RELEASE.md) đối chiếu scope/evidence; [USER_GUIDE](HABIT_GAME_USER_GUIDE.md) hướng dẫn source, chưa tuyên bố phát hành.
+Habit tùy chỉnh/theo dõi/lịch-nhắc/đặt chỗ, luyện bốn tầng/tinh thuần nghiêm, trận nhiều ngày/chiêu/rút/tử trận/cứu, đủ5phái/39côngpháp/15chương tới DIỆT THẦN/40encounters/tuyến phụ/3thần binh/11chiến tích. Có truyện/nhân vật/ảnh cuối, onboarding/thư viện/nhật ký/presets/export/settings/bot. Task/ngủ5phúthoàntác/focus/checkin/reminders/đột phá được giữ bằng regressions.
 
-## Quyền và giới hạn
+- Gates cuối: **317main+25experiments+33browser,0fail/0skip**, typecheck/check:web45modules/build:check/staging:check đạt.
+- QA: actualChrome360/390/414/1440/light-dark/large text/keyboard/slow-offline; fullcampaign80previews/30chapters/30endings/lower-fold đã xem. Localpipeline tạo130WebP/39SVG; finals/workflow/manifest ởGit, không cần model chạy khi dùng app.
+- Balance:3200repeatcases không một chiêu spam vượt toàntruyện;30earnedimperfect/weekly và5mixedroutes tới40wins, earnedrescue thành công; unionearnedprofiles phủ11achievementIDs.
+- Actualbackup1.559.408bytes ngoàiGit đã restore/rehearse:72legacytables/1011rows count/hash giữ,27newtables/integrityok/FK0; productionreadflows trên copy khôngwrite/dispatch. Localruntime365daydrain và actualD1scale3nămlogs đã kiểm.
+- Sau deploy:215staticfiles+indexroute khớp SHA256, liveownerAPIs200; ba naturalcronoutcomeokCPU5–8ms. Không tạo habit/log cá nhân giả hoặc gửi tin thử.
 
-- Goal đã cấp ngoại lệ duyệt từng file trong phạm vi IMPLEMENTATION; AI tự triển khai. Chỉ dẫn user mới hơn thu hẹp quyền luôn ưu tiên.
-- Ngân sách bổ sung0đ; CUDA/GTX1650 4GB đã tạo ảnh thử thật; venv/models/drafts ở `D:\Tro-ly-AI-art`, script và manifest trong repo. Không paid fallback.
-- User đã cho commit/push bình thường, migration/deploy staging hiện tại sau gates/đúng target/backup. Không production, paid fallback, force-push, xóa dữ liệu hoặc log cá nhân/tin nhắn giả.
-- Secrets trong môi trường/.env, không in/commit; example config theo code thật. Chi tiết vận hành tại [OPERATIONS](OPERATIONS.md).
+[RELEASE](HABIT_GAME_RELEASE.md) sở hữu evidence map/version/giới hạn; [PROGRESS](HABIT_GAME_PROGRESS.md) giữ decisions/checkpoints lịch sử; [ACCEPTANCE](HABIT_GAME_ACCEPTANCE.md) là tiêu chí kiểm chứng.
 
-## Next action
+## Hướng dẫn và phục hồi
 
-Đọc checkpoint F6/R1 cuối tại PROGRESS, kiểm git status và poll main suite96739 nếu còn live. Kiểm fullgates và docs/diff, commit/push checkpoint; khi login khôi phục thì verify target, export/rehearse backup thật, migrate/deploy/smoke staging và completion audit theo RELEASE/ACCEPTANCE. Bot/art/presets/guide/export/counter/earnedprofiles đã có, không khởi động lại các phần đó hoặc thu goal xuống checkpoint.
+- [USER_GUIDE](HABIT_GAME_USER_GUIDE.md): bắt đầu, ngày/quota tuần, sửa cùng ngày, luyện/bản/tinh thuần, trận/rút/cứu, export và lỗi mạng. Người dùng không cần đọc thiết kế kỹ thuật để chơi.
+- [OPERATIONS](OPERATIONS.md): commands, backup/restore riêng và compatible code recovery. Không deploy Worker pre-habit khi đã có game data; không import backup cũ đè ghi nhận sau release.
+- [IMPLEMENTATION](HABIT_GAME_IMPLEMENTATION.md): nhiệm vụ/quyền đã dùng. Prompt `/goal` giữ để tham khảo, không cần chạy lại nhiệm vụ đã giao.
 
-Các ghi chú phát hành tháng 9 trước đây là lịch sử và còn trong Git tại `23a1808:docs/HANDOFF.md`; không chứng minh trạng thái cloud hiện tại. Kiểm source/schema/config và release evidence mới khi thao tác remote.
+## Giới hạn thực tế và vòng tiếp theo
+
+- Bootstrap live sample mất6,2–6,6giây/CPU23–35ms; habit1,2–1,4giây/game1,5–2,3giây. Không khẳng định mọi invocation<10ms, không suy localbenchmark là remoteWorkload30habit. Tối ưu bootstrap là mục tiêu tiếp nếu user thấy chậm; không tự đổi logic cũ/nâng gói0đ.
+- Chrome emulation chưa là máy thật; providerfixtures chưa chứng minh Gemini/Telegramlive. Campaign/earned simulations chưa là người thật chơi nhiều tháng; user nghiệm thu cảm giác chơi/art cuối.
+- Nudge ngủ lịch sử chưa có rootcause đã chứng minh. Hai finalsendrace thực tế đã reproduceD1/fix/regression và deploy; configuredpersonalreminders vẫn gửi. Tin đã dispatch không thu hồi bởi báo ngủ.
+- Model/venv/sourcePNG/QA/artifacts/backups ở `D:/Tro-ly-AI-art`, ngoàiGit; không còn art/test/tail process của đợt này cần giữ chạy.
+
+Việc tiếp theo là user nghiệm thu và nêu findings cụ thể. Giữ luật đã chốt ở REVIEW và phạm vi của yêu cầu mới; không chạy lại toàncampaign hoặc mở thêm scope khi chưa có rủi ro cụ thể. Secrets ở môi trường/.env, không in/commit; ngân sách bổ sung0đ. Không production/forcepush/phá dữ liệu/tin thử.

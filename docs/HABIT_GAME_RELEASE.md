@@ -1,6 +1,6 @@
 # Habit/Thần Lộ — bằng chứng và phát hành
 
-Cập nhật 2026-10-12. **Goal chưa hoàn thành; phần mới chưa lên staging.** File này đối chiếu yêu cầu với bằng chứng hiện có, không thay [ACCEPTANCE](HABIT_GAME_ACCEPTANCE.md) hoặc [PRODUCT](HABIT_GAME_PRODUCT.md).
+Cập nhật 2026-10-12. **Toàn bộ phần mở rộng đã phát hành staging và kiểm sau deploy; sẵn sàng để user nghiệm thu.** File này đối chiếu yêu cầu với bằng chứng hiện có, không thay [ACCEPTANCE](HABIT_GAME_ACCEPTANCE.md) hoặc [PRODUCT](HABIT_GAME_PRODUCT.md).
 
 ## Target và trạng thái
 
@@ -10,19 +10,21 @@ Cập nhật 2026-10-12. **Goal chưa hoàn thành; phần mới chưa lên stag
 | Staging | `personal-assistant-staging` |
 | D1 | `assistant-staging`, ID `5457c401-45d9-4b19-b76e-0eceec67a223` |
 | URL app | https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev/app/ |
-| Schema cần phát hành | 0031–0037; chưa áp remote |
+| Release source | `bcd22bb`, đã push; các commit tài liệu sau đó không đổi binary |
+| Schema đã phát hành | 0031–0037 áp thành công; listing sau apply không còn migration chờ |
 | Luật/content | `practice-v1`, `battle-v1`, `than-lo-3`; snapshots cũ giữ nghĩa cũ |
 | Xác thực | Auth10000 đã giải: agent chạy `wrangler login` theo user, exit0; info/pending migration target verified |
 | Backup staging thật / restore | Đã export/restore/rehearse;72legacytables/1011rows proof giữ,27newtables |
-| Deploy / smoke | Full gates đã đạt; chuẩn bị áp remote/deploy, chưa có Worker version mới |
+| Worker version | `d3923c51-3959-474d-8e9a-6d4bfbaf7415` |
+| Deploy / smoke | Deploy exit0; assets/auth/live owner APIs đạt; user xác nhận đã mở và đăng nhập được |
 
-Backup thật và full gates đã đạt; tiếp theo remoteapply/deploy và read-only smoke. Không in token/.env/SQL/private export URL.
+Backup thật, full gates và kiểm sau deploy đã đạt. Cron mỗi phút giữ nguyên; không thay webhook, gửi tin thử hoặc tạo habit/log cá nhân giả. Không in token/.env/SQL/private export URL.
 
 ## Đối chiếu phạm vi sản phẩm
 
 | Yêu cầu | Bằng chứng sở hữu | Giới hạn / phần còn cần |
 | --- | --- | --- |
-| Habit CRUD/lifecycle/ba lịch/tick và định lượng | `src/application/habit-service.ts`, D1 habit store; unit habits và integration habits | Local; còn kiểm bản publish |
+| Habit CRUD/lifecycle/ba lịch/tick và định lượng | `src/application/habit-service.ts`, D1 habit store; unit habits và integration habits; live GET habits200 | Writes được kiểm D1/local; staging không tạo dữ liệu giả |
 | H01/H02/H07/H08/H09/H10: revisions, sửa cùng ngày, retry, khóa ngày cũ | integration habits: replacement/concurrency/replay, pending revision rollback, weekly archive; unit time/definitions | Không cho fixture sửa dữ liệu thật |
 | H03–H06: ngày trung tính/quota/thiếu không thể bù | unit habits: cả 896 mẫu Q1–7 và ví dụ ngày1/6/7; integration weekly | Quota là số ngày đạt, không số lần ghi |
 | H11: report/history/notes/filter/export | D1 history/report; browser habit flows; JSON/CSV web model tests | UI 7/30 ngày; API bounded 366 ngày, có pagination |
@@ -35,12 +37,12 @@ Backup thật và full gates đã đạt; tiếp theo remoteapply/deploy và rea
 | Lựa chọn chiến thuật và nhịp chơi | BALANCE: 3200 repeat cases, 30 earned profiles/5 mixed routes/earned rescue | Không spam một chiêu vượt toàn truyện; thời gian mô phỏng không dự báo thời gian chơi thật |
 | 3 thần binh/11 chiến tích | reward registry/D1 weapon victory; union earned profiles/mixed/rescue đủ 11 IDs | Không dùng fixture cấp sẵn mọi quyền để chứng minh kiếm được |
 | Truyện/nhân vật nguyên bản và thư viện/nhật ký | game-content/characters; lazy chapter/boss endpoints; browser story/access/history/search | Không lộ kết chương/pattern khi chưa có quyền |
-| Ảnh thật đồng nhất, không placeholder | assets manifest/source/workflows; 40 encounter/15 scene/5 school/3 weapon +39 SVG; full campaign browser/contact QA | Staging asset smoke còn thiếu; `tram-nui` là ảnh dự phòng không được dùng trong runtime |
+| Ảnh thật đồng nhất, không placeholder | assets manifest/source/workflows; 40 encounter/15 scene/5 school/3 weapon +39 SVG; full campaign browser/contact QA; staging SHA256 khớp | `tram-nui` là ảnh dự phòng không được dùng trong runtime |
 | Onboarding/guide/settings/export | browser guide/settings/export/presets; D1 game-export/presets; USER_GUIDE | Hide game/reduced motion device-local; không tự import ghi đè dữ liệu |
 | UI gọn/mobile/accessibility/mạng | actual browser 360/390/414/1440, light/dark, text200%, keyboard, slow/offline; PROGRESS | Chrome emulation; không tuyên bố thiết bị thật |
 | Bot/context/tools | integration habit-game-bot: readonly/pagination, native atomic journal, stale cutoff/lost ACK/guards | Live provider không suy từ fixture; deterministic core không phụ thuộc model |
 | Giữ task/ngủ/focus/reminders/đột phá | main regression suites + full browser; final-send race có fail-before/pass-after | Root cause tin ngủ lịch sử chưa xác nhận; tin đã dispatch không thu hồi |
-| Data/hiệu năng/vận hành | upgrade rehearsal + production-store restore smoke; D1 scale case; runtime benchmark; actualstaging backup/restore readflows; OPERATIONS | Remote migration/deploy/smoke còn chờ gate; runtime remote latency/CPU chưa đo |
+| Data/hiệu năng/vận hành | upgrade rehearsal + production-store restore smoke; D1 scale case; runtime benchmark; actual staging backup/restore readflows; live CPU/wall sample; OPERATIONS | Mẫu live nhỏ; bootstrap khoảng6giây, không chứng minh mọi lượt dưới10msCPU |
 
 ## Bằng chứng F6/R1 mới
 
@@ -55,14 +57,23 @@ Artifact local ở `D:/Tro-ly-AI-art`, không chứa trong bundle/Git. Nội dun
 
 Fullbrowser cuối **33pass/0skip**, exit0 (`r1-final-test-browser.log`); typecheck/check:web45modules/build:check/staging:check dry-run đạt. Bundle659.42KiB/gzip153.30KiB/224assetfiles. Main gate đầu314/315, một source-fragment assertion cũ không phù hợp queued-close fix; đã thay bằng kiểm callback giữ thẻ mới và mở cuộn sau đóng cuối,17unitUIcases đạt. Full recheck **317main +25experiments/0fail/0skip**, exit0 (`r1-final-test-all-recheck.log`); có cả D1scale/restore/newclosebehavior cases. Không gọi provider fixtures là live.
 
-Candidate rollback code là `fb3e76f`: backend/migrations/rules của worktree hiện tại giống commit này, khác runtime UI chủ yếu là queued-close guard; verify diff lại trước release. Không tự rollback về Worker staging cũ không biết luật game mới nếu đã có dữ liệu/trận. Khi có Worker version mới, ghi version rollback tương thích hoặc dựng candidate từ checkout riêng và chạy gates; không ghi đè workspace/dữ liệu hoặc xóa schema mới.
+Candidate rollback code là `fb3e76f`: `git diff --name-only fb3e76f bcd22bb -- src web migrations` chỉ có `web/ui/sheets.js`; backend/migrations/rules giống nhau. Khi cần, dựng candidate từ checkout riêng, chạy gates rồi deploy cùng staging và giữ schema0037. Candidate này bỏ queued-close fix nên ưu tiên sửa tiến tới; chưa có Worker version cloud của candidate để rollback trực tiếp. Không dùng Worker pre-habit cũ khi đã có dữ liệu/trận mới; không xóa schema hoặc ghi đè workspace/data. Quy trình cụ thể ở OPERATIONS.
 
-## Audit còn bắt buộc trước complete
+## Kiểm sau deploy và audit cuối
 
-1. Đọc lại PRODUCT/REVIEW/ACCEPTANCE và source cuối, xử lý mâu thuẫn hoặc hạng mục chưa được bằng chứng phủ. Kiểm paths/docs/manifest/hash và staged files.
-2. Đạt typecheck/check:web/test:all/test:browser/build:check/staging:check trên source cuối; ghi kết quả và version rõ. Tests provider fixture không gọi Gemini/Telegram thật.
-3. Sau login: xác minh account/Worker/DB/migration baseline, export backup ngoài Git; restore và rehearsal backup thật vào SQLite mới; kiểm counts/hash/integrity/FK, dữ liệu cũ và schema mới.
-4. Chỉ khi các gate đạt mới áp remote0031–0037/deploy staging. Kiểm migration listing/Worker version, app/modules/assets, auth401 và API read-only bằng phiên owner hợp lệ nếu có. Không tạo log thật hoặc gửi tin giả để smoke.
-5. Bổ sung version/commit/migrations/backup path/restore report/remote smoke và hình màn cuối; giao USER_GUIDE, URL/cách đăng nhập và tour nghiệm thu.
+- `r1-staging-migrations-apply.log`, `r1-staging-migrations-after.log`, `r1-staging-deploy.log`: 0031–0037 áp thành công, không còn pending; Worker version bên trên, deploy exit0. Không thay secrets/webhook/cron.
+- `r1-staging-public-assets-auth-smoke-final.json`: 215 file tĩnh200 và SHA256 khớp source, gồm toàn130WebP/39SVG/45module/CSS. `index.html` được phục vụ ở `/app/`200,1775bytes/SHA256 khớp; `/app/index.html`404 là canonical routing của Assets, không là màn app thiếu. Sáu GET API không auth trả401; POST foreign Origin trả403 trước mutation. Report gốc giữ phản hồi canonical404 để đối chiếu; report cuối bổ sung kiểm indexroute.
+- `r1-staging-natural-runtime-20261012.json`: tail đã lọc bỏ headers/body/query/log/privatecontent; 52events, không parseerror. Owner traffic trên đúng version có bootstrap/history/habits/habit-history/habit-report/game/game-catalog/game-chapter200. User xác nhận **đã mở và đăng nhập được**; agent không lấy token của user hoặc phát request ghi thử.
+- Live sample: habits4requests CPU4–6ms/wall1247–1420ms; game5requests CPU6–10ms/wall1521–1593ms; catalog CPU3ms/wall219ms; report CPU2ms/wall626ms. Bootstrap3requests CPU24–35ms/wall6186–6551ms. Bootstrap chứa legacy task/plan/rest/timeline và nhiều đọc D1 nối tiếp, phần habit/game/history mới tải riêng; không thể suy chậm do feature mới hoặc cam kết10ms từ mẫu này. Tất cả request mẫu outcomeok; số đo là Worker wall, không là thời gian render thiết bị. Giữ latency bootstrap là hạn chế đã biết và mục tiêu tối ưu tiếp, không nâng gói0đ hoặc đổi cơ chế cũ để đạt một con số.
+- `r1-staging-counts-after-migration-retry.json`: query read-only/rowswritten0; tasks20/sleepreports1/healthyaccounts1 khớp backup; habits/gameaccounts/battles0. Diagnostic UNION trước đó bị D1compoundSELECTlimit từ chối, đã thay scalar subqueries; không là failure migration hoặc mất dữ liệu.
+- `r1-staging-natural-cron-20261012.json`: thêm180giây tail,9events/0parseerror; ba cron trên đúng version outcomeok/CPU5–8ms/wall1932–3713ms. Owner API/history/game/bootstrap tiếp tục200; game wall2242–2269ms, bootstrap6377–6619ms. Observer dừng tiến trình tail của chính nó theo timeout; childexit1 do timedStop, không là Workerexception. Mẫu này chưa phủ mọi phase hoặc backlog lớn ở remote.
+- Audit PRODUCT/REVIEW/ACCEPTANCE: H01–H11/G01–G14 và từng dòng scope có evidence trong bảng trên; A01–A10 có source/docs/QA/ops tương ứng. Full gates chạy trên runtime source của `bcd22bb`; bàn giao docs sau release không đổi binary. Không còn feature/art/staging gate phải hứa bổ sung. Root cause nudge lịch sử vẫn chưa được chứng minh; hai lỗi final-send thực tế đã có regression fail-before/pass-after và bản fix đã deploy.
 
-Giữ goal active khi còn công việc độc lập; nếu chặn xác thực trở thành impasse thật, dùng blocked theo điều kiện công cụ. Không đánh dấu complete khi chỉ xong local.
+## Tour nghiệm thu và giới hạn
+
+1. **Hôm nay:** kiểm kế hoạch/deadline/focus/ngủ vẫn theo bố trí cũ; habit chỉ là nhóm gọn.
+2. **Thói quen:** tạo habit thực tế nếu muốn; thử tick hoặc nhập tổng, lịch tuần linh hoạt, lịch sử/báo cáo, nhắc/đặt chỗ tùy chọn và xuất dữ liệu.
+3. **Thần Lộ:** mở Cách chơi, Công pháp và Hành trình; thử Võ Kỹ Cơ Bản/trận nhập môn, chọn luyện từ habit thật. Xuất chiến/đổi môn áp ngày sinh hoạt kế tiếp; không cần log giả để thấy toàn catalog.
+4. Đọc [USER_GUIDE](HABIT_GAME_USER_GUIDE.md) khi cần hiểu tinh thuần, chốt ngày, rút/cứu, kỳ thiếu hoặc mất mạng.
+
+Chrome emulation không phải thiết bị thật; provider fixtures không chứng minh Gemini/Telegram live. Truyện/game nhiều ngày đã kiểm bằng production engine/D1/earned simulations, chưa phải người thật chơi nhiều tháng. Độ cuốn và cảm giác hình ảnh do user nghiệm thu cuối. Local artifact/backup có dữ liệu hoặc dung lượng lớn giữ ngoàiGit; finals/workflow/manifest/docs trong repo.

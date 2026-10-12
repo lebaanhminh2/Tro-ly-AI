@@ -65,7 +65,7 @@ Source khảo sát ứng dụng tại `51f5ffd`; docs trước đợt mở rộn
 - Hôm nay ưu tiên kế hoạch/toàn cảnh/deadline; task đã xong không đưa vào xếp lịch. Giữ bố trí/thứ bậc chữ người dùng đã duyệt trừ khi sửa lỗi cụ thể.
 - Không tự liên kết ngủ/điểm danh thành habit hoặc nhân rewards. Liên kết mới phải opt-in, chung nguồn và giữ undo guards.
 
-Issue user đã báo: ngủ sớm bằng button nhưng sáng thấy nudge ngủ. Chưa audit root cause/chưa sửa ở phiên docs. Đây là gate nền khi triển khai, không tự mô tả một giả thuyết là kết luận.
+Issue user đã báo: ngủ sớm bằng button nhưng sáng thấy nudge ngủ. Audit lịch sử chưa chứng minh tin được gửi sau report trong nhóm đã kiểm; không kết luận root cause lịch sử. Hai lỗi final-send thực tế đã reproduce bằng D1, sửa và có fail-before/pass-after; bản fix đã lên staging, personal reminders vẫn được gửi. Bằng chứng/giới hạn ở RELEASE/OPERATIONS, không mô tả giả thuyết như kết luận.
 
 ## 6. Dùng bản nháp đúng vai trò
 

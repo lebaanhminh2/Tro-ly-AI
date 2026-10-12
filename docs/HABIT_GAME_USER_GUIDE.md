@@ -1,6 +1,6 @@
 # Dùng Habit và Thần Lộ
 
-Hướng dẫn bám source hiện tại ngày 2026-10-12. Phần mới đã chạy local; **chưa phát hành staging**. Trạng thái phát hành và bằng chứng tại [RELEASE](HABIT_GAME_RELEASE.md).
+Hướng dẫn bản staging ngày 2026-10-12: https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev/app/ . Bản mới đã phát hành và user xác nhận đăng nhập được. Trạng thái phát hành và bằng chứng tại [RELEASE](HABIT_GAME_RELEASE.md).
 
 ## Bắt đầu trong vài phút
 

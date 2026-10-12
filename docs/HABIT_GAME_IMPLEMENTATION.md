@@ -1,6 +1,6 @@
 # Giao việc cho AI: hoàn thiện Habit và Thần Lộ
 
-Cập nhật **2026-10-12**. Đây là điểm vào duy nhất cho nhiệm vụ và prompt `/goal`. Goal đang hoạt động; F1–F4 đã commit/push (F4 `699c69a`), F5 có checkpoint `c99ed03` / `017b545` đã push và còn triển khai tiếp, chưa release remote. Trạng thái, quyết định và bằng chứng mới nhất tại [PROGRESS](HABIT_GAME_PROGRESS.md); kiểm git status/HEAD trước khi tiếp tục.
+Cập nhật **2026-10-12**. Đây là điểm vào nhiệm vụ và prompt `/goal` được giữ để tham khảo. Toàn scope P0/F1–F6/R1 đã triển khai; runtime `bcd22bb` đã push/deploy staging, migration0031–0037 và smoke đạt. User đã mở và đăng nhập được; sản phẩm sẵn sàng nghiệm thu. Xem [RELEASE](HABIT_GAME_RELEASE.md), [USER_GUIDE](HABIT_GAME_USER_GUIDE.md) và checkpoint [PROGRESS](HABIT_GAME_PROGRESS.md); không chạy lại goal này từ đầu chỉ vì prompt vẫn còn trong docs.
 
 ## 1. Nhiệm vụ cuối cùng
 
@@ -23,7 +23,7 @@ Quyền/ngân sách đã trao đổi:
 
 - **Ngân sách bổ sung 0đ**: không API trả phí, subscription/top-up/nâng gói hay paid fallback. Key có sẵn không chứng minh quota miễn phí.
 - Được tự commit/push bình thường và migration/deploy **staging hiện tại** sau gates/kiểm target; bảo toàn dữ liệu và có backup/rollback phù hợp. Không force-push, production, xóa DB/tài nguyên hoặc dịch vụ mới ngoài phạm vi.
-- Được tải model/cài môi trường art local riêng. GTX 1650 4 GB đã chạy ảnh thử thật; workflow và giới hạn ở [LOCAL_ART](HABIT_GAME_LOCAL_ART.md). QA tích hợp và art toàn nội dung vẫn chưa hoàn tất.
+- Được tải model/cài môi trường art local riêng. GTX 1650 4 GB đã tạo ảnh cuối toàn nội dung; workflow và giới hạn ở [LOCAL_ART](HABIT_GAME_LOCAL_ART.md), QA tích hợp/staging tại RELEASE.
 - User cho hỏi trực tiếp khi cần API/dịch vụ/cấu hình hoặc chặn thật. Hỏi cụ thể endpoint/model/quota/cách điền biến; secrets đặt trong môi trường/.env, không in/commit hoặc yêu cầu gửi full key vào chat. `.env.example` chỉ khai báo biến thực sự được code đọc.
 - Không tạo task/habit/log cá nhân giả, time-travel dữ liệu thật, gửi tin thử tới người khác hoặc reset uncertain delivery để test. Dùng local/fixture riêng.
 
