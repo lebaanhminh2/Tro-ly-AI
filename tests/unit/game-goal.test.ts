@@ -25,6 +25,17 @@ test('unfinished edition, weekly audit, side prerequisite and collection point t
     const boss = catalog.bosses.find(value => !state.victories.includes(value.id) && value.requires.every(id => state.victories.includes(id)))!;
     assert.ok(boss.practicePrerequisites?.includes(goal.id));
     state.victories = catalog.bosses.map(boss => boss.id); assert.equal(nearestGameGoal(state, catalog).kind, 'collection');
+    assert.equal(nearestGameGoal(state, catalog).action, 'Mở thành tựu');
+});
+
+test('suggestions present floor progress without naming undiscovered encounters', () => {
+    const state = data();
+    assert.match(nearestGameGoal(state, catalog).description, /Tầng 01/);
+    assert.match(nearestGameGoal(state, catalog).description, /ngày sinh hoạt kế tiếp/);
+    const sealed = { ...catalog, bosses: catalog.bosses.map(boss => ({ ...boss, discovery: 'sealed' })) };
+    const goal = nearestGameGoal(state, sealed);
+    assert.equal(goal.kind, 'collection');
+    assert.doesNotMatch(goal.title + goal.description, /Truy Lệnh|Song Nha|đã trọn/);
 });
 
 test('return guidance uses real nested settlement status and does not interpret a habit miss as a lost battle', () => {

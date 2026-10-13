@@ -1,7 +1,7 @@
 import { fighterForRank, payBattleDeath, payBattleRescue } from '../domain/battle-economy.ts';
 import { assertBattleCanChange } from '../domain/battle-run.ts';
-import { resolveBattleTurn, withdrawBattle } from '../domain/battle.ts';
-import { bossById, bossIntents, GAME_CONTENT_VERSION } from '../domain/game-content.ts';
+import { resolveBattleTurn, validateBattleState, withdrawBattle } from '../domain/battle.ts';
+import { bossById, bossForNewBattle, bossIntents, GAME_CONTENT_VERSION } from '../domain/game-content.ts';
 import { armedBattleState, battleWeapon } from '../domain/game-rewards.ts';
 import type { BattleChange, BattleSaved, BattleStore, StoredBattle } from '../ports/battle-store.ts';
 import type { GameSelection } from '../ports/game-store.ts';
@@ -12,6 +12,7 @@ export class BattleService {
     execute(owner: string, id: string, input: Record<string, unknown>, now: number): Promise<BattleSaved> {
         const fields: Record<string, string[]> = {
             prepare_battle: ['bossId', 'versions', 'weaponId'], cancel_battle: ['battleId', 'battleVersion'],
+            update_prepared_battle: ['battleId', 'battleVersion', 'versions'],
             choose_battle: ['battleId', 'battleVersion', 'techniqueId', 'acceptCost'],
             withdraw_battle: ['battleId', 'battleVersion', 'confirm'],
             rescue_battle: ['battleId', 'battleVersion', 'kind', 'healthyVersion', 'acceptCost'],
@@ -22,17 +23,18 @@ export class BattleService {
         if (typeof operation !== 'string' || !fields[operation] ||
             Object.keys(input).some(key => !['operation', 'day', 'version', ...fields[operation]!].includes(key))) throw Error('INVALID_BATTLE_OPERATION');
         if (!Number.isSafeInteger(input.day) || !Number.isSafeInteger(input.version) || Number(input.version) < 0) throw Error('INVALID_GAME_VERSION');
-        if (operation === 'prepare_battle') {
-            if (typeof input.bossId !== 'string' || !Array.isArray(input.versions) || input.versions.length > 5 ||
+        if (operation === 'prepare_battle' || operation === 'update_prepared_battle') {
+            if ((operation === 'prepare_battle' && typeof input.bossId !== 'string') || !Array.isArray(input.versions) || input.versions.length > 5 ||
                 input.versions.some(value => typeof value !== 'string' || !/^[a-zA-Z0-9_-]{8,110}$/.test(value)) ||
                 new Set(input.versions).size !== input.versions.length) throw Error('INVALID_BATTLE_LOADOUT');
-            bossById(input.bossId);
+            if (operation === 'prepare_battle') bossById(input.bossId as string);
             if (input.weaponId !== undefined && input.weaponId !== null) {
                 if (typeof input.weaponId !== 'string') throw Error('INVALID_GAME_WEAPON');
                 battleWeapon(input.weaponId);
             }
-        } else if (typeof input.battleId !== 'string' || !/^[a-zA-Z0-9_-]{8,110}$/.test(input.battleId) ||
-            !Number.isSafeInteger(input.battleVersion) || Number(input.battleVersion) < 1) throw Error('INVALID_BATTLE_ID');
+        }
+        if (operation !== 'prepare_battle' && (typeof input.battleId !== 'string' || !/^[a-zA-Z0-9_-]{8,110}$/.test(input.battleId) ||
+            !Number.isSafeInteger(input.battleVersion) || Number(input.battleVersion) < 1)) throw Error('INVALID_BATTLE_ID');
         return this.store.mutateBattle(owner, id, input, now, snapshot => {
             if (input.day !== snapshot.day.day) throw Error('GAME_DAY_CLOSED');
             if (input.version !== snapshot.gameVersion) throw Error('GAME_CHANGED');
@@ -43,13 +45,15 @@ export class BattleService {
             const restore = (value: StoredBattle): GameSelection => ({ fromDay: day + 1,
                 mode: value.resumePracticeId ? 'practice' : 'idle', practiceId: value.resumePracticeId, battleId: null });
             if (operation === 'prepare_battle') {
-                if (snapshot.live || snapshot.current.mode === 'battle') throw Error('BATTLE_ACTIVE');
-                const boss = bossById(input.bossId as string);
+                if (snapshot.live) throw Error('BATTLE_ACTIVE');
+                const boss = bossForNewBattle(input.bossId as string);
                 if (boss.requires.some(id => !snapshot.victories.includes(id)) || (boss.practicePrerequisites ?? []).some(id => !snapshot.learned.includes(id))) throw Error('BOSS_LOCKED');
                 if (snapshot.loadout.length !== (input.versions as string[]).length) throw Error('INVALID_BATTLE_LOADOUT');
                 const rank = snapshot.healthy.state.rank;
-                const weaponId = input.weaponId as string | null | undefined ?? null;
-                if (weaponId && !snapshot.ownedWeapons.includes(weaponId)) throw Error('GAME_WEAPON_LOCKED');
+                // Receipt replay is checked by the store before this callback,
+                // so old successful requests still return their original result.
+                if (input.weaponId) throw Error('GAME_WEAPON_RETIRED');
+                const weaponId = null;
                 const previousSelection = snapshot.pending ?? snapshot.current;
                 battle = { version: 1, status: 'prepared', created: now, content: structuredClone(boss),
                     resumePracticeId: previousSelection.mode === 'practice' ? previousSelection.practiceId : null,
@@ -61,7 +65,16 @@ export class BattleService {
                 if (!snapshot.battle) throw Error('BATTLE_NOT_FOUND');
                 battle = structuredClone(snapshot.battle);
                 if (battle.version !== input.battleVersion) throw Error('BATTLE_CHANGED');
-                if (operation === 'cancel_battle') {
+                if (operation === 'update_prepared_battle') {
+                    if (day >= battle.run.startsDay || battle.status !== 'prepared' || snapshot.pending?.battleId !== battle.run.id)
+                        throw Error('BATTLE_CANCEL_UNAVAILABLE');
+                    if (snapshot.loadout.length !== (input.versions as string[]).length) throw Error('INVALID_BATTLE_LOADOUT');
+                    // An old prepared battle keeps its content, rank and weapon
+                    // snapshot; editing changes the editions only, never its clock.
+                    battle.run.state.loadout = snapshot.loadout.map(skill => ({ ...skill }));
+                    validateBattleState(battle.run.state);
+                    change = { kind: 'update_prepared', battle };
+                } else if (operation === 'cancel_battle') {
                     if (day >= battle.run.startsDay || battle.status !== 'prepared') throw Error('BATTLE_CANCEL_UNAVAILABLE');
                     battle.status = 'cancelled';
                     change = { kind: 'cancel', battle, selection: restore(battle) };
@@ -108,6 +121,7 @@ export class BattleService {
                     }
                 }
                 battle.version++;
+                if (['won', 'expired', 'withdrawn', 'dead', 'cancelled'].includes(battle.status)) battle.finishedDay = day;
             }
             return { change, result: { saved: true, version: snapshot.gameVersion + 1, battleId: battle.run.id, battleVersion: battle.version,
                 ...(change.selection ? { effectiveFrom: change.selection.fromDay } : {}),

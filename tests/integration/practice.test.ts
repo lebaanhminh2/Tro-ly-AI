@@ -25,6 +25,39 @@ async function database(at = monday) {
 }
 const definition = { name: 'Thiền', metric: 'check', target: 1, cadence: { kind: 'daily' } };
 
+test('read-only settlement of an open day uses two queries and no account uses one, without changing progress or hiding backlog', async () => {
+    const { mf, db, game, service } = await database();
+    try {
+        let reads = 0, batches = 0;
+        const measured: Database = { prepare: sql => { reads++; return db.prepare(sql); }, batch: statements => { batches++; return db.batch(statements); } };
+        const settling = new D1GameStore(measured);
+        assert.deepEqual(await settling.settle('456', monday, 7), { processed: 0, pending: false });
+        assert.equal(reads, 1); assert.equal(batches, 0);
+        assert.equal(await db.prepare("SELECT 1 FROM game_accounts WHERE owner='456'").first(), null);
+        const initial = await game.read('123', monday);
+        await service.execute('123', 'read_only_practice', { operation: 'start_practice', day: initial.day.day,
+            version: initial.version, techniqueId: 'kiem-y' }, monday);
+        const before = { game: await game.read('123', monday), editions: await game.versions('123', 'kiem-y', null, 20),
+            days: (await db.prepare('SELECT * FROM game_days WHERE owner=?').bind('123').all()).results,
+            receipts: (await db.prepare('SELECT * FROM game_receipts WHERE owner=?').bind('123').all()).results };
+        for (const limit of [1, 7]) {
+            reads = 0; batches = 0;
+            assert.deepEqual(await settling.settle('123', monday + 60000, limit), { processed: 0, pending: false });
+            assert.equal(reads, 2, 'Account and existing operating-day boundary each read once'); assert.equal(batches, 0);
+        }
+        const after = { game: await game.read('123', monday), editions: await game.versions('123', 'kiem-y', null, 20),
+            days: (await db.prepare('SELECT * FROM game_days WHERE owner=?').bind('123').all()).results,
+            receipts: (await db.prepare('SELECT * FROM game_receipts WHERE owner=?').bind('123').all()).results };
+        assert.deepEqual(after, before);
+        const limited = await settling.settle('123', monday + 3 * DAY, 1);
+        assert.deepEqual(limited, { processed: 1, pending: true }, 'Limit still advertises closed days not yet processed');
+        assert.deepEqual(await settling.settle('123', monday + 3 * DAY, 7), { processed: 2, pending: false });
+        reads = 0; batches = 0;
+        assert.deepEqual(await settling.settle('123', monday + 3 * DAY, 7), { processed: 0, pending: false });
+        assert.equal(batches, 0);
+    } finally { await mf.dispose(); }
+});
+
 test('practice selection is tomorrow-only, retry is canonical across closure, and concurrent/failing writes preserve old versions', async () => {
     const { mf, db, game, service } = await database();
     try {

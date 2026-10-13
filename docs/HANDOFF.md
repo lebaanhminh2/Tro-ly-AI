@@ -1,5 +1,9 @@
 # Bàn giao Habit và Tu luyện
 
+## Mục tiêu Tu luyện hiện tại
+
+**Đang triển khai redesign trong app thật và bộ art mới theo `/goal` đã duyệt.** Theo [checkpoint hiện tại](HABIT_GAME_CULTIVATION_PROGRESS.md), không áp dụng các yêu cầu chờ duyệt HTML/hoãn art/xin duyệt từng file ở các mục lịch sử dưới đây cho vòng này. Các version staging bên dưới vẫn là bản trước redesign, không phải bằng chứng phát hành mục tiêu mới.
+
 ## Cập nhật 13/10/2026: icon và bản thử Tu luyện
 
 User duyệt `web/index.html`, `web/styles.css` để sửa icon Thói quen thành SVG ô tick và tạo duy nhất `docs/prototypes/cultivation/index.html` để chốt lại UX Tu luyện. Commit **`b419934`** đã push trên `review/p1-p3`. Icon đã lên staging, version **`d4990393-e797-4e8c-ba9d-fcd822af51aa`**; HTML/CSS live HTTP200 và SHA256 khớp local. Deploy readiness4/4, dry-run và check:web45 đạt. Không có migration.

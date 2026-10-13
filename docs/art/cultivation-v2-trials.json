@@ -1,0 +1,14 @@
+{
+  "model": "Lykon/dreamshaper-8",
+  "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+  "variant": "fp16",
+  "license": "creativeml-openrail-m",
+  "direction": "cultivation-illustrated-v2",
+  "style": "masterpiece, original xianxia game illustration, elegant ink outlines, cel shading, rich muted colors, dramatic rim light",
+  "negative": "photo, photorealistic, 3d, render, text, watermark, logo, blurry, low quality, bad anatomy, deformed face, extra limbs, extra fingers, nude, cleavage, neon, oversaturated",
+  "assets": [
+    {"id":"ky-hanh-v2","publishId":"ky-hanh","seed":71028,"width":448,"height":640,"steps":32,"guidance":7,"prompt":"solo male swordsman, handsome East Asian young adult, long black ponytail, confident amber eyes, ivory robes, charcoal sash, bronze shoulder armor, bust portrait, misty teal mountain background","contentId":"boss.ky-hanh","role":"boss","focalPoint":[0.55,0.36],"crop":[0,0,1,0.7],"alt":"Kỷ Hành, tóc đen buộc cao, áo choàng xanh trầm trên cổ áo ngà và giáp vai đồng.","conceptApproved":true,"qaNote":"Original viewed 2026-10-13: expressive coherent facial anatomy, hair silhouette, bronze plate edges, distinct teal mantle and ivory collar. Lower hand area excluded with explicit crop, not claimed as anatomically correct. UI review pending."},
+    {"id":"khoi-loi-v2","publishId":"khoi-loi","seed":73132,"width":448,"height":640,"steps":32,"guidance":7,"prompt":"colossal ancient armored puppet guardian, porcelain face mask, glowing amber eyes, black iron plates, bronze engraved joints, upper body, temple ruins in deep teal fog","contentId":"boss.khoi-loi","role":"boss","focalPoint":[0.56,0.34],"alt":"Khôi Lỗi hộ vệ với gương mặt kim loại tối, giáp đồng chạm khắc và ánh mắt đỏ.","conceptApproved":true,"qaNote":"Original viewed 2026-10-13: clean carved metal face and armor, coherent illustration outlines and dark teal/bronze palette. Output intentionally accepted as forged metal guardian; porcelain/joints not claimed. Readable head silhouette; UI review pending."},
+    {"id":"chapter01-v2","publishId":"chapter01","seed":71039,"width":640,"height":448,"steps":32,"guidance":7,"prompt":"wide landscape, ancient mountain village, moon bridge over jade river, lanterns glowing amber, monumental distant peaks, teal dawn mist, elegant pagoda rooftops, no people","contentId":"chapter.01","role":"scene","focalPoint":[0.5,0.5],"alt":"Mái đền đỏ sẫm giữa những dãy núi xanh và sương dưới vầng trăng nhạt.","conceptApproved":true,"qaNote":"Original viewed 2026-10-13: clear depth layers, readable dark pagoda silhouettes with warm timber accents and restrained jade atmosphere. Moon and mountains coherent; unseen bridge/river not claimed. UI review pending."}
+  ]
+}

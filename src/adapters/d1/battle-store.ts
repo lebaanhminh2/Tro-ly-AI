@@ -1,4 +1,4 @@
-import { bossById } from '../../domain/game-content.ts';
+import { bossById, GAME_BOSSES } from '../../domain/game-content.ts';
 import { publicBattleState, type EquippedTechnique } from '../../domain/battle.ts';
 import type { PracticeVersion } from '../../domain/practice.ts';
 import type { BattleChange, BattleSaved, BattleSnapshot, BattleStore, StoredBattle } from '../../ports/battle-store.ts';
@@ -9,11 +9,13 @@ import { HealthyStore } from './healthy-store.ts';
 import { initialHealthy, type HealthyState } from '../../domain/healthy.ts';
 import { rescueQuote } from '../../domain/battle-economy.ts';
 import { earnedBattleRewards } from '../../domain/game-rewards.ts';
+import type { GameAccess } from '../../domain/game-discovery.ts';
 
 export type BattleRow = { id: string; version: number; status: string; state_json: string; content_json: string; created: number };
 export const storedBattle = (row: BattleRow): StoredBattle => ({ ...JSON.parse(row.state_json) as Omit<StoredBattle, 'version' | 'status' | 'content' | 'created'>,
     version: row.version, status: row.status, content: JSON.parse(row.content_json), created: row.created });
-export const battleJson = (battle: StoredBattle) => JSON.stringify({ run: battle.run, resumePracticeId: battle.resumePracticeId });
+export const battleJson = (battle: StoredBattle) => JSON.stringify({ run: battle.run, resumePracticeId: battle.resumePracticeId,
+    ...(battle.finishedDay !== undefined ? { finishedDay: battle.finishedDay } : {}) });
 
 export function battleVictoryStatements(db: Database, owner: string, battle: StoredBattle, now: number): Statement[] {
     if (battle.run.state.status !== 'won') return [];
@@ -29,6 +31,38 @@ export function battleVictoryStatements(db: Database, owner: string, battle: Sto
 export class D1BattleStore implements BattleStore {
     private db: Database;
     constructor(db: Database) { this.db = db; }
+    async access(owner: string): Promise<GameAccess> {
+        const row = await query(this.db, `SELECT
+            (SELECT json_group_array(boss_id) FROM boss_victories WHERE owner=?) AS victories,
+            (SELECT json_group_array(technique_id) FROM (SELECT DISTINCT technique_id FROM practice_versions WHERE owner=? AND json_array_length(state_json,'$.tiers')>0)) AS learned,
+            (SELECT json_group_array(technique_id) FROM technique_unlocks WHERE owner=?) AS owned`, owner, owner, owner)
+            .first<{ victories: string; learned: string; owned: string }>();
+        return { victories: JSON.parse(row!.victories), learned: JSON.parse(row!.learned), owned: JSON.parse(row!.owned) };
+    }
+    async victories(owner: string) {
+        // First-win rows are stable even after repeat wins, losses and a long
+        // battle archive. Fetch only victory snapshots, never all event logs.
+        const rows = (await query(this.db, `SELECT b.id,b.version,b.status,b.state_json,b.content_json,b.created,
+            v.created AS won_at FROM boss_victories v JOIN battles b ON b.owner=v.owner AND b.id=v.battle_id
+            WHERE v.owner=? ORDER BY v.created DESC,v.boss_id LIMIT 40`, owner)
+            .all<BattleRow & { won_at: number }>()).results;
+        const main = GAME_BOSSES.filter(boss => !boss.kind || boss.kind === 'main');
+        const snapshots = rows.map(row => storedBattle(row)), ids = [...new Set(snapshots.flatMap(battle => battle.run.state.loadout.map(skill => skill.versionId)))];
+        const editions = ids.length ? (await query(this.db, `SELECT id,json_extract(state_json,'$.edition') AS edition
+            FROM practice_versions WHERE owner=? AND id IN(SELECT value FROM json_each(?))`, owner, JSON.stringify(ids))
+            .all<{ id: string; edition: number }>()).results : [];
+        return { victories: rows.map(row => {
+            const battle = storedBattle(row), floor = main.findIndex(boss => boss.id === battle.run.bossId);
+            return { battleId: battle.run.id, bossId: battle.run.bossId, name: battle.content.name,
+                kind: battle.content.kind ?? 'main', floor: floor < 0 ? null : floor + 1,
+                artId: battle.content.artId, artPosition: battle.content.artPosition,
+                wonAt: row.won_at, wonDay: battle.finishedDay ?? battle.run.lastDay,
+                turn: battle.run.state.turn, startsDay: battle.run.startsDay,
+                loadout: battle.run.state.loadout.map(skill => ({ ...skill, edition: editions.find(value => value.id === skill.versionId)?.edition ?? null })),
+                usedTechniqueIds: Object.keys(battle.run.state.lastUses), rescueUsed: battle.run.state.rescueUsed,
+                unlocks: battle.content.unlocks, victory: battle.content.victory, contentVersion: battle.run.contentVersion };
+        }) };
+    }
     async readBattle(owner: string, id: string): Promise<StoredBattle | null> {
         const row = await query(this.db, 'SELECT id,version,status,state_json,content_json,created FROM battles WHERE owner=? AND id=?', owner, id).first<BattleRow>();
         return row ? storedBattle(row) : null;
@@ -94,12 +128,14 @@ export class D1BattleStore implements BattleStore {
             (SELECT rank_lock_until_day FROM game_accounts WHERE owner=?) AS rank_lock_until_day`,
             owner, owner, owner, owner, owner, day.day, owner, owner, owner).first<{ battles: string; victories: string; learned: string; rewards: string; choices: string;
                 healthy: string | null; healthy_version: number; rank_lock_until_day: number | null }>();
-        const rows = JSON.parse(data!.battles) as { id: string; version: number; status: string; state: { run: StoredBattle['run']; resumePracticeId: string | null }; content: StoredBattle['content']; created: number }[];
+        const rows = JSON.parse(data!.battles) as { id: string; version: number; status: string; state: { run: StoredBattle['run']; resumePracticeId: string | null; finishedDay?: number }; content: StoredBattle['content']; created: number }[];
         const healthy = { ...initialHealthy(), ...(data!.healthy ? JSON.parse(data!.healthy) : {}) } as HealthyState;
         return { battles: rows.map(row => ({ id: row.id, version: row.version, status: row.status, created: row.created,
             startsDay: row.state.run.startsDay, bossId: row.state.run.bossId, contentVersion: row.state.run.contentVersion,
             weaponId: row.state.run.weaponId ?? null,
             combatRank: row.state.run.combatRank, waitDays: row.state.run.waitDays, rescueUntilDay: row.state.run.rescueUntilDay,
+            lastDay: row.state.run.lastDay, resumePracticeId: row.state.resumePracticeId,
+            finishedDay: ['won', 'expired', 'withdrawn', 'dead', 'cancelled'].includes(row.status) ? row.state.finishedDay ?? row.state.run.lastDay : null,
             content: { ...row.content, pattern: undefined, victory: row.status === 'won' ? row.content.victory : undefined },
             state: publicBattleState(row.state.run.state), rescue: rescueQuote(healthy, row.state.run.combatRank) })),
             combatEconomy: { healthyVersion: data!.healthy_version, qi: healthy.qi, rank: healthy.rank, rankLockUntilDay: data!.rank_lock_until_day },
@@ -123,22 +159,21 @@ export class D1BattleStore implements BattleStore {
             .first<{ request_json: string; result_json: string }>();
         const receipt = await replay();
         if (receipt) { if (receipt.request_json !== request) throw Error('REQUEST_ID_REUSED'); return JSON.parse(receipt.result_json) as BattleSaved; }
-        const ids = input.operation === 'prepare_battle' ? input.versions as string[] : input.operation === 'exchange_battle' ? [String(input.practiceId)] : [];
+        const ids = ['prepare_battle', 'update_prepared_battle'].includes(String(input.operation)) ? input.versions as string[] : input.operation === 'exchange_battle' ? [String(input.practiceId)] : [];
         const account = await query(this.db, 'SELECT version,next_day,rank_lock_until_day FROM game_accounts WHERE owner=?', owner)
             .first<{ version: number; next_day: number; rank_lock_until_day: number | null }>();
-        const [game, healthy, battle, liveRow, victories, learned, loadout, weapons] = await Promise.all([
+        const [game, healthy, battle, liveRow, victories, learned, loadout] = await Promise.all([
             new D1GameStore(this.db).read(owner, now),
             new HealthyStore(this.db).read(owner), typeof input.battleId === 'string' ? this.readBattle(owner, input.battleId) : Promise.resolve(null),
             query(this.db, "SELECT id,version,status,state_json,content_json,created FROM battles WHERE owner=? AND status IN('prepared','active','awaiting_rescue') LIMIT 1", owner).first<BattleRow>(),
             query(this.db, 'SELECT boss_id FROM boss_victories WHERE owner=?', owner).all<{ boss_id: string }>(),
             query(this.db, "SELECT DISTINCT technique_id FROM practice_versions WHERE owner=? AND json_array_length(state_json,'$.tiers')>0 LIMIT 39", owner).all<{ technique_id: string }>(),
             this.loadout(owner, ids),
-            query(this.db, "SELECT id FROM game_entitlements WHERE owner=? AND kind='weapon' LIMIT 10", owner).all<{ id: string }>(),
         ]);
         if (game.version !== (account?.version ?? 0)) throw Error('GAME_CHANGED');
         const { change, result } = apply({ day: game.day, gameVersion: game.version, nextSettlementDay: account?.next_day ?? game.day.day,
             current: game.current, pending: game.pending, healthy, battle, live: liveRow ? storedBattle(liveRow) : null,
-            victories: victories.results.map(row => row.boss_id), learned: learned.results.map(row => row.technique_id), ownedWeapons: weapons.results.map(row => row.id), loadout, restrictions: { rankLockUntilDay: account?.rank_lock_until_day ?? null } });
+            victories: victories.results.map(row => row.boss_id), learned: learned.results.map(row => row.technique_id), ownedWeapons: [], loadout, restrictions: { rankLockUntilDay: account?.rank_lock_until_day ?? null } });
         const value = change.battle;
         const statements: Statement[] = [query(this.db, `INSERT INTO transaction_guard SELECT CASE WHEN
             COALESCE((SELECT version FROM game_accounts WHERE owner=?),0)=? AND
@@ -190,7 +225,7 @@ export class D1BattleStore implements BattleStore {
     }
 }
 function eventText(change: BattleChange): string {
-    const texts = { prepare: 'Đã chuẩn bị trận cho ngày sinh hoạt kế tiếp.', cancel: 'Đã hủy chuẩn bị trận.',
+    const texts = { prepare: 'Đã chuẩn bị trận cho ngày sinh hoạt kế tiếp.', update_prepared: 'Đã đổi bộ công pháp; ngày xuất chiến được giữ nguyên.', cancel: 'Đã hủy chuẩn bị trận.',
         choose: 'Đã chọn chiêu cho ngày hiện tại; có thể đổi trước khi ngày kết thúc.', withdraw: 'Đã rút lui trước lượt hôm nay.',
         rescue: 'Đã cứu mạng. Cái giá được ghi cùng trạng thái trận.', death: 'Đã chấp nhận tử trận và ghi khoản tổn thất.', exchange: 'Đã đổi một ô công pháp cho lượt kế tiếp.' };
     return texts[change.kind];

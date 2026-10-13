@@ -49,12 +49,18 @@ const records = TECHNIQUES.map(technique => {
     const gesture = gestures[technique.identity];
     if (!gesture) throw Error('Missing technique symbol: ' + technique.id);
     const path = 'web/assets/than-lo/technique-' + technique.id + '.svg';
-    const border = technique.kind === 'heritage' ? '<circle cx="32" cy="32" r="29"/>'
-        : technique.kind === 'forbidden' ? '<path d="M12 10H6V16M52 10H58V16M12 54H6V48M52 54H58V48"/>'
-        : technique.kind === 'outside' ? '<path d="M9 12H15M49 12H55M9 52H15M49 52H55"/>' : '';
-    writeFileSync(path, '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#8a806a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + border + '<path d="' + gesture + '"/></svg>\n');
+    const palette: Record<string, [string, string]> = {
+        'thien-kiem': ['#315d61', '#e7efec'], 'bat-diet': ['#81623c', '#f1e9da'],
+        'u-minh': ['#824b53', '#f2e6e5'], 'thai-hu': ['#5a6080', '#ebeaf2'],
+        'thien-co': ['#436c61', '#e6eee5'], forbidden: ['#79424b', '#eee0df'], outside: ['#675779', '#ebe5ed'],
+    };
+    const [ink, paper] = palette[technique.school ?? technique.kind]!;
+    const border = technique.kind === 'heritage' ? '<circle cx="32" cy="32" r="28.5" stroke-width="1.2"/><path d="m32 2 3 4-3 4-3-4Z" fill="' + ink + '"/>'
+        : technique.kind === 'forbidden' ? '<path d="M12 10H6V16M52 10H58V16M12 54H6V48M52 54H58V48" stroke-width="1.5"/>'
+        : technique.kind === 'outside' ? '<path d="M9 12H15M49 12H55M9 52H15M49 52H55" stroke-width="1.5"/>' : '';
+    writeFileSync(path, '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="' + ink + '" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="58" height="58" rx="17" fill="' + paper + '" stroke="none"/><circle cx="32" cy="32" r="25.5" opacity=".22" stroke-width="1"/>' + border + '<path d="' + gesture + '"/></svg>\n');
     return { id: technique.id, identity: technique.identity, kind: technique.kind, school: technique.school,
-        path, format: 'svg', creator: 'project-original', workflow: 'scripts/build-technique-art.ts' };
+        path, format: 'svg', creator: 'project-original', direction: 'cultivation-illustrated-v2', ink, paper, workflow: 'scripts/build-technique-art.ts' };
 });
 if (new Set(records.map(record => gestures[record.identity])).size !== TECHNIQUES.length) throw Error('Duplicate technique gestures');
 writeFileSync('docs/art/technique-symbols.json', JSON.stringify(records, null, 2) + '\n');

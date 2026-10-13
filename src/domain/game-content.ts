@@ -11,8 +11,8 @@ import { bossAction as action, contentFighter as fighter, type GameBoss, type Ga
 export type { GameBoss, GameChapter } from './game-content-model.ts';
 export { GAME_CHAPTERS } from './game-campaign.ts';
 
-export const GAME_CONTENT_VERSION = 'than-lo-3';
-export const SUPPORTED_CONTENT_VERSIONS = ['than-lo-1', 'than-lo-2', 'than-lo-3'] as const;
+export const GAME_CONTENT_VERSION = 'than-lo-4';
+export const SUPPORTED_CONTENT_VERSIONS = ['than-lo-1', 'than-lo-2', 'than-lo-3', 'than-lo-4'] as const;
 export const supportsContentVersion = (version: string): boolean => SUPPORTED_CONTENT_VERSIONS.some(value => value === version);
 export const GAME_BOSSES: GameBoss[] = withReadStances([
     { id: 'truy-lenh', name: 'Người Truy Lệnh', chapter: 1, requires: [], recommendedRank: 0, maxTurns: 4,
@@ -77,6 +77,13 @@ export const GAME_BOSSES: GameBoss[] = withReadStances([
 export function bossById(id: string): GameBoss {
     const boss = GAME_BOSSES.find(value => value.id === id);
     if (!boss) throw Error('INVALID_GAME_BOSS');
+    return boss;
+}
+// Keep authored legacy rewards available for interpreting old persisted content.
+// New battles snapshot this publication instead; historical JSON is never rewritten.
+export function bossForNewBattle(id: string): GameBoss {
+    const boss = structuredClone(bossById(id));
+    if (boss.rewards) boss.rewards.weapons = [];
     return boss;
 }
 export function publicGameCatalog() {

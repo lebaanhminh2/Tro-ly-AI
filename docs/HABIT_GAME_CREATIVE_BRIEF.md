@@ -1,4 +1,6 @@
-# Thần Lộ — trải nghiệm, cốt truyện và chuẩn mỹ thuật
+# Tu luyện — trải nghiệm, cốt truyện và chuẩn mỹ thuật
+
+**Vòng hiện tại 2026-10-13:** [CULTIVATION_UX](HABIT_GAME_CULTIVATION_UX.md) và [STYLE_V2](art/CULTIVATION_STYLE_V2.md) sở hữu hướng mới: Hiện tại/Công pháp/Vượt tầng/Thành tựu, minh họa 2D có nét mực và nhận diện nhân vật rõ, không Thần binh trong trải nghiệm mới. Nội dung/stable IDs/quyền cũ vẫn được bảo toàn. Các đoạn mô tả weapon và QA art đã phát hành bên dưới là lịch sử; không dùng để mở lại phạm vi đã bỏ hoặc coi bộ ảnh mới hoàn tất.
 
 Cập nhật 2026-10-12. Chuẩn sáng tạo cho **toàn sản phẩm**; nhân vật/truyện/art đã tích hợp và QA, phát hành staging, bằng chứng ở [RELEASE](HABIT_GAME_RELEASE.md). AI sở hữu thiết kế chi tiết và tự QA; user nghiệm thu cuối. Phạm vi tại [PRODUCT](HABIT_GAME_PRODUCT.md), catalog/truyện tại [GAMEPLAY](HABIT_GAME_GAMEPLAY.md), sản xuất ảnh tại [LOCAL_ART](HABIT_GAME_LOCAL_ART.md).
 

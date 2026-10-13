@@ -51,7 +51,7 @@ export async function miniAppApi(request: Request, env: Env, now = Date.now()): 
     }
     try {
         const context = { env, owner, now, healthy: new HealthyStore(env.DB) };
-        if (request.method === 'GET' && ['/api/game', '/api/game-catalog', '/api/game-boss', '/api/game-chapter', '/api/game-presets', '/api/game-export', '/api/practice-versions', '/api/battle-history', '/api/battle-loadout', '/api/battles'].includes(url.pathname))
+        if (request.method === 'GET' && ['/api/game', '/api/game-catalog', '/api/game-boss', '/api/game-chapter', '/api/game-presets', '/api/game-victories', '/api/game-export', '/api/practice-versions', '/api/battle-history', '/api/battle-loadout', '/api/battles'].includes(url.pathname))
             return await readGame(context, url);
         if (request.method === 'GET' && ['/api/habits', '/api/habit-history', '/api/habit-report'].includes(url.pathname))
             return await readHabits(context, url);
@@ -80,6 +80,7 @@ export async function miniAppApi(request: Request, env: Env, now = Date.now()): 
     catch (error) {
         const code = error instanceof Error ? error.message : '';
         const gameErrors: Record<string, string> = {
+            GAME_WEAPON_RETIRED: 'Bộ chiêu mới chỉ dùng công pháp. Tải lại Tu luyện để chuẩn bị trận.',
             GAME_EXPORT_TOO_LARGE: 'Dữ liệu vượt giới hạn một lần xuất. Chọn khoảng ngắn hơn để xuất nhật ký nhé.',
             GAME_EXPORT_UNAVAILABLE: 'Chưa xuất được hành trình. Cậu thử lại nhé.',
             GAME_CHANGED: 'Tiến độ vừa được cập nhật. Tải lại để tiếp tục nhé.', GAME_DAY_CLOSED: 'Ngày này đã kết thúc. Tải lại để chọn cho ngày hiện tại.',
@@ -88,7 +89,7 @@ export async function miniAppApi(request: Request, env: Env, now = Date.now()): 
             PRACTICE_DAILY_LIMIT: 'Cậu đã tạo đủ 7 bản luyện mới trong ngày. Có thể tiếp tục bản đang có.',
             BATTLE_ACTIVE: 'Kết thúc trận trước khi chọn lịch luyện mới.',
             BATTLE_CHANGED: 'Trận vừa được cập nhật. Tải lại trước khi chọn tiếp.', BATTLE_NOT_FOUND: 'Không tìm thấy trận này.',
-            BOSS_LOCKED: 'Chưa đủ điều kiện mở đoạn này. Xem trận trước và các môn cần luyện trong Hành trình nhé.', GAME_CATCHING_UP: 'Đang chốt ngày trước. Cập nhật kết quả rồi chọn tiếp nhé.',
+            BOSS_LOCKED: 'Chưa đủ điều kiện thử thách. Xem tầng trước và các môn cần luyện trong Vượt tầng nhé.', GAME_CATCHING_UP: 'Đang chốt ngày trước. Cập nhật kết quả rồi chọn tiếp nhé.',
             GAME_WEAPON_LOCKED: 'Cậu chưa sở hữu thần binh này.',
             GAME_PRESETS_CHANGED: 'Bộ chiêu đã thay đổi ở nơi khác. Tải lại danh sách rồi lưu tiếp; lựa chọn đang chỉnh vẫn được giữ.',
             GAME_PRESET_NOT_FOUND: 'Bộ chiêu này không còn trong danh sách. Tải lại để kiểm tra nhé.',

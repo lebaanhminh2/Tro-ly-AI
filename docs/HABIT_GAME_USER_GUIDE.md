@@ -1,13 +1,13 @@
-# Dùng Habit và Thần Lộ
+# Dùng Thói quen và Tu luyện
 
-Hướng dẫn bản staging ngày 2026-10-12: https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev/app/ . Bản mới đã phát hành và user xác nhận đăng nhập được. Trạng thái phát hành và bằng chứng tại [RELEASE](HABIT_GAME_RELEASE.md).
+Hướng dẫn đang cập nhật cho redesign Tu luyện ngày 2026-10-13. **Bản redesign chưa phát hành**; trạng thái công việc ở [checkpoint hiện tại](HABIT_GAME_CULTIVATION_PROGRESS.md). URL staging: https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev/app/ . Bằng chứng các bản đã phát hành tại [RELEASE](HABIT_GAME_RELEASE.md).
 
 ## Bắt đầu trong vài phút
 
 1. Mở app và đăng nhập như trước. Trên trình duyệt ngoài Telegram, lấy mã trong app rồi gửi `/dangnhap MÃ` cho bot.
 2. Mở **Thói quen → + Thêm**. Chọn một việc vừa sức, kiểu ghi nhận và lịch cam kết. Có thể bắt đầu với một habit; không cần tạo thêm để chơi.
-3. Habit dạng tick dùng **Đánh dấu**. Habit số lượng/thời lượng dùng **Ghi nhận**, nhập **tổng đã làm hôm nay**; lần sửa thay tổng cũ.
-4. Nếu muốn chơi, mở **Thần Lộ → Cách chơi** hoặc **Công pháp** để chọn môn luyện. Võ Kỹ Cơ Bản dùng ngay khi thử trận đầu.
+3. Ô tick đầu mỗi habit đặt đủ mục tiêu; bỏ tick đưa tổng về 0. Bấm nút tiến độ để ghi một phần: thời lượng có thanh trượt, số lượng có bộ đếm, cả hai vẫn nhập số chính xác. Lưu **tổng đã làm hôm nay**; lần sửa thay tổng cũ. Hoàn tác ghi nhận xuất hiện ngắn sau thao tác, không sửa ngày đã qua.
+4. Nếu muốn chơi, mở **Tu luyện → Cách chơi** hoặc **Công pháp** để chọn môn luyện. Võ Kỹ dùng ngay khi thử trận đầu.
 
 Hôm nay vẫn ưu tiên công việc và kế hoạch; danh sách habit đầy đủ ở Thói quen. Phần game có thể ẩn trong cài đặt trải nghiệm mà không mất dữ liệu habit.
 
@@ -33,15 +33,15 @@ Ví dụ quota **3 ngày/tuần**, chỉ ngày 1 đạt:
 
 ## Chỉnh habit, xem lại và đặt giờ
 
-- **···** cạnh habit mở phần chỉnh sửa/lưu trữ. **Đã lưu trữ** cho tìm lại và khôi phục; lịch sử cũ được giữ.
-- **Nhịp đã qua** có báo cáo 7/30 ngày, lọc habit/kết quả và **Xem thêm**. Tỷ lệ giữ cam kết dùng lần đạt và cam kết thiếu; ngày trung tính không làm tăng tỷ lệ giả.
+- Chạm tên habit để xem đầy đủ và chỉnh sửa/lưu trữ. Dòng phụ được giữ gọn; **+N** mở các thông tin khác trong chi tiết. **Đã lưu trữ** cho tìm lại và khôi phục; lịch sử cũ được giữ.
+- **Tiến bộ** có bảng 7 ngày và tỷ lệ 30 ngày cho từng habit; **Lịch sử** có lọc và xem thêm. Tỷ lệ dùng lần đạt và cam kết thiếu đã chốt; ngày trung tính không làm tăng tỷ lệ giả.
 - **Xuất dữ liệu** tải JSON/CSV theo phạm vi chọn. Đây là bản xuất cá nhân; backup DB để phục hồi do quy trình vận hành quản lý.
 - Giờ nhắc là tùy chọn. Đặt thời gian dành cho habit cũng là tùy chọn; có kiểm xung đột với công việc. Đặt chỗ không tự hoàn thành habit, tạo task bản sao hay cấp vé task.
 - Nhắc đã chủ động đặt tiếp tục theo lịch khi ngủ/tập trung, trừ tạm dừng chủ động hoặc các giới hạn lịch sẵn có. Lời thúc task/habit/luyện chủ động tôn trọng ngủ/tập trung.
 
 ## Luyện công pháp
 
-Mở **Thần Lộ → Công pháp**, tìm/lọc môn và xem quyền mở khóa. Chọn môn luyện; đổi môn/bản hoặc đổi chế độ áp dụng từ ngày sinh hoạt kế tiếp. Một ngày đóng góp được xử lý theo chế độ của chính ngày đó.
+Mở **Tu luyện → Công pháp**. **Đã mở** chứa môn có quyền học; **Khám phá** chứa môn đã biết và manh mối còn niêm phong. Tìm theo tên hoặc cách dùng, có thể gõ không dấu. Chạm sách để xem công dụng, đường học và các bản luyện. Chọn môn/bản áp dụng từ ngày sinh hoạt kế tiếp. Một ngày đóng góp được xử lý theo chế độ của chính ngày đó.
 
 Bốn tầng: **Nhập môn → Tiểu thành → Đại thành → Viên mãn**. Tiến độ là lượng luyện; tinh thuần là phẩm chất. Bỏ cam kết có thể tạo khuyết điểm tích lũy; luyện tốt các tầng sau không xóa khuyết điểm đã khóa. Muốn cải thiện cần luyện một bản mới từ tầng 1; bản cũ còn dùng được.
 
@@ -49,14 +49,16 @@ Với quota tuần, tầng có thể đủ tiến độ nhưng còn chờ chốt
 
 ## Chuẩn bị và chiến đấu
 
-1. Vào **Hành trình**, xem chương và **Xem và chuẩn bị** ở trận đã mở. Đọc cơ chế, đánh đổi và yêu cầu trước khi bắt đầu.
-2. Chọn tối đa năm công pháp/bản luyện và thần binh đang sở hữu; có thể lưu bộ chiêu để dùng lại. Lưu bộ chỉ chuẩn bị, không tự xuất chiến hay trả giá.
+1. Vào **Vượt tầng**, xem đối thủ tiếp theo và **Xem & chuẩn bị**. Các nhóm tầng giúp xem toàn cảnh; **Cơ duyên** là lối rẽ đã tìm thấy. Đọc cơ chế, đánh đổi và yêu cầu trước khi bắt đầu.
+2. Võ Kỹ luôn có sẵn. Mang tối đa năm công pháp đã đạt Nhập môn, mỗi môn một bản. Mở **Chỉnh bộ chiêu** để đổi ô; **Chọn bản luyện khác** cho dùng một bản cũ. Có thể lưu bộ để dùng lại. Trận mới không chọn Thần binh.
 3. Xuất chiến bắt đầu từ ngày sinh hoạt kế tiếp. Trong trận, xem **Đối thủ chuẩn bị** rồi chọn **Chiêu hôm nay**. Có thể đổi lựa chọn trước khi ngày kết thúc; chỉ lựa chọn cuối được chốt.
 4. Habit đủ mục tiêu đóng góp khi chốt ngày; task góp thêm có trần. Luyện tạm dừng trong chế độ chiến đấu. **Nhật ký trận** giải thích đòn đánh, hiệu ứng và kết quả đã xác nhận.
 
+Trước ngày xuất chiến có thể **Đổi bộ chiêu** hoặc **Hủy chuẩn bị**. Đổi bộ giữ nguyên trận và ngày bắt đầu. Hủy khôi phục lịch luyện theo ngày hiệu lực. Khi đã chuẩn bị hoặc đang đánh, cần hủy/kết thúc trận trước khi đổi lịch luyện; chọn một công pháp khác không tự hủy trận.
+
 Các trận sau nhập môn có thể **đọc chiêu lặp**: dùng lại chiêu của lượt trước giảm sát thương trong lượt đó, gồm đòn trễ/phản thương. Màn trận báo mức giảm. Đổi chiêu phá thế đọc; phòng thủ và giá thi triển vẫn theo cơ chế của chiêu.
 
-Không chọn chiêu/vắng app được xử lý theo chính sách chờ/rút an toàn hiện trong trận; không tự thi triển hoặc trả giá thay người dùng. Nếu có backlog, **Cập nhật kết quả** tải thêm kết quả đã chốt; không nhập bù habit ngày cũ. Trận đang chờ xử lý có thể khóa thao tác đến khi trạng thái cập nhật.
+Không chọn chiêu thì trận chờ, không thi triển hay phản công thay người dùng. Ba ngày chưa chọn chiêu dẫn tới rút an toàn theo luật hiện có; nghĩa vụ habit vẫn theo lịch. Nếu có backlog, **Cập nhật kết quả** tải thêm kết quả đã chốt; không nhập bù habit ngày cũ. Trận đang chờ xử lý có thể khóa thao tác đến khi trạng thái cập nhật.
 
 ## Rút lui và cứu mạng
 
@@ -65,11 +67,13 @@ Không chọn chiêu/vắng app được xử lý theo chính sách chờ/rút a
 - Quyền cứu chung dùng một lần trong trận. Sau cứu có thể chơi tiếp; tử trận lần sau không cho cứu lần nữa. Có thể **Chấp nhận tử trận**; app không tự mua cứu mạng.
 - Các chiêu có đánh đổi cần đọc xác nhận. Ngủ/hoàn tác ngủ và đột phá không hoàn nguyên miễn phí giá đã trả trong trận.
 
-## Truyện, quyền mở khóa và sưu tập
+## Bí tịch, truyện và thành tựu
 
-Có 15 chương tới DIỆT THẦN; năm phái, 39 công pháp, các tuyến truyền thừa/cấm thuật/Ngoại Đạo và mục tiêu thần binh/chiến tích. **Đọc truyện** chỉ mở nội dung được phép; kết chương hiện sau khi vượt các trận chính tương ứng. Đọc lại không phát thưởng.
+Có 22 tầng chính, 18 cơ duyên, 15 chương tới DIỆT THẦN, năm phái và 39 công pháp. Công pháp đặc biệt đi qua **manh mối → tìm thấy thử thách → thắng mở quyền học → tự luyện từ Nhập môn**. Bí tịch chưa phát hiện được gom lại, chưa lộ tên/ảnh riêng. **Truyện đã mở** nằm trong Vượt tầng; kết chương hiện sau khi vượt các trận chính tương ứng. Đọc lại không phát thưởng.
 
-Truyền thừa yêu cầu luyện các môn liên quan thực sự, không chỉ sở hữu bí tịch. Quyền mới cho phép bắt đầu luyện, không tặng bản hoàn chỉnh. Đánh lại không cấp lại quyền/thưởng đã nhận. Sưu tập dài hạn là tùy chọn; tuyến chính không yêu cầu sở hữu/luyện đủ cả 39 môn.
+Truyền thừa yêu cầu luyện các môn liên quan thực sự, không chỉ sở hữu bí tịch. Quyền mới không tặng bản hoàn chỉnh. **Thành tựu** giữ boss đã thắng, ngày thắng, số lượt, bộ chiêu, quyền học và truyện sau trận. Trận thua/rút vẫn có trong **Lịch sử tất cả trận**. Đánh lại không cấp lại quyền/thưởng đã nhận. Tuyến chính không yêu cầu luyện đủ cả 39 môn.
+
+**Thành tựu** trong Tu luyện khác tab **Thành tích** ở thanh chính: Thành tích tiếp tục giữ cảnh giới, hỏa mạch và phần thưởng sinh hoạt hiện có. Vật phẩm và snapshot trận cũ được bảo toàn khi đổi thiết kế.
 
 ## Khi mất mạng hoặc phiên hết hạn
 

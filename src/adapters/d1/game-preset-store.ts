@@ -23,20 +23,16 @@ export class D1GamePresetStore implements GamePresetStore {
         const receipt = await replay();
         if (receipt) { if (receipt.request_json !== request) throw Error('REQUEST_ID_REUSED'); return JSON.parse(receipt.result_json); }
         const current = await this.read(owner), versions = input.operation === 'save' ? input.versions as string[] : [];
-        const [available, weapons] = await Promise.all([
-            new D1BattleStore(this.db).resolveLoadout(owner, versions),
-            query(this.db, "SELECT id FROM game_entitlements WHERE owner=? AND kind='weapon' LIMIT 10", owner).all<{ id: string }>(),
-        ]);
+        const available = await new D1BattleStore(this.db).resolveLoadout(owner, versions);
         const { preset, deleted, result } = apply({ ...current, available: available.map(skill => ({ id: skill.techniqueId,
-            versionId: skill.versionId, tier: skill.tier, purityBp: skill.purityBp })), ownedWeapons: weapons.results.map(row => row.id) });
+            versionId: skill.versionId, tier: skill.tier, purityBp: skill.purityBp })), ownedWeapons: [] });
         const statements: Statement[] = [query(this.db, 'INSERT INTO transaction_guard SELECT CASE WHEN COALESCE((SELECT version FROM game_preset_accounts WHERE owner=?),0)=? THEN 1 ELSE 0 END', owner, current.version),
             query(this.db, 'INSERT INTO game_preset_accounts(owner) VALUES(?) ON CONFLICT(owner) DO UPDATE SET version=version+1', owner)];
         if (deleted) statements.push(query(this.db, 'DELETE FROM game_presets WHERE owner=? AND id=?', owner, preset.id));
         else {
             statements.push(query(this.db, `INSERT INTO transaction_guard SELECT CASE WHEN
-                (SELECT COUNT(*) FROM practice_versions WHERE owner=? AND id IN(SELECT value FROM json_each(?)) AND json_array_length(state_json,'$.tiers')>0)=?
-                AND (? IS NULL OR EXISTS(SELECT 1 FROM game_entitlements WHERE owner=? AND kind='weapon' AND id=?)) THEN 1 ELSE 0 END`,
-                owner, JSON.stringify(preset.versions), preset.versions.length, preset.weaponId, owner, preset.weaponId),
+                (SELECT COUNT(*) FROM practice_versions WHERE owner=? AND id IN(SELECT value FROM json_each(?)) AND json_array_length(state_json,'$.tiers')>0)=? THEN 1 ELSE 0 END`,
+                owner, JSON.stringify(preset.versions), preset.versions.length),
                 query(this.db, `INSERT INTO game_presets(owner,id,name,versions_json,weapon_id,created,updated) VALUES(?,?,?,?,?,?,?)
                     ON CONFLICT(owner,id) DO UPDATE SET name=excluded.name,versions_json=excluded.versions_json,weapon_id=excluded.weapon_id,updated=excluded.updated`,
                     owner, preset.id, preset.name, JSON.stringify(preset.versions), preset.weaponId, now, now));

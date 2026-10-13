@@ -7,7 +7,7 @@ import { armedBattleState, earnedBattleRewards } from '../src/domain/game-reward
 import { fighterForRank, payBattleRescue } from '../src/domain/battle-economy.ts';
 import { battleHabitContribution } from '../src/domain/battle-run.ts';
 import { resolveBattleTurn } from '../src/domain/battle.ts';
-import { bossIntents, GAME_BOSSES, GAME_CONTENT_VERSION, validateGameContent } from '../src/domain/game-content.ts';
+import { bossIntents, bossForNewBattle, GAME_BOSSES, GAME_CONTENT_VERSION, validateGameContent } from '../src/domain/game-content.ts';
 import { INITIAL_TECHNIQUES, SCHOOLS, TECHNIQUES, techniqueById, type SchoolId } from '../src/domain/techniques.ts';
 import { searchBattle } from './simulate-game.ts';
 
@@ -109,11 +109,12 @@ export function simulateProfileJourney(schoolId: SchoolId, profile: string, mixe
         return chosen.map(version => ({ id: version.techniqueId, versionId: version.id, tier: version.tiers.length, purityBp: version.tiers.at(-1)!.purityBp }));
     }
     function fight(boss: typeof GAME_BOSSES[number]) {
+        boss = bossForNewBattle(boss.id);
         if (boss.requires.some(id => !victories.has(id)) || (boss.practicePrerequisites ?? []).some(id => !learned().includes(id))) throw Error('PROFILE_BOSS_NOT_EARNED:' + boss.id);
         // Preview begins tomorrow, after the preparation day's obligations.
         const simulated = structuredClone(periods); outcomes(day, fixtures, simulated, startedDay);
         const contributions = Array.from({ length: boss.maxTurns }, (_, index) => battleHabitContribution(outcomes(day + 1 + index, fixtures, simulated, startedDay)));
-        const loadout = combatSkills(mixedBuild), weapon = weapons.has('thach-tam') ? 'thach-tam' : null;
+        const loadout = combatSkills(mixedBuild), weapon = null;
         const initial = armedBattleState(fighterForRank(healthy.rank), boss, loadout, bossIntents(boss), weapon);
         const solution = searchBattle(initial, contributions, 48); if (!solution) return false;
         const learnedBefore = learned(); pending = { id: null, day: day + 1 }; closeDay();
@@ -159,7 +160,7 @@ export function simulateProfileJourney(schoolId: SchoolId, profile: string, mixe
     }
     return { school: schoolId, profile, mixedBuild, seed, contentVersion: GAME_CONTENT_VERSION, days: day - startedDay,
         currentDay: day, healthy, habitSnapshot: { startedDay, fixtures, periods: [...periods] },
-        fixture: 'fresh domain, fixed habit profile, production weekly audit, checkin/on-time sleep every day, seeded breakthrough RNG and earned charms; early branches; no tasks/rescue/grants; complete-pattern solver; tactical failures do not commit a battle or loss; not expected human completion time or D1 proof',
+        fixture: 'fresh domain, fixed habit profile, production weekly audit, checkin/on-time sleep every day, seeded breakthrough RNG and earned charms; early branches; no weapons/tasks/rescue/grants; complete-pattern solver; tactical failures do not commit a battle or loss; not expected human completion time or D1 proof',
         rank: healthy.rank, successes, misses, neutral, breakthroughAttempts, breakthroughFailures, mainWins: events.filter(event => !GAME_BOSSES.find(boss => boss.id === event.boss)!.kind || GAME_BOSSES.find(boss => boss.id === event.boss)!.kind === 'main').length,
         totalWins: victories.size, finalWon: victories.has('than-chu'), achievements: [...achievements], weapons: [...weapons], owned: [...owned],
         editions: versions.map(version => ({ id: version.id, techniqueId: version.techniqueId, tiers: version.tiers, defectsMilli: version.defectsMilli })), events, failures };
@@ -176,7 +177,7 @@ export function simulateEarnedRescue(journey: ReturnType<typeof simulateProfileJ
     const loadout = journey.editions.filter(version => techniqueById(version.techniqueId).school === journey.school && version.tiers.length)
         .slice(0, 5).map(version => ({ id: version.techniqueId, versionId: version.id, tier: version.tiers.length, purityBp: version.tiers.at(-1)!.purityBp }));
     const risky = loadout.some(skill => skill.id === 'vo-hoi') ? 'vo-hoi' : 'vo-ky';
-    for (const boss of GAME_BOSSES.filter(value => journey.events.some(event => event.boss === value.id)).reverse()) {
+    for (const boss of GAME_BOSSES.filter(value => journey.events.some(event => event.boss === value.id)).map(value => bossForNewBattle(value.id)).reverse()) {
         const periods = new Map(structuredClone(journey.habitSnapshot.periods)); let day = journey.currentDay;
         outcomes(day++, fixtures, periods, startedDay); // preparation closes today
         let state = armedBattleState(fighterForRank(journey.rank), boss, loadout, bossIntents(boss), null);

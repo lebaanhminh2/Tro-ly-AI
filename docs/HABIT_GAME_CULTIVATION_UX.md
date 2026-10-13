@@ -1,16 +1,16 @@
-# Tu luyện — bản thử giao diện và luồng
+# Tu luyện — giao diện và luồng
 
-Cập nhật: 2026-10-13. Trạng thái: **đề xuất để người dùng nghiệm thu bằng HTML**, chưa triển khai lại tab Tu luyện thật.
+Cập nhật: 2026-10-13. Bản HTML đã được người dùng đồng ý làm nền tảng; **luồng mới và bộ art cuối đã tích hợp trong app thật, hoàn tất QA local**, xem [checkpoint hiện tại](HABIT_GAME_CULTIVATION_PROGRESS.md). Các số giao chiến trong HTML vẫn chỉ là mô phỏng. Trạng thái/commit/version staging thực tại RELEASE; phần kiểm bản thử bên dưới là lịch sử, không mô tả app hiện hành.
 
 Mở [bản HTML tương tác](prototypes/cultivation/index.html) trực tiếp trong Chrome/Edge. Không cần đăng nhập, cài thư viện hoặc có mạng. Dữ liệu mẫu lưu trong trình duyệt, độc lập với dữ liệu của app. Nút **Đổi tình huống** giúp xem các trạng thái mà không phải chơi nhiều ngày.
 
-## 1. Phạm vi được duyệt
+## 1. Phạm vi vòng tạo HTML trước
 
 - `web/index.html`, `web/styles.css`: sửa icon Thói quen thành ô tick SVG, giữ đúng thứ tự điều hướng đã chốt.
 - `docs/prototypes/cultivation/index.html`: một file HTML tự chứa CSS/JS/dữ liệu mẫu, có thể bấm thử các luồng bên dưới.
 - Tài liệu này ghi quyết định thiết kế và các điểm cần xử lý khi áp dụng vào app.
 
-Ảnh nhân vật/boss/công pháp là một vòng thiết kế tiếp theo. HTML dùng dấu ấn đơn giản, không đưa các ảnh đang bị phản hồi xấu vào bản thử. Thần binh được bỏ khỏi phương án giao diện; backend/vũ khí của các trận hiện có chưa được thay đổi.
+HTML dùng dấu ấn đơn giản để chốt luồng. Mục tiêu hiện tại đã cho phép làm art cuối, code app thật và các thay đổi backend cần thiết; không dùng danh sách file của vòng HTML làm giới hạn triển khai. Trận mới bỏ vũ khí; snapshot của trận cũ phải giữ tương thích.
 
 ## 2. Những vấn đề của cách tổ chức hiện tại
 
@@ -52,7 +52,7 @@ Mỗi thẻ sách gồm dấu ấn, tên môn, một dòng về vai trò chiến
 4. Các bản luyện, tầng/tinh thuần từng bản, nếu đã sở hữu.
 5. Một hành động chính: luyện một bản, bắt đầu luyện, hoặc đến thử thách mở khóa.
 
-**Luyện lại** có xác nhận, tạo bản mới từ Nhập môn. Bản cũ giữ tinh thuần, tiến độ và quyền dùng trong trận. Chọn bản khác/luyện mới áp dụng từ ngày sinh hoạt kế tiếp. Nếu đã chuẩn bị xuất chiến, phải xác nhận thay lựa chọn đó; hủy xác nhận không tự tạo một bản mới.
+**Luyện lại** có xác nhận, tạo bản mới từ Nhập môn. Bản cũ giữ tinh thuần, tiến độ và quyền dùng trong trận. Chọn bản khác/luyện mới áp dụng từ ngày sinh hoạt kế tiếp. App thật yêu cầu hủy chuẩn bị hoặc kết thúc trận trước khi đổi lịch luyện; không âm thầm thay lựa chọn xuất chiến và không tạo bản mới khi thao tác bị chặn.
 
 **Đã mở** nghĩa là đã có quyền học. Công pháp mới mở chưa có sẵn một bản đạt Nhập môn để mang vào trận.
 
@@ -105,7 +105,7 @@ Ví dụ lấy từ nội dung dự án:
 - **Vô Môn Dịch Kinh:** cũng có dấu vết sau tầng 08, mở qua Khách Không Môn.
 - **Tứ Ấn Vấn Thiên:** cần các chiến thắng/công pháp ngoài phái trước đó; điều kiện thể hiện thành danh sách trong chi tiết.
 
-Ẩn tên/phát hiện là **đề xuất mới**, chưa phải một cơ chế đã tồn tại trong backend. Khi áp dụng phải xử lý người chơi cũ đã sở hữu hoặc đã vượt các điều kiện; không khóa lại quyền của họ.
+Ẩn tên/phát hiện là thiết kế mới của vòng này. Backend đang triển khai redaction theo tiến trình, không chỉ ẩn bằng CSS. Người chơi cũ đã sở hữu hoặc luyện vẫn giữ quyền; không khóa lại bí tịch của họ.
 
 ## 5. Giao chiến, kết quả và cứu mạng
 
@@ -144,9 +144,9 @@ Có nút đổi sáng/tối và xuất JSON **dữ liệu mẫu** trong điều 
 
 Bản thử dùng bố cục riêng: nền giấy/than, một màu nhấn đồng, chữ hệ thống có dấu tiếng Việt nhất quán; dấu ấn sách/tầng/chiến tích là hình thay chỗ. Chưa chọn lại phong cách ảnh cuối và chưa sao chép nhân vật, art hoặc UI của các nguồn tham khảo.
 
-## 8. Điều kiện trước khi áp dụng vào app thật
+## 8. Yêu cầu kỹ thuật khi áp dụng vào app thật
 
-Sau khi người dùng duyệt HTML, lập danh sách file riêng để duyệt triển khai theo AGENTS.md. Không dùng lần duyệt demo làm quyền sửa toàn bộ game.
+Mục tiêu `/goal` hiện tại đã duyệt trước các file và công việc cần thiết trong phạm vi redesign; không cần xin duyệt từng file. Lựa chọn phát sinh được tự quyết có căn cứ và ghi checkpoint.
 
 Các yêu cầu kỹ thuật của vòng triển khai:
 
@@ -154,14 +154,14 @@ Các yêu cầu kỹ thuật của vòng triển khai:
 - Giữ ngày sinh hoạt, phiên bản chống ghi đè, kết toán một lần, bản luyện/tinh thuần bất biến và entitlement đã có.
 - Đo đường tải thực tế của từng màn hình. Tổng quan dùng snapshot gọn; catalog có cache/version; truyện, bản luyện, nhật ký và bộ chiêu tải khi mở. Thao tác chuyển mục phải phản hồi ngay, có trạng thái tải/lỗi/thử lại rõ ràng.
 - Tránh preload ảnh chương/boss cho những trang không dùng ảnh; ảnh cuối có kích thước phù hợp và tải khi cần.
-- Khi bỏ Thần binh: kiểm tác động HP/công/thủ và phần thưởng; giữ snapshot cho trận cũ hoặc có phương án tương thích được duyệt. Không xóa vật phẩm/trận lịch sử để khớp bố cục mới.
+- Khi bỏ Thần binh: kiểm tác động HP/công/thủ và phần thưởng; giữ snapshot cho trận cũ, dùng content version mới cho trận mới. Không xóa vật phẩm/trận lịch sử để khớp bố cục mới.
 - Ánh xạ tầng dùng ID boss hiện có. Đổi tên route không tạo bản ghi chiến thắng mới.
 - Discovery được suy ra từ tiến trình hiện có hoặc bổ sung trạng thái có version; người chơi cũ giữ quyền học.
 - Giữ preset/export/history của app, đưa vào nơi phù hợp dưới chi tiết/cấu hình.
 - Kiểm trên màn hình nhỏ, chữ lớn, bàn phím, mạng chậm/mất mạng, dữ liệu rỗng và nhiều bản luyện. Màn kết quả/cứu mạng cần báo hệ quả thật trước hành động.
-- Chỉ deploy staging sau kiểm thử; chờ nghiệm thu UI và luồng trước vòng làm lại art.
+- Làm mẫu art, kiểm trong UI thật, sửa rồi hoàn thiện cả bộ. Chỉ deploy staging sau các kiểm tra cần thiết; giao một bản tích hợp đầy đủ để người dùng nghiệm thu.
 
-## 9. Kiểm tra bản thử
+## 9. Kiểm tra bản thử và phát hành icon — lịch sử trước redesign
 
 Đã kiểm trực tiếp bằng Chrome headless, hồ sơ tạm và dữ liệu mẫu:
 

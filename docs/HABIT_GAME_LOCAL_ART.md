@@ -1,4 +1,8 @@
-# Tạo hình ảnh cục bộ cho toàn bộ Thần Lộ
+# Tạo hình ảnh cục bộ cho Tu luyện
+
+**Vòng hiện tại 2026-10-13:** bộ minh họa v2 đã thay toàn bộ art game theo [STYLE_V2](art/CULTIVATION_STYLE_V2.md). 61 raster và 39 SVG đã xuất bản, kiểm hash và xem trong app local; mọi QA/release 2026-10-12 bên dưới là lịch sử. Không sản xuất lại ba Thần binh đã bỏ. Trạng thái phát hành tại [CULTIVATION_PROGRESS](HABIT_GAME_CULTIVATION_PROGRESS.md) và RELEASE.
+
+**Checkpoint nguồn và tích hợp:** 61 raster thành 122 WebP và 39 SVG; SHA nguồn/final, kích thước và dung lượng đã kiểm. Tổng WebP 2.663.754 byte; SVG 16.628 byte; không còn job GPU. Các lần loại/retry/crop ghi tại STYLE_V2 và manifest. Khi art-agent bàn giao,61QA UI pending; root đã kiểm matrix40đối thủ/15chương và40mànphái/cast sáng–tối, xem contact UI-final và cập nhật61approved-local. `cultivation-v2-audit.json` giữ cả trạng thái nguồn ban đầu và bằng chứng tích hợp sau đó. Hash staging được ghi riêng trong RELEASE.
 
 Cập nhật 2026-10-12. User chọn AI tự thiết lập model ảnh local khi chạy `/goal`, ngân sách bổ sung **0đ**. Pipeline đã tạo/tích hợp finals cho40encounters,15cảnh chương,nămphái,baweapon và39symbols nguyên bản. Source QA/integration evidence tại inventory; visual/network/staging QA đạt trong [RELEASE](HABIT_GAME_RELEASE.md). [CREATIVE_BRIEF](HABIT_GAME_CREATIVE_BRIEF.md) sở hữu art direction/cast/inventory, [PROGRESS](HABIT_GAME_PROGRESS.md) lưu bằng chứng.
 

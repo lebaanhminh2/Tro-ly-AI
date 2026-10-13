@@ -147,9 +147,11 @@ export class D1GameStore implements GameStore {
         let processed = 0;
         while (processed < limit) {
             const account = await this.account(owner);
-            if (!account) break;
+            if (!account) return { processed, pending: false };
             const day = await this.historicalDay(owner, account.next_day, account);
-            if (now < day.endAt) break;
+            // There is no closed day to process. Re-reading the same account
+            // and day at the tail adds two round trips without a mutation.
+            if (now < day.endAt) return { processed, pending: false };
             if (await query(this.db, 'SELECT 1 FROM habits WHERE owner=? AND created_day<=? AND next_day<=? AND (archived_from IS NULL OR next_day<archived_from) LIMIT 1', owner, day.day, day.day).first()) break;
             const selected = await this.selected(owner, day.day);
             const aggregate = await query(this.db, 'SELECT version FROM habit_accounts WHERE owner=?', owner).first<{ version: number }>();

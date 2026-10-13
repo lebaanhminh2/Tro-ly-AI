@@ -1,5 +1,22 @@
 # Habit/Thần Lộ — bằng chứng và phát hành
 
+## Candidate Tu luyện redesign — 2026-10-13
+
+**Source đã kiểm local, chưa deploy candidate mới tại thời điểm checkpoint này.** Phát hành trước ở các mục dưới không chứng minh redesign hiện tại đã lên cloud.
+
+- Hiện tại → Công pháp → Vượt tầng → Thành tựu.22tầng/18cơduyên/39môn; Thành tựu đọc chiến thắng đầu tiên, khám phá che bí tịch chưa phát hiện.
+- Content `than-lo-4`, engine `battle-v1`. Trận mới không chọn/nhận vũ khí; snapshot/quyền/receipt/preset cũ được giữ. Không đổi schema0037 hoặc behavior task/habit/ngủ/focus/reminders/đột phá.
+- Asset cuối61raster/122WebP/39SVG, source/provenance/hash và QA actual-app cập nhật trong `docs/art/assets.json`, `cultivation-v2-audit.json` và STYLE_V2. Ngân sách bổ sung0đ, localDreamShaper8; originals ngoàiGit, không còn GPU job.
+- Gate main/experiments329+25 trước sửa loader/fastpath/modal cuối; các sửa đó có targeted loader/discovery9, settlement1 và19practice/battlecases đạt. Typecheck/check:web45pass. Browser bản cuối35/35, matrix final1/1; thêm40mànphái/cast sáng–tối, root review ảnh cuối.
+- Staging config3/3 và dry-run224assetfiles đạt; Worker670,88KiB/gzip155,90KiB. Frontend lab không chứng minh tải đầu nhanh hơn đáng kể; loại2SQLthừa/giới hạnlazyreads có bằng chứng. Số remote/bootstrap2026-10-12 bên dưới là lịch sử.
+- Release sẽ dùng staging hiện tại; public/static/auth/runtime proof và commit/version được ghi sau deploy. Phiên owner isolated đã hết auth401; không tạo fake sessions/logs hoặc gửi tin để lấy số đo.
+
+Hướng dẫn nghiệm thu: [USER_GUIDE](HABIT_GAME_USER_GUIDE.md). Nghiên cứu, số đo và giới hạn: [CULTIVATION_REVIEW](HABIT_GAME_CULTIVATION_REVIEW.md). Checklist/current state: [CULTIVATION_PROGRESS](HABIT_GAME_CULTIVATION_PROGRESS.md).
+
+---
+
+## Phát hành Habit/Thần Lộ 2026-10-12 — lịch sử
+
 Cập nhật 2026-10-12. **Toàn bộ phần mở rộng đã phát hành staging và kiểm sau deploy; sẵn sàng để user nghiệm thu.** File này đối chiếu yêu cầu với bằng chứng hiện có, không thay [ACCEPTANCE](HABIT_GAME_ACCEPTANCE.md) hoặc [PRODUCT](HABIT_GAME_PRODUCT.md).
 
 ## Target và trạng thái

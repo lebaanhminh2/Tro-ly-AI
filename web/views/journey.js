@@ -1,26 +1,26 @@
 import { habitDate } from '../models/habits.js';
+import { bossDiscovered, mainFloors, currentBattle } from '../models/game-library.js';
+import { gameArtUrl } from '../ui/game-art.js';
 const statusNames = { won: 'Đã thắng', awaiting_rescue: 'Chờ cứu mạng', dead: 'Tử trận', expired: 'Hết lượt giao chiến', withdrawn: 'Đã rút lui', cancelled: 'Đã hủy chuẩn bị' };
 
 export function renderJourney(ui, data, catalog, selectedChapter, principalOnly = false) {
     const { el, button, card } = ui, root = el('div', undefined, 'journey-page');
-    const current = (data.battles ?? []).find(battle => battle.id === data.current.battleId || battle.id === data.pending?.battleId)
-        ?? (data.battles ?? []).find(battle => ['won', 'dead', 'expired', 'withdrawn'].includes(battle.status));
+    const current = currentBattle(data) ?? (principalOnly ? (data.battles ?? []).find(battle => ['won', 'dead', 'expired', 'withdrawn'].includes(battle.status)) : null);
     const catchingUp = data.settledThrough !== null && data.settledThrough < data.day.day - 1;
     if (catchingUp) root.append(el('p', 'Đang chốt những ngày trước. Cập nhật kết quả để chọn cho hôm nay.', 'hint'), button('Cập nhật kết quả', () => ui.loadGame(), 'secondary'));
     if (current) {
         const battle = current.state, panel = card('battle-card'), header = el('div', undefined, 'battle-heading'), copy = el('div');
-        copy.append(el('p', 'CHƯƠNG ' + current.content.chapter + ' · ' + (current.startsDay > data.day.day ? 'ĐÃ CHUẨN BỊ' : 'XUẤT CHIẾN'), 'eyebrow'), el('h2', current.content.name));
+        copy.append(el('p', (mainFloors(catalog).findIndex(boss => boss.id === current.bossId) >= 0 ? 'TẦNG ' + String(mainFloors(catalog).findIndex(boss => boss.id === current.bossId) + 1).padStart(2, '0') : 'CƠ DUYÊN') + ' · ' + (current.startsDay > data.day.day ? 'ĐÃ CHUẨN BỊ' : battle.status === 'active' ? 'XUẤT CHIẾN' : statusNames[battle.status] ?? 'KẾT QUẢ'), 'eyebrow'), el('h2', current.content.name));
         header.append(copy);
         if (current.content.artId) {
-            const image = el('img'); image.src = './assets/than-lo/' + current.content.artId + '-thumb.webp'; image.width = 76; image.height = 96;
+            const image = el('img'); image.src = gameArtUrl(current.content.artId + '-thumb.webp'); image.width = 76; image.height = 96;
             image.alt = current.content.name; image.loading = 'lazy'; header.append(image);
             if (current.content.artPosition) image.style.objectPosition = current.content.artPosition.map(value => value * 100 + '%').join(' ');
         }
         panel.append(header);
-        if (current.weaponId) panel.append(el('p', 'Thần binh · ' + (catalog.weapons?.find(weapon => weapon.id === current.weaponId)?.name ?? current.weaponId), 'hint'));
         if (current.startsDay > data.day.day) {
             panel.append(el('p', 'Bắt đầu từ ' + habitDate(current.startsDay) + '. Hôm nay vẫn theo lịch luyện đã chọn.', 'technique-description'),
-                button('Hủy chuẩn bị', () => ui.cancelBattle(current), 'text-button'));
+                button('Đổi bộ chiêu', () => ui.prepareBoss(current.content, current), 'secondary'), button('Hủy chuẩn bị', () => ui.cancelBattle(current), 'text-button'));
         } else {
             panel.append(el('p', statusNames[battle.status] ?? ('Lượt ' + Math.min(battle.turn + 1, battle.maxTurns) + ' / ' + battle.maxTurns + (current.waitDays ? ' · đang chờ chọn chiêu' : '')), 'practice-state'));
             const meters = el('div', undefined, 'battle-vitals');
@@ -57,6 +57,7 @@ export function renderJourney(ui, data, catalog, selectedChapter, principalOnly 
             } else if (battle.status === 'awaiting_rescue') {
                 panel.append(el('h3', 'Sinh lực đã cạn'), el('p', 'Chọn cứu mạng hoặc chấp nhận tử trận. Quyền cứu chung chỉ dùng một lần trong trận.', 'hint'),
                     el('p', 'Còn ' + Math.max(0, current.rescueUntilDay - data.day.day) + ' ngày sinh hoạt để quyết định.', 'hint'));
+                panel.append(el('p', 'Hiện có ' + data.combatEconomy.qi + ' Tu Vi' + (!current.rescue.qiAvailable ? ' · chưa đủ điều kiện Hộ Mệnh' : ''), 'hint'));
                 const actions = el('div', undefined, 'battle-rescue-actions'), qi = button('Hộ Mệnh · ' + current.rescue.qiCost + ' Tu Vi', () => ui.rescueBattle(current, 'qi'), 'primary');
                 qi.disabled = !current.rescue.qiAvailable || catchingUp; actions.append(qi);
                 if (battle.rankRescueAvailable) {
@@ -65,62 +66,74 @@ export function renderJourney(ui, data, catalog, selectedChapter, principalOnly 
                 }
                 const death = button('Chấp nhận tử trận', () => ui.acceptBattleDeath(current), 'text-button'); death.disabled = catchingUp;
                 actions.append(death); panel.append(actions);
-            } else panel.append(el('p', battle.status === 'won' ? current.content.victory : current.content.defeat, 'battle-story'));
+             } else {
+                panel.append(el('p', battle.status === 'won' ? current.content.victory : current.content.defeat, 'battle-story'));
+                if (current.finishedDay != null) panel.append(el('p', 'Kết thúc ' + habitDate(current.finishedDay) + ' · ' + battle.turn + ' lượt', 'hint'));
+                const names = (current.content.unlocks ?? []).map(id => catalog.techniques.find(technique => technique.id === id)?.name).filter(Boolean);
+                if (battle.status === 'won' && names.length) panel.append(el('p', 'Đường học đã mở: ' + names.join(' · '), 'battle-unlocks'));
+                if (data.current.mode === 'practice') panel.append(el('p', 'Lịch luyện đã trở lại từ ' + habitDate(data.current.fromDay) + '.', 'hint'));
+                else if (data.pending?.mode === 'practice') panel.append(el('p', 'Trở lại lịch luyện từ ' + habitDate(data.pending.fromDay) + '.', 'hint'));
+                else panel.append(el('p', 'Các bản luyện được giữ lại. Cậu có thể chọn nhịp tiếp theo khi sẵn sàng.', 'hint'));
+                panel.append(button(battle.status === 'won' ? 'Xem thành tựu' : 'Chọn tầng tiếp theo', () => {
+                    if (battle.status === 'won') ui.state().gameVictoryFocus = current.bossId;
+                    ui.showGamePanel(battle.status === 'won' ? 'collection' : 'journey');
+                }, 'secondary'));
+            }
         }
-        panel.append(button('Nhật ký trận', () => ui.openBattleHistory(current), 'text-button')); root.append(panel);
+        panel.append(button('Nhật ký trận', () => ui.openBattleHistory(current), 'text-button'));
+        if (['won', 'dead', 'expired', 'withdrawn'].includes(battle.status) && (current.finishedDay ?? current.lastDay) < data.day.day - 1) {
+            const previous = el('details', undefined, 'practice-recent game-last-result'); previous.append(el('summary', 'Trận gần nhất · ' + current.content.name + ' · ' + statusNames[battle.status]), panel); root.append(previous);
+        } else root.append(panel);
     }
     if (principalOnly) return root;
-    const section = el('section', undefined, 'journey-boss-list');
-    const chapters = catalog.chapters ?? [{ number: 1, name: 'Hắc Lệnh Qua Thôn', scene: 'chapter01', encounters: ['truy-lenh', 'song-nha', 'thu-lenh', 'thiet-lenh-su'] }];
-    const next = chapters.find(chapter => chapter.encounters.some(id => !(data.victories ?? []).includes(id))) ?? chapters.at(-1);
-    const chapter = chapters.find(chapter => chapter.number === selectedChapter) ?? chapters.find(chapter => chapter.number === current?.content.chapter) ?? next;
-    const nextBoss = chapter.encounters.map(id => catalog.bosses.find(boss => boss.id === id)).find(boss => boss && !(data.victories ?? []).includes(boss.id));
-    const pickerWrap = el('label', 'Chương truyện', 'form-field journey-chapter-picker'), picker = el('select');
-    for (const value of chapters) {
-        const option = el('option', String(value.number).padStart(2, '0') + ' · ' + value.name); option.value = value.number; picker.append(option);
+    const floors = mainFloors(catalog), won = new Set(data.victories ?? []);
+    const showVictory = boss => { ui.state().gameVictoryFocus = boss.id; ui.showGamePanel('collection'); };
+    const nextBoss = floors.find(boss => !won.has(boss.id)), ready = boss => bossDiscovered(boss, data) && (boss.practicePrerequisites ?? []).every(id => (data.learned ?? []).includes(id));
+    const busy = !!currentBattle(data) || catchingUp || !!ui.state().featureSaving;
+    const overview = el('section', undefined, 'floor-overview');
+    overview.append(el('p', 'VƯỢT TẦNG', 'eyebrow'), el('h2', floors.filter(boss => won.has(boss.id)).length + ' / ' + floors.length + ' tầng đã vượt'));
+    const track = el('progress'); track.max = floors.length; track.value = floors.filter(boss => won.has(boss.id)).length; track.setAttribute('aria-label', 'Số tầng đã vượt'); overview.append(track); root.append(overview);
+    if (nextBoss && bossDiscovered(nextBoss, data)) {
+        const hero = card('floor-next'), copy = el('div', undefined, 'floor-next-copy');
+        copy.append(el('p', 'TẦNG ' + String(floors.indexOf(nextBoss) + 1).padStart(2, '0') + ' · TIẾP THEO', 'eyebrow'), el('h2', nextBoss.name), el('p', nextBoss.mechanics, 'hint'));
+        const action = button(ready(nextBoss) ? 'Xem & chuẩn bị' : 'Xem điều kiện', () => ui.prepareBoss(nextBoss), 'primary'); action.disabled = busy && ready(nextBoss); copy.append(action); hero.append(copy);
+        if (nextBoss.artId) { const image = el('img', undefined, 'floor-next-art'); image.src = gameArtUrl(nextBoss.artId + '-thumb.webp'); image.alt = ''; image.width = 100; image.height = 140; image.decoding = 'async'; hero.append(image); }
+        hero.dataset.bossId = nextBoss.id; root.append(hero);
     }
-    picker.value = chapter.number; picker.addEventListener('change', () => ui.selectGameChapter(Number(picker.value))); pickerWrap.append(picker); section.append(pickerWrap);
-    if (chapter.scene) {
-        const scene = el('img', undefined, 'journey-chapter-scene'); scene.src = './assets/than-lo/' + chapter.scene + '.webp';
-        scene.width = 640; scene.height = 448; scene.loading = 'lazy'; scene.alt = 'Cảnh ' + chapter.name; section.append(scene);
-    }
-    section.append(el('p', 'CHƯƠNG ' + String(chapter.number).padStart(2, '0'), 'eyebrow'), el('h2', chapter.name));
-    const firstBoss = (catalog.bosses ?? []).find(boss => boss.id === chapter.encounters[0]);
-    if (firstBoss && firstBoss.requires.every(id => (data.victories ?? []).includes(id))) section.append(button('Đọc truyện', () => ui.openGameChapter(chapter), 'text-button'));
-    for (const boss of (catalog.bosses ?? []).filter(boss => boss.chapter === chapter.number)) {
-        const won = (data.victories ?? []).includes(boss.id), unlocked = boss.requires.every(id => (data.victories ?? []).includes(id))
-            && (boss.practicePrerequisites ?? []).every(id => (data.learned ?? []).includes(id));
-        const recommended = boss.id === nextBoss?.id && unlocked && !['prepared', 'active', 'awaiting_rescue'].includes(current?.status);
-        const row = card('journey-boss' + (!unlocked ? ' is-locked' : '') + (recommended ? ' is-next' : ''));
-        row.dataset.bossId = boss.id;
-        const heading = el('div', undefined, 'journey-boss-heading'), copy = el('div');
-        const needsPractice = boss.requires.every(id => (data.victories ?? []).includes(id)) && !unlocked;
-        copy.append(el('p', recommended ? 'TRẬN TIẾP THEO · ' + boss.maxTurns + ' LƯỢT' : won ? 'Đã vượt qua' : unlocked ? boss.maxTurns + ' lượt tối đa' : needsPractice ? 'Cần luyện các môn yêu cầu' : 'Mở sau trận trước', 'eyebrow'), el('h3', boss.name));
-        heading.append(copy);
-        if (boss.artId) {
-            const image = el('img'); image.src = './assets/than-lo/' + boss.artId + '-thumb.webp'; image.width = 56; image.height = 72;
-            image.alt = ''; image.loading = 'lazy'; heading.append(image);
-            if (boss.artPosition) image.style.objectPosition = boss.artPosition.map(value => value * 100 + '%').join(' ');
+    const list = el('section', undefined, 'floor-map'); list.setAttribute('aria-label', 'Các tầng');
+    for (let offset = 0; offset < floors.length; offset += 4) {
+        const group = el('details', undefined, 'floor-group'), chunk = floors.slice(offset, offset + 4);
+        group.open = chunk.some(boss => boss.id === nextBoss?.id);
+        group.append(el('summary', 'Tầng ' + String(offset + 1).padStart(2, '0') + '–' + String(Math.min(offset + 4, floors.length)).padStart(2, '0') + ' · ' + chunk.filter(boss => won.has(boss.id)).length + '/' + chunk.length));
+        for (const boss of chunk) {
+            const found = bossDiscovered(boss, data), beaten = won.has(boss.id), row = el('div', undefined, 'floor-row' + (beaten ? ' is-complete' : boss.id === nextBoss?.id ? ' is-next' : !found ? ' is-locked' : ''));
+            row.dataset.bossId = boss.id; const copy = el('div'); copy.append(el('strong', found ? boss.name : 'Chưa mở'), el('small', beaten ? 'Đã vượt' : found ? ready(boss) ? boss.maxTurns + ' lượt tối đa' : 'Cần luyện các môn yêu cầu' : 'Vượt tầng trước để mở'));
+            row.append(el('span', String(offset + chunk.indexOf(boss) + 1).padStart(2, '0'), 'floor-number'), copy);
+            if (found) { const action = button(beaten ? 'Chiến tích' : 'Xem', () => beaten ? showVictory(boss) : ui.prepareBoss(boss), 'text-button'); row.append(action); }
+            else row.append(el('span', '—', 'floor-lock')); group.append(row);
         }
-        row.append(heading);
-        if (unlocked) row.append(el('p', boss.mechanics, 'hint'));
-        if (boss.repeatWard && unlocked) row.append(el('p', 'Đọc chiêu lặp · đổi chiêu để giữ trọn sát thương.', 'hint'));
-        if (needsPractice) {
-            const missing = (boss.practicePrerequisites ?? []).filter(id => !(data.learned ?? []).includes(id));
-            row.append(el('p', 'Cần đạt Nhập môn: ' + missing.map(id => catalog.techniques.find(technique => technique.id === id)?.name ?? id).join(', ') + '.', 'hint'));
-        }
-        const prepare = button(won ? 'Đánh lại' : 'Xem và chuẩn bị', () => ui.prepareBoss(boss), recommended ? 'primary' : 'secondary');
-        prepare.disabled = !unlocked || data.current.mode === 'battle' || !!current && ['active', 'awaiting_rescue'].includes(current.state.status) || current?.startsDay > data.day.day;
-        if (unlocked) row.append(prepare);
-        if (recommended) section.prepend(row); else section.append(row);
+        list.append(group);
     }
-    root.append(section);
-    const previous = (data.battles ?? []).filter(battle => battle.id !== current?.id && statusNames[battle.status]);
-    if (previous.length) {
-        const history = el('details', undefined, 'practice-recent'); history.append(el('summary', 'Những trận gần đây'));
-        for (const battle of previous) history.append(button(battle.content.name + ' · ' + statusNames[battle.status], () => ui.openBattleHistory(battle), 'text-button'));
-        root.append(history);
+    root.append(list);
+    const branches = catalog.bosses.filter(boss => boss.kind && boss.kind !== 'main'), foundBranches = branches.filter(boss => bossDiscovered(boss, data)), opportunities = el('section', undefined, 'game-opportunities');
+    opportunities.append(el('h2', 'Cơ duyên'), el('p', 'Những lối rẽ mở bí tịch, truyền thừa và cấm thuật.', 'hint'));
+    const completedBranches = el('details', undefined, 'game-completed-opportunities');
+    completedBranches.append(el('summary', 'Cơ duyên đã vượt · ' + foundBranches.filter(boss => won.has(boss.id)).length));
+    for (const boss of foundBranches) {
+        const row = el('div', undefined, 'opportunity-row'), copy = el('div');
+        copy.append(el('strong', boss.name), el('p', won.has(boss.id) ? 'Đã vượt · quyền học được giữ' : ready(boss) ? 'Đã tìm thấy · có thể thử thách' : 'Đã tìm thấy · còn điều kiện luyện', 'hint'));
+        row.append(copy, button(won.has(boss.id) ? 'Chiến tích' : 'Xem', () => won.has(boss.id) ? showVictory(boss) : ui.prepareBoss(boss), 'text-button')); row.dataset.bossId = boss.id;
+        if (won.has(boss.id)) completedBranches.append(row); else opportunities.append(row);
     }
-    root.append(button('Lịch sử tất cả trận', () => ui.openBattleArchive(), 'text-button'));
-    return root;
+    if (completedBranches.childElementCount > 1) opportunities.append(completedBranches);
+    const hidden = branches.length - foundBranches.length;
+    if (hidden) opportunities.append(el('p', hidden + ' cơ duyên chưa lộ diện. Tiếp tục vượt tầng để tìm dấu vết.', 'game-sealed-note hint'));
+    if (!branches.length) opportunities.append(el('p', 'Thư các sẽ cập nhật khi có cơ duyên mới.', 'hint'));
+    root.append(opportunities);
+    const chapters = el('details', undefined, 'practice-recent game-chapter-archive'); chapters.append(el('summary', 'Truyện đã mở'));
+    for (const chapter of catalog.chapters ?? []) {
+        const first = catalog.bosses.find(boss => boss.id === chapter.encounters[0]);
+        if (first && bossDiscovered(first, data)) chapters.append(button('Chương ' + chapter.number + ' · ' + chapter.name, () => ui.openGameChapter(chapter), 'text-button'));
+    }
+    root.append(chapters, button('Lịch sử tất cả trận', () => ui.openBattleArchive(), 'text-button')); return root;
 }

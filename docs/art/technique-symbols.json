@@ -7,6 +7,9 @@
     "path": "web/assets/than-lo/technique-kiem-y.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#315d61",
+    "paper": "#e7efec",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -17,6 +20,9 @@
     "path": "web/assets/than-lo/technique-lien-van.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#315d61",
+    "paper": "#e7efec",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -27,6 +33,9 @@
     "path": "web/assets/than-lo/technique-tuyet-menh.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#315d61",
+    "paper": "#e7efec",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -37,6 +46,9 @@
     "path": "web/assets/than-lo/technique-vo-hoi.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#315d61",
+    "paper": "#e7efec",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -47,6 +59,9 @@
     "path": "web/assets/than-lo/technique-kiem-vuc.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#315d61",
+    "paper": "#e7efec",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -57,6 +72,9 @@
     "path": "web/assets/than-lo/technique-kim-than.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#81623c",
+    "paper": "#f1e9da",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -67,6 +85,9 @@
     "path": "web/assets/than-lo/technique-huyen-quy.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#81623c",
+    "paper": "#f1e9da",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -77,6 +98,9 @@
     "path": "web/assets/than-lo/technique-phan-chan.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#81623c",
+    "paper": "#f1e9da",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -87,6 +111,9 @@
     "path": "web/assets/than-lo/technique-tran-son.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#81623c",
+    "paper": "#f1e9da",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -97,6 +124,9 @@
     "path": "web/assets/than-lo/technique-chien-the.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#81623c",
+    "paper": "#f1e9da",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -107,6 +137,9 @@
     "path": "web/assets/than-lo/technique-thon-thien.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#824b53",
+    "paper": "#f2e6e5",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -117,6 +150,9 @@
     "path": "web/assets/than-lo/technique-huyet-sat.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#824b53",
+    "paper": "#f2e6e5",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -127,6 +163,9 @@
     "path": "web/assets/than-lo/technique-minh-ha.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#824b53",
+    "paper": "#f2e6e5",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -137,6 +176,9 @@
     "path": "web/assets/than-lo/technique-tan-menh.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#824b53",
+    "paper": "#f2e6e5",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -147,6 +189,9 @@
     "path": "web/assets/than-lo/technique-huyet-hai.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#824b53",
+    "paper": "#f2e6e5",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -157,6 +202,9 @@
     "path": "web/assets/than-lo/technique-thai-hu-bo.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#5a6080",
+    "paper": "#ebeaf2",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -167,6 +215,9 @@
     "path": "web/assets/than-lo/technique-hu-khong.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#5a6080",
+    "paper": "#ebeaf2",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -177,6 +228,9 @@
     "path": "web/assets/than-lo/technique-khong-minh.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#5a6080",
+    "paper": "#ebeaf2",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -187,6 +241,9 @@
     "path": "web/assets/than-lo/technique-hoan-hinh.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#5a6080",
+    "paper": "#ebeaf2",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -197,6 +254,9 @@
     "path": "web/assets/than-lo/technique-quy-hu.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#5a6080",
+    "paper": "#ebeaf2",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -207,6 +267,9 @@
     "path": "web/assets/than-lo/technique-quan-thien.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#436c61",
+    "paper": "#e6eee5",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -217,6 +280,9 @@
     "path": "web/assets/than-lo/technique-lac-tu.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#436c61",
+    "paper": "#e6eee5",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -227,6 +293,9 @@
     "path": "web/assets/than-lo/technique-dan-kiep.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#436c61",
+    "paper": "#e6eee5",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -237,6 +306,9 @@
     "path": "web/assets/than-lo/technique-that-tinh.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#436c61",
+    "paper": "#e6eee5",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -247,6 +319,9 @@
     "path": "web/assets/than-lo/technique-nghich-thien.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#436c61",
+    "paper": "#e6eee5",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -257,6 +332,9 @@
     "path": "web/assets/than-lo/technique-nghich-menh.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#79424b",
+    "paper": "#eee0df",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -267,6 +345,9 @@
     "path": "web/assets/than-lo/technique-thau-thien.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#79424b",
+    "paper": "#eee0df",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -277,6 +358,9 @@
     "path": "web/assets/than-lo/technique-tang-nhat.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#79424b",
+    "paper": "#eee0df",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -287,6 +371,9 @@
     "path": "web/assets/than-lo/technique-dong-menh.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#79424b",
+    "paper": "#eee0df",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -297,6 +384,9 @@
     "path": "web/assets/than-lo/technique-cuu-u.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#79424b",
+    "paper": "#eee0df",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -307,6 +397,9 @@
     "path": "web/assets/than-lo/technique-phong-than.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#79424b",
+    "paper": "#eee0df",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -317,6 +410,9 @@
     "path": "web/assets/than-lo/technique-tam-nhat.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#79424b",
+    "paper": "#eee0df",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -327,6 +423,9 @@
     "path": "web/assets/than-lo/technique-nghich-luan.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#79424b",
+    "paper": "#eee0df",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -337,6 +436,9 @@
     "path": "web/assets/than-lo/technique-vo-mon.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#675779",
+    "paper": "#ebe5ed",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -347,6 +449,9 @@
     "path": "web/assets/than-lo/technique-son-ha.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#675779",
+    "paper": "#ebe5ed",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -357,6 +462,9 @@
     "path": "web/assets/than-lo/technique-huyet-trieu.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#675779",
+    "paper": "#ebe5ed",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -367,6 +475,9 @@
     "path": "web/assets/than-lo/technique-kiep-dong.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#675779",
+    "paper": "#ebe5ed",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -377,6 +488,9 @@
     "path": "web/assets/than-lo/technique-van-co.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#675779",
+    "paper": "#ebe5ed",
     "workflow": "scripts/build-technique-art.ts"
   },
   {
@@ -387,6 +501,9 @@
     "path": "web/assets/than-lo/technique-van-thien.svg",
     "format": "svg",
     "creator": "project-original",
+    "direction": "cultivation-illustrated-v2",
+    "ink": "#675779",
+    "paper": "#ebe5ed",
     "workflow": "scripts/build-technique-art.ts"
   }
 ]

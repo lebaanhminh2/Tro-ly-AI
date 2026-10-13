@@ -1,0 +1,28 @@
+{
+  "date": "2026-10-13",
+  "direction": "cultivation-illustrated-v2",
+  "rasterCount": 61,
+  "roles": {
+    "boss": 35,
+    "scene": 15,
+    "portrait": 6,
+    "school": 5
+  },
+  "webpCount": 122,
+  "svgCount": 39,
+  "totalWebpBytes": 2663754,
+  "totalSvgBytes": 16628,
+  "maxFullBytes": 81478,
+  "maxThumbBytes": 9198,
+  "sourceAndFinalHashAndDimensions": "verified",
+  "integratedUi": "approved-local-actual-app",
+  "legacyExcluded": [
+    "tram-nui",
+    "weapon-thach-tam",
+    "weapon-dinh-tam",
+    "weapon-thuan-phong"
+  ],
+  "sourceExportIntegrationStatus": "pending-root-review at art-agent handoff",
+  "integrationReviewedAt": "2026-10-13",
+  "integrationEvidence": "Final read-only matrix pass, 40 supplementary light/dark screens, 35 browser regression flows; root viewed all final UI contact sheets and representative full screens. Staging hash verification recorded separately after deploy."
+}

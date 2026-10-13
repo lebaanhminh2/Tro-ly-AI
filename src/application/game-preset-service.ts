@@ -20,9 +20,10 @@ export class GamePresetService {
             if (!deleted) {
                 if (!prior && snapshot.presets.length >= GAME_PRESET_LIMIT) throw Error('GAME_PRESET_LIMIT');
                 if (snapshot.available.length !== versions.length || new Set(snapshot.available.map(skill => skill.id)).size !== versions.length) throw Error('INVALID_BATTLE_LOADOUT');
-                if (weaponId && !snapshot.ownedWeapons.includes(weaponId as string)) throw Error('GAME_WEAPON_LOCKED');
             }
-            const preset = prior && deleted ? prior : { id: prior?.id ?? 'set_' + id, name, versions, weaponId: weaponId as string | null };
+            // Accept known legacy weapon fields when re-saving an old set, but
+            // new and edited sets contain only techniques. Unedited rows survive.
+            const preset = prior && deleted ? prior : { id: prior?.id ?? 'set_' + id, name, versions, weaponId: null };
             return { preset, deleted, result: { saved: true, version: snapshot.version + 1, presetId: preset.id, deleted } };
         });
     }

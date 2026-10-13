@@ -3,16 +3,23 @@ import { habitDate } from '../models/habits.js';
 import { purityLabel } from '../models/practice.js';
 import { button, el } from '../ui/dom.js';
 import { battlePresetControls } from './battle-presets.js';
+import { realms } from '../models/cultivation.js';
+import { gameArtUrl } from '../ui/game-art.js';
 
 export function createBattleActions(context) {
-    const { state, runtime, render, toast, openSheet, closeSheet, sheet, sheetContent, confirm, performLive } = context;
+    const { state, runtime, render, toast, openSheet, closeSheet, sheet, sheetContent, confirm: defaultConfirm, performLive } = context;
+    function confirm(title, description, action) {
+        defaultConfirm(title, description, action);
+        sheetContent.querySelector('.actions')?.classList.add('game-confirm-actions');
+        sheetContent.querySelector(':scope>.hint')?.setAttribute('tabindex', '0');
+    }
     const command = (operation, battle, extra = {}) => ({ operation, day: state.gameData.day.day, version: state.gameData.version,
         ...(battle ? { battleId: battle.id, battleVersion: battle.version } : {}), ...extra });
     async function save(input) {
         const panel = state.gamePanel;
         const result = await performLive('game', input);
         if (result) {
-            if (input.operation === 'prepare_battle' && state.gamePanel === panel) state.gamePanel = 'journey';
+            if (['prepare_battle', 'update_prepared_battle'].includes(input.operation) && state.gamePanel === panel) state.gamePanel = 'practice';
             render();
         }
     }
@@ -31,21 +38,23 @@ export function createBattleActions(context) {
     }
     function rescueBattle(battle, kind) {
         const input = command('rescue_battle', battle, { kind, healthyVersion: state.gameData.combatEconomy.healthyVersion, acceptCost: true });
+        const rank = state.gameData.combatEconomy.rank;
+        const untilDay = Math.max(state.gameData.combatEconomy.rankLockUntilDay ?? input.day, input.day + (battle.rescue.rankLockDays ?? 3));
         confirm(kind === 'qi' ? 'Dùng Hộ Mệnh?' : 'Dùng Nghịch Mệnh?', kind === 'qi'
-            ? 'Trả ' + battle.rescue.qiCost + ' Tu Vi, trở lại với 35% HP. Đây là quyền cứu duy nhất của trận.'
-            : 'Hy sinh một đại cảnh giới; không trừ Tu Vi. Sức mạnh nền trong trận giảm tương ứng và không thể đột phá lại trong 3 ngày sinh hoạt. Đây là quyền cứu duy nhất của trận.', () => save(input));
+            ? 'Trả ' + battle.rescue.qiCost + ' Tu Vi, trở lại với ' + (battle.rescue.restoresPercent ?? 35) + '% HP. Đây là quyền cứu duy nhất của trận.'
+            : (realms[rank]?.name ?? 'Cảnh giới hiện tại') + ' → ' + (realms[Math.max(0, rank - 1)]?.name ?? 'cảnh giới trước') + '. Không trừ Tu Vi; trở lại với ' + (battle.rescue.restoresPercent ?? 35) + '% HP. Sức mạnh nền trong trận giảm tương ứng; khóa đột phá đến ngày sinh hoạt ' + habitDate(untilDay) + '. Đây là quyền cứu duy nhất của trận.', () => save(input));
     }
     function acceptBattleDeath(battle) {
         const input = command('accept_battle_death', battle, { healthyVersion: state.gameData.combatEconomy.healthyVersion, confirm: true });
         const qi = state.gameData.combatEconomy.qi, loss = Math.min(qi, Math.min(60, Math.max(5, Math.ceil(qi * .08))));
         confirm('Chấp nhận tử trận?', 'Mất ' + loss + ' Tu Vi. Cảnh giới, bí tịch và vật phẩm được giữ; cậu có thể chuẩn bị trận khác từ ngày mai.', () => save(input));
     }
-    async function prepareBoss(boss) {
-        const input = command('prepare_battle', null, { bossId: boss.id }), catalog = state.gameCatalog;
+    async function prepareBoss(boss, preparedBattle = null) {
+        const input = preparedBattle ? command('update_prepared_battle', preparedBattle) : command('prepare_battle', null, { bossId: boss.id }), catalog = state.gameCatalog;
         openSheet(boss.name); sheet.classList.add('settings-sheet-open');
         const body = el('div', undefined, 'settings-sheet-body battle-preparation'); sheetContent.append(body);
         if (boss.artId) {
-            const image = el('img', undefined, 'battle-preparation-art'); image.src = './assets/than-lo/' + boss.artId + '.webp';
+            const image = el('img', undefined, 'battle-preparation-art'); image.src = gameArtUrl(boss.artId + '.webp');
             if (boss.artPosition) image.style.objectPosition = boss.artPosition.map(value => value * 100 + '%').join(' ');
             image.alt = boss.name; image.loading = 'lazy'; body.append(image);
         }
@@ -61,26 +70,28 @@ export function createBattleActions(context) {
                 const advice = el('details', undefined, 'battle-editions'); advice.append(el('summary', 'Gợi ý giao chiến'));
                 for (const text of detail.boss.advice) advice.append(el('p', text, 'hint')); body.append(advice);
             }
-            const weaponWrap = el('label', 'Thần binh · một món', 'form-field'), weaponSelect = el('select'), noWeapon = el('option', 'Không mang');
-            noWeapon.value = ''; weaponSelect.append(noWeapon);
-            const ownedWeapons = (state.gameData.rewards ?? []).filter(reward => reward.kind === 'weapon').map(reward => reward.id);
-            for (const weapon of (catalog.weapons ?? []).filter(weapon => ownedWeapons.includes(weapon.id))) {
-                const option = el('option', weapon.name); option.value = weapon.id; weaponSelect.append(option);
-            }
-            if (weaponSelect.options.length > 1) {
-                const hint = el('p', 'Chọn cho trận này; không thay giữa trận.', 'hint');
-                weaponSelect.addEventListener('change', () => { hint.textContent = catalog.weapons.find(weapon => weapon.id === weaponSelect.value)?.description ?? 'Chọn cho trận này; không thay giữa trận.'; });
-                weaponWrap.append(weaponSelect); body.append(weaponWrap, hint);
+            const won = state.gameData.victories ?? [], learned = state.gameData.learned ?? [];
+            const enterable = detail.boss.enterable ?? ((boss.requires ?? []).every(id => won.includes(id)) && (boss.practicePrerequisites ?? []).every(id => learned.includes(id)));
+            if (!enterable && !preparedBattle) {
+                body.append(el('h3', 'Điều kiện thử thách'));
+                for (const id of boss.practicePrerequisites ?? []) {
+                    const technique = catalog.techniques.find(value => value.id === id);
+                    body.append(el('p', (learned.includes(id) ? '✓ ' : '○ ') + 'Nhập môn ' + (technique?.name ?? id), 'hint'));
+                    if (technique && !learned.includes(id)) body.append(button('Xem ' + technique.name, () => context.openTechnique(technique), 'text-button'));
+                }
+                body.append(el('p', 'Quyền học mở sau khi thắng. Bí tịch mới bắt đầu từ Nhập môn; không tự tạo một bản luyện hoàn chỉnh.', 'hint')); return;
             }
             const selectors = [];
             const loadoutSummary = el('p', 'Võ Kỹ luôn có sẵn trong trận.', 'battle-loadout-summary'); body.append(loadoutSummary);
+            const loadoutWarning = el('p', undefined, 'battle-warning'); loadoutWarning.hidden = true; body.append(loadoutWarning);
             function updateSummary() {
                 const selected = selectors.map(select => data.versions.find(version => version.versionId === select.value)).filter(Boolean);
                 loadoutSummary.textContent = selected.length ? 'Võ Kỹ + ' + selected.map(version => catalog.techniques.find(value => value.id === version.techniqueId)?.name ?? version.techniqueId).join(' · ')
                     : 'Võ Kỹ luôn có sẵn trong trận.';
-                if (weaponSelect.value) loadoutSummary.textContent += ' · ' + (catalog.weapons.find(value => value.id === weaponSelect.value)?.name ?? weaponSelect.value);
+                const warnings = selected.map(version => catalog.techniques.find(value => value.id === version.techniqueId)?.combatWarning).filter(Boolean);
+                loadoutWarning.textContent = warnings.length ? 'Bộ chiêu có đánh đổi khi thi triển: ' + warnings.join(' ') : '';
+                loadoutWarning.hidden = !warnings.length;
             }
-            weaponSelect.addEventListener('change', updateSummary);
             const labelFor = version => (catalog.techniques.find(value => value.id === version.techniqueId)?.name ?? version.techniqueId)
                 + ' · bản ' + version.edition + ' · tầng ' + version.tier + ' · ' + purityLabel(version.purityBp);
             const addVersion = version => {
@@ -103,8 +114,10 @@ export function createBattleActions(context) {
                 const customize = el('details', undefined, 'battle-loadout-customize battle-editions');
                 customize.append(el('summary', 'Chỉnh bộ chiêu · tối đa 5 môn'), group); body.append(customize);
                 for (const select of selectors) select.addEventListener('change', updateSummary);
-                const recommended = data.versions.find(version => catalog.techniques.find(value => value.id === version.techniqueId)?.kind === 'ordinary');
-                if (recommended) { selectors[0].value = recommended.versionId; updateSummary(); }
+                if (!preparedBattle) {
+                    const recommended = data.versions.find(version => catalog.techniques.find(value => value.id === version.techniqueId)?.kind === 'ordinary');
+                    if (recommended) { selectors[0].value = recommended.versionId; updateSummary(); }
+                }
                 const editions = el('details', undefined, 'battle-editions battle-version-picker'); editions.append(el('summary', 'Chọn bản luyện khác'));
                 editions.append(el('p', 'Danh sách trên gợi ý tầng cao nhất của mỗi môn, rồi đến tinh thuần. Cậu vẫn có thể chọn một bản cũ.', 'hint'));
                 const wrap = el('label', 'Công pháp', 'form-field'), techniqueSelect = el('select');
@@ -141,18 +154,40 @@ export function createBattleActions(context) {
                 }
                 editions.addEventListener('toggle', () => { if (editions.open && !loaded) loadEditions(true); });
                 techniqueSelect.addEventListener('change', () => loadEditions(true));
-            } else body.append(el('p', boss.chapter === 1 ? 'Chưa có công pháp đạt Nhập môn. Cậu vẫn có thể dùng Võ Kỹ để mở đầu.'
-                : 'Chưa có công pháp đạt Nhập môn. Luyện trước khi vào trận này sẽ giúp cậu chuẩn bị tốt hơn.', 'hint'));
-            body.append(battlePresetControls({ data, selectors, weaponSelect, addVersion, performLive, toast, presetSnapshot: () => runtime.refreshPending ? null : state.gamePresetData }));
-            const effective = el('p', 'Xuất chiến từ ' + habitDate(input.day + 1) + '. Luyện tạm dừng trong trận; habit vẫn theo lịch cam kết.', 'battle-effective hint');
-            const prepare = button('Chuẩn bị xuất chiến', () => {
+            } else {
+                const note = el('p', boss.chapter === 1 ? 'Chưa có công pháp đạt Nhập môn. Cậu vẫn có thể dùng Võ Kỹ để mở đầu.'
+                    : 'Chưa có công pháp đạt Nhập môn. Luyện trước khi vào trận này sẽ giúp cậu chuẩn bị tốt hơn.', 'battle-preparation-note hint'); body.insertBefore(note, story);
+            }
+            if (preparedBattle) {
+                for (const [index, skill] of preparedBattle.state.loadout.entries()) {
+                    const versionId = skill.versionId ?? skill.practiceId;
+                    if (!data.versions.some(version => version.versionId === versionId)) {
+                        const found = await liveRequest('battle-loadout?' + new URLSearchParams([['versionId', versionId]]));
+                        if (!body.isConnected) return;
+                        found.versions.forEach(addVersion);
+                    }
+                    if (selectors[index]) selectors[index].value = versionId;
+                }
+                updateSummary();
+            }
+            body.append(battlePresetControls({ data, selectors, addVersion, performLive, toast, presetSnapshot: () => runtime.refreshPending ? null : state.gamePresetData }));
+            const effective = el('p', 'Xuất chiến từ ' + habitDate(preparedBattle?.startsDay ?? input.day + 1) + '. Luyện tạm dừng trong trận; habit vẫn theo lịch cam kết.', 'battle-effective hint');
+            const prepare = button(preparedBattle ? 'Lưu bộ chiêu' : 'Chuẩn bị xuất chiến', () => {
                     const versions = selectors.map(select => select.value).filter(Boolean), skills = versions.map(id => data.versions.find(version => version.versionId === id)?.techniqueId);
                     if (new Set(skills).size !== skills.length) { toast('Mỗi công pháp dùng một ô; chọn một bản luyện cho môn đó nhé.'); return; }
-                    save({ ...input, versions, weaponId: weaponSelect.value || null });
+                    save({ ...input, versions });
                 }, 'primary');
+            const battleBusy = (state.gameData.battles ?? []).some(battle => ['prepared', 'active', 'awaiting_rescue'].includes(battle.status));
+            const catchingUp = state.gameData.settledThrough !== null && state.gameData.settledThrough < state.gameData.day.day - 1;
+            prepare.disabled = !preparedBattle && battleBusy || !!state.featureSaving || catchingUp;
+            if (catchingUp) body.append(el('p', 'Cập nhật kết quả những ngày trước rồi mở lại để chuẩn bị.', 'hint'));
+            if (!preparedBattle && battleBusy) body.append(el('p', 'Kết thúc hoặc hủy trận hiện tại trước khi chuẩn bị trận khác.', 'hint'));
             body.insertBefore(effective, story); body.insertBefore(prepare, story);
             body.insertBefore(loadoutSummary, effective);
-        } catch (error) { if (body.isConnected) waiting.textContent = error.message; }
+            body.insertBefore(loadoutWarning, effective);
+        } catch (error) {
+            if (body.isConnected) { if (!waiting.isConnected) body.append(waiting); waiting.textContent = error.message; body.append(button('Thử lại', () => prepareBoss(boss, preparedBattle), 'secondary')); }
+        }
     }
     async function openBattleHistory(battle) {
         openSheet('Nhật ký · ' + battle.content.name); sheet.classList.add('settings-sheet-open');
@@ -242,10 +277,14 @@ export function createBattleActions(context) {
             const data = await liveRequest('game-chapter?chapter=' + chapter.number);
             if (!body.isConnected || !sheet.open) return;
             waiting.remove();
+            if (chapter.scene) {
+                const scene = el('img', undefined, 'game-story-scene'); scene.src = gameArtUrl(chapter.scene + '.webp');
+                scene.width = 640; scene.height = 448; scene.alt = 'Cảnh ' + chapter.name; scene.loading = 'lazy'; scene.decoding = 'async'; body.append(scene);
+            }
             const people = el('div', undefined, 'game-story-people');
             for (const character of data.characters ?? []) {
                 const person = el('div');
-                if (character.artId) { const image = el('img'); image.src = './assets/than-lo/' + character.artId + '-thumb.webp'; image.alt = ''; image.width = 44; image.height = 56; image.loading = 'lazy'; person.append(image); }
+                if (character.artId) { const image = el('img'); image.src = gameArtUrl(character.artId + '-thumb.webp'); image.alt = ''; image.width = 44; image.height = 56; image.loading = 'lazy'; person.append(image); }
                 person.append(el('span', character.name)); people.append(person);
             }
             if (people.childElementCount) body.append(people);

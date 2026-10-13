@@ -6,28 +6,35 @@ import { D1GamePresetStore } from '../../adapters/d1/game-preset-store.ts';
 import { GamePresetService } from '../../application/game-preset-service.ts';
 import { GameExportService } from '../../application/game-export-service.ts';
 import { D1GameExportStore } from '../../adapters/d1/game-export-store.ts';
-import { bossById, GAME_CHAPTERS, publicGameCatalog } from '../../domain/game-content.ts';
+import { bossById, GAME_CHAPTERS } from '../../domain/game-content.ts';
+import { discoveredBoss, playerGameCatalog } from '../../domain/game-discovery.ts';
 import { GAME_CHARACTERS } from '../../domain/game-characters.ts';
 import { json, type MiniAppContext, type MiniAppInput } from './context.ts';
 
 export async function readGame({ env, owner, now }: MiniAppContext, url: URL): Promise<Response> {
-    if (url.pathname === '/api/game-catalog') return json(publicGameCatalog());
+    if (url.pathname === '/api/game-catalog') {
+        const response = json(playerGameCatalog(await new D1BattleStore(env.DB).access(owner)));
+        response.headers.set('Cache-Control', 'private, no-store');
+        return response;
+    }
     if (url.pathname === '/api/game-export') {
         if (!/^\d+$/.test(url.searchParams.get('from') ?? '') || !/^\d+$/.test(url.searchParams.get('to') ?? '')) throw Error('INVALID_GAME_EXPORT');
         return json(await new GameExportService(new D1GameExportStore(env.DB))
             .read(owner, Number(url.searchParams.get('from')), Number(url.searchParams.get('to')), now));
     }
     if (url.pathname === '/api/game-presets') return json(await new D1GamePresetStore(env.DB).read(owner));
+    if (url.pathname === '/api/game-victories') return json(await new D1BattleStore(env.DB).victories(owner));
     const store = new D1GameStore(env.DB);
     const battles = new D1BattleStore(env.DB);
     if (url.pathname === '/api/game-boss' || url.pathname === '/api/game-chapter') {
-        const game = await store.read(owner, now), access = await battles.overview(owner, game.day);
+        const access = await battles.access(owner);
         const canEnter = (id: string) => { const boss = bossById(id); return boss.requires.every(value => access.victories.includes(value))
             && (boss.practicePrerequisites ?? []).every(value => access.learned.includes(value)); };
         if (url.pathname === '/api/game-boss') {
             const boss = bossById(url.searchParams.get('bossId') ?? '');
-            if (!canEnter(boss.id)) throw Error('BOSS_LOCKED');
-            return json({ boss: { ...boss, pattern: undefined, victory: access.victories.includes(boss.id) ? boss.victory : undefined } });
+            if (!discoveredBoss(boss.id, access)) throw Error('BOSS_LOCKED');
+            return json({ boss: { ...boss, rewards: undefined, pattern: undefined, enterable: canEnter(boss.id),
+                victory: access.victories.includes(boss.id) ? boss.victory : undefined } });
         }
         const chapter = GAME_CHAPTERS.find(value => value.number === Number(url.searchParams.get('chapter')));
         if (!chapter) throw Error('INVALID_GAME_CHAPTER');

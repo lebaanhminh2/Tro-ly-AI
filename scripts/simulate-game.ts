@@ -5,7 +5,7 @@ import { assessHabitDay, newHabitPeriod, parseHabitDefinition } from '../src/dom
 import { newPracticeVersion, settlePracticeDay, type PracticeVersion } from '../src/domain/practice.ts';
 import { earnedBattleRewards } from '../src/domain/game-rewards.ts';
 import { fighterForRank } from '../src/domain/battle-economy.ts';
-import { bossIntents, GAME_BOSSES, GAME_CONTENT_VERSION, validateGameContent } from '../src/domain/game-content.ts';
+import { bossIntents, bossForNewBattle, GAME_BOSSES, GAME_CONTENT_VERSION, validateGameContent } from '../src/domain/game-content.ts';
 import { SCHOOLS, TECHNIQUES, INITIAL_TECHNIQUES, techniqueById, type SchoolId } from '../src/domain/techniques.ts';
 
 // Offline fixture search using production rules. It grants already learned
@@ -123,6 +123,7 @@ export function simulateEarnedJourney(schoolId: SchoolId, collection = false) {
     }
     function learned() { return versions.filter(version => version.tiers.length).map(version => version.techniqueId); }
     function fight(boss: typeof GAME_BOSSES[number]) {
+        boss = bossForNewBattle(boss.id);
         if (boss.requires.some(id => !victories.has(id)) || (boss.practicePrerequisites ?? []).some(id => !learned().includes(id)))
             throw Error('JOURNEY_BOSS_LOCKED:' + boss.id);
         const loadout = versions.filter(version => techniqueById(version.techniqueId).school === schoolId && version.tiers.length)

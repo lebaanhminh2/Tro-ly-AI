@@ -1,0 +1,1186 @@
+{
+  "model": "Lykon/dreamshaper-8",
+  "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+  "variant": "fp16",
+  "style": "masterpiece, original xianxia game illustration, elegant ink outlines, cel shading, rich muted colors, dramatic rim light",
+  "negative": "photo, photorealistic, 3d, render, text, watermark, logo, blurry, low quality, bad anatomy, deformed face, extra limbs, extra fingers, nude, cleavage, neon, oversaturated",
+  "direction": "cultivation-illustrated-v2",
+  "license": "creativeml-openrail-m",
+  "assets": [
+    {
+      "id": "a-lac-v2",
+      "publishId": "a-lac",
+      "seed": 24160844,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "head shoulders portrait, young woman age 22, short black hair tied back, determined warm expression, ivory linen robe charcoal sash, worn stone arch background, high collar, teal mist",
+      "contentId": "character.a-lac",
+      "role": "portrait",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "alt": "A Lạc tóc đen tết gọn phía sau, áo xanh trầm với vai và đai màu than.",
+      "conceptApproved": true,
+      "qaNote": "Original viewed 2026-10-13: coherent younger female face, braided dark hair, unarmored jade robe and black shoulder mantle. Distinct simpler silhouette versus Tich Van bronze scholar trim. Lower body not needed; UI review pending.",
+      "crop": [
+        0,
+        0,
+        1,
+        0.88
+      ]
+    },
+    {
+      "id": "cam-cuu-u-v3",
+      "publishId": "cam-cuu-u",
+      "seed": 140232903,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "head shoulders portrait, pale female ritual keeper, straight black bob hair, charcoal hood, bronze moon pendant, deep violet mist, solemn gaze, front view",
+      "contentId": "boss.cam-cuu-u",
+      "role": "boss",
+      "focalPoint": [
+        0.45,
+        0.35
+      ],
+      "alt": "Người Giữ Dấu Hồn tóc đen ngắn, áo đen cổ cao với mặt phù tím và giáp vai đồng.",
+      "conceptApproved": true,
+      "replacesRejected": "cam-cuu-u-v2",
+      "qaNote": "Version3 original viewed 2026-10-13 after rejecting generic jade V2: angular black bob, pale calm face, charcoal high collar, purple circular pendant and bronze shoulder ornament. Distinct silhouette/color from guide and A Lac; no exact age or hood claim. UI review pending."
+    },
+    {
+      "id": "cam-dong-menh-v3",
+      "publishId": "cam-dong-menh",
+      "seed": 56597836,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "head shoulders portrait, middle aged male scholar, long beard, dark cloth headwrap, ivory collar, two linked jade pendants, burgundy robes, crimson mist, front view",
+      "contentId": "boss.cam-dong-menh",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.47
+      ],
+      "alt": "Người Giữ Song Khế",
+      "conceptApproved": true,
+      "replacesRejected": "cam-dong-menh-v2",
+      "qaNote": "Version3 original viewed 2026-10-13: older lined face, long grey beard, dark cloth headwrap and burgundy mantle. Different face age and silhouette from ordinary guard. Generated decorative marks below bust removed by explicit crop. UI review pending.",
+      "crop": [
+        0,
+        0,
+        1,
+        0.81
+      ]
+    },
+    {
+      "id": "cam-nghich-luan-v2",
+      "publishId": "cam-nghich-luan",
+      "seed": 241252259,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "head shoulders portrait, older female archivist, grey hair tight bun, tired observant eyes, layered slate robe, simple bronze ring pendant, teal mist",
+      "contentId": "boss.cam-nghich-luan",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "alt": "Người Giữ Luân Khuyết tóc đen búi cao, áo xám cổ đen và móc đồng tròn.",
+      "conceptApproved": true,
+      "qaNote": "Original viewed 2026-10-13: grey swept hair in high bun, restrained tired gaze, burgundy collar and bronze shoulder details. Clearly different hair silhouette from dark-haired guide and pale younger A Lac. Facial lines stylized, no exact age claim. UI review pending."
+    },
+    {
+      "id": "cam-phong-than-v2",
+      "publishId": "cam-phong-than",
+      "seed": 240433694,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "head shoulders portrait, stern female warden, short cropped black hair, black iron shoulder plates, high white collar, silver rectangular seal, icy blue light, side profile",
+      "contentId": "boss.cam-phong-than",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.34
+      ],
+      "alt": "Người Giữ Niêm Ấn",
+      "conceptApproved": true,
+      "qaNote": "Original viewed 2026-10-13: pale female face, swept dark hair, high icy-blue collar, silver shoulder armor and geometric chest seal. Distinct material/palette versus violet ritual keeper. No exact short-hair claim. UI review pending."
+    },
+    {
+      "id": "cam-tam-nhat-v2",
+      "publishId": "cam-tam-nhat",
+      "seed": 119549246,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "head shoulders portrait, ancient male hermit, deeply wrinkled face, long white beard, charcoal cloth hood, three small amber rings behind head, sepia mist, front view",
+      "contentId": "boss.cam-tam-nhat",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.42
+      ],
+      "alt": "Người Giữ Tử Ấn",
+      "conceptApproved": true,
+      "qaNote": "Original viewed 2026-10-13: visibly elderly lined face, long white beard, charcoal folded hood, clear ivory/black silhouette. Face, eyes, hood and beard anatomically coherent, no hands/text. No claim of three circles absent from output. UI review pending."
+    },
+    {
+      "id": "cam-tang-nhat-v2",
+      "publishId": "cam-tang-nhat",
+      "seed": 161329650,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "head shoulders portrait, older female keeper, long silver braid, lined severe face, crimson layered robes, black sun medallion, red sunset rim light, side profile",
+      "contentId": "boss.cam-tang-nhat",
+      "role": "boss",
+      "focalPoint": [
+        0.54,
+        0.35
+      ],
+      "alt": "Người Giữ Nhật Tàn",
+      "conceptApproved": true,
+      "qaNote": "Original viewed 2026-10-13: silver braid and side profile, pale face, ivory/burgundy closed costume, distinct bronze halo and dark crimson sky. No anatomy/text issue in visible portrait; stylized ageless facial treatment not precise old age. UI review pending."
+    },
+    {
+      "id": "cam-thau-thien-v2",
+      "publishId": "cam-thau-thien",
+      "seed": 54414410,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "head shoulders portrait, bald male ascetic, angular gaunt face, dark scar at eyebrow, charcoal layered robe, ruby ring clasp, subtle crimson smoke, front view",
+      "contentId": "boss.cam-thau-thien",
+      "role": "boss",
+      "focalPoint": [
+        0.55,
+        0.34
+      ],
+      "alt": "Người Đoạt Huyết",
+      "conceptApproved": true,
+      "qaNote": "Original viewed 2026-10-13: gaunt bald male ascetic, angular face with small ritual scars, burgundy/charcoal robe and muted crimson ring background. Face/eyes/ear coherent; distinct threatening silhouette from bearded scholar. No visible hand/text defect. UI review pending."
+    },
+    {
+      "id": "chapter02-v2",
+      "publishId": "chapter02",
+      "seed": 166949198,
+      "width": 640,
+      "height": 448,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "ancient stone training courtyard, mountain library with tiled roofs, teal mist, worn steps, bronze lantern, pine trees, dawn, wide landscape, no people",
+      "contentId": "chapter.02",
+      "role": "scene",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "alt": "Sân tỷ thí bằng đá trước thư các trên núi, trong sương sớm.",
+      "conceptApproved": false,
+      "rejectionReason": "Courtyard is photo-like rather than illustrated fantasy environment; targeted V3 needed."
+    },
+    {
+      "id": "chapter03-v2",
+      "publishId": "chapter03",
+      "seed": 152705474,
+      "width": 640,
+      "height": 448,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "ancient stone quay beside dark river, wooden medicine house, rust red reeds, teal mist, mountain silhouettes, wide landscape, no people",
+      "contentId": "chapter.03",
+      "role": "scene",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "alt": "Bến đá Huyết Hà với nhà mái ngói bên dòng sông và núi mờ trong sương.",
+      "conceptApproved": true,
+      "qaNote": "Original viewed 2026-10-13: unmistakably illustrated jade river, layered angular mountains, red pagoda timber, russet shore foliage and soft reflections. Strong depth and readable silhouettes, no visible text/anatomy defect. UI review pending."
+    },
+    {
+      "id": "chapter04-v2",
+      "publishId": "chapter04",
+      "seed": 216599376,
+      "width": 640,
+      "height": 448,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "massive weathered wooden prison gate in mountain cliff, broken bronze chains, stone stairs, single amber lantern, fog, wide landscape, no people",
+      "contentId": "chapter.04",
+      "role": "scene",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "alt": "Cổng gỗ mái ngói trên lối núi, đèn lồng và bậc đá chìm trong sương.",
+      "conceptApproved": true,
+      "qaNote": "Original viewed 2026-10-13: clear painterly fortress gateway, stepped stone approach, watch towers and distant cliff wall. Distinct warm/cool depth layers versus river scene; no readable text or person artifacts. Not claimed as a giant wooden gate absent from output. UI review pending."
+    },
+    {
+      "id": "chapter05-v2",
+      "publishId": "chapter05",
+      "seed": 52629627,
+      "width": 640,
+      "height": 448,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "circular ancient stone tournament arena, five austere mountain pavilions, hanging ivory banners without writing, pine forest, misty dawn, wide landscape, no people",
+      "contentId": "chapter.05",
+      "role": "scene",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "alt": "Đền núi trên cao nguyên xanh, đường vòng quanh vách đá.",
+      "conceptApproved": true,
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending."
+    },
+    {
+      "id": "chapter06-v2",
+      "publishId": "chapter06",
+      "seed": 37759275,
+      "width": 640,
+      "height": 448,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "abandoned mountain watch station, dark tiled roofs, narrow cliff path, bronze signal bell, sparse pines, grey twilight fog, wide landscape, no people",
+      "contentId": "chapter.06",
+      "role": "scene",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "alt": "Đường thành dẫn đến đền trên vách núi dưới mây xám.",
+      "conceptApproved": true,
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending."
+    },
+    {
+      "id": "chapter07-v2",
+      "publishId": "chapter07",
+      "seed": 90116027,
+      "width": 640,
+      "height": 448,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "ancient mountain mausoleum courtyard, immense worn stone tablets without writing, empty tomb gateway, sparse bare trees, misty dawn, wide landscape, no people",
+      "contentId": "chapter.07",
+      "role": "scene",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "alt": "Cổng đá và mái đen mở ra sân xanh giữa núi.",
+      "conceptApproved": true,
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending. Explicit crop removes nonessential lower hands/body or decorative edge; original defect is excluded, not claimed repaired.",
+      "crop": [
+        0.04,
+        0.04,
+        0.96,
+        0.96
+      ]
+    },
+    {
+      "id": "chapter08-v2",
+      "publishId": "chapter08",
+      "seed": 162008417,
+      "width": 640,
+      "height": 448,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "remote stone causeway over dark inland sea, weathered pavilion, subtle rust red shore reeds, pale fog, distant mountains, wide landscape, no people",
+      "contentId": "chapter.08",
+      "role": "scene",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "alt": "Cầu vòm qua dòng sông dưới cây lá đỏ và núi đá.",
+      "conceptApproved": true,
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending."
+    },
+    {
+      "id": "chapter09-v2",
+      "publishId": "chapter09",
+      "seed": 256769930,
+      "width": 640,
+      "height": 448,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "five jagged mountain peaks, ancient stone stairway through pine forest, distant austere temple roofs, ivory dawn sky, teal mist, wide landscape, no people",
+      "contentId": "chapter.09",
+      "role": "scene",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "alt": "Bậc đá dẫn xuống đền bên sườn núi xanh.",
+      "conceptApproved": true,
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending."
+    },
+    {
+      "id": "chapter10-v2",
+      "publishId": "chapter10",
+      "seed": 204844358,
+      "width": 640,
+      "height": 448,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "ancient prison fortress outer courtyard, long stone passage, wooden gates, bronze lanterns, mountain clouds behind high walls, wide landscape, no people",
+      "contentId": "chapter.10",
+      "role": "scene",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "alt": "Thành đá và cổng vòm giữa núi dưới bầu trời nắng.",
+      "conceptApproved": true,
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending."
+    },
+    {
+      "id": "chapter11-v2",
+      "publishId": "chapter11",
+      "seed": 235517608,
+      "width": 640,
+      "height": 448,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "ancient prison courtyard, immense nine stone towers, barred gate, narrow empty walkway, grey storm clouds, pale mist, wide landscape, no people",
+      "contentId": "chapter.11",
+      "role": "scene",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "alt": "Sân đá và cửa vòm giữa các mái ngói xám của Cửu Trụ Thiên Ngục.",
+      "conceptApproved": false
+    },
+    {
+      "id": "chapter12-v2",
+      "publishId": "chapter12",
+      "seed": 88488356,
+      "width": 640,
+      "height": 448,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "abandoned subterranean bronze altar, monumental ivory marble pillars, rock cavern, soft shafts of light, still dark water, wide landscape, no people",
+      "contentId": "chapter.12",
+      "role": "scene",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "alt": "Đại điện cột đá trong hang, ánh sáng rọi từ vòm cao.",
+      "conceptApproved": true,
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending."
+    },
+    {
+      "id": "chapter13-v2",
+      "publishId": "chapter13",
+      "seed": 93844144,
+      "width": 640,
+      "height": 448,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "immense ancient stone gate above mountain clouds, long narrow staircase, bronze door hinges, distant tiled temple, pale dawn, wide landscape, no people",
+      "contentId": "chapter.13",
+      "role": "scene",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "alt": "Cổng mái đen nhìn ra núi và đền xa trong ánh chiều.",
+      "conceptApproved": true,
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending."
+    },
+    {
+      "id": "chapter14-v2",
+      "publishId": "chapter14",
+      "seed": 135969248,
+      "width": 640,
+      "height": 448,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "empty ancient battlefield, broken stone steles and fallen bronze spear shafts, ruined walls, sparse grass, blue morning mist, wide landscape, no people",
+      "contentId": "chapter.14",
+      "role": "scene",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "alt": "Hàng cột đá bỏ hoang trên đồng cỏ dưới núi xanh.",
+      "conceptApproved": true,
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending."
+    },
+    {
+      "id": "chapter15-v2",
+      "publishId": "chapter15",
+      "seed": 250915250,
+      "width": 640,
+      "height": 448,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "ancient stone bridge toward ruined temple, immense broken circular stone arch, pale moon above mountain clouds, deep blue night, wide landscape, no people",
+      "contentId": "chapter.15",
+      "role": "scene",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "alt": "Đền núi và cầu đá dưới trăng, sông xanh qua khe núi.",
+      "conceptApproved": true,
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending."
+    },
+    {
+      "id": "co-truyen-v2",
+      "publishId": "co-truyen",
+      "seed": 36288075,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "head shoulders portrait, elderly male strategist, grey beard, folded black cloth scholar hat, ivory linen robe, amber bronze pin, attentive eyes, library, front view",
+      "contentId": "boss.co-truyen",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "alt": "Trưởng lão râu bạc, mũ đen và áo choàng thêu đồng.",
+      "conceptApproved": true,
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending."
+    },
+    {
+      "id": "di-san-huyet-trieu-v2",
+      "publishId": "di-san-huyet-trieu",
+      "seed": 213490518,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "head shoulders portrait, stern female river guardian, black braided hair, burgundy cape, silver shoulder plates, crimson river fog, side profile",
+      "contentId": "boss.di-san-huyet-trieu",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "alt": "Người giữ Huyết Triều tóc đen tết, áo đỏ sẫm và cổ áo đen.",
+      "conceptApproved": true,
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending."
+    },
+    {
+      "id": "di-san-kiep-dong-v2",
+      "publishId": "di-san-kiep-dong",
+      "seed": 228177987,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "head shoulders portrait, battle scarred mature male keeper, short dark hair, dark lamellar armor, white scarf, blue storm light, calm intense gaze, front view",
+      "contentId": "boss.di-san-kiep-dong",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "alt": "Người giữ Kiếp Động tóc bạc, áo trắng và giáp vai xanh đồng.",
+      "conceptApproved": true,
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending."
+    },
+    {
+      "id": "di-san-son-ha-v2",
+      "publishId": "di-san-son-ha",
+      "seed": 35271099,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "head shoulders portrait, broad elderly male mountain keeper, thick grey beard, craggy lined face, rugged stone armor, copper clasps, amber mountain dusk, low angle",
+      "contentId": "boss.di-san-son-ha",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "alt": "Người giữ Sơn Hà tóc bạc buộc sau, râu đen bạc và áo đỏ nâu.",
+      "conceptApproved": true,
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending."
+    },
+    {
+      "id": "di-san-van-co-v2",
+      "publishId": "di-san-van-co",
+      "seed": 146984016,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "head shoulders portrait, elderly female sword keeper, white hair tight bun, lined face, ivory robes, dark purple high collar, bronze clasp, lavender mist, side profile",
+      "contentId": "boss.di-san-van-co",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "alt": "Người giữ Vạn Cổ tóc bạc búi cao, áo trắng tím và kiếm dựng bên vai.",
+      "conceptApproved": true,
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending."
+    },
+    {
+      "id": "di-san-van-thien-v2",
+      "publishId": "di-san-van-thien",
+      "seed": 249885818,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "head shoulders portrait, ancient male astrologer, white beard, charcoal scholar cap, ivory high collar robe, round bronze chest seal, golden star circle, front view",
+      "contentId": "boss.di-san-van-thien",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "alt": "Người giữ Vạn Thiên râu bạc dài, mũ trắng đen và áo ngà.",
+      "conceptApproved": true,
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending. Explicit crop removes nonessential lower hands/body or decorative edge; original defect is excluded, not claimed repaired.",
+      "crop": [
+        0,
+        0,
+        1,
+        0.82
+      ]
+    },
+    {
+      "id": "di-san-vo-mon-v2",
+      "publishId": "di-san-vo-mon",
+      "seed": 229650954,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "head shoulders portrait, smiling mature male wanderer, short windswept hair, stubble, ash grey robe, loose blue scarf, wind swept fabric, ivory sky, front view",
+      "contentId": "boss.di-san-vo-mon",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "alt": "Người giữ Vô Môn tóc đen, áo ngà và khăn xanh xám.",
+      "conceptApproved": true,
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending."
+    },
+    {
+      "id": "hu-truyen-v2",
+      "publishId": "hu-truyen",
+      "seed": 83618432,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "head shoulders portrait, elderly female martial teacher, long silver hair, fine wrinkles, ivory hood, midnight violet robes, pale moonlit mountain mist, side profile",
+      "contentId": "boss.hu-truyen",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "alt": "Đệ tử Thái Hư tóc xám buộc cao và cổ áo tím.",
+      "conceptApproved": true,
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending."
+    },
+    {
+      "id": "huyet-ha-v2",
+      "publishId": "huyet-ha",
+      "seed": 182937538,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "head shoulders portrait, stern older bald male monk, weathered pale face, wine red robe, bronze amulet, dark red river fog, front view",
+      "contentId": "boss.huyet-ha",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "alt": "Huyết Hà đầu trọc, râu bạc ngắn và áo đỏ sẫm.",
+      "conceptApproved": true,
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending. Explicit crop removes nonessential lower hands/body or decorative edge; original defect is excluded, not claimed repaired.",
+      "crop": [
+        0,
+        0,
+        1,
+        0.63
+      ]
+    },
+    {
+      "id": "huyet-truyen-v2",
+      "publishId": "huyet-truyen",
+      "seed": 93303045,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "head shoulders portrait, mature female martial teacher, black side braid, closed burgundy robes, worn bronze pendant, dim crimson shrine, front view",
+      "contentId": "boss.huyet-truyen",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "alt": "Đệ tử U Minh tóc đen tết, áo đỏ nâu trong khung trang trí.",
+      "conceptApproved": true,
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending."
+    },
+    {
+      "id": "kiem-truyen-v2",
+      "publishId": "kiem-truyen",
+      "seed": 106041962,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "head shoulders portrait, elderly swordsman age 65, weathered narrow face, grey beard, long grey hair tied back, simple grey linen robe, bamboo sheath at shoulder, misty mountain path, teal mist",
+      "contentId": "boss.kiem-truyen",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "alt": "Đệ tử Thiên Kiếm tóc bạc búi sau và áo xanh xám.",
+      "conceptApproved": true,
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending."
+    },
+    {
+      "id": "la-sat-v2",
+      "publishId": "la-sat",
+      "seed": 933688,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "head shoulders portrait, mature female empress, severe face, black hair silver strands, ornate bronze crown, dark burgundy high collar robes, ruby halo, crimson mist",
+      "contentId": "character.la-sat",
+      "role": "portrait",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "alt": "La Sát đội vương miện, áo đen đỏ và trang sức đồng.",
+      "conceptApproved": true,
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending. Explicit crop removes nonessential lower hands/body or decorative edge; original defect is excluded, not claimed repaired.",
+      "crop": [
+        0,
+        0,
+        1,
+        0.78
+      ]
+    },
+    {
+      "id": "moc-an-v2",
+      "publishId": "moc-an",
+      "seed": 171417335,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "head shoulders portrait, thoughtful female healer, dark hair low bun, sage grey linen robes, ivory collar, medicine satchel strap, warm amber light, side profile",
+      "contentId": "character.moc-an",
+      "role": "portrait",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "alt": "Mộc An tóc đen búi cao, áo ngà và cổ áo xanh xám.",
+      "conceptApproved": true,
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending. Explicit crop removes nonessential lower hands/body or decorative edge; original defect is excluded, not claimed repaired.",
+      "crop": [
+        0,
+        0,
+        1,
+        0.79
+      ]
+    },
+    {
+      "id": "school-bat-diet-v2",
+      "publishId": "school-bat-diet",
+      "seed": 151265053,
+      "width": 448,
+      "height": 448,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "closed ancient dark bound book, amber stone cover, angular bronze shield medallion, ivory page edges, charcoal stone altar, close view",
+      "contentId": "school.bat-diet",
+      "role": "school",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "alt": "Bí tịch đen viền đồng với ấn tròn vững chắc.",
+      "conceptApproved": true,
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending."
+    },
+    {
+      "id": "school-thai-hu-v2",
+      "publishId": "school-thai-hu",
+      "seed": 131119882,
+      "width": 448,
+      "height": 448,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "closed ancient dark bound book, pale violet jade cover, silver crescent medallion, ivory page edges, moonlit dark stone altar, close view",
+      "contentId": "school.thai-hu",
+      "role": "school",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "alt": "Bí tịch trắng bạc với ấn tròn xanh nhạt trên nền đỏ nâu.",
+      "conceptApproved": true,
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending."
+    },
+    {
+      "id": "school-thien-co-v2",
+      "publishId": "school-thien-co",
+      "seed": 151817002,
+      "width": 448,
+      "height": 448,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "closed ancient dark bound book, sage green cover, bronze celestial compass medallion, ivory page edges, charcoal stone altar, close view",
+      "contentId": "school.thien-co",
+      "role": "school",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "alt": "Thiên bàn xanh đen với vòng đồng trên giấy ngà.",
+      "conceptApproved": true,
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending."
+    },
+    {
+      "id": "school-thien-kiem-v2",
+      "publishId": "school-thien-kiem",
+      "seed": 162313448,
+      "width": 448,
+      "height": 448,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "floating ancient sword seal, jade green bronze border, engraved sword on dark book cover, ivory pages, dark teal stone altar, luminous mist, close view",
+      "contentId": "school.thien-kiem",
+      "role": "school",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "alt": "Bí tịch bìa xanh trầm, viền đồng và vật trang trí hình kiếm.",
+      "conceptApproved": true,
+      "qaNote": "Original viewed 2026-10-13: legible green bound book with bronze corner filigree and a slim sword ornament, uncluttered negative space. Fine cover seal treated as decorative, not readable text. UI review pending."
+    },
+    {
+      "id": "school-u-minh-v2",
+      "publishId": "school-u-minh",
+      "seed": 37863403,
+      "width": 448,
+      "height": 448,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "closed ancient dark bound book, crimson leather cover, bronze crescent moon medallion, ivory page edges, dark red stone altar, close view",
+      "contentId": "school.u-minh",
+      "role": "school",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "alt": "Trang bí tịch mở với huyết ấn đỏ nâu và tâm ấn đồng.",
+      "conceptApproved": true,
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending."
+    },
+    {
+      "id": "song-nha-v2",
+      "publishId": "song-nha",
+      "seed": 205681054,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "close view, two black wolves shoulder to shoulder, both heads large, pale eyes, bronze collars, front paws visible, stone steps, fog, creature portrait",
+      "contentId": "boss.song-nha",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "alt": "Song Nha Canh Lộ",
+      "conceptApproved": false
+    },
+    {
+      "id": "thach-truyen-v2",
+      "publishId": "thach-truyen",
+      "seed": 89152839,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "head shoulders portrait, burly middle aged male guardian, shaved head, square jaw, scarred bronze armor, charcoal high collar, stone wall, amber rim light",
+      "contentId": "boss.thach-truyen",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "alt": "Đệ tử Bất Diệt đầu trọc, râu đen và giáp vai đồng.",
+      "conceptApproved": true,
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending."
+    },
+    {
+      "id": "than-chien-vuong-v2",
+      "publishId": "than-chien-vuong",
+      "seed": 203794572,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "head shoulders portrait, ancient male war guardian, grey beard, weathered face, bronze war helmet, heavy bronze armor, charcoal collar, crimson battlefield sunset",
+      "contentId": "boss.than-chien-vuong",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "alt": "Thần Chiến Vương đội giáp trán đồng, râu đen và giáp đỏ nâu.",
+      "conceptApproved": true,
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending."
+    },
+    {
+      "id": "than-chu-v2",
+      "publishId": "than-chu",
+      "seed": 147142868,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "head shoulders portrait, mature male immortal, long white hair, calm cold expression, ivory ceremonial robe, bronze collar, fractured golden halo, deep teal cosmic mist",
+      "contentId": "character.than-chu",
+      "role": "portrait",
+      "focalPoint": [
+        0.57,
+        0.33
+      ],
+      "alt": "Thần Chủ tóc trắng dài, áo ngà với cổ áo than và đai đồng.",
+      "conceptApproved": true,
+      "qaNote": "Original viewed 2026-10-13: coherent mature face, long white hair, ivory/teal ceremonial clothing, decorative gold ring framing silhouette. Cloth motifs are decorative, not readable copy. Distinct from black-haired Ky Hanh. UI review pending."
+    },
+    {
+      "id": "than-so-v2",
+      "publishId": "than-so",
+      "seed": 20288017,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "antique leather bound book, dark bronze circular seal on cover, thick ivory paper edges, resting on a stone altar, dim ancient cave, still life, paper texture, close view",
+      "contentId": "boss.than-so",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "alt": "Thiên Mệnh Thần Sổ",
+      "conceptApproved": false
+    },
+    {
+      "id": "than-the-v2",
+      "publishId": "than-the",
+      "seed": 260433036,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "nonhuman ivory marble deity, blank sculpted mask, carved white hair, monolithic white chest armor, dark bronze trim, pale light, upper body",
+      "contentId": "boss.than-the",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "alt": "Thiên Mệnh Thần Thể",
+      "conceptApproved": false,
+      "negative": "human skin, flesh, pretty face"
+    },
+    {
+      "id": "thien-luat-v2",
+      "publishId": "thien-luat",
+      "seed": 170808009,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "head shoulders portrait, stern mature male magistrate, black moustache, tall black ceremonial hat, ivory high collar robes, bronze shoulder plates, pale amber sky, front view",
+      "contentId": "boss.thien-luat",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "alt": "Người Giữ Thiên Luật đội mũ trắng đen, áo ngà viền đồng.",
+      "conceptApproved": true,
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending."
+    },
+    {
+      "id": "thiet-lenh-su-v2",
+      "publishId": "thiet-lenh-su",
+      "seed": 163746647,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "head shoulders portrait, mysterious imperial envoy, bronze half mask, dark layered iron armor, flowing grey cloak, amber eyes, misty teal mountain ravine",
+      "contentId": "boss.thiet-lenh-su",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "alt": "Thiết Lệnh Sứ tóc đen, mặt che xanh đậm và giáp vai đồng.",
+      "conceptApproved": true,
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending."
+    },
+    {
+      "id": "thu-lenh-v2",
+      "publishId": "thu-lenh",
+      "seed": 33302924,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "antique parchment scroll, floating above a stone altar, curled ivory paper edges, black calligraphic ink, dark red wax seal, dim ancient cave, still life, paper texture, close view",
+      "contentId": "boss.thu-lenh",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "alt": "Thư Lệnh Không Mặt",
+      "conceptApproved": false
+    },
+    {
+      "id": "thu-mo-v2",
+      "publishId": "thu-mo",
+      "seed": 66114209,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "head shoulders portrait, ancient bald male tomb keeper, short grey beard, brown weathered linen robes, thick ivory scarf, calm expression, ancient tomb, amber torch light",
+      "contentId": "boss.thu-mo",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "alt": "Thủ Mộ đầu trọc, râu bạc, áo nâu và dải áo ngà.",
+      "conceptApproved": true,
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending. Explicit crop removes nonessential lower hands/body or decorative edge; original defect is excluded, not claimed repaired.",
+      "crop": [
+        0,
+        0,
+        1,
+        0.72
+      ]
+    },
+    {
+      "id": "tich-van-v2",
+      "publishId": "tich-van",
+      "seed": 52299976,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "head shoulders portrait, thoughtful female scholar age 28, black hair bun, bronze hairpin, charcoal scholar robe, ivory collar, teal mountain library",
+      "contentId": "character.tich-van",
+      "role": "portrait",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "alt": "Tịch Vân trong áo xanh trầm, cổ áo ngà và tóc búi với trâm đồng giữa thư các.",
+      "conceptApproved": true,
+      "crop": [
+        0,
+        0,
+        1,
+        0.8
+      ],
+      "qaNote": "Original viewed 2026-10-13: distinct clear female face, black bun with bronze clasp, jade/ivory scholar costume in a library window. Lower hand excluded via explicit crop; hands not approved. Face/eye/hair silhouette clear. UI review pending."
+    },
+    {
+      "id": "tru-am-v2",
+      "publishId": "tru-am",
+      "seed": 189571952,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "shadow guardian, piercing amber eyes, black hood, dark veil over lower face, segmented black iron armor, violet shadow wisps, chest portrait",
+      "contentId": "boss.tru-am",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "alt": "Hộ vệ khoác mũ trùm đen, giáp đen với huy hiệu tím.",
+      "conceptApproved": true,
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending."
+    },
+    {
+      "id": "tru-thach-v2",
+      "publishId": "tru-thach",
+      "seed": 179608427,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "massive stone guardian, bald cracked granite face, amber eyes, carved stone shoulder armor, bronze clasps, ancient ruined tower, upper body",
+      "contentId": "boss.tru-thach",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "alt": "Thần tướng đầu trọc trong giáp đen đồng, đứng giữa cột đá.",
+      "conceptApproved": true,
+      "negative": "human skin, flesh, pretty face",
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending. Explicit crop removes nonessential lower hands/body or decorative edge; original defect is excluded, not claimed repaired.",
+      "crop": [
+        0,
+        0,
+        1,
+        0.72
+      ]
+    },
+    {
+      "id": "tru-thuy-v2",
+      "publishId": "tru-thuy",
+      "seed": 233012518,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "female water guardian, black long braid, composed stern face, slate blue layered robes, silver armor, pale blue water mist, upper body",
+      "contentId": "boss.tru-thuy",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "alt": "Thần tướng tóc xanh bạc tết dài, áo đen xanh giữa vách nước.",
+      "conceptApproved": true,
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending. Explicit crop removes nonessential lower hands/body or decorative edge; original defect is excluded, not claimed repaired.",
+      "crop": [
+        0,
+        0,
+        1,
+        0.64
+      ]
+    },
+    {
+      "id": "truong-sinh-v2",
+      "publishId": "truong-sinh",
+      "seed": 235581446,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "head shoulders portrait, ancient frail male gatekeeper, long white hair, deeply lined face, patched brown linen robes, ivory scarf, weary smile, amber lantern light",
+      "contentId": "character.ta-truong-sinh",
+      "role": "portrait",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "alt": "Tạ Trường Sinh tóc bạc dài, áo ngà và cổ áo nâu.",
+      "conceptApproved": true,
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending. Explicit crop removes nonessential lower hands/body or decorative edge; original defect is excluded, not claimed repaired.",
+      "crop": [
+        0,
+        0,
+        1,
+        0.85
+      ]
+    },
+    {
+      "id": "truy-lenh-v2",
+      "publishId": "truy-lenh",
+      "seed": 81666825,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "head shoulders portrait, stern male guard age 35, tied black hair, charcoal linen uniform, bronze token at collar, misty wooden bridge background, teal mist",
+      "contentId": "boss.truy-lenh",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "alt": "Người Truy Lệnh mặc áo đen viền đồng, ánh nhìn nghiêm nghị.",
+      "conceptApproved": true,
+      "qaNote": "Original viewed 2026-10-13: coherent stern mature male face with short beard, tied dark hair, teal/charcoal guard robe and bronze collar chain. Distinct from younger Ky Hanh. No hand region present. UI review pending."
+    },
+    {
+      "id": "van-phap-khoi-v2",
+      "publishId": "van-phap-khoi",
+      "seed": 56034236,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "massive nonhuman mechanical golem, smooth faceless ivory mask, segmented bronze neck, five angular shoulder plates, dark metal chest, golden ritual circle, upper body",
+      "contentId": "boss.van-phap-khoi",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "alt": "Khôi lỗi giáp đen đồng với mũ sừng và vòng ấn sau đầu.",
+      "conceptApproved": true,
+      "negative": "human skin, flesh, pretty face",
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending."
+    },
+    {
+      "id": "vo-anh-v2",
+      "publishId": "vo-anh",
+      "seed": 77136718,
+      "width": 448,
+      "height": 640,
+      "steps": 28,
+      "guidance": 7,
+      "prompt": "ancient masked wooden sentinel, carved blank ivory mask, jointed bronze shoulders, long dark ragged cloak, misty ruined shrine, chest portrait, no human skin",
+      "contentId": "boss.vo-anh",
+      "role": "boss",
+      "focalPoint": [
+        0.5,
+        0.3
+      ],
+      "alt": "Vô Ảnh khoác mũ trùm đen, mặt nạ trắng và áo ngà đen.",
+      "conceptApproved": true,
+      "negative": "human skin, flesh, pretty face",
+      "qaNote": "Original/contact reviewed 2026-10-13: coherent illustrated identity, costume and restrained palette. Parent independently viewed group. Current integrated UI evidence pending."
+    }
+  ]
+}

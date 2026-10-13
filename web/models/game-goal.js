@@ -1,4 +1,6 @@
-// Suggestions use public, already unlocked data. Following opens a screen;
+import { bossDiscovered, mainFloors } from './game-library.js';
+
+// Suggestions use discovered, earned data. Following opens a screen;
 // it never starts a battle, logs a habit or spends a resource.
 export function nearestGameGoal(data, catalog) {
     if (!data || !catalog) return null;
@@ -11,20 +13,25 @@ export function nearestGameGoal(data, catalog) {
             ? 'Đủ tiến độ rồi. Tầng sẽ chốt khi cam kết tuần kết thúc hoặc đã đủ số ngày cần làm.'
             : 'Đạt mục tiêu habit theo lịch để luyện tầng đầu. Từ Nhập môn, bản này đã dùng được trong trận.', action: 'Xem thói quen' };
     const won = new Set(data.victories ?? []), learned = new Set(data.learned ?? []);
-    const mainIds = (catalog.chapters ?? []).flatMap(chapter => chapter.encounters);
-    const nextMain = mainIds.map(id => catalog.bosses.find(boss => boss.id === id)).find(boss => boss && !won.has(boss.id));
-    const ready = boss => boss.requires.every(id => won.has(id));
+    const floors = mainFloors(catalog);
+    const nextMain = floors.find(boss => !won.has(boss.id));
+    const ready = boss => bossDiscovered(boss, data) && (boss.requires ?? []).every(id => won.has(id));
     const next = nextMain && ready(nextMain) ? nextMain : catalog.bosses.find(boss => !won.has(boss.id) && ready(boss));
-    if (!next) return { kind: 'collection', title: 'Một hành trình đã trọn', description: 'Cậu có thể đọc lại những trận đã qua, xem chiến tích hoặc luyện một bản mới.', action: 'Mở sưu tập' };
+    if (!next) {
+        const finished = catalog.bosses.length > 0 && catalog.bosses.every(boss => won.has(boss.id));
+        return { kind: 'collection', title: finished ? 'Những tầng đã vượt' : 'Dấu ấn của cậu',
+            description: finished ? 'Xem lại chiến tích, những bí tịch đã mở hoặc luyện một bản mới.' : 'Xem chiến tích và manh mối đã tìm thấy trước khi chọn thử thách tiếp theo.', action: 'Mở thành tựu' };
+    }
     const missing = (next.practicePrerequisites ?? []).find(id => !learned.has(id));
     if (missing) {
         const technique = catalog.techniques.find(value => value.id === missing);
         return { kind: 'technique', id: missing, title: 'Chuẩn bị cho ' + next.name,
             description: 'Cần luyện ' + (technique?.name ?? missing) + ' tới Nhập môn trước thử thách này.', action: 'Xem công pháp' };
     }
+    const floor = floors.findIndex(boss => boss.id === next.id);
     return { kind: 'boss', id: next.id, chapter: next.chapter, title: next.name,
-        description: 'Chương ' + next.chapter + ' · ' + (nextMain?.id === next.id ? 'Bước tiếp theo của tuyến truyện.' : 'Một thử thách còn chờ cậu.')
-            + ' Xem cơ chế và bộ chiêu trước khi quyết định xuất chiến.', action: 'Xem thử thách' };
+        description: (floor >= 0 ? 'Tầng ' + String(floor + 1).padStart(2, '0') : 'Cơ duyên đã tìm thấy')
+            + ' · Xem đối thủ và chuẩn bị bộ chiêu. Xuất chiến bắt đầu từ ngày sinh hoạt kế tiếp.', action: 'Xem thử thách' };
 }
 
 export function returnGameSummary(data) {

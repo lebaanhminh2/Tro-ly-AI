@@ -18,6 +18,7 @@ test('settled habit contribution excludes neutral and partial days and caps six 
 test('weekly earned journey preserves neutral days and defects, opens branches before the ending, and never grants a right or edition', () => {
     const result = simulateProfileJourney('thien-kiem', 'weekly-3');
     assert.equal(result.finalWon, true); assert.equal(result.totalWins, 40);
+    assert.deepEqual(result.weapons, []); assert.ok(result.events.every(event => event.weapon === null));
     assert.ok(result.misses > 0 && result.neutral > result.successes); assert.ok(result.breakthroughFailures > 0);
     const rights = new Set(INITIAL_TECHNIQUES), won = new Set<string>();
     for (const event of result.events) {

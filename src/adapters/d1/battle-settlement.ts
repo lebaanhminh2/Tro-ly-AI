@@ -40,6 +40,7 @@ export async function prepareBattleSettlement(db: Database, owner: string, id: s
     const result = { status: battle.run.state.status, turn: battle.run.state.turn, fought: outcome.fought, castExecuted,
         player: battle.run.state.player, boss: battle.run.state.boss, contribution: { habits: castExecuted ? habits : 0, tasks: usedTasks.length * 50 },
         tasks: usedTasks.map(task => ({ taskId: task.task_id, title: task.title })), waitDays: battle.run.waitDays, qiSpent };
+    if (['won', 'expired', 'withdrawn', 'dead'].includes(battle.status)) battle.finishedDay = day.day;
     statements.push(query(db, 'UPDATE battles SET version=?,status=?,state_json=?,updated=? WHERE owner=? AND id=?', battle.version, battle.status, battleJson(battle), now, owner, id),
         query(db, 'INSERT INTO battle_events(owner,battle_id,sequence,day,kind,entries_json,result_json,created) VALUES(?,?,?,?,?,?,?,?)',
             owner, id, battle.version, day.day, 'settlement', JSON.stringify(outcome.entries), JSON.stringify(result), now),

@@ -97,7 +97,7 @@ test('each school can earn all side rights and train all39 editions from fresh s
         const journey = simulateEarnedJourney(school.id, true), rights = new Set(INITIAL_TECHNIQUES), victories = new Set<string>();
         assert.equal(journey.mainWins, 22); assert.equal(journey.branchWins, 18); assert.equal(journey.editions.length, 39);
         assert.deepEqual(new Set(journey.owned), new Set(TECHNIQUES.map(technique => technique.id)));
-        assert.deepEqual(new Set(journey.weapons), new Set(['thach-tam', 'thuan-phong', 'dinh-tam']));
+        assert.deepEqual(journey.weapons, [], 'New content does not grant retired weapons');
         for (const event of journey.events) {
             const boss = GAME_BOSSES.find(value => value.id === event.boss)!;
             assert.ok(boss.requires.every(id => victories.has(id)));

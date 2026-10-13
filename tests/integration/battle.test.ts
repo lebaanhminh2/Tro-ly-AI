@@ -38,7 +38,7 @@ test('prepare is tomorrow-only, canonical replay survives closure, forged loadou
     try {
         const first = await game.read('123', at), input = { operation: 'prepare_battle', day: first.day.day, version: 0, bossId: 'truy-lenh', versions: [] };
         await assert.rejects(service.execute('123', 'fake_loadout001', { ...input, versions: ['other_owner_v1'] }, at), /INVALID_BATTLE_LOADOUT/);
-        await assert.rejects(service.execute('123', 'fake_weapon001', { ...input, weaponId: 'thach-tam' }, at), /GAME_WEAPON_LOCKED/);
+        await assert.rejects(service.execute('123', 'fake_weapon001', { ...input, weaponId: 'thach-tam' }, at), /GAME_WEAPON_RETIRED/);
         assert.throws(() => service.execute('123', 'fake_weapon002', { ...input, weaponId: 'invented' }, at), /INVALID_GAME_WEAPON/);
         const results = await Promise.allSettled(['prepare_first01', 'prepare_first02'].map(id => service.execute('123', id, input, at)));
         assert.equal(results.filter(row => row.status === 'fulfilled').length, 1);
@@ -95,6 +95,87 @@ test('a saved v2 battle settles its original repeated cast after v3 read stances
         const view = await store.overview('123', (await game.read('123', at + DAY)).day);
         assert.equal(view.battles[0]!.state.choices.find(choice => choice.id === 'kiem-y')!.repeatDamagePenalty, 0);
         assert.equal(await store.readBattle('456', run.id), null);
+    } finally { await mf.dispose(); }
+});
+
+test('prepared editions update atomically before tomorrow and terminal battles can prepare the next without losing the resume schedule', async () => {
+    const { mf, db, game, store, service } = await database();
+    try {
+        const first = await game.read('123', at);
+        for (const [id, technique] of [['ready_edition_01', 'kiem-y'], ['ready_edition_02', 'kim-than']] as const) {
+            const practice = newPracticeVersion(id, technique, first.day.day);
+            practice.tiers = [{ tier: 1, purityBp: 7500, effortMilli: 3000, defectsMilli: 0, startedDay: first.day.day, lockedDay: first.day.day }];
+            await db.prepare('INSERT INTO practice_versions(owner,id,technique_id,state_json,created_day,created,updated) VALUES(?,?,?,?,?,?,?)')
+                .bind('123', id, technique, JSON.stringify(practice), first.day.day, at, at).run();
+        }
+        await new PracticeService(game).execute('123', 'pending_practice01', { operation: 'continue_practice', day: first.day.day,
+            version: first.version, practiceId: 'ready_edition_01' }, at);
+        const selected = await game.read('123', at);
+        const prepared = await service.execute('123', 'pending_prepare01', { operation: 'prepare_battle', day: first.day.day,
+            version: selected.version, bossId: 'truy-lenh', versions: ['ready_edition_01'] }, at);
+        const before = (await store.readBattle('123', prepared.battleId))!;
+        const input = { operation: 'update_prepared_battle', day: first.day.day, version: prepared.version,
+            battleId: prepared.battleId, battleVersion: prepared.battleVersion, versions: ['ready_edition_02'] };
+        const fault: Database = { prepare: sql => db.prepare(sql), batch: statements => db.batch([...statements, db.prepare('INSERT INTO transaction_guard(valid) VALUES(0)')]) };
+        await assert.rejects(new BattleService(new D1BattleStore(fault)).execute('123', 'pending_update01', input, at));
+        assert.deepEqual(await store.readBattle('123', prepared.battleId), before);
+        assert.equal((await game.read('123', at)).version, prepared.version);
+        const updated = await service.execute('123', 'pending_update01', input, at);
+        assert.deepEqual(await service.execute('123', 'pending_update01', input, at + DAY), updated);
+        const after = (await store.readBattle('123', prepared.battleId))!;
+        assert.equal(after.run.startsDay, before.run.startsDay); assert.equal(after.resumePracticeId, 'ready_edition_01');
+        assert.equal(after.run.state.loadout[0]!.versionId, 'ready_edition_02');
+        assert.deepEqual({ ...after.run.state, loadout: [] }, { ...before.run.state, loadout: [] },
+            'Changing editions must not reconstruct the snapshotted fighter, intents or equipment effects');
+        assert.equal(after.run.combatRank, before.run.combatRank);
+        assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM battles').first<{ n: number }>())!.n, 1);
+        await assert.rejects(service.execute('123', 'pending_stale01', input, at), /GAME_CHANGED/);
+        await game.settle('123', at + DAY, 1);
+        const active = await game.read('123', at + DAY);
+        await assert.rejects(service.execute('123', 'pending_late001', { ...input, day: active.day.day, version: active.version,
+            battleVersion: after.version }, at + DAY), /BATTLE_CANCEL_UNAVAILABLE/);
+        const withdrawn = await service.execute('123', 'pending_withdraw1', { operation: 'withdraw_battle', day: active.day.day,
+            version: active.version, battleId: prepared.battleId, battleVersion: after.version, confirm: true }, at + DAY);
+        const terminal = await game.read('123', at + DAY);
+        assert.equal(terminal.current.mode, 'battle'); assert.equal(terminal.pending!.practiceId, 'ready_edition_01');
+        const next = await service.execute('123', 'pending_next001', { operation: 'prepare_battle', day: terminal.day.day,
+            version: withdrawn.version, bossId: 'truy-lenh', versions: [] }, at + DAY);
+        assert.equal((await store.readBattle('123', next.battleId))!.resumePracticeId, 'ready_edition_01');
+        const view = await store.overview('123', terminal.day);
+        assert.equal(view.battles.find(battle => battle.id === prepared.battleId)!.finishedDay, terminal.day.day);
+    } finally { await mf.dispose(); }
+});
+
+test('first victory records survive repeat wins and recent losses with original edition, purity, date and owner isolation', async () => {
+    const { mf, db, game, store } = await database();
+    try {
+        const first = await game.read('123', at), content = bossById('truy-lenh');
+        const practice = newPracticeVersion('victory_edition1', 'kiem-y', first.day.day - 2, 1000, 3);
+        practice.tiers = [{ tier: 1, purityBp: 6200, effortMilli: 3000, defectsMilli: 0, startedDay: first.day.day - 2, lockedDay: first.day.day - 1 }];
+        await db.prepare('INSERT INTO practice_versions(owner,id,technique_id,state_json,created_day,created,updated) VALUES(?,?,?,?,?,?,?)')
+            .bind('123', practice.id, 'kiem-y', JSON.stringify(practice), first.day.day - 2, at - 2 * DAY, at).run();
+        for (let index = 0; index < 8; index++) {
+            const owner = index === 7 ? '456' : '123', id = 'victory_record_' + index;
+            const state = newBattleState(fighterForRank(1), content.fighter,
+                [{ id: 'kiem-y', versionId: practice.id, tier: 1, purityBp: 6200 }], bossIntents(content), content.maxTurns);
+            state.turn = index === 0 ? 2 : 1; state.status = index < 2 || index === 7 ? 'won' : 'withdrawn';
+            state.rescueUsed = index === 0; state.lastUses = { 'kiem-y': 1 }; if (state.status === 'won') state.boss.hp = 0;
+            const run = { id, bossId: content.id, contentVersion: 'than-lo-3', combatRank: 1, state, startsDay: first.day.day - 5,
+                lastDay: first.day.day - 3, waitDays: 0, rescueUntilDay: null, deathPaid: false };
+            await db.prepare('INSERT INTO battles(owner,id,boss_id,status,starts_day,state_json,content_json,created,updated) VALUES(?,?,?,?,?,?,?,?,?)')
+                .bind(owner, id, content.id, state.status, run.startsDay, JSON.stringify({ run, resumePracticeId: null }), JSON.stringify(content), at + index, at + index).run();
+            if (index === 0 || index === 7) await db.prepare('INSERT INTO boss_victories(owner,boss_id,battle_id,created) VALUES(?,?,?,?)')
+                .bind(owner, content.id, id, at - DAY).run();
+        }
+        assert.ok((await store.overview('123', first.day)).battles.every(battle => battle.status !== 'won'));
+        const records = await store.victories('123'); assert.equal(records.victories.length, 1);
+        const record = records.victories[0]!; assert.equal(record.battleId, 'victory_record_0');
+        assert.equal(record.wonDay, first.day.day - 3); assert.equal(record.wonAt, at - DAY); assert.equal(record.floor, 1);
+        assert.equal(record.rescueUsed, true); assert.equal(record.turn, 2); assert.deepEqual(record.usedTechniqueIds, ['kiem-y']);
+        assert.deepEqual(record.loadout[0], { id: 'kiem-y', versionId: practice.id, tier: 1, purityBp: 6200, edition: 3 });
+        assert.equal((await store.victories('456')).victories[0]!.battleId, 'victory_record_7');
+        assert.equal((await store.victories('456')).victories[0]!.loadout[0]!.edition, null, 'Foreign practice ID is never resolved');
+        assert.deepEqual(await store.victories('789'), { victories: [] });
     } finally { await mf.dispose(); }
 });
 
@@ -186,7 +267,7 @@ test('four immutable chosen days produce one victory and unlocks; task contribut
     } finally { await mf.dispose(); }
 });
 
-test('a committed weapon victory is atomic with entitlements; owned preparation snapshots its effect and retry cannot reapply it', async () => {
+test('new victories omit weapons atomically while legacy snapshotted equipment survives rank changes and retries', async () => {
     const { mf, db, game, store, service } = await database();
     try {
         const first = await game.read('123', at), versions: string[] = [], boss = bossById('thu-mo');
@@ -236,14 +317,27 @@ test('a committed weapon victory is atomic with entitlements; owned preparation 
         const won = (await store.readBattle('123', saved.battleId))!;
         assert.equal(won.status, 'won');
         const rewards = (await store.overview('123', (await game.read('123', at + offset * DAY)).day)).rewards;
-        assert.deepEqual(rewards.map(reward => reward.id).sort(), ['khong-cuu', 'mo-loi', 'thach-tam', 'thuan-thien-kiem']);
+        assert.deepEqual(rewards.map(reward => reward.id).sort(), ['khong-cuu', 'mo-loi', 'thuan-thien-kiem']);
         assert.ok(rewards.every(reward => reward.battleId === saved.battleId));
         assert.equal((await store.overview('456', first.day)).rewards.length, 0);
         const now = at + offset * DAY, current = await game.read('123', now), input = { operation: 'prepare_battle',
-            day: current.day.day, version: current.version, bossId: 'truy-lenh', versions: [], weaponId: 'thach-tam' };
+            day: current.day.day, version: current.version, bossId: 'truy-lenh', versions: [] };
         const equipped = await service.execute('123', 'weapon_equipped', input, now);
         assert.deepEqual(await service.execute('123', 'weapon_equipped', input, now + DAY), equipped);
         let battle = (await store.readBattle('123', equipped.battleId))!;
+        assert.equal(battle.run.weaponId, null);
+        // Persistence fixture of an existing v3 prepared battle, with its
+        // original equipment already in the snapshot; no new equipment grant.
+        battle.run.weaponId = 'thach-tam'; battle.run.contentVersion = 'than-lo-3';
+        battle.run.state = armedBattleState(fighterForRank(4), battle.content, [], bossIntents(battle.content), 'thach-tam');
+        await db.prepare('UPDATE battles SET state_json=? WHERE owner=? AND id=?')
+            .bind(JSON.stringify({ run: battle.run, resumePracticeId: battle.resumePracticeId }), '123', equipped.battleId).run();
+        const legacyRequest = { ...input, weaponId: 'thach-tam' };
+        await db.prepare('UPDATE game_receipts SET request_json=? WHERE owner=? AND request_id=?')
+            .bind(JSON.stringify(Object.fromEntries(Object.keys(legacyRequest).sort().map(key => [key, legacyRequest[key as keyof typeof legacyRequest]]))),
+                '123', 'weapon_equipped').run();
+        assert.deepEqual(await service.execute('123', 'weapon_equipped', legacyRequest, now + DAY), equipped,
+            'Retired equipment cannot invalidate a receipt committed before publication');
         assert.equal(battle.run.weaponId, 'thach-tam');
         assert.deepEqual(battle.run.state, armedBattleState(fighterForRank(4), bossById('truy-lenh'), [], bossIntents(bossById('truy-lenh')), 'thach-tam'));
         assert.equal(battle.run.state.statuses.filter(status => status.key === 'weapon:thach-tam').length, 1);
@@ -481,6 +575,15 @@ test('battle HTTP conceals future patterns, rejects forged results and stale day
         const current = await game.read('123', at), input = { id: 'http_prepare01', operation: 'prepare_battle', day: current.day.day, version: 0, bossId: 'truy-lenh', versions: [] };
         assert.equal((await request('game', input, at, 'https://other')).status, 403);
         assert.equal((await request('game', input, at, 'https://local', false)).status, 401);
+        assert.equal((await request('game-victories', null, at, 'https://local', false)).status, 401);
+        const victoryResponse = await request('game-victories', null);
+        assert.equal(victoryResponse.status, 200); assert.deepEqual(await victoryResponse.json(), { victories: [] });
+        const catalogResponse = await request('game-catalog', null);
+        assert.equal(catalogResponse.headers.get('Cache-Control'), 'private, no-store');
+        const catalog = await catalogResponse.json() as { access: { victories: string[] }; techniques: { id: string; discovery: string }[] };
+        assert.deepEqual(catalog.access.victories, []);
+        assert.equal(catalog.techniques.find(value => value.id === 'thau-thien')!.discovery, 'sealed');
+        assert.equal((await request('game-boss?bossId=cam-thau-thien', null)).status, 409);
         for (const forged of [{ owner: '456' }, { now: at + DAY }, { damage: 999 }, { reward: ['kiem-vuc'] }, { contribution: { habits: 600 } }])
             assert.equal((await request('game', { ...input, ...forged })).status, 400);
         const prepared = await request('game', input); assert.equal(prepared.status, 200);

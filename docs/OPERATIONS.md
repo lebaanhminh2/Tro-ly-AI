@@ -1,5 +1,11 @@
 # Vận hành và ranh giới kỹ thuật
 
+## Vòng Tu luyện 2026-10-13
+
+Redesign đang phát hành theo [CULTIVATION_PROGRESS](HABIT_GAME_CULTIVATION_PROGRESS.md); version/commit thật được ghi ở RELEASE sau verify. Vòng này không đổi schema, không cần apply lại migration hoặc restore DB. Trước publish vẫn kiểm staging config/listing và gates. Thay đổi content `than-lo-4` bảo toàn JSON trận cũ và dùng luật `battle-v1`.
+
+**Phục hồi:** ưu tiên sửa tiến tới. Sau khi có trận v4, không rollback thẳng về binary `6e23d9f`, `bcd22bb` hay Worker pre-redesign: chúng chưa khai báo hiểu content v4. Candidate rollback phải hỗ trợ mọi content đang lưu (1–4), giữ engine/snapshot/receipts/quyền và được kiểm bằng legacy/v4 fixtures trước deploy. Không xóa state/migration, không import backup cũ đè dữ liệu mới. Các chỉ dẫn phục hồi bản 2026-10-12 bên dưới chỉ đúng cho dữ liệu trước content v4.
+
 Cập nhật 2026-10-12. Habit/Thần Lộ đã migrate/deploy staging và kiểm sau publish; bằng chứng/version/giới hạn tại [RELEASE](HABIT_GAME_RELEASE.md). Trạng thái bàn giao tại [HANDOFF](HANDOFF.md) và [HABIT_GAME_PROGRESS](HABIT_GAME_PROGRESS.md).
 
 ## Stack và nguồn chuẩn

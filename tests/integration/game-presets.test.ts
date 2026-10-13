@@ -51,7 +51,7 @@ test('presets preserve a chosen old edition across devices without mutating comb
         const created = await service.execute('123', 'preset_save001', input, now);
         assert.equal(created.version, 1);
         assert.deepEqual(await new D1GamePresetStore(db).read('123'), { version: 1, presets: [{ id: created.presetId,
-            name: input.name, versions: input.versions, weaponId: input.weaponId }] });
+            name: input.name, versions: input.versions, weaponId: null }] });
         const resolver = new D1BattleStore(db);
         assert.equal((await resolver.availableLoadout('123'))[0]!.versionId, 'preset_new_001');
         assert.equal((await resolver.resolveLoadout('123', input.versions))[0]!.versionId, 'preset_old_001');
@@ -91,7 +91,10 @@ test('presets reject forged, duplicate and unfinished editions and enforce six s
     try {
         for (const versions of [['foreign_ready1'], ['preset_draft01'], ['preset_old_001', 'preset_new_001']])
             await assert.rejects(service.execute('123', 'preset_invalid1', { ...save(), versions }, now), /INVALID_BATTLE_LOADOUT/);
-        await assert.rejects(service.execute('456', 'preset_weapon01', { ...save(), versions: [] }, now), /GAME_WEAPON_LOCKED/);
+        // Legacy clients may still send a known weapon; it is normalized away,
+        // without requiring (or granting) historical entitlements.
+        await service.execute('456', 'preset_weapon01', { ...save(), versions: [] }, now);
+        assert.equal((await store.read('456')).presets[0]!.weaponId, null);
         assert.throws(() => service.execute('123', 'preset_name001', { ...save(), name: 'Tên\nkhác' }, now), /INVALID_GAME_PRESET/);
         assert.throws(() => service.execute('123', 'preset_owner01', { ...save(), owner: '456' }, now), /INVALID_GAME_PRESET/);
         for (let index = 0; index < 6; index++) await service.execute('123', 'preset_limit0' + index, save(index), now);
