@@ -1,6 +1,16 @@
 # Dùng Thói quen và Tu luyện
 
-Hướng dẫn đang cập nhật cho redesign Tu luyện ngày 2026-10-13. **Bản redesign chưa phát hành**; trạng thái công việc ở [checkpoint hiện tại](HABIT_GAME_CULTIVATION_PROGRESS.md). URL staging: https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev/app/ . Bằng chứng các bản đã phát hành tại [RELEASE](HABIT_GAME_RELEASE.md).
+Hướng dẫn redesign Tu luyện đã phát hành staging ngày 2026-10-13, source `07e9aa0`, Worker `db6b1f93-3532-4aac-972b-598fa48e5488`. URL nghiệm thu: https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev/app/ . [RELEASE](HABIT_GAME_RELEASE.md) ghi bằng chứng và giới hạn; [checkpoint](HABIT_GAME_CULTIVATION_PROGRESS.md) ghi quyết định triển khai.
+
+## Nghiệm thu bản mới
+
+1. Mở URL trên, tải lại và đăng nhập nếu phiên hết hạn. Vào **Tu luyện**: kiểm bốn mục **Hiện tại → Công pháp → Vượt tầng → Thành tựu**.
+2. **Hiện tại**: xem tiến độ/tầng/tinh thuần và lựa chọn ngày sau. **Công pháp**: xem phái, tìm môn, mở chi tiết/bản luyện và manh mối. Không cần tạo dữ liệu thử để đọc.
+3. **Vượt tầng**: xem mục tiêu gần, nhóm tầng/cơ duyên; mở bảng chuẩn bị để đọc cơ chế và thử chọn bộ chiêu. Chỉ bấm xác nhận khi muốn ghi lựa chọn thật cho ngày sinh hoạt kế tiếp.
+4. Nếu đang đánh, đọc ý định/giá chiêu và chọn cho hôm nay; kết quả chỉ chốt theo ngày thật. Cứu mạng có xác nhận chi phí. **Thành tựu** mở boss đã thắng với bản luyện/chiêu dùng thật; dữ liệu cũ và nhật ký còn giữ.
+5. Thử trên điện thoại với theme đang dùng: tên/ảnh/nút/tiêu đề bảng có dễ đọc, đổi mục có rõ mục đích, có giữ được toàn cảnh tầng hay không. Chưa thắng thì Thành tựu hiển thị trạng thái rỗng; chưa phát hiện thì bí tịch không lộ tên/ảnh riêng.
+
+Phiên browser kiểm remote của agent đã hết hạn; vòng này đã kiểm static/auth/cron, không giả owner login hoặc tự tạo log cá nhân. Nếu gặp lỗi, ghi mục đang mở/thao tác/giờ và ảnh màn hình; không gửi key hoặc token.
 
 ## Bắt đầu trong vài phút
 

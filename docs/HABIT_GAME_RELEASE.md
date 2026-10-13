@@ -1,17 +1,39 @@
-# Habit/Thần Lộ — bằng chứng và phát hành
+# Habit và Tu luyện — bằng chứng phát hành
 
-## Candidate Tu luyện redesign — 2026-10-13
+## Tu luyện redesign — staging ngày 2026-10-13
 
-**Source đã kiểm local, chưa deploy candidate mới tại thời điểm checkpoint này.** Phát hành trước ở các mục dưới không chứng minh redesign hiện tại đã lên cloud.
+**Source `07e9aa0` đã commit/push trên `review/p1-p3`, deploy exit 0 và kiểm sau phát hành.** Worker version: **`db6b1f93-3532-4aac-972b-598fa48e5488`**.
 
-- Hiện tại → Công pháp → Vượt tầng → Thành tựu.22tầng/18cơduyên/39môn; Thành tựu đọc chiến thắng đầu tiên, khám phá che bí tịch chưa phát hiện.
-- Content `than-lo-4`, engine `battle-v1`. Trận mới không chọn/nhận vũ khí; snapshot/quyền/receipt/preset cũ được giữ. Không đổi schema0037 hoặc behavior task/habit/ngủ/focus/reminders/đột phá.
-- Asset cuối61raster/122WebP/39SVG, source/provenance/hash và QA actual-app cập nhật trong `docs/art/assets.json`, `cultivation-v2-audit.json` và STYLE_V2. Ngân sách bổ sung0đ, localDreamShaper8; originals ngoàiGit, không còn GPU job.
-- Gate main/experiments329+25 trước sửa loader/fastpath/modal cuối; các sửa đó có targeted loader/discovery9, settlement1 và19practice/battlecases đạt. Typecheck/check:web45pass. Browser bản cuối35/35, matrix final1/1; thêm40mànphái/cast sáng–tối, root review ảnh cuối.
-- Staging config3/3 và dry-run224assetfiles đạt; Worker670,88KiB/gzip155,90KiB. Frontend lab không chứng minh tải đầu nhanh hơn đáng kể; loại2SQLthừa/giới hạnlazyreads có bằng chứng. Số remote/bootstrap2026-10-12 bên dưới là lịch sử.
-- Release sẽ dùng staging hiện tại; public/static/auth/runtime proof và commit/version được ghi sau deploy. Phiên owner isolated đã hết auth401; không tạo fake sessions/logs hoặc gửi tin để lấy số đo.
+URL nghiệm thu: https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev/app/
 
-Hướng dẫn nghiệm thu: [USER_GUIDE](HABIT_GAME_USER_GUIDE.md). Nghiên cứu, số đo và giới hạn: [CULTIVATION_REVIEW](HABIT_GAME_CULTIVATION_REVIEW.md). Checklist/current state: [CULTIVATION_PROGRESS](HABIT_GAME_CULTIVATION_PROGRESS.md).
+### Bản được giao
+
+- **Hiện tại → Công pháp → Vượt tầng → Thành tựu**. Có 22 tầng chính, 18 cơ duyên và 39 công pháp. Thành tựu giữ chiến thắng đầu tiên; discovery che tên/ảnh bí tịch chưa phát hiện.
+- Content `than-lo-4`, engine `battle-v1`. Trận mới không chọn hoặc thưởng vũ khí. Snapshot, quyền, receipt, preset và lịch sử cũ được bảo toàn. Không đổi schema 0037 hoặc hành vi task, habit, ngủ, tập trung, lời nhắc và đột phá.
+- Bộ ảnh cuối gồm 61 raster thành 122 WebP, cùng 39 SVG nguyên bản. Nguồn, crop, hash và QA màn hình thật nằm trong inventory, audit và STYLE_V2. Ngân sách bổ sung 0đ; sinh ảnh local với DreamShaper 8. Không còn job GPU; originals/model ở ngoài Git.
+
+### Kiểm trước phát hành
+
+- Full gate **329 main + 25 experiments**, 0 fail/skip, ở lượt trước các sửa loader/fastpath/modal cuối. Sau các sửa đó: loader/discovery 9, settlement read-only 1 và 19 practice/battle cases liên quan đạt. Không gọi kết quả cũ là full rerun source cuối.
+- Browser source cuối **35/35**, 0 fail/skip; matrix asset cuối 1/1. Thêm 40 màn phái/cast sáng–tối. Root xem contact sheets và màn thật, gồm luyện, chuẩn bị, active, cứu, thắng, tử trận, hết lượt và rút lui; chữ 200%/màn nhỏ/theme tối.
+- Typecheck, check:web 45 modules, staging config 3/3, deploy readiness 4/4 và dry-run đều đạt. Dry-run đọc 224 asset files; Worker 670,88 KiB / gzip 155,90 KiB.
+- Frontend lab trước–sau không chứng minh tải đầu nhanh hơn đáng kể. Loại hai SQL kết toán thừa, nạp chiến tích theo nhu cầu và giới hạn response có bằng chứng riêng. Các số remote/bootstrap ngày 2026-10-12 bên dưới là lịch sử.
+
+### Kiểm sau phát hành
+
+- `/app/` và **216 file tĩnh** HTTP 200, SHA256 khớp source: 45 modules, CSS/index, 130 WebP và 39 SVG. Tám GET API không auth trả 401; POST với Origin ngoài trả 403 trước ghi.
+- Tail 60 giây: **66 events** trên đúng version, gồm 65 request và một cron; tất cả outcome `ok`, 0 parse error. Cron CPU 17ms / wall 3743ms. Không có owner API 200 trong mẫu; đây không phải benchmark owner API/render hoặc mọi phase.
+- Browser isolated sau deploy không có runtime exception, nhưng phiên đã hết hạn: 401. Không giả phiên, ghi log cá nhân hoặc gửi tin để lấy bằng chứng.
+- Listing đúng DB staging không có migration chờ; không áp migration. Backup trước phát hành: 1.578.743 byte, SHA256 `c3f37f56e6db7cf00309895e6b4d6b3aa1a9bd8bb8151ad47c542cbbe5c79245`, nằm ở `.wrangler/cultivation-qa/staging/before-redesign-20261013.sql`, ngoài Git.
+- Cron, phases và secrets giữ nguyên. Rollback cần binary hiểu content 1–4; ưu tiên sửa tiến tới, không restore backup cũ đè dữ liệu mới. Xem OPERATIONS.
+
+### Bằng chứng và giới hạn nghiệm thu
+
+Artifacts local: `.wrangler/cultivation-qa/staging/` có `final-deploy.log`, `final-public-assets-auth.json`, `final-natural-runtime.json`, `after-owner-reads.json` và `final-migrations-list.log`; các logs/screens/matrix được liệt kê trong checkpoint. Backup/raw CLI logs riêng không đưa vào Git hoặc tài liệu. Docs commit sau phát hành không đổi binary/asset.
+
+**Chưa kiểm owner API bằng phiên đăng nhập thật trong vòng này**; user đăng nhập khi nghiệm thu. Engine/D1 integration local bao phủ writes, ownership, replay và legacy; static/auth/cron remote xác nhận bản phát hành, không thay bằng chứng owner interaction. Chrome emulation không phải nghiệm thu thiết bị thật. Chưa chứng minh tải đầu nhanh hơn đáng kể hoặc độ cuốn dài ngày; số đo có điều kiện ở REVIEW.
+
+Hướng dẫn nghiệm thu: [USER_GUIDE](HABIT_GAME_USER_GUIDE.md). Nghiên cứu và số đo: [CULTIVATION_REVIEW](HABIT_GAME_CULTIVATION_REVIEW.md). Audit mục tiêu: [CULTIVATION_PROGRESS](HABIT_GAME_CULTIVATION_PROGRESS.md).
 
 ---
 

@@ -1,68 +1,62 @@
-# Tu luyện — triển khai theo mục tiêu hiện tại
+# Tu luyện — checkpoint và audit mục tiêu
 
-Cập nhật: 2026-10-13. Trạng thái: **bản triển khai cuối đã kiểm local, đang chuẩn bị phát hành staging**. Phiên bản phát hành thực tế sẽ ghi tại RELEASE sau deploy.
+Cập nhật 2026-10-13. **Đã tích hợp, kiểm local, commit/push và phát hành staging; sẵn sàng nghiệm thu.** Source `07e9aa0`; Worker `db6b1f93-3532-4aac-972b-598fa48e5488`. [RELEASE](HABIT_GAME_RELEASE.md) lưu bằng chứng và giới hạn.
 
 ## Quyền và phạm vi
 
-Mục tiêu `/goal` hiện tại cho phép triển khai app thật, thay toàn bộ art game, sửa gameplay/UX/hiệu năng có căn cứ, tự review và phát hành staging. Quyền này thay việc xin duyệt từng file trong vòng này. Chỉ dẫn cũ về chờ duyệt HTML hoặc hoãn art là lịch sử; không áp dụng cho công việc hiện tại.
+Mục tiêu `/goal` cho phép tự triển khai app thật, thiết kế lại art/gameplay/UX/hiệu năng có căn cứ, dùng agent phụ, tự review và phát hành staging. Quyền này thay yêu cầu duyệt từng file trong vòng này. Không áp dụng yêu cầu cũ chờ duyệt HTML hoặc hoãn art.
 
-Ngân sách bổ sung 0đ. Dùng môi trường sinh ảnh cục bộ, không dịch vụ trả phí. Không production, force-push, dữ liệu cá nhân thử hay tin thử. Thay đổi riêng từ vòng trước ở `docs/HABIT_GAME_UX_REVIEW.md` và `docs/prototypes/habits/` được giữ riêng.
+Ngân sách bổ sung 0đ; sinh ảnh local miễn phí. Không production, force-push, dữ liệu cá nhân thử hoặc tin thử. Hai phần có sẵn ở `docs/HABIT_GAME_UX_REVIEW.md` và `docs/prototypes/habits/` được giữ ngoài commit.
 
-## Khung trải nghiệm và quyết định
+## Quyết định đã triển khai
 
-- Bốn mục cố định: **Hiện tại → Công pháp → Vượt tầng → Thành tựu**. Giữ các ID panel cũ để không phá state đang dùng; tên hiển thị thay theo thiết kế mới.
-- Tầng là cách trình bày chuỗi boss chính hiện có. Cơ duyên chứa thử thách phụ. Không thay ID boss, không tạo lại quyền chiến thắng.
-- Thành tựu lấy boss đã thắng làm trọng tâm. Nạp bản ghi chiến thắng khi mở mục này; không giới hạn bằng bốn trận gần đây trong tổng quan.
-- Discovery do server suy ra từ tiến trình, quyền học và bản luyện. Chưa phát hiện thì không gửi tên/mô tả/ảnh của bí tịch đặc biệt hoặc đối thủ. Có quyền cũ thì giữ quyền. Thắng mở quyền học, không tạo bản luyện đạt Nhập môn.
-- Catalog giờ phụ thuộc tiến trình người chơi; cache phải vô hiệu khi quyền/chiến thắng thay đổi, và khi thay phiên đăng nhập.
-- Đổi bộ chiêu đã chuẩn bị là một cập nhật nguyên tử có version, giữ ID trận/ngày bắt đầu và lựa chọn quay lại luyện. Không hủy rồi tạo trận thay thế.
-- Bỏ chọn Thần binh và bonus khỏi trận mới; snapshot nội dung/trạng thái và tài sản cũ vẫn được bảo toàn. Dùng content version mới cho luật trận mới.
-- Art dùng minh họa tiên hiệp với đường nét rõ, bảng màu than/ngà và điểm nhấn từng phái. Không trộn portrait ảnh thực với icon pixel. Kiểm mẫu nhân vật, boss và cảnh trong UI trước khi sản xuất cả bộ.
+- Bốn mục cố định: **Hiện tại → Công pháp → Vượt tầng → Thành tựu**. Giữ ID panel cũ và mapping ID boss, không tạo lại tiến trình hay quyền.
+- Tầng trình bày 22 trận chính; Cơ duyên tách 18 thử thách phụ. Thành tựu đọc chiến thắng đầu tiên của từng boss, không bị giới hạn bốn trận gần đây.
+- Discovery do server suy từ quyền và bản luyện. Bí tịch đặc biệt/chương/đối thủ chưa phát hiện được che cả tên, ảnh và trường phụ. Người chơi cũ giữ quyền. Thắng mở quyền học, không tặng bản luyện hoàn chỉnh.
+- Catalog cache theo owner/quyền; response mang access của chính snapshot. Khi settlement mở quyền, refresh catalog và chiến tích; guard phiên/generation/revision loại response cũ.
+- Sửa bộ chiêu đã chuẩn bị bằng một cập nhật nguyên tử có version. Giữ ID trận, ngày bắt đầu, fighter/intents và lịch luyện trở lại; không hủy rồi tạo trận khác.
+- Content trận mới `than-lo-4` bỏ chọn/bonus/thưởng Thần binh. Snapshot, entitlement, receipt và preset cũ còn giữ. Engine vẫn `battle-v1`; không đổi schema 0037.
+- Minh họa tiên hiệp với bảng màu than/ngà/đồng, nét mặt và silhouette rõ. Các phái có dấu nhận diện; công pháp dùng 39 SVG nguyên bản. Không trộn ảnh thực với pixel/chibi.
 
-## Phân công
+## Phân công đã hoàn tất
 
 | Phần | Trách nhiệm |
 | --- | --- |
-| Giao diện | Bốn mục, chi tiết công pháp, chuẩn bị/giao chiến/kết quả, CSS |
-| Backend | Discovery, phiên bản trận không vũ khí, đổi bộ chiêu nguyên tử, bản ghi chiến thắng, tests |
-| Mỹ thuật | Mẫu, pipeline 0đ, bộ ảnh cuối, dấu ấn công pháp, provenance/manifest |
-| Tích hợp | Wiring/cache phiên, hướng dẫn, QA độc lập, hiệu năng, kiểm thử browser, release/docs |
+| UI | Bốn mục, chi tiết/bản luyện, chuẩn bị/chiêu/kết quả/cứu, CSS |
+| Backend | Discovery, content mới, sửa chuẩn bị nguyên tử, chiến thắng đầu tiên, tests |
+| Art | Trial/workflow 0đ, tạo/review/retry toàn bộ ảnh, seals, provenance |
+| Root | Wiring/cache/guide, review ảnh độc lập, browser/performance/ops/release |
 
-## Bằng chứng đã có ở vòng này
+## Bằng chứng bản cuối
 
-- Đọc mục tiêu đầy đủ bằng UTF-8, trạng thái goal/worktree và tài liệu bàn giao; không xem bản staging icon cũ là bản redesign đã xong.
-- Mẫu Kỳ Hành mới đã xem ở kích thước lớn. Nét mặt/giáp/silhouette rõ hơn ảnh thực màu be cũ. Phần tay không đạt phải bị loại khỏi crop cuối; còn cần kiểm crop nhỏ trong UI.
-- Hướng dẫn và gợi ý bước tiếp theo đã đổi sang tầng/thành tựu; test model 4/4 đạt, gồm trường hợp không gợi ý đối thủ chưa phát hiện.
-- Đã nối action/API chiến thắng và reset catalog/chiến tích khi rời phiên đăng nhập. Chưa tuyên bố kiểm API owner staging.
-- App thật đã được chụp bốn mục ở 390px và bảng chuẩn bị Kỳ Hành; crop mặt/giáp rõ, không lộ tay lỗi. Native progress xanh được thay thành đồng để thống nhất. Ảnh ở `.wrangler/cultivation-qa/current/`, ngoài Git.
-- Browser mới kiểm luyện ngày sau/luyện lại giữ tầng khóa, chuẩn bị/đổi bộ chiêu nguyên tử, bản sửa lỗi thời, chiêu chưa chốt và Hộ Mệnh, chiến tích ngoài bốn trận gần đây, discovery/cập nhật catalog và bộ chiêu có retry/xung đột. Các flow này đã chạy đạt; đang chạy toàn bộ hồi quy.
-- Matrix đã mở **40 đối thủ, 15 trang truyện, 39 dấu ấn** qua màn hình thật, kiểm URL ảnh/nút đóng/tràn ngang và không ghi dữ liệu. Đây là kiểm tích hợp; các ảnh chưa thay xong vẫn là ảnh cũ nên chưa phải kiểm mỹ thuật cuối.
-- 17 model/loader/web-module tests đạt, gồm race đọc catalog trước khi settlement ghi chiến thắng. Catalog mang access của chính snapshot đã dùng; không gắn nhầm access mới vào catalog cũ.
-- Browser harness được tách thành `tests/browser/app-harness.mjs`. Các test riêng cho bố cục Hành trình/Sưu tập/vũ khí cũ được thay bằng `cultivation-flows.test.mjs`; hành vi legacy vũ khí vẫn cần chứng minh trong backend, không giữ UI chọn vũ khí vì đó là trải nghiệm đã bị bỏ.
+- Full gate 329 main + 25 experiments, 0 fail/skip, trước sửa loader/fastpath/modal cuối. Sau sửa: typecheck, check:web 45, loader/discovery 9, settlement read-only 1 và 19 practice/battle cases liên quan đạt. Không gọi lượt đầu là full rerun source cuối.
+- Browser cuối 35/35, 0 fail/skip; matrix art cuối 1/1. Đã kiểm màn 320/390/1440, theme sáng/tối, chữ 200%, dữ liệu rỗng/nhiều, mạng chậm/mất mạng, retry và version conflict.
+- Root xem 40 preparation previews/15 trang truyện, thêm 40 màn phái/cast sáng–tối; xem contact sheets WebP cuối và crop trong UI thật. Trạng thái luyện/active/cứu/thắng/tử trận/hết lượt/rút lui đều được chụp; confirmation 320×460 vẫn giữ X/hành động, dialog đã đóng thật `display:none` và Escape không ghi.
+- 61 raster (35 boss, 6 chân dung, 15 cảnh, 5 phái), 122 WebP và 39 SVG. Toàn bộ hash/bytes khớp inventory. WebP 2.663.754 byte, SVG 16.628 byte; full lớn nhất 81.478 byte, thumb 9.198 byte. Bốn asset legacy không dùng nằm ngoài phạm vi thay ảnh. Không còn job GPU.
+- 61 `integratedUi` được cập nhật sau root review, không kế thừa QA ảnh cũ. Audit giữ cả trạng thái source-export pending lúc bàn giao và kết quả UI sau đó.
+- Staging config 3/3, readiness 4/4 và dry-run đạt; 224 asset files, Worker 670,88 KiB / gzip 155,90 KiB. Backup trước phát hành, listing không pending; không migration.
+- Commit/push thường và deploy staging exit 0. 216 file tĩnh/index live khớp source, tám GET 401/Origin 403. Tail 66 events/một cron trên đúng Worker version, outcome ok/0 parse error. Browser isolated không exception, auth 401.
 
-## Audit bản cuối trước phát hành
+Artifacts `.wrangler/cultivation-qa/`: `final-browser.log`, `final-art-matrix.log`, `final-ui-art/`, `final-matrix/`, `art/ui-*-final-*.png`, `visual-review/`, `current/`, `performance/`, `final-staging-check.log`, `staging/`. Scratch QA ban đầu thiếu thư mục screenshot hoặc đọc cast/port trước khi sẵn sàng đã được sửa và rerun; không coi các lượt lỗi là xanh. Lượt terminal fixture ban đầu thiếu turn=maxTurns bị validator từ chối, đã sửa fixture hợp lệ và rerun, không sửa engine để bỏ kiểm tra.
 
-- Đủ bốn mục trong app thật; engine production và D1 services xử lý lựa chọn/luyện lại/chuẩn bị/chiêu/cứu/chiến tích, không dùng số mô phỏng HTML.
-- 61/61 raster mới (35 boss, 6 chân dung, 15 cảnh, 5 phái), 122 WebP và 39 SVG; toàn bộ SHA/bytes khớp inventory. Bốn asset legacy không sử dụng được giữ riêng. Tổng WebP 2.663.754 byte, SVG 16.628 byte; full lớn nhất 81.478 byte, thumbnail lớn nhất 9.198 byte.
-- Root xem bộ contact cuối và các ảnh chụp màn thật: 40 preparation previews/15 trang truyện, thêm 40 màn phái/cast sáng–tối; xem từng nhóm crop thật và các màn Hiện tại/Vượt tầng/Thành tựu. 61 `integratedUi` được cập nhật sau lần xem này, không kế thừa QA bộ cũ.
-- Gate main/experiments trước các sửa cuối: 329 + 25, 0 fail/skip. Sau sửa cuối: typecheck, check:web45, loader/discovery9, integration `read-only settlement`1 đều đạt. Main/experiments không chạy lại nguyên bộ sau fastpath; 19 practice/battle cases liên quan đã được kiểm riêng.
-- Hồi quy browser bản cuối **35/35, 0 fail/skip**; matrix asset cuối1/1. Đã kiểm dialog `[open]`, Escape không ghi, đóng thực `display:none`, nút/X còn thấy ở320×460/chữ200%. Visual review không tràn ngang/không vùng bấm dưới44px/không runtime error.
-- Gate staging cấu hình3/3 và dry-run đạt, 224 asset files; Worker670,88KiB/gzip155,90KiB. Không thay schema0037, không cần migration.
-- Frontend lab trước–sau có đầy đủ điều kiện trong REVIEW. Không chứng minh tải đầu nhanh hơn đáng kể; đã loại hai SQL kết toán thừa, giới hạn dữ liệu và nạp chiến tích theo nhu cầu.
-- Local artifacts `.wrangler/cultivation-qa/`: `final-browser.log`, `final-art-matrix.log`, `final-ui-art/`, `final-matrix/`, `art/ui-*-final-*.png`, `visual-review/`, `current/`, `performance/`, `final-staging-check.log`. Các lỗi ở lần chạy scratch trước đã được sửa và rerun: thiếu thư mục screenshot; truy cập cast trước khi trang truyện nạp. Không coi hai lần đó là xanh.
+## Audit yêu cầu mục tiêu
 
-## Việc phát hành còn lại
+| Yêu cầu | Bằng chứng hiện hành |
+| --- | --- |
+| App thật/bốn mục/bỏ Thần binh | web views/features mới; browser 35/35; module/CSS live hash match |
+| Luyện/tinh thuần/bản/đổi/luyện lại | Production service/D1, integration practice, next-day/immutable-edition browser, ảnh practice/details |
+| Chuẩn bị/chiêu/kết quả/cứu | Atomic service/D1, engine thật, prepare/update/stale/choice/rescue browser; visual terminal states/theme/text |
+| Bí tịch/cấm thuật/quyền cũ | Player catalog projection, discovery 5/loader 4, HTTP/ownership/prerequisite tests, UI sealed/discovered/access refresh |
+| Thành tựu boss | First-win SQL/owner isolation/edition và casts thật; browser chiến thắng cũ/lazy load, victory screens |
+| Gameplay từ việc thật | Tests content/profile v4: năm phái, 40 wins/39 môn; weekly/mixed/cứu có trả giá; BALANCE ghi giới hạn fixture |
+| Nghiên cứu/thẩm mỹ | REVIEW ghi nguồn đã xem và cách áp dụng; trial/pipeline/rejection history, STYLE_V2/story bible |
+| Toàn asset cuối | 61 active/122 WebP/39 SVG, nguồn/final hashes, root xem ảnh và matrix/UI cuối |
+| Kiến trúc/dữ liệu/tính năng cũ | Domain/ports/adapters giữ; legacy v2 weapon/receipt/preset/history tests, main/browser regression; schema không đổi |
+| Mobile/desktop/mạng/chữ lớn | 320/390/1440, light/dark/200%, empty/large/offline/stale/retry; visual modal 44px/no overflow/no errors |
+| Hiệu năng | Lab trước–sau có điều kiện; regression 2 SQL thay 4, lazy/bounded reads/cache; không claim tải đầu nhanh hơn |
+| Vận hành/quyền/ngân sách | 0đ, normal commit/push, backup/listing/staging/hash/auth/cron/version; không production/force-push/log cá nhân/tin thử |
+| Giao sản phẩm/bàn giao | URL staging, USER_GUIDE walkthrough, RELEASE/OPERATIONS/checkpoint; không còn feature/art/deploy gate đang hứa |
 
-Commit/push source đã kiểm; deploy staging; xác minh hashes/static/auth và runtime đúng version; ghi commit/version/hướng dẫn nghiệm thu. Phiên browser isolated hiện đã hết auth; không giả owner session hoặc ghi dữ liệu thử để thay bằng chứng. Giới hạn remote owner-read sẽ ghi rõ nếu không có traffic thực trong mẫu tail.
+## Giới hạn bằng chứng
 
-## Danh sách yêu cầu dùng khi audit
-
-1. App thật dùng đầy đủ luồng mới, mọi hành động đọc/ghi tương thích engine và phiên bản.
-2. Art cuối đồng nhất, đã kiểm trong UI; manifest/hash/nguồn không thay việc xem ảnh.
-3. Browser kiểm người mới/luyện/công pháp/tầng/chuẩn bị/chiêu/kết quả/cứu/chiến tích, chữ lớn/sáng tối/mạng lỗi.
-4. Integration chứng minh ghi nguyên tử, idempotency, chủ sở hữu, ngày sinh hoạt, snapshot cũ và quyền cũ.
-5. Cân bằng mới kiểm bằng hành trình có luyện và đóng góp thật trong engine riêng; không dùng mô phỏng HTML làm bằng chứng.
-6. Đo tải/request/ảnh trước–sau, phân biệt lab fixtures với staging thực tế.
-7. Commit/push, staging deploy và verify; hướng dẫn nghiệm thu/bàn giao cập nhật với giới hạn thực tế.
-
-Không mục nào ở trên được coi hoàn thành chỉ vì tồn tại file hoặc test khác đã xanh. Checkpoint này sẽ được cập nhật bằng kết quả thực tế.
+User nghiệm thu cảm giác đẹp/cuốn dài ngày và thiết bị thật. Phiên isolated đã hết hạn, vòng này chưa kiểm owner remote API; không suy owner latency từ auth/static. Bootstrap chậm ở mẫu lịch sử chưa được chứng minh đã giải quyết toàn app. Bản giao là app tích hợp thật với dữ liệu cũ bảo toàn; các giới hạn này được ghi rõ, không dùng demo hoặc placeholder thay phạm vi sản phẩm.

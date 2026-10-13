@@ -1,6 +1,6 @@
 # Tu luyện — nghiên cứu, review và bằng chứng
 
-Cập nhật 2026-10-13. Redesign và art cuối đã tích hợp/kiểm local; trạng thái phát hành tại [RELEASE](HABIT_GAME_RELEASE.md), checkpoint tại [PROGRESS](HABIT_GAME_CULTIVATION_PROGRESS.md). Không dùng bằng chứng của bộ ảnh cũ để duyệt bộ mới.
+Cập nhật 2026-10-13. Redesign và art cuối đã tích hợp, kiểm và phát hành staging từ source `07e9aa0`. [RELEASE](HABIT_GAME_RELEASE.md) và [PROGRESS](HABIT_GAME_CULTIVATION_PROGRESS.md) ghi bằng chứng/giới hạn. Không dùng QA bộ ảnh cũ để duyệt bộ mới.
 
 ## Tham khảo đã xem và cách áp dụng
 
@@ -64,4 +64,4 @@ Ba lượt mỗi bản, Chrome 390px, cùng fixture người mới, khi mở gam
 
 **Không đủ căn cứ nói tải đầu nhanh hơn đáng kể.** Cả hai bản đã giữ cache; không gắn cơ chế có sẵn thành một cải thiện mới. Asset SVG mới tăng nhẹ bytes để có hình nguyên bản rõ hơn. Tối ưu có bằng chứng ở vòng này là nạp chiến tích theo nhu cầu, không gửi trận/log đầy đủ để xem danh sách, catalog không nạp lại khi quyền giữ nguyên và bỏ SQL kết toán lặp. Phân biệt điều này với tốc độ mở app chịu bootstrap cũ.
 
-Mẫu staging lịch sử cho thấy game khoảng 1,5–2,3s và bootstrap khoảng 6s; đó là dữ liệu 2026-10-12, không benchmark bản mới. Phiên browser isolated kiểm lại 2026-10-13 không còn auth (401), không tạo phiên/dữ liệu cá nhân giả để lấy số đẹp. Verify public/static/auth/natural-runtime sau publish và giới hạn owner-read được ghi trong release.
+Mẫu staging lịch sử cho thấy game khoảng 1,5–2,3s và bootstrap khoảng 6s; đó là dữ liệu 2026-10-12, không benchmark bản mới. Phiên isolated trước/sau deploy 2026-10-13 không auth (401); không tạo phiên/dữ liệu cá nhân giả. Bản mới: 216 file tĩnh/index hash khớp, tám GET 401/Origin 403, browser không exception; runtime 66 events/một cron đúng version outcome ok. Không có owner API 200 trong mẫu; không suy owner latency từ auth/static. RELEASE ghi version/backup và giới hạn.

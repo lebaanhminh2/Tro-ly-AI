@@ -1,8 +1,16 @@
 # Bàn giao Habit và Tu luyện
 
-## Mục tiêu Tu luyện hiện tại
+## Mục tiêu Tu luyện hiện tại — đã giao staging
 
-**Đang triển khai redesign trong app thật và bộ art mới theo `/goal` đã duyệt.** Theo [checkpoint hiện tại](HABIT_GAME_CULTIVATION_PROGRESS.md), không áp dụng các yêu cầu chờ duyệt HTML/hoãn art/xin duyệt từng file ở các mục lịch sử dưới đây cho vòng này. Các version staging bên dưới vẫn là bản trước redesign, không phải bằng chứng phát hành mục tiêu mới.
+Source **`07e9aa0`** đã push trên `review/p1-p3`; Worker **`db6b1f93-3532-4aac-972b-598fa48e5488`**. URL nghiệm thu: https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev/app/
+
+[RELEASE](HABIT_GAME_RELEASE.md), [checkpoint](HABIT_GAME_CULTIVATION_PROGRESS.md), [USER_GUIDE](HABIT_GAME_USER_GUIDE.md) và [REVIEW](HABIT_GAME_CULTIVATION_REVIEW.md) là tài liệu hiện hành. Các mục dưới là lịch sử trước redesign; không khởi động lại yêu cầu chờ duyệt HTML/hoãn art hoặc đưa Thần binh trở lại.
+
+- Hiện tại/Công pháp/Vượt tầng/Thành tựu; 22 tầng/18 cơ duyên/39 môn; discovery che bí tịch, cập nhật bộ chiêu nguyên tử, chiến thắng đầu tiên nạp khi cần.
+- 61 raster/122 WebP/39 SVG cuối đã xem trong UI và hash live khớp. Content `than-lo-4`, engine `battle-v1`; snapshot/quyền/preset/receipt cũ giữ. Không đổi schema 0037.
+- Main 329 + experiments 25 trước sửa cuối; targeted loader/discovery 9, settlement 1 và practice/battle 19 đạt; final browser 35/35, typecheck/check:web 45/dry-run/readiness đạt. 216 statics live hash match, tám GET 401/Origin 403, runtime 66 events/một cron đúng version outcome ok.
+- Owner browser isolated 401; không giả phiên/log hoặc gửi tin. Chưa claim owner API 200 hay tải đầu nhanh hơn; bootstrap latency cũ là giới hạn đã biết. USER_GUIDE có hướng dẫn nghiệm thu.
+- Backup trước release ở `.wrangler/cultivation-qa/staging/`, ngoài Git. Rollback cần binary hiểu v4; ưu tiên sửa tiến tới, không restore đè dữ liệu mới. Hai phần dirty riêng `docs/HABIT_GAME_UX_REVIEW.md` và `docs/prototypes/habits/` giữ ngoài commit.
 
 ## Cập nhật 13/10/2026: icon và bản thử Tu luyện
 

@@ -1,6 +1,6 @@
 # Tu luyện — giao diện và luồng
 
-Cập nhật: 2026-10-13. Bản HTML đã được người dùng đồng ý làm nền tảng; **luồng mới và bộ art cuối đã tích hợp trong app thật, hoàn tất QA local**, xem [checkpoint hiện tại](HABIT_GAME_CULTIVATION_PROGRESS.md). Các số giao chiến trong HTML vẫn chỉ là mô phỏng. Trạng thái/commit/version staging thực tại RELEASE; phần kiểm bản thử bên dưới là lịch sử, không mô tả app hiện hành.
+Cập nhật 2026-10-13. Bản HTML là nền tảng đã duyệt; **luồng mới và bộ art cuối đã tích hợp, kiểm và phát hành staging** từ source `07e9aa0`. [Checkpoint](HABIT_GAME_CULTIVATION_PROGRESS.md) và RELEASE ghi version/bằng chứng/giới hạn. Các số trong HTML là mô phỏng; phần kiểm bản thử bên dưới là lịch sử, không mô tả app hiện hành.
 
 Mở [bản HTML tương tác](prototypes/cultivation/index.html) trực tiếp trong Chrome/Edge. Không cần đăng nhập, cài thư viện hoặc có mạng. Dữ liệu mẫu lưu trong trình duyệt, độc lập với dữ liệu của app. Nút **Đổi tình huống** giúp xem các trạng thái mà không phải chơi nhiều ngày.
 
