@@ -2,46 +2,65 @@
 
 ## Tu luyện v2 — ngày 2026-10-14
 
-**Gates nguồn cuối đạt; source commit đầu8dffbe8. Đang hoàn tất artifact/migration/deploy, chưa phát hành v2 tại thời điểm ghi phần này.** Trạng thái từng bước ở [PROGRESS §5.9](CULTIVATION_IMPLEMENTATION_PROGRESS.md).
+**Đã phát hành và kiểm staging.** Runtime source `8dffbe8`, artifact source `f2b4ec6`, đã push trên `review/p1-p3`. Worker **`ef677def-9126-4af5-857b-39c3bcf6f103`**, schema **0038**. Commit cấu hình/tài liệu sau phát hành không đổi binary hoặc asset. Trạng thái từng bước ở [PROGRESS §5.9](CULTIVATION_IMPLEMENTATION_PROGRESS.md).
 
 ### Phạm vi giao
 
 - Hiện tại / Công pháp / Thử thách / Thành tựu; Phái → Môn → Tác dụng / Nâng cấp, 39 môn và 40 encounter. Mỗi thẻ một số Sát thương nổi bật; hiệu ứng, điều kiện và cái giá đọc thống nhất, nhật ký có breakdown mở thêm.
 - Tầng theo số ngày luyện; damage tăng độc lập từng kỳ theo habit. Thuần khiết giữ khuyết điểm kế thừa, trần và phần mất; 80/90/100% là Tinh Thuần/Chí Thuần/Thông Thần. Tối đa hai bản được duy trì, lịch sử và snapshot vẫn giữ.
-- Bản v2 mới dùng lịch3/4/6/8: thường21/cấm32/ngoài42 ngày. Lịch đã lưu và bản v1 giữ riêng. Contentthan-lo-5, practice-v2/battle-v2 cho bản/trận mới; content1–4 và rulev1 vẫn được đọc đúng.
-- [Demo HTML](prototypes/cultivation/kiem-y-demo.html)354.409byte đóng gói production engine/actions/views; dữ liệu mẫu riêng, networkAPI bị chặn. Giữ ảnh hiện có, bốn raster kiếm tổng69.742byte; không sinh ảnh mới hoặc dùng dịch vụ trả phí.
+- Bản v2 mới dùng lịch 3/4/6/8: thường 21/cấm 32/ngoài 42 ngày. Lịch đã lưu và bản v1 giữ riêng. Content than-lo-5, practice-v2/battle-v2 cho bản/trận mới; content 1–4 và rule v1 vẫn được đọc đúng.
+- [Demo HTML](prototypes/cultivation/kiem-y-demo.html)354.409 byte đóng gói production engine/actions/views; dữ liệu mẫu riêng, networkAPI bị chặn. Giữ ảnh hiện có, bốn raster kiếm tổng69.742 byte; không sinh ảnh mới hoặc dùng dịch vụ trả phí.
 
 ### Gates và review trước release
 
 | Cổng | Kết quả nguồn cuối | Artifact private |
 | --- | --- | --- |
-| Main |378/378,0fail/skip,819,84s |`delivered-main.log` |
-| Browser |44/44,0fail/skip |`checked-browser.log` |
-| Typecheck / web |exit0;47modules |`delivered-typecheck.log`, `delivered-web.log` |
-| Build / staging check |exit0;230assets,719,90KiB/gzip166,71KiB |`delivered-build.log`, `delivered-staging.log` |
-| Visual |320/360/390/1440,hai theme/chữ200%,104demo captures; agent mở contact sheets và màn thật |Ảnh nguồn cuối và `review-demo-*` |
-| Restore mới |0038 áp được trên bản sao, integrityok,0FK;99bảng cũ unchanged,1bảng mới |`delivered-restore.json` |
-| Recovery bundle |content1–5/practice-v1/v2 GET200/parity,401khôngauth,state/version giữ; restoredDB read-only |`delivered-recovery.json` |
+| Main |378/378,0 fail/skip,819,84 s |`delivered-main.log` |
+| Browser |44/44,0 fail/skip |`checked-browser.log` |
+| Typecheck / web |exit0;47 modules |`delivered-typecheck.log`, `delivered-web.log` |
+| Build / staging check |exit0;230assets,719,90 KiB/gzip166,71 KiB |`delivered-build.log`, `delivered-staging.log` |
+| Visual |320/360/390/1440,hai theme/chữ200%,104 demo captures; agent mở contact sheets và màn thật |Ảnh nguồn cuối và `review-demo-*` |
+| Restore mới |0038 áp được trên bản sao, integrityok,0 FK;99 bảng cũ unchanged,1 bảng mới |`release-restore.json` |
+| Recovery bundle |content 1–5/practice-v1/v2 GET200/parity,401không auth,state/version giữ; restoredDB read-only |`release-recovery.json` |
 
 Đã sửa footer chữ lớn bằng chuyển ghi chú dài vào body, ảnh desktop contain và đưa phần Nâng cấp vào viewport khi đổi mục. Preview/nhật ký dùng metadata resolver; không đổi công thức phòng ngự hoặc kinh tế nền. Huyền Quy/Kiếm Ý/Thôn Thiên có ca trigger/benefit/limit cụ thể tại [BALANCE](HABIT_GAME_BALANCE.md); matrix earned giữ fingerprint và giới hạn của report gốc.
 
 ### Hiệu năng có điều kiện
 
-Năm mẫu local cuối,390×844,latency150ms,100KiB/s,không CPU throttle: shell13,6–17,6ms; nội dung303–313,8ms; ảnh trong viewport740,8–759,1ms; mở cache5,2–6,8ms; chi tiết734,7–775,2ms. `delivered-performance.json` giữ hashes từng nguồn. Fixture không bao gồm Worker/D1; không dùng số này làm latency staging hoặc chứng minh nhanh hơn bản cũ.
+Năm mẫu local cuối,390×844, latency 150 ms,100 KiB/s,không CPU throttle: shell13,6–17,6 ms; nội dung303–313,8 ms; ảnh trong viewport740,8–759,1 ms; mở cache5,2–6,8 ms; chi tiết734,7–775,2 ms. `delivered-performance.json` giữ hashes từng nguồn. Fixture không bao gồm Worker/D1; không dùng số này làm latency staging hoặc chứng minh nhanh hơn bản cũ.
 
-D1 local với lịch34 đã lưu và4tầng×30habit: peak22SQL/ngày, overview13SQL/25.281byte, detail7SQL/14.618byte. Không viết các phép tính game vào UI/LLM.
+D1 local với lịch34 đã lưu và4 tầng×30habit: peak22SQL/ngày, overview13SQL/25.281byte, detail7SQL/14.618byte. Không viết các phép tính game vào UI/LLM.
 
-Đóng gói Git: metadata gốc được stage no-filters để giữ CRLF/hash nguồn.26record trong Git index và12checkout-filter cases true/false/input khớp hash; không tạo .gitattributes khi chưa được user duyệt.
+Đóng gói Git: metadata gốc giữ nguyên byte/hash.26 record trong Git index và12 checkout-filter cases true/false/input khớp hash. User đã duyệt `.gitattributes`: đúng một quy tắc `v2/*.metadata.json -text`; unit provenance 1/1 đạt sau thêm cấu hình. Không sinh ảnh mới.
 
 ### Backup và phục hồi
 
-Backup mới `.wrangler/cultivation-v2-final-qa/staging-before-v2-release-20261014.sql`,1.632.676byte, SHA256 `0FF106002333390C413E07DC5F94FF7D5BF1D4418F85A79775269E1375751B7D`. File và CLI output riêng tư không commit.
+Backup mới `.wrangler/cultivation-v2-final-qa/staging-before-final-v2-20261014.sql`,1.632.676 byte, SHA256 `0FF106002333390C413E07DC5F94FF7D5BF1D4418F85A79775269E1375751B7D`. File và CLI output riêng tư không commit.
 
-Recovery candidate là bundle nguồn cuối719,90KiB, SHA256 `567a9edf921e4b5cfb56d823d2049ca9e09e1a8a6ff763584fe8fc14bdb65b87`. Rehearsal offline hỗ trợ content1–5/v1–v2; workerd local tối đa2026-08-06, cloudconfig2026-09-11 giữ nguyên. Sau writesv2, không dùng binarypre-v2 hoặc restore backup đè writes mới. Commands và cách phục hồi ở [OPERATIONS](OPERATIONS.md).
+Recovery candidate là bundle nguồn cuối719,90 KiB, SHA256 `567a9edf921e4b5cfb56d823d2049ca9e09e1a8a6ff763584fe8fc14bdb65b87`. Rehearsal offline hỗ trợ content 1–5/v1–v2; workerd local tối đa2026-08-06, cloud config 2026-09-11 giữ nguyên. Sau writesv2, không dùng binarypre-v2 hoặc restore backup đè writes mới. Commands và cách phục hồi ở [OPERATIONS](OPERATIONS.md).
 
 ### Kiểm sau phát hành
 
-Chưa thực hiện tại checkpoint này. Cần ghi sourcecommit, WorkerID, migrationlisting, static/hash/auth/Origin, ownerGET bằng phiên thật và latencylive trước báo hoàn tất. Không tạo dữ liệu cá nhân thử hoặc gửi tin thử. Art/trải nghiệm dài ngày chờ người dùng nghiệm thu; Chrome emulation không thay thiết bị thật.
+- Deploy exit0, startup8 ms; Worker ID trên, cron mỗi phút và bindings/secrets giữ nguyên.
+- Migration0038 áp thành công; listing không còn pending. Remote `PRAGMA quick_check`=ok, `foreign_key_check` không có dòng; chỉ đọc,0 rows written.
+- **222 file tĩnh** HTTP200/SHA256 khớp working source.230 files là số Wrangler đọc, khác số222 file html/css/js/svg/webp đã smoke. Tám API không auth trả401; Origin ngoài trả403 trước ghi.
+- Phiên user vừa đăng nhập được dùng để đọc **25 GET/5 endpoint×5 mẫu**, tất cả200,0 browser runtime error. Catalog trảthan-lo-5; chi tiết Kiếm Ý đúng DTO selected/technique/upgrade/versions, private no-store. Không tạo habit/log/battle giả hoặc gửi tin thử.
+- Source `f2b4ec6` đã push thường; phần .gitattributes/tài liệu sau đó không đổi runtime, giữ hash metadata khi checkout.
+
+| API live | Số mẫu | Min / trung vị / max (ms) | Payload (byte) |
+| --- | ---: | ---: | ---: |
+| game |5 |453,1 /482,6 /688,7 |3.168 |
+| game-catalog |5 |183,7 /213,2 /335,9 |26.244 |
+| game-victories |5 |190,2 /191,8 /245,6 |16 |
+| game-presets |5 |170,8 /195,2 /284,4 |26 |
+| game-technique Kiếm Ý |5 |333,4 /359,0 /432,7 |7.637 |
+
+Mẫu live không throttle, tuần tự trong browser/session riêng; bao gồm mạng/Worker/D1, không là benchmark mọi dữ liệu hoặc chứng minh nhanh hơn bản cũ. Game Server-Timing tách settle95–209ms/practice145–211ms/battle47–55ms trong các mẫu; dùng số raw report khi phân tích. Hành động ghi/replay/concurrency được kiểm qua domain/D1/browser fixtures, không ghi thử vào tài khoản thật. Chrome emulation chưa thay thiết bị thật; art và trải nghiệm dài ngày do user nghiệm thu.
+
+Artifacts private: `.wrangler/cultivation-v2-final-qa/` có `release-deploy.log`, `release-migrate.log`, `release-migrations-after.log`, `release-integrity.json`, `release-public-assets-auth.json`, `release-owner-reads.json`, `release-restore.json`, `release-recovery.json`, các gates/images/performance và pushlog. Backup/CLI/raw reports không commit; tài liệu chỉ count/hash/version. [USER_GUIDE](HABIT_GAME_USER_GUIDE.md) và [READMEdemo](prototypes/cultivation/README.md) hướng dẫn thử.
+
+**Hoàn tất triển khai kỹ thuật theo PLAN§12.** Người dùng nghiệm thu trên [staging](https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev/app/) hoặc [HTMLdemo](prototypes/cultivation/kiem-y-demo.html).
+
 
 ---
 

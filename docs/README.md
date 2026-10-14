@@ -5,7 +5,7 @@ Cập nhật 2026-10-14. Docs tách **source đang có**, **sản phẩm đích*
 ## Bắt đầu đúng nhiệm vụ
 
 - Tiếp tục công việc chung: [HANDOFF](HANDOFF.md), kiểm git status/HEAD rồi đọc phần liên quan.
-- Vòng Tu luyện v2 hiện tại: [bản chốt](CULTIVATION_FINAL_BRIEF.md) → [PLAN](CULTIVATION_IMPLEMENTATION_PLAN.md) → [PROGRESS §5.9/§6](CULTIVATION_IMPLEMENTATION_PROGRESS.md). [GOAL](CULTIVATION_GOAL.md) có prompt cho thread mới và cách tiếp tục goal đã có; [demo HTML](prototypes/cultivation/kiem-y-demo.html) dùng dữ liệu riêng. V2 đang local, chưa phát hành; không lấy release lịch sử bên dưới làm bằng chứng vòng này đã xong.
+- Vòng Tu luyện v2 hiện tại: [bản chốt](CULTIVATION_FINAL_BRIEF.md) → [PLAN](CULTIVATION_IMPLEMENTATION_PLAN.md) → [PROGRESS §5.9/§6](CULTIVATION_IMPLEMENTATION_PROGRESS.md). [GOAL](CULTIVATION_GOAL.md) có prompt cho thread mới và cách tiếp tục goal đã có; [demo HTML](prototypes/cultivation/kiem-y-demo.html) dùng dữ liệu riêng. V2 đã giao staging; [RELEASE](HABIT_GAME_RELEASE.md) ghi source/Worker0038/gates/latency. Không lấy release lịch sử thay bằng chứng nguồn hiện hành.
 - Triển khai toàn Habit/Thần Lộ: [HABIT_GAME_IMPLEMENTATION](HABIT_GAME_IMPLEMENTATION.md), prompt `/goal` ở mục 8. Sau đó REVIEW/PRODUCT/PROGRESS và docs chuyên đề theo bước.
 - Phạm vi mới đã phát hành staging: habit/theo dõi, luyện/chiến đấu, **5 phái/39 môn/15 chương**, truyện/nhân vật/ảnh thật, UX và vận hành. Ngân sách bổ sung0đ, ảnh local; xem [USER_GUIDE](HABIT_GAME_USER_GUIDE.md) để dùng và [RELEASE](HABIT_GAME_RELEASE.md) để nghiệm thu/bằng chứng.
 

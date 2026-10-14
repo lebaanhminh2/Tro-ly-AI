@@ -2,7 +2,7 @@
 
 Cập nhật **2026-10-14**. Điểm vào cho vòng sửa Tu luyện tiếp theo; giữ các quyết định đã chốt ngày 13/10.
 
-**Trạng thái: hoàn thiện local, đang qua cổng phát hành v2.** Engine/D1/API, UI và demo chung nguồn đã có; factory bản mới21ngày, lịch đã lưu giữ nguyên. Footer chữ lớn và crop ảnh đã sửa; browser44/44, rehearsal bundle content1–5/v1–v2 đạt. Main nguồn cuối/remote release đang hoàn tất. **PROGRESS§5.9/§6 là nguồn trạng thái duy nhất**; đọc checkpoint trước mọi thao tác.
+**Trạng thái: v2 đã phát hành staging và hoàn tất kỹ thuật.** Versions/evidence tại [RELEASE](HABIT_GAME_RELEASE.md); **PROGRESS§5.9/§6** là checkpoint hiện hành. Tài liệu này tiếp tục sở hữu luật, kiến trúc và cổng nghiệm thu; trạng thái các nhóm không được suy từ nhật ký cũ.
 
 **Đọc bản tổng hợp sản phẩm trước:** [CULTIVATION_FINAL_BRIEF.md](CULTIVATION_FINAL_BRIEF.md). Tài liệu này sở hữu luật cố định, inventory và điều kiện nghiệm thu; PROGRESS sở hữu trạng thái/bằng chứng, GOAL sở hữu prompt. Không sao chép số tests hoặc trạng thái phát hành giữa các tài liệu để suy ra bản nguồn cuối đã đạt.
 

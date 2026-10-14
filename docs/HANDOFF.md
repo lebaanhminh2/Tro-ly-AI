@@ -1,16 +1,15 @@
 # Bàn giao Habit và Tu luyện
 
-## Điểm vào mới nhất14/10/2026 — phát hành Tu luyện v2
+## Điểm vào mới nhất14/10/2026 — Tu luyện v2 đã giao staging
 
-[Bản chốt sản phẩm](CULTIVATION_FINAL_BRIEF.md), [PLAN](CULTIVATION_IMPLEMENTATION_PLAN.md) và **[PROGRESS§5.9/§6](CULTIVATION_IMPLEMENTATION_PROGRESS.md)** là nguồn hiện hành. [RELEASE](HABIT_GAME_RELEASE.md) ghi source/Worker/migration thật sau verify; các mục dưới giữ lịch sử.
+**Runtime source 8dffbe8, artifact source f2b4ec6 đã push** trên review/p1-p3. Worker **ef677def-9126-4af5-857b-39c3bcf6f103**, schema **0038**. [Staging](https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev/app/), [demo HTML](prototypes/cultivation/kiem-y-demo.html), [cách thử](prototypes/cultivation/README.md), [USER_GUIDE](HABIT_GAME_USER_GUIDE.md).
 
-- Tầng theo ngày; sát thương tăng riêng từng kỳ theo habit; khuyết điểm kế thừa trong thuần khiết; tác dụng/tỷ lệ tăng đủ theo tầng; tối đa hai bản.
-- Hiện tại/Công pháp/Thử thách/Thành tựu; Phái → Môn → Tác dụng/Nâng cấp. Một số Sát thương chính; chi tiết/preview/nhật ký từ resolver server.
-- [HTML thử toàn bộ](prototypes/cultivation/kiem-y-demo.html), [cách thử](prototypes/cultivation/README.md): chung engine/actions/views, dữ liệu riêng, khôngcloudwrite. Không sửa công thức trong HTML sinh.
-- Footer chữ lớn,cropdesktop,cuộnNâng cấp đã sửa; browser44/44,bundlecontent1–5/v1–v2 và restoredDB chỉđọc đạt. Gates/release còn lại đọccheckpoint; không dựng lạiengine/probes.
-- Factory bảnmới3/4/6/8=21ngày,cấm32/ngoài42; lịchđãlưu/v1/snapshot giữnguyên. Simulation gốc/giới hạn tạiBALANCE.
-- Bộ ảnh hiện có,ngân sách0đ; agent mởxem320/360/390/1440,sáng/tối/chữ200%. Mỹthuật/trải nghiệm dàingày chờuser nghiệmthu.
-- Quyềncode theo yêu cầu mới nhất. AGENTS yêu cầu duyệt lại được user cung cấp trongturn hiện tại; scriptrehearsal được duyệt sửa riêng. Không tự sửa filecode khác.
+- Hiện tại/Công pháp/Thử thách/Thành tựu; Phái → Môn → Tác dụng/Nâng cấp. Một số Sát thương; preview/nhật ký theo resolver.
+- Tầng theo ngày; phần tăng sát thương riêng từng kỳ theo habit, khuyết điểm kế thừa trong thuần khiết. Tác dụng tăng đủ theo tầng, tối đa hai bản, lịch/snapshot/legacy giữ.
+- Gates **378main/44browser**,type/web47/build/staging đạt;222static hash,auth/Origin và25ownerGET đều đúng;0 runtime error. Backup/restore/recovery và provenance Git đã kiểm. .gitattributes được user duyệt riêng.
+- Factory bản mới3/4/6/8=21ngày,cấm32/ngoài42; bản cũ giữ requiredDays. Bộ ảnh hiện có0đ; không batch art mới, mỹ thuật chờ user nghiệm thu.
+- [RELEASE](HABIT_GAME_RELEASE.md) sở hữu versions/evidence/latency/giới hạn; [PROGRESS§5.9/§6](CULTIVATION_IMPLEMENTATION_PROGRESS.md) sở hữu checkpoint. [BRIEF](CULTIVATION_FINAL_BRIEF.md)/[PLAN](CULTIVATION_IMPLEMENTATION_PLAN.md) giữ luật/phạm vi; không dùng checkpoint cũ để bắt đầu lại.
+- Commit cấu hình/tài liệu sau release không đổi binary. Habit/pixel prototypes và artdraft ngoài scope vẫn giữ riêng. Quyền code theo AGENTS/user mới nhất; không suy từ prompt trong tài liệu.
 
 ## Lịch sử redesign Tu luyện — bản đã giao staging trước vòng v2
 

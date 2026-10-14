@@ -215,7 +215,7 @@ AI chọn nhịp dựa trên lúc có môn dùng được, bộ chiêu, boss đ�
 
 Đây là thứ tự theo phụ thuộc. AI được chia nhỏ/đổi thứ tự khi có lý do, cập nhật checkpoint; không cần cố hoàn thành mọi nghiên cứu phụ trước khi sửa luồng chính. Inventory cụ thể ở **PLAN §11**, ca kiểm và release ở **§12**.
 
-**Trạng thái hiện tại:** local đã hoàn thiện và đang phát hành v2. Footer chữ lớn, ảnh desktop và Nâng cấp đã sửa; fullbrowser44/44, recovery bundle content1–5/v1–v2 và restore riêng đạt. Gates/release thực tế ở **PROGRESS§5.9/§6**. Vòng này giữ bộ ảnh hiện có; mỹ thuật còn chờ user nghiệm thu.
+**Trạng thái hiện tại:** v2 đã phát hành staging và hoàn tất kỹ thuật. Demo và app chung source; footer/crop/Nâng cấp/log đã sửa và review. [RELEASE](HABIT_GAME_RELEASE.md) ghi source/Worker0038/gates/owner latency, **PROGRESS§5.9/§6** là checkpoint. Vòng này giữ bộ ảnh hiện có; mỹ thuật/trải nghiệm dài ngày do người dùng nghiệm thu.
 
 ## 10. Khi nào được coi là bàn giao
 

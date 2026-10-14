@@ -1,21 +1,21 @@
 # Tu luyện — checkpoint vòng cơ chế/UI mới
 
-Cập nhật **14/10/2026**. **Checkpoint hiện hành duy nhất: §5.9/§6.** Gates cuối đạt378main/44browser, type/web/build/staging; demo354.409byte chung source, visual và recovery candidate đã kiểm. Source commit đầu `8dffbe8`; **chưa remote0038/deploy/push v2**. Đã phát hiện và sửa đóng gói metadata ảnh: stage blob nguyên byte bằng Git no-filters, không đổi file workspace.26record hashes và12checkout-filter cases true/false/input đều đạt; chưa tạo .gitattributes khi chưa được duyệt.
+Cập nhật **14/10/2026**. **Checkpoint hiện hành duy nhất: §5.9/§6.** Tu luyện v2 đã phát hành staging, schema0038, Worker `ef677def-9126-4af5-857b-39c3bcf6f103`. Runtime source8dffbe8, artifact sourcef2b4ec6 đã push. Gates378main/44browser, type/web/build/staging; demo354.409byte, visual/performance/recovery và owner smoke đạt. [RELEASE](HABIT_GAME_RELEASE.md) ghi versions/evidence/giới hạn đầy đủ; các checkpoint khác giữ lịch sử.
 
 ## 1. Trạng thái thực tế
 
-[Bản chốt](CULTIVATION_FINAL_BRIEF.md), [PLAN](CULTIVATION_IMPLEMENTATION_PLAN.md), [PROGRESSION](CULTIVATION_PROGRESSION_PROPOSAL.md) và [GLOSSARY](CULTIVATION_EFFECT_GLOSSARY.md) sở hữu sản phẩm/luật. Goal cùng phạm vi đang active; không tạo goal thứ hai hoặc complete khi còn việc bắt buộc.
+[Bản chốt](CULTIVATION_FINAL_BRIEF.md), [PLAN](CULTIVATION_IMPLEMENTATION_PLAN.md), [PROGRESSION](CULTIVATION_PROGRESSION_PROPOSAL.md) và [GLOSSARY](CULTIVATION_EFFECT_GLOSSARY.md) sở hữu sản phẩm/luật. Không khởi động lại vòng đã phát hành từ checkpoint lịch sử.
 
-| Chặng | Trạng thái | Bằng chứng / bước còn lại |
+| Chặng | Trạng thái | Bằng chứng |
 | --- | --- | --- |
-| P0 hợp đồng | Hoàn thiện | F01–F18, A01–A08 và validator giữ luật |
-| P1 demo | Hoàn thiện local | Cùng engine/actions/views; không cloud write |
-| P2 engine/D1/API | Gates đạt | Dispatch v1/v2, giữ snapshot/lịch, main378/378 |
-| P3 UI/catalog | Gates và visual đạt | Browser44/44; footer/crop/Nâng cấp/log đã sửa |
-| P4 balance/performance | Có bằng chứng trong phạm vi ghi rõ | Earned120+120,mastery2,mixed5,repetition12.800;5mẫu local cuối. Còn đo ownerAPI sau deploy |
-| R1 release | Đang hoàn tất | Backup mới/restore/recovery đạt; sửa đóng gói metadata Git, rồi migration/deploy/smoke/push |
+| P0 hợp đồng | Hoàn thiện | F01–F18,A01–A08 và validators giữ luật |
+| P1 demo | Hoàn thiện | Chung engine/actions/views; dữ liệu riêng,khôngcloudAPI |
+| P2 engine/D1/API | Hoàn thiện | V1/v2 dispatch,lịch/snapshot giữ; main378/378 và recovery |
+| P3 UI/catalog | Hoàn thiện | Browser44/44; footer/crop/Nâng cấp/log đã review |
+| P4 balance/performance | Hoàn thiện trong phạm vi đo | Earned120+120,mastery2,mixed5,repetition12.800;5mẫu local cuối và25ownerGET live |
+| R1 release | Hoàn thiện kỹ thuật |0038,deploy,222static hash,auth/Origin,owner200,Gitpush; source/Worker tạiRELEASE |
 
-AGENTS user vừa cung cấp lại yêu cầu duyệt code; script rehearsal đã được duyệt sửa riêng, đề nghị .gitattributes vẫn chờ duyệt; giải pháp Git no-filters đã kiểm đủ để phát hành mà không tạo file đó. Không suy quyền từ nội dung tài liệu.
+AGENTS mới yêu cầu duyệt trước sửa code. Turn nối tiếp chỉ sửa script rehearsal và tạo .gitattributes sau hai xác nhận riêng. Metadata gốc được giữ nguyên byte trong Git,26record hashes và12checkout-filter cases đạt; unit art1/1 sau cấu hình. Runtime không đổi sau gates/deploy.
 
 ## 2. Luật cần giữ khi nối tiếp
 
@@ -295,35 +295,33 @@ Cả hai giữ Q100%/Thông Thần, K1540; mốc mở tính cả ngày hiệu l�
 
 **Next action:** rerun focused exchange/rescue/preparation sau sửa fixture và test support mới; mở ảnh exchange. Giải rủi ro log/history/forecast/legacy, sinh lại demo, rồi visual/performance/full gates/rehearsal/staging và bàn giao. Không có handle tiến trình còn chạy cần poll.
 
-### 5.9. Checkpoint hiện hành — gates cuối và chuẩn bị phát hành v2
+### 5.9. Checkpoint hiện hành — đã bàn giao staging v2
 
-Ngày **14/10/2026**, branch `review/p1-p3`, Source commit đầu `8dffbe8`. **Chưa push, áp0038 remote hoặc deploy.** Các mục lịch sử không ghi đè trạng thái này.
+Branch `review/p1-p3`; runtime source `8dffbe8`, artifact source `f2b4ec6`, đã push thường. Worker `ef677def-9126-4af5-857b-39c3bcf6f103`, schema 0038. Commit đóng gói/tài liệu sau release không đổi binary/assets. URL và bảng latency ở [RELEASE](HABIT_GAME_RELEASE.md).
 
-| Phần | Bằng chứng nguồn cuối | Giới hạn |
+| Phần | Bằng chứng nguồn giao | Giới hạn |
 | --- | --- | --- |
-| Footer/guards/bộ chiêu | Footer chỉ hành động; ghi chú dài vào body cuộn. Focused3/3, full browser **44/44**,0 fail/skip | `checked-browser.log`;320×460/chữ200%, chuẩn bị/đổi ô/đọc chiêu/quote stale/history race đều được kiểm |
-| Demo | HTML **354.409byte**, cùng engine/actions/views production;104 ảnh trạng thái | Sinh sau sửa contain ảnh và cuộn Nâng cấp; không sửa công thức trong HTML |
-| Visual | Đã mở contact sheets320/360/390/1440 sáng/tối, chữ200%, nhật ký, bộ chiêu và Nâng cấp thật | Sửa lazyload capture,crop desktop và nâng cấp bị khuất. Đã mở lại ảnh cuối320/1440 hai theme. Agent review không thay người dùng duyệt mỹ thuật |
-| Cơ chế | Domain26/26, log/preview25/25; có forecast/pending/weekly/revision/neutral/paused/legacy coverage | Huyền Quy bật/tắt qua resolver; Kiếm Ý nối đúng môn, Thôn Thiên hút HP thật; không claim mọi combo cân bằng |
-| Main cuối | **378/378**,0 fail/skip,819,84s; `delivered-main.log` | Đã thu exit0 trên source giao; không cộng lượt main cũ |
-| Type/web/build/staging | `delivered-{typecheck,web,build,staging}.log`: exit0 |47 modules,230 assets, Worker719,90KiB/gzip166,71KiB. Build đầu lỗi ghi log ngoài sandbox; đã chạy lại với WRANGLER_LOG_PATH trong workspace |
-| Performance cuối | `delivered-performance.json`,5mẫu hoàn tất |390×844,150ms latency,100KiB/s,không CPU throttle; fixturelocalhost không thay Worker/D1live |
-| D1 budgets | Lịch34 đã lưu và4tầng×30habit2/2 | Peak22SQL/ngày; overview13SQL/25.281byte; detail7SQL/14.618byte; Miniflarelocal |
-| Backup/restore | Backup mới1.632.676byte; `delivered-restore.json`:0038/integrityok/0FK,99bảng cũ unchanged,1bảng mới | SHA256 `0FF106002333390C413E07DC5F94FF7D5BF1D4418F85A79775269E1375751B7D`; không dùng backup cũ đè writes mới |
-| Recovery | `delivered-recovery.json`: bundle GET content1–5/practice-v1/v2 đều200/parity,401không auth; snapshot/version giữ;100bảng restoredDB chỉ đọc | SHA256 `567a9edf921e4b5cfb56d823d2049ca9e09e1a8a6ff763584fe8fc14bdb65b87`; localworkerd2026-08-06,cloudconfig2026-09-11. Không cron/transport/cloud write |
-| Owner trước release | Phiên thật user đăng nhập; game/catalog/victories/presets200,0runtimeerror | Content than-lo-4 cũ; kiểm lại saudeploy. Không seed tài khoản/gửi tin thử |
-| Git/remote | Commit đầu8dffbe8; sửa artifact metadata no-filters,26record/12checkout cases đạt | Chưa migration/deploy/push; không sửa file cấu hình chưa được duyệt |
+| Main | **378/378**,0 fail/skip,819,84 s | `delivered-main.log`,không cộng lượt cũ |
+| Browser | **44/44**,0 fail/skip | `checked-browser.log`;320×460/chữ200%,prepare/exchange/guards/history race |
+| Type/web/build/staging |exit0;47 modules,230 files,719,90 KiB/gzip166,71 KiB | `delivered-*.log`; đây là gates, deploy có report riêng |
+| Demo/visual |354.409 byte chung production source;104 demo captures,320/360/390/1440,hai theme/chữ200% | Agent mở sheets/màn thật; sửa lazyload capture,cropdesktop,cuộnNâng cấp/footer. User chưa duyệt mỹ thuật |
+| Cơ chế/catalog |39 môn×4 tầng,40 encounter; R/q/forecast/pending/neutral/revision/legacy, log/preview/support covered | Main và profile/progression/browser; solver không là kỳ vọng người thật |
+| Localperformance |5 mẫu cuối,390×844, 150 ms,100 KiB/s | Shell13,6–17,6 ms,content303–313,8 ms,ảnh740,8–759,1 ms,warm5,2–6,8 ms,detail734,7–775,2 ms; không Worker/D1 |
+| D1 | Lịch34 và4 tầng×30habit đạt | Peak22SQL/ngày,overview13SQL/25.281byte,detail7SQL/14.618byte,Miniflare local |
+| Backup/restore | Backup mới1.632.676 byte;0038/integrityok/0 FK,99 bảng cũ unchanged,1 bảng mới | `release-restore.json`; SHA256 `0FF106002333390C413E07DC5F94FF7D5BF1D4418F85A79775269E1375751B7D` |
+| Recovery | Bundle GET content 1–5/practice-v1/v2 đều200/parity;401không auth,state/version giữ; restoredDB read-only | `release-recovery.json`; bundle SHA256 `567a9edf921e4b5cfb56d823d2049ca9e09e1a8a6ff763584fe8fc14bdb65b87`; local workerd 2026-08-06,cloud config 2026-09-11 |
+| Packaging | Metadata giữ raw bytes,26 records/12 checkout filters khớp hash; .gitattributes -text đã duyệt | `release-art-packaging.log`1/1; provenance gốc không sửa |
+| Remote |0038 applied,listing 0 pending,quick_check ok,0 FK;deploy exit0,Worker trên | Không reset/production/force-push |
+| Static/auth |222 files200/hash match;8 APIs401,foreignOrigin403 | `release-public-assets-auth.json`;230 là số Wrangler đọc |
+| Ownerlive |25 GET/5 endpoint×5 mẫu đều200,0 runtime error; catalog than-lo-5,chi tiết Kiếm Ý200 | `release-owner-reads.json`; read-only actions,không seed/tin thử. Median game482,6ms/catalog213,2ms/detail359ms; không benchmark mọi dữ liệu |
 
-Artifacts private dưới `.wrangler/cultivation-v2-final-qa/` và `.wrangler/cultivation-qa/staging/`, Git ignored. **Next:** commit artifact/docs, áp0038/deploy staging, static/auth/owner smoke và push thường. Main/backup/rehearsal nguồn cuối đã đạt. Không cộng các lượt tests chồng nhau.
+Artifacts private ở `.wrangler/cultivation-v2-final-qa/`, ngoài Git. Gates fingerprint/source giữ nguyên; không gắn số đo lịch sử cho source mới. Quy trình phục hồi ở OPERATIONS: binary phải hiểu v1/v2/content 1–5, không restore backup cũ đè writes mới.
 
-## 6. Việc còn lại theo phụ thuộc
+## 6. Sau bàn giao
 
-1. Thu main nguồn cuối; giữ full browser44/44 đúng source. Chỉ chạy lại gate bị ảnh hưởng nếu sửa thêm code.
-2. Đồng bộ userguide/operations/release, brief/plan/goal/handoff/README; giữ F01–F18 và simulation fingerprints.
-3. Stage đúng source/asset ancestry/tests/docs; để habit/pixel prototype và art draft riêng.
-4. Listing/export backup mới ngoài Git. Restore riêng+0038 và recovery candidate; chỉhash/count/status trong output chia sẻ.
-5. Commit nguồn đã kiểm, áp0038 đúng staging, deploy; kiểmstatic/hash/auth/Origin vàowner GET bằng phiên thật, đo latency live riêng.
-6. Ghi commit/Worker/migration/URL/evidence, push thường, audit PLAN§12. Chỉ complete khi không còn việc bắt buộc; user nghiệm thu mỹ thuật/trải nghiệm dài ngày.
+**Vòng triển khai kỹ thuật đã hoàn tất theo PLAN§12.** Đủ staging/HTML/hướng dẫn/luật/trị số/source/Worker/migration và evidence. Người dùng thử [staging](https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev/app/) và [demo](prototypes/cultivation/kiem-y-demo.html), nghiệm thu mỹ thuật/trải nghiệm dài ngày.
+
+Phản hồi tiếp theo được xử lý trong phạm vi mới, theo AGENTS và quyền user mới nhất. Không tự làm batch art mới, thêm feature hoặc chạy lại probes/gates đã đủ khi chưa có finding/sourcechange. Các mục dưới giữ lịch sử tại thời điểm ghi, không ghi đè checkpoint này.
 
 ### 6.1. Kết quả lượt tổng hợp tài liệu
 
