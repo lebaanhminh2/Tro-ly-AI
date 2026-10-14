@@ -1,5 +1,7 @@
 # Thần Lộ — luyện, chiến đấu và toàn bộ nội dung
 
+**Lưu ý phiên bản 2026-10-13:** phần practice-v1/battle-v1 bên dưới giữ bối cảnh luật cũ. Vòng mới đã chốt lên tầng theo số ngày, phần sát thương nhận thêm theo habit riêng từng kỳ, khuyết điểm giữ trong độ thuần và hiệu ứng đi đủ theo tầng. Đọc bản chốt tại [PLAN](CULTIVATION_IMPLEMENTATION_PLAN.md), công thức thử tại [PROGRESSION](CULTIVATION_PROGRESSION_PROPOSAL.md), tên/nhóm tại [GLOSSARY](CULTIVATION_EFFECT_GLOSSARY.md). Domain/D1 v2 đang dở local, demo/UI chưa đồng bộ, chưa phát hành; bằng chứng tại [PROGRESS](CULTIVATION_IMPLEMENTATION_PROGRESS.md). Không lấy công thức hoặc tên tầng cũ dưới đây làm đặc tả mới.
+
 Cập nhật 2026-10-12. Luyện/engine và toàn nội dung đã triển khai, phát hành staging; bằng chứng tại [RELEASE](HABIT_GAME_RELEASE.md). [PRODUCT](HABIT_GAME_PRODUCT.md) sở hữu phạm vi; [HABITS](HABIT_GAME_HABITS.md) sở hữu cam kết; [CREATIVE_BRIEF](HABIT_GAME_CREATIVE_BRIEF.md) sở hữu trải nghiệm/mỹ thuật.
 
 Danh mục bên dưới chuẩn hóa bản nháp để agent thiết kế sản phẩm đầy đủ. Tên, lore, chỉ số và cách triển khai có thể được AI biên tập; không tự xem mọi con số/đề xuất trong [BUSINESS_DRAFT](HABIT_GAME_BUSINESS_DRAFT.md) là luật đã duyệt.

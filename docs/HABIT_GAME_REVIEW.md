@@ -1,5 +1,7 @@
 # Habit/Thần Lộ — quyết định đã chốt và đối chiếu source
 
+**Cập nhật quyết định Tu luyện 2026-10-13:** hết số ngày luyện thì lên tầng; habit quyết định riêng phần sát thương kỳ đó, khuyết điểm giữ trong độ thuần, hiệu ứng mở/tăng đủ theo tầng. Màn hình chỉ một số Sát thương nổi bật. Tổng hợp/inventory/nghiệm thu tại [PLAN](CULTIVATION_IMPLEMENTATION_PLAN.md), công thức thử tại [PROGRESSION](CULTIVATION_PROGRESSION_PROPOSAL.md), thuật ngữ tại [GLOSSARY](CULTIVATION_EFFECT_GLOSSARY.md), baseline v1 tại [SOURCE REVIEW](CULTIVATION_EFFECTS_REVIEW.md). Domain/D1 v2 đang dở local, chưa phát hành; bằng chứng tại [PROGRESS](CULTIVATION_IMPLEMENTATION_PROGRESS.md). Các phần practice-v1 bên dưới là lịch sử khi có xung đột. Lượt tổng hợp chỉ sửa Markdown; prompt [GOAL](CULTIVATION_GOAL.md) để người dùng cấp quyền chạy tiếp theo AGENTS mới nhất.
+
 Cập nhật 2026-10-12. Đây là nguồn luật user và bối cảnh thiết kế; không phải nhật ký chat. Nhiệm vụ tại [IMPLEMENTATION](HABIT_GAME_IMPLEMENTATION.md); tình trạng triển khai local/remote thật ở [PROGRESS](HABIT_GAME_PROGRESS.md).
 
 ## 1. Phạm vi mới nhất
@@ -20,6 +22,7 @@ User muốn AI tự thiết kế và thực hiện từ đầu đến cuối, gi
 | Sửa sai | Chỉ ghi/sửa ngày sinh hoạt hiện tại; ngày cũ chỉ xem, không backfill | HABITS |
 | Nghỉ/ốm | Không miễn tinh thuần khi có cam kết mà không làm; không đến lịch khác bỏ cam kết | HABITS/GAMEPLAY |
 | Mode | Tu Luyện/Xuất Chiến hiệu lực từ ngày sinh hoạt kế tiếp, có thể chuẩn bị trận ngay | GAMEPLAY |
+| Lên tầng — cập nhật 2026-10-13 | Hết số ngày luyện quy định thì lên tầng; phần sát thương nhận thêm tính theo habit riêng từng kỳ, không bị trần độ thuần kỳ trước giới hạn; khuyết điểm giữ trong độ thuần/trần danh hiệu; đặc tính/hiệu ứng mở đủ theo tầng | CULTIVATION_PROGRESSION_PROPOSAL |
 | Tinh thuần | Nghiêm, khuyết điểm tích lũy mạnh; khóa tầng, tầng sau không sửa tầng trước; cải thiện bằng bản mới từ tầng 1, giữ bản cũ | GAMEPLAY |
 | UI | Gọn/dễ đọc điện thoại/ít màu; đồng bộ app hiện có, AI tự chọn layout/style chi tiết | CREATIVE_BRIEF |
 | Sáng tác | AI thiết kế nhân vật nguyên bản, truyện, hình ảnh đồng nhất, ưu tiên tiên hiệp trầm; tự QA và sửa | CREATIVE_BRIEF |

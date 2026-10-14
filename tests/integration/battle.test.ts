@@ -196,8 +196,13 @@ test('weekly practice obligations close across battle and safe absence without g
         await habits.settle('123', at + 7 * DAY, 30);
         await game.settle('123', at + 7 * DAY, 7); await game.settle('123', at + 7 * DAY, 7);
         const version = (await game.versions('123', 'kiem-y', null, 10)).versions[0]!.practice;
-        assert.equal(version.tiers.length, 1); assert.equal(version.tiers[0]!.effortMilli, 3000);
-        assert.equal(version.tiers[0]!.defectsMilli, 2000); assert.equal(version.tiers[0]!.purityBp, 4285);
+        assert.equal(version.rule, 'practice-v2');
+        assert.equal(version.tiers.length, 1); assert.equal(version.tiers[0]!.effortMilli, 4000, 'three daily and one weekly success');
+        assert.equal(version.tiers[0]!.defectsMilli, 2000); assert.equal(version.tiers[0]!.purityBp, 6666, 'equal habit weights: (100% + 1/3) / 2');
+        assert.equal(version.time!.periods[0]!.days, 3, 'battle days never advance the training clock');
+        assert.equal(version.time!.periods[0]!.openedDay, day + 2);
+        assert.equal(version.time!.periods[0]!.ratioSettledDay, day + 6, 'weekly award settles later than tier opening');
+        assert.equal(version.time!.periods[0]!.qualitySettledDay, day + 6);
         const receiver = await db.prepare('SELECT receiver_json FROM habit_outcomes WHERE owner=? AND habit_id=? AND day=?').bind('123', weekly.habitId, day + 5).first<{ receiver_json: string }>();
         assert.equal(JSON.parse(receiver!.receiver_json).mode, 'battle');
         const last = await db.prepare("SELECT state_json FROM battles WHERE owner=? ORDER BY created DESC LIMIT 1").bind('123').first<{ state_json: string }>();

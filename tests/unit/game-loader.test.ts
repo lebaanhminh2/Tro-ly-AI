@@ -24,6 +24,25 @@ test('game reads coalesce, cache only the same earned access and refresh discove
     await actions.loadGame(); assert.equal(calls.filter(path => path === '/api/game-catalog').length, 2);
     assert.deepEqual(ctx.state.gameCatalog.access.victories, ['truy-lenh']);
 });
+test('the current overview renders while the independent catalog is still pending', async t => {
+    const { createGameActions } = await import(actionsPath);
+    const previous = globalThis.fetch; t.after(() => { globalThis.fetch = previous; });
+    const overview = { owned: ['kiem-y'], learned: [], victories: [], current: { mode: 'practice' } };
+    let releaseCatalog!: (response: Response) => void, rendered!: () => void;
+    const usefulRender = new Promise<void>(resolve => { rendered = resolve; });
+    globalThis.fetch = async url => String(url) === '/api/game' ? json(overview) :
+        new Promise<Response>(resolve => { releaseCatalog = resolve; });
+    const ctx = context(); ctx.render = () => { if (ctx.state.gameData && !ctx.state.gameCatalog) rendered(); };
+    const request = createGameActions(ctx).loadGame();
+    await usefulRender;
+    assert.deepEqual(ctx.state.gameData, overview);
+    assert.equal(ctx.state.gameLoading, false);
+    assert.equal(ctx.state.gameCatalogLoading, true);
+    assert.equal(ctx.state.gameCatalog, null);
+    releaseCatalog(json({ techniques: [], bosses: [], access: overview })); await request;
+    assert.equal(ctx.state.gameCatalogLoading, false);
+});
+
 test('a late game or victory read cannot restore the previous account after logout', async t => {
     const { createGameActions } = await import(actionsPath);
     const previous = globalThis.fetch; t.after(() => { globalThis.fetch = previous; });

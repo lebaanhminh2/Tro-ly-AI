@@ -1,0 +1,239 @@
+{
+  "version": "kiem-y-art-v2",
+  "workflow": "Authorized local Stable Diffusion inpainting and sword preservation compositing",
+  "modelLicense": "creativeml-openrail-m",
+  "budgetVnd": 0,
+  "preview": "docs/prototypes/cultivation/assets/kiem-y/v2/kiem-y-four-tiers.jpg",
+  "demo": "docs/prototypes/cultivation/kiem-y-demo.html",
+  "assets": [
+    {
+      "tier": "nhap-mon",
+      "label": "Nhập môn",
+      "source": "base-b.png",
+      "generation": {
+        "model": "Lykon/dreamshaper-8",
+        "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+        "mode": "local img2img",
+        "source": "sword-layout.png",
+        "sourceSha256": "7bfbe4816d302c10d31b4a62589356d8dfaa4741fd564b411af55ee4e2eb18a1",
+        "prompt": "masterpiece, premium fantasy sword icon, one complete silver straight longsword, long pristine sharp blade, dark sapphire grip, elegant sculpted silver crossguard, blue gemstone, tiny gold accents, realistic polished metal, dramatic studio rim lighting, dark navy background, crisp detailed weapon illustration",
+        "negative": "person, character, human, warrior, face, hands, holding, text, watermark, logo, duplicate sword, cropped sword, curved blade, filigree blade, elaborate patterns, noisy background, neon rings, portal, circle, cartoon, pixel art, blurry, low quality, photo",
+        "seed": 64828,
+        "strength": 0.6,
+        "steps": 28,
+        "guidance": 7,
+        "dimensions": [
+          640,
+          448
+        ],
+        "seconds": 132.02,
+        "sha256": "771caa5d6ed160daec02855c2b000b1579192b3faeb04fb11af02c37867cacf5",
+        "qa": "draft pending review"
+      },
+      "file": "docs/prototypes/cultivation/assets/kiem-y/nhap-mon.webp",
+      "bytes": 9816,
+      "sha256": "ab25e57488dc1b89a8c6be4ea1b84800f8486a0acaf36f5320afd7d537aa22a9",
+      "dimensions": [
+        640,
+        448
+      ],
+      "visualReview": "Reviewed source, contact sheet and mobile rendering. One consistent sword, no figures or text. Awaiting user art approval."
+    },
+    {
+      "tier": "tieu-thanh",
+      "label": "Tiểu thành",
+      "source": "tieu-thanh.png",
+      "generation": {
+        "id": "kiem-y-v2-tieu-thanh",
+        "model": "Lykon/dreamshaper-8",
+        "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+        "mode": "local inpainting with original AI sword preservation",
+        "source": "tieu-thanh.conditioning.png",
+        "sourceSha256": "8244e3c439091036d6d14b2eb59f3e96db7b938b4e951b7502f6442e29e54f26",
+        "originalSword": "base-b.png",
+        "originalSwordSha256": "771caa5d6ed160daec02855c2b000b1579192b3faeb04fb11af02c37867cacf5",
+        "mask": "sword-preserve-mask.png",
+        "prompt": "masterpiece, premium xianxia sword illustration, silver sword awakening, elegant flowing cyan sword energy along the diagonal blade, luminous silk ribbons, crisp silver highlights, delicate blue sparks, dark navy mist, restrained cinematic lighting, one clean focal point",
+        "negative": "human, person, face, character, hands, warrior, figure, duplicate weapon, text, letters, logo, watermark, pixel art, cartoon, blurry, messy, neon ring, circle, portal, planets, moon, buildings, landscape",
+        "seed": 65211,
+        "strength": 0.64,
+        "steps": 24,
+        "guidance": 7.5,
+        "dimensions": [
+          640,
+          448
+        ],
+        "seconds": 128.38,
+        "sha256": "12d66a7c4a3ca51544d350b60d0b406380a532aac4342805c13282f4d536d8e5",
+        "qa": "pending review"
+      },
+      "file": "docs/prototypes/cultivation/assets/kiem-y/tieu-thanh.webp",
+      "bytes": 15008,
+      "sha256": "b3c9fe97dd8d5733db8a086cc3c41f6b150b63188c07140b280913712033071b",
+      "dimensions": [
+        640,
+        448
+      ],
+      "visualReview": "Reviewed source, contact sheet and mobile rendering. One consistent sword, no figures or text. Awaiting user art approval."
+    },
+    {
+      "tier": "dai-thanh",
+      "label": "Đại thành",
+      "source": "dai-thanh-clean.png",
+      "generation": {
+        "id": "kiem-y-v2-dai-thanh-clean",
+        "model": "Lykon/dreamshaper-8",
+        "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+        "mode": "local inpainting, original AI sword composited through preservation mask",
+        "source": "tieu-thanh.png",
+        "sourceSha256": "12d66a7c4a3ca51544d350b60d0b406380a532aac4342805c13282f4d536d8e5",
+        "originalSword": "base-b.png",
+        "mask": "sword-preserve-mask.png",
+        "prompt": "masterpiece, premium abstract fantasy energy illustration, flowing icy blue plasma, luminous white silver silk ribbons, elegant sweeping sharp streams of light, scattered tiny crystalline sparks, black navy mist, dramatic cold rim lighting, clean cinematic composition, dark background",
+        "negative": "person, people, character, face, warrior, creature, bird, dragon, weapon, sword, blade, handle, hilt, dagger, spear, shield, armor, text, logo, watermark, pixel art, blurry, clutter, ring, circle, portal, moon, planet, buildings",
+        "seed": 65812,
+        "strength": 0.68,
+        "steps": 24,
+        "guidance": 8,
+        "dimensions": [
+          640,
+          448
+        ],
+        "seconds": 133.31,
+        "sha256": "c2f9ac899f0a50c2e8c05e46ca4b28d6f564e95c04504d19d3a09a4d1a5a398f",
+        "qa": "pending review"
+      },
+      "file": "docs/prototypes/cultivation/assets/kiem-y/dai-thanh.webp",
+      "bytes": 19428,
+      "sha256": "f3466a38a9d60d886b3b57c2db4fcebb5c3c8776a98a18b15807dafbecba78a6",
+      "dimensions": [
+        640,
+        448
+      ],
+      "visualReview": "Reviewed source, contact sheet and mobile rendering. One consistent sword, no figures or text. Awaiting user art approval."
+    },
+    {
+      "tier": "vien-man",
+      "label": "Viên mãn",
+      "source": "vien-man-clean.png",
+      "generation": {
+        "id": "kiem-y-v2-vien-man-clean",
+        "model": "Lykon/dreamshaper-8",
+        "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+        "mode": "local inpainting, original AI sword composited through preservation mask",
+        "source": "tieu-thanh.png",
+        "sourceSha256": "12d66a7c4a3ca51544d350b60d0b406380a532aac4342805c13282f4d536d8e5",
+        "originalSword": "base-b.png",
+        "mask": "sword-preserve-mask.png",
+        "prompt": "masterpiece, premium abstract fantasy energy illustration, immense brilliant white silver plasma currents, majestic diagonal sweeping ribbons of light, intense blue white radiant energy, dark sapphire storm clouds, subtle gold sparks, overwhelming celestial power, elegant clean cinematic composition",
+        "negative": "person, people, character, face, warrior, creature, bird, dragon, weapon, sword, blade, handle, hilt, dagger, spear, shield, armor, text, logo, watermark, pixel art, blurry, clutter, ring, circle, portal, moon, planet, buildings",
+        "seed": 65813,
+        "strength": 0.79,
+        "steps": 24,
+        "guidance": 8,
+        "dimensions": [
+          640,
+          448
+        ],
+        "seconds": 147.26,
+        "sha256": "86572450baebfbf649b928df65735726a9ce9802c7bc462c611665cd894a3311",
+        "qa": "pending review"
+      },
+      "file": "docs/prototypes/cultivation/assets/kiem-y/vien-man.webp",
+      "bytes": 25490,
+      "sha256": "bf641b37025e7abc2b51fdbfbdcdc2f677cfad00730eb184d5a72cff31084cef",
+      "dimensions": [
+        640,
+        448
+      ],
+      "visualReview": "Reviewed source, contact sheet and mobile rendering. One consistent sword, no figures or text. Awaiting user art approval."
+    }
+  ],
+  "review": "Source and demo rendering reviewed; user art approval pending.",
+  "browserQa": {
+    "runtimeErrors": [],
+    "views": [
+      {
+        "viewport": [
+          390,
+          844
+        ],
+        "tier": 1,
+        "screenshot": ".wrangler/kiem-y-art-v2-qa/tier-1-390.png",
+        "loaded": true,
+        "horizontalOverflow": false
+      },
+      {
+        "viewport": [
+          390,
+          844
+        ],
+        "tier": 2,
+        "screenshot": ".wrangler/kiem-y-art-v2-qa/tier-2-390.png",
+        "loaded": true,
+        "horizontalOverflow": false
+      },
+      {
+        "viewport": [
+          390,
+          844
+        ],
+        "tier": 3,
+        "screenshot": ".wrangler/kiem-y-art-v2-qa/tier-3-390.png",
+        "loaded": true,
+        "horizontalOverflow": false
+      },
+      {
+        "viewport": [
+          390,
+          844
+        ],
+        "tier": 4,
+        "screenshot": ".wrangler/kiem-y-art-v2-qa/tier-4-390.png",
+        "loaded": true,
+        "horizontalOverflow": false
+      },
+      {
+        "viewport": [
+          360,
+          844
+        ],
+        "tier": 1,
+        "screenshot": ".wrangler/kiem-y-art-v2-qa/tier-1-360.png",
+        "loaded": true,
+        "horizontalOverflow": false
+      },
+      {
+        "viewport": [
+          360,
+          844
+        ],
+        "tier": 2,
+        "screenshot": ".wrangler/kiem-y-art-v2-qa/tier-2-360.png",
+        "loaded": true,
+        "horizontalOverflow": false
+      },
+      {
+        "viewport": [
+          360,
+          844
+        ],
+        "tier": 3,
+        "screenshot": ".wrangler/kiem-y-art-v2-qa/tier-3-360.png",
+        "loaded": true,
+        "horizontalOverflow": false
+      },
+      {
+        "viewport": [
+          360,
+          844
+        ],
+        "tier": 4,
+        "screenshot": ".wrangler/kiem-y-art-v2-qa/tier-4-360.png",
+        "loaded": true,
+        "horizontalOverflow": false
+      }
+    ],
+    "review": "Mobile screenshots visually reviewed."
+  }
+}

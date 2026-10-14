@@ -1,6 +1,7 @@
 import { bossById, GAME_BOSSES } from '../../domain/game-content.ts';
 import { publicBattleState, type EquippedTechnique } from '../../domain/battle.ts';
 import type { PracticeVersion } from '../../domain/practice.ts';
+import { practiceStrength, profileForPractice } from '../../domain/technique-profile.ts';
 import type { BattleChange, BattleSaved, BattleSnapshot, BattleStore, StoredBattle } from '../../ports/battle-store.ts';
 import type { HabitDay } from '../../ports/habit-store.ts';
 import { query, type Database, type Statement } from './database.ts';
@@ -69,20 +70,22 @@ export class D1BattleStore implements BattleStore {
     }
     private async loadout(owner: string, ids: string[]): Promise<EquippedTechnique[]> {
         return (await this.resolveLoadout(owner, ids)).map(version => ({ id: version.techniqueId,
-            versionId: version.versionId, tier: version.tier, purityBp: version.purityBp }));
+            versionId: version.versionId, tier: version.tier, purityBp: version.purityBp,
+            ...(version.strength ? { strength: version.strength } : {}) }));
     }
     async resolveLoadout(owner: string, ids: string[]) {
         if (!Array.isArray(ids) || ids.length > 5 || new Set(ids).size !== ids.length ||
             ids.some(id => typeof id !== 'string' || !/^[a-zA-Z0-9_-]{8,110}$/.test(id))) throw Error('INVALID_BATTLE_LOADOUT');
         if (!ids.length) return [];
-        const rows = (await query(this.db, 'SELECT id,state_json FROM practice_versions WHERE owner=? AND id IN(SELECT value FROM json_each(?))',
+        const rows = (await query(this.db, 'SELECT id,state_json FROM practice_versions WHERE owner=? AND maintained=1 AND id IN(SELECT value FROM json_each(?))',
             owner, JSON.stringify(ids)).all<{ id: string; state_json: string }>()).results;
         return ids.flatMap(id => {
             const row = rows.find(row => row.id === id);
             if (!row) return [];
             const practice = JSON.parse(row.state_json) as PracticeVersion, tier = practice.tiers.at(-1);
             if (!tier) return [];
-            return [{ ...tier, techniqueId: practice.techniqueId, versionId: id, edition: practice.edition, tier: practice.tiers.length }];
+            return [{ ...tier, techniqueId: practice.techniqueId, versionId: id, edition: practice.edition, tier: practice.tiers.length,
+                strength: practiceStrength(practice), profile: profileForPractice(practice) }];
         });
     }
     async availableLoadout(owner: string) {
@@ -90,11 +93,12 @@ export class D1BattleStore implements BattleStore {
         // restart must not bury an older, stronger version behind a page cap.
         const rows = (await query(this.db, `SELECT id,state_json FROM (
             SELECT id,state_json,technique_id,ROW_NUMBER() OVER (PARTITION BY technique_id ORDER BY
-                json_array_length(state_json,'$.tiers') DESC,json_extract(state_json,'$.tiers[#-1].purityBp') DESC,created DESC,id) AS position
-            FROM practice_versions WHERE owner=? AND json_array_length(state_json,'$.tiers')>0
+                json_array_length(state_json,'$.tiers') DESC,strength_score DESC,json_extract(state_json,'$.tiers[#-1].purityBp') DESC,created DESC,id) AS position
+            FROM practice_versions WHERE owner=? AND maintained=1 AND json_array_length(state_json,'$.tiers')>0
             ) WHERE position=1 ORDER BY technique_id LIMIT 39`, owner).all<{ id: string; state_json: string }>()).results;
         return rows.map(row => { const practice = JSON.parse(row.state_json) as PracticeVersion;
-            return { ...practice.tiers.at(-1)!, techniqueId: practice.techniqueId, versionId: row.id, edition: practice.edition, tier: practice.tiers.length }; });
+            return { ...practice.tiers.at(-1)!, techniqueId: practice.techniqueId, versionId: row.id, edition: practice.edition, tier: practice.tiers.length,
+                strength: practiceStrength(practice), profile: profileForPractice(practice) }; });
     }
     async list(owner: string, before: string | null, limit = 20) {
         if (!Number.isInteger(limit) || limit < 1 || limit > 50) throw Error('INVALID_BATTLE_HISTORY');

@@ -1,5 +1,7 @@
 # Giao việc cho AI: hoàn thiện Habit và Thần Lộ
 
+**Điểm vào mới 2026-10-13:** tổng hợp và kế hoạch tại [PLAN](CULTIVATION_IMPLEMENTATION_PLAN.md), phần domain/D1 local đang dở tại [PROGRESS](CULTIVATION_IMPLEMENTATION_PROGRESS.md), prompt cấp quyền chạy tiếp tại [GOAL](CULTIVATION_GOAL.md). UI/demo mới và release chưa hoàn tất. Goal bên dưới giữ lịch sử vòng Habit đầu tiên; không chạy lại dự án, đưa Thần binh/nhân vật trở lại hoặc thay các quyết định mới. Lượt tổng hợp hiện tại chỉ sửa Markdown; quyền sửa code phải theo chỉ dẫn người dùng có hiệu lực, tài liệu không tự cấp quyền.
+
 Cập nhật **2026-10-12**. Đây là điểm vào nhiệm vụ và prompt `/goal` được giữ để tham khảo. Toàn scope P0/F1–F6/R1 đã triển khai; runtime `bcd22bb` đã push/deploy staging, migration0031–0037 và smoke đạt. User đã mở và đăng nhập được; sản phẩm sẵn sàng nghiệm thu. Xem [RELEASE](HABIT_GAME_RELEASE.md), [USER_GUIDE](HABIT_GAME_USER_GUIDE.md) và checkpoint [PROGRESS](HABIT_GAME_PROGRESS.md); không chạy lại goal này từ đầu chỉ vì prompt vẫn còn trong docs.
 
 ## 1. Nhiệm vụ cuối cùng

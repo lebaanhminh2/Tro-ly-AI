@@ -1,0 +1,23 @@
+{
+  "id": "kiem-y-v2-vien-man-clean",
+  "model": "Lykon/dreamshaper-8",
+  "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+  "mode": "local inpainting, original AI sword composited through preservation mask",
+  "source": "tieu-thanh.png",
+  "sourceSha256": "12d66a7c4a3ca51544d350b60d0b406380a532aac4342805c13282f4d536d8e5",
+  "originalSword": "base-b.png",
+  "mask": "sword-preserve-mask.png",
+  "prompt": "masterpiece, premium abstract fantasy energy illustration, immense brilliant white silver plasma currents, majestic diagonal sweeping ribbons of light, intense blue white radiant energy, dark sapphire storm clouds, subtle gold sparks, overwhelming celestial power, elegant clean cinematic composition",
+  "negative": "person, people, character, face, warrior, creature, bird, dragon, weapon, sword, blade, handle, hilt, dagger, spear, shield, armor, text, logo, watermark, pixel art, blurry, clutter, ring, circle, portal, moon, planet, buildings",
+  "seed": 65813,
+  "strength": 0.79,
+  "steps": 24,
+  "guidance": 8,
+  "dimensions": [
+    640,
+    448
+  ],
+  "seconds": 147.26,
+  "sha256": "86572450baebfbf649b928df65735726a9ce9802c7bc462c611665cd894a3311",
+  "qa": "pending review"
+}

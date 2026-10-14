@@ -1,8 +1,9 @@
 import { liveRequest } from '../core/http.js';
 import { habitDate } from '../models/habits.js';
-import { practiceNumber, practiceStatus, purityLabel } from '../models/practice.js';
+import { practiceStatus } from '../models/practice.js';
 import { button, el } from '../ui/dom.js';
 import { techniqueSymbol } from '../ui/game-art.js';
+import { renderTechniqueDamage, renderPracticePurity, renderTechniqueEffects, renderTechniqueUpgrade } from '../ui/technique-profile.js';
 import { techniqueDiscovered, bossDiscovered } from '../models/game-library.js';
 
 export function createGameActions(context) {
@@ -29,23 +30,28 @@ export function createGameActions(context) {
     }
     async function fetchGame(catalogOnly) {
         const request = ++generation, revision = runtime.revision;
-        state.gameLoading = true; state.gameError = null; render();
+        const current = () => request === generation && revision === runtime.revision;
+        state.gameLoading = true; state.gameError = null; state.gameCatalogLoading = !state.gameCatalog; render();
         try {
             if (!state.live) return;
             const cached = state.gameCatalog;
-            const [data, initialCatalog] = await Promise.all([catalogOnly && state.gameData ? Promise.resolve(state.gameData) : liveRequest('game'), cached ? Promise.resolve(cached) : liveRequest('game-catalog')]);
-            if (request !== generation || revision !== runtime.revision) return;
+            const dataRead = catalogOnly && state.gameData ? Promise.resolve(state.gameData) : liveRequest('game');
+            const catalogRead = cached ? Promise.resolve({ value: cached }) : liveRequest('game-catalog').then(value => ({ value }), error => ({ error }));
+            const data = await dataRead;
+            if (!current()) return;
             const signature = accessSignature(data);
-            const changed = cached ? signature !== state.gameCatalogAccess
-                : initialCatalog.access ? accessSignature(initialCatalog.access) !== signature : false;
-            const catalog = changed ? await liveRequest('game-catalog') : initialCatalog;
-            if (request !== generation || revision !== runtime.revision) return;
-            state.gameData = data; state.gameCatalog = catalog; state.gameCatalogAccess = catalog.access ? accessSignature(catalog.access) : signature;
+            state.gameData = data; state.gameLoading = false; render();
+            const initial = await catalogRead;
+            if (!current()) return;
+            if (initial.error) throw initial.error;
+            const changed = cached ? signature !== state.gameCatalogAccess : initial.value.access ? accessSignature(initial.value.access) !== signature : false;
+            const catalog = changed ? await liveRequest('game-catalog') : initial.value;
+            if (!current()) return;
+            state.gameCatalog = catalog; state.gameCatalogAccess = catalog.access ? accessSignature(catalog.access) : signature;
             if (changed) state.gameVictories = null;
             if (state.gamePanel === 'collection' && !state.gameVictories) loadGameVictories();
-        } catch (error) {
-            if (request === generation && revision === runtime.revision) state.gameError = error.message;
-        } finally { if (request === generation) { state.gameLoading = false; render(); } }
+        } catch (error) { if (current()) state.gameError = error.message; }
+        finally { if (current()) { state.gameLoading = false; state.gameCatalogLoading = false; render(); } }
     }
     function showGamePanel(panel) {
         if (panel !== 'collection') state.gameVictoryFocus = null;
@@ -79,7 +85,7 @@ export function createGameActions(context) {
         })().finally(() => { if (victoryLoading === request) victoryLoading = null; });
         victoryLoading = request; return request;
     }
-    function selectGameSchool(id) { state.gameSchool = id; render(); }
+    function selectGameSchool(id) { state.gameSchool = id; state.gameSearch = ''; render(); }
     function followGameGoal(goal) {
         if (goal.kind === 'refresh') return loadGame();
         if (goal.kind === 'habits') {
@@ -111,78 +117,103 @@ export function createGameActions(context) {
     }
     async function openTechnique(technique) {
         if (!state.gameData) return;
-        if (!techniqueDiscovered(technique, state.gameData, state.gameCatalog)) { toast('Bí tịch này chưa lộ diện. Tiếp tục vượt tầng để tìm dấu vết.'); return; }
-        const expected = { day: state.gameData.day.day, version: state.gameData.version };
+        if (!techniqueDiscovered(technique, state.gameData, state.gameCatalog)) { toast('Bí tịch chưa được phát hiện. Xem Thử thách để tìm đường học.'); return; }
+        const expected = { day: state.gameData.day.day, version: state.gameData.version }, revision = runtime.revision;
         openSheet(technique.name); sheet.classList.add('settings-sheet-open');
-        const body = el('div', undefined, 'settings-sheet-body technique-sheet');
-        const introduction = el('div', undefined, 'technique-introduction');
-        introduction.append(techniqueSymbol(technique.id, 48), el('p', technique.description, 'technique-description')); body.append(introduction);
-        if (technique.combatWarning) body.append(el('p', technique.combatWarning, 'battle-warning'));
-        const sources = el('section', undefined, 'technique-sources'); sources.append(el('h3', 'Đường học'));
-        if (technique.availableInitially) sources.append(el('p', 'Quyền học có sẵn từ khi bắt đầu hành trình.', 'hint'));
-        for (const id of technique.sources ?? []) {
-            const boss = state.gameCatalog.bosses.find(value => value.id === id); if (!boss) continue;
-            if (!bossDiscovered(boss, state.gameData)) { sources.append(el('p', 'Vượt thêm tầng để đến thử thách mở đường học.', 'hint')); continue; }
-            sources.append(el('p', ((state.gameData.victories ?? []).includes(id) ? '✓ Đã thắng ' : 'Thắng ') + boss.name + (boss.floor ? ' · tầng ' + String(boss.floor).padStart(2, '0') : ' · cơ duyên'), 'hint'), button('Xem thử thách', () => {
-                sheet.close(); state.gamePanel = 'journey'; state.gameChapter = boss.chapter; render();
-                requestAnimationFrame(() => document.querySelector('[data-boss-id="' + boss.id + '"]')?.scrollIntoView({ block: 'center' }));
-            }, 'text-button'));
+        const body = el('div', undefined, 'settings-sheet-body technique-sheet'), footer = el('footer', undefined, 'technique-sheet-footer'); sheetContent.append(body, footer);
+        let detailGeneration = 0, mode = 'effects';
+        const selected = [state.gameData.currentPractice, state.gameData.pendingPractice].find(value => value?.practice.techniqueId === technique.id)?.practice.id;
+        const connected = () => sheet.open && body.isConnected && revision === runtime.revision;
+        async function readDetails(versionId) {
+            const generation = ++detailGeneration;
+            body.replaceChildren(el('p', 'Đang tải công pháp…', 'hint')); footer.replaceChildren();
+            try {
+                const data = await liveRequest('game-technique?techniqueId=' + encodeURIComponent(technique.id) + (versionId ? '&versionId=' + encodeURIComponent(versionId) : ''));
+                if (!connected() || generation !== detailGeneration) return;
+                draw(data);
+            } catch (error) {
+                if (!connected() || generation !== detailGeneration) return;
+                body.replaceChildren(el('p', error.message, 'hint'), button('Thử lại', () => readDetails(versionId), 'secondary'));
+            }
         }
-        body.append(sources);
-        if (!state.gameData.owned.includes(technique.id)) {
-            body.append(el('p', 'Chưa có quyền học. Thắng thử thách mở bí tịch; cậu tự luyện từ Nhập môn.', 'hint')); sheetContent.append(body); return;
-        }
-        const hint = el('p', 'Đang tải các bản luyện…', 'hint'); body.append(hint); sheetContent.append(body);
-        try {
-            const history = await liveRequest('practice-versions?techniqueId=' + encodeURIComponent(technique.id));
-            if (!sheet.open || !body.isConnected) return;
-            hint.remove();
-            body.append(el('p', 'Chọn luyện có hiệu lực từ ' + habitDate(expected.day + 1) + '. Habit đạt mục tiêu mới góp tiến độ; tinh thuần chốt khi hoàn tất tầng và cam kết tuần.', 'hint'));
-            const editions = el('details', undefined, 'technique-edition-details'); editions.append(el('summary', 'Các bản luyện đã có'));
-            const list = el('div', undefined, 'practice-version-history'); editions.append(list); body.append(editions);
-            function appendVersion(stored) {
-                const version = stored.practice, row = el('section', undefined, 'practice-version-row');
-                row.append(el('strong', 'Bản ' + version.edition), el('p', practiceStatus(version), 'hint'));
-                if (version.tiers.length) row.append(el('p', version.tiers.length + ' / 4 tầng · tinh thuần ' + purityLabel(version.tiers.at(-1).purityBp), 'hint'));
-                else row.append(el('p', 'Tiến độ ' + practiceNumber(version.progressMilli) + ' / ' + practiceNumber(version.costsMilli[0]), 'hint'));
-                if (version.tiers.length < 4) row.append(button('Luyện bản ' + version.edition, () => save({ operation: 'continue_practice', ...expected, practiceId: version.id }), 'secondary'));
-                if (version.tiers.length) {
-                    const purity = el('details', undefined, 'technique-tier-purity'); purity.append(el('summary', 'Tinh thuần từng tầng'));
-                    for (const [index, tier] of version.tiers.entries()) purity.append(el('p', ['Nhập môn', 'Tiểu thành', 'Đại thành', 'Viên mãn'][index] + ' · ' + purityLabel(tier.purityBp), 'hint'));
-                    purity.append(el('p', 'Tinh thuần đã khóa. Muốn cải thiện cần luyện một bản mới từ tầng đầu.', 'hint')); row.append(purity);
+        function draw(data) {
+            body.replaceChildren(); footer.replaceChildren();
+            const owned = state.gameData.owned.includes(technique.id), stored = data.selected, version = stored?.practice;
+            const profile = stored?.profile ?? data.upgrade.referenceRoadmap[0].profile;
+            const intro = el('div', undefined, 'technique-introduction'); intro.append(techniqueSymbol(technique.id, 80, profile?.tier ?? 0),
+                el('p', version ? 'Bản ' + version.edition + ' · Tầng ' + version.tiers.length + ' / 4' : 'Chưa học · Tham chiếu tầng 1', 'hint'));
+            body.append(intro, renderTechniqueDamage(profile, !stored?.profile));
+            if (stored?.training) body.append(renderPracticePurity(stored.training));
+            if (stored?.maintained === false) body.append(el('p', 'Bản lịch sử · chỉ xem. Các trận đã chốt vẫn giữ nguyên bản này.', 'hint'));
+            if (data.versions.length > 1 || stored?.maintained === false) {
+                const chooser = el('label', 'Bản đang xem', 'form-field'), select = el('select');
+                if (stored?.maintained === false) {
+                    const historical = el('option', 'Bản ' + version.edition + ' · Lịch sử, chỉ xem');
+                    historical.value = version.id; select.append(historical);
                 }
-                list.append(row);
+                for (const value of data.versions) {
+                    const option = el('option', 'Bản ' + value.practice.edition + ' · Tầng ' + value.practice.tiers.length +
+                        (value.profile ? ' · ' + value.profile.damage + ' sát thương' : ' · Chưa đủ tầng 1'));
+                    option.value = value.practice.id; select.append(option);
+                }
+                select.value = version?.id ?? ''; select.addEventListener('change', () => readDetails(select.value)); chooser.append(select); body.append(chooser);
             }
-            history.versions.forEach(appendVersion);
-            const create = button(history.versions.length ? 'Luyện một bản mới' : 'Bắt đầu luyện', () => {
-                const input = { operation: 'start_practice', ...expected, techniqueId: technique.id, confirmRestart: !!history.versions.length };
-                if (history.versions.length) confirm('Luyện lại từ Nhập môn?', 'Bản mới bắt đầu từ tầng 1 để cải thiện tinh thuần. Các bản cũ và chất lượng đã chốt được giữ nguyên.', () => save(input));
-                else save(input);
-            }, 'primary');
-            body.insertBefore(create, sources);
-            const effective = el('p', 'Áp dụng từ ' + habitDate(expected.day + 1) + '.', 'technique-effective'); body.insertBefore(effective, sources);
-            if (history.versions.length) {
-                const latest = history.versions.find(entry => entry.practice.tiers.length < 4);
-                if (latest) body.insertBefore(button('Tiếp tục bản ' + latest.practice.edition, () => save({ operation: 'continue_practice', ...expected, practiceId: latest.practice.id }), 'secondary'), create);
+            const tabs = el('nav', undefined, 'technique-detail-tabs'), content = el('div', undefined, 'technique-detail-content');
+            tabs.setAttribute('aria-label', 'Thông tin công pháp');
+            const effectsTab = button('Tác dụng', () => { mode = 'effects'; showContent(true); }, 'text-button');
+            const upgradeTab = button('Nâng cấp', () => { mode = 'upgrade'; showContent(true); }, 'text-button'); tabs.append(effectsTab, upgradeTab);
+            function showContent(reveal = false) {
+                effectsTab.setAttribute('aria-pressed', String(mode === 'effects')); upgradeTab.setAttribute('aria-pressed', String(mode === 'upgrade'));
+                content.replaceChildren(mode === 'effects' ? renderTechniqueEffects(profile) : renderTechniqueUpgrade(data.upgrade));
+                if (reveal) content.scrollIntoView({ block: 'start', behavior: 'instant' });
             }
-            const explanation = el('details', undefined, 'technique-formula'); explanation.append(el('summary', 'Tiến độ & cách tính'),
-                el('p', 'Bốn tầng: ' + [3, 6, 10, 15].map(value => practiceNumber(value * technique.trainingFactor)).join(' / ') + ' tiến độ.', 'hint'));
-            body.append(explanation);
-            if (history.next) {
-                let cursor = history.next;
-                const more = button('Xem thêm bản cũ', async () => {
-                    more.disabled = true;
+            body.append(tabs, content); showContent();
+            const actions = el('div', undefined, 'technique-learning-actions');
+            if (owned) {
+                const active = version && state.gameData.current.mode === 'practice' && state.gameData.current.practiceId === version.id;
+                if (stored?.maintained && version.tiers.length < 4 && !active) actions.append(button('Luyện bản ' + version.edition,
+                    () => save({ operation: 'continue_practice', ...expected, practiceId: version.id }), 'primary'));
+                const create = button(data.versions.length ? 'Luyện lại từ tầng 1' : 'Bắt đầu luyện', () => {
+                    const input = { operation: 'start_practice', ...expected, techniqueId: technique.id, confirmRestart: !!data.versions.length };
+                    if (data.versions.length) confirm('Luyện lại công pháp?', 'Giữ bản mạnh nhất và bắt đầu một bản từ tầng 1. Nếu đã có bản luyện lại, bản đó sẽ chuyển vào lịch sử. Không ghép các tầng giữa hai bản.', () => save(input));
+                    else save(input);
+                }, data.versions.length ? 'secondary' : 'primary');
+                actions.append(create, el('p', active ? 'Đang luyện bản này. Thay đổi có hiệu lực từ ' + habitDate(expected.day + 1) + '.' : 'Áp dụng từ ' + habitDate(expected.day + 1) + '.', 'hint'));
+            } else actions.append(el('p', 'Chưa có quyền học. Thắng thử thách tương ứng để mở bí tịch, rồi luyện từ tầng 1.', 'hint'));
+            footer.append(actions);
+            const sources = el('details', undefined, 'technique-sources'); sources.append(el('summary', 'Điều kiện học'));
+            if (data.technique.availableInitially) sources.append(el('p', 'Quyền học có sẵn từ khi bắt đầu.', 'hint'));
+            for (const id of data.technique.sources ?? []) {
+                const boss = state.gameCatalog?.bosses.find(value => value.id === id);
+                if (!boss || !bossDiscovered(boss, state.gameData)) continue;
+                sources.append(button(((state.gameData.victories ?? []).includes(id) ? 'Đã thắng ' : 'Thắng ') + boss.name, () => {
+                    sheet.close(); state.gamePanel = 'journey'; state.gameChapter = boss.chapter; render();
+                    requestAnimationFrame(() => document.querySelector('[data-boss-id="' + CSS.escape(id) + '"]')?.scrollIntoView({ block: 'center' }));
+                }, 'text-button'));
+            }
+            body.append(sources);
+            if (owned && data.versions.length) {
+                const history = el('details', undefined, 'technique-edition-details'); history.append(el('summary', 'Lịch sử bản luyện'));
+                const list = el('div', undefined, 'practice-version-history'); history.append(list); let loaded = false, cursor = null;
+                async function readHistory() {
+                    if (!connected() || !history.isConnected) return;
+                    const more = list.querySelector('button[data-more]'); if (more) more.disabled = true;
                     try {
-                        const next = await liveRequest('practice-versions?techniqueId=' + encodeURIComponent(technique.id) + '&before=' + encodeURIComponent(cursor));
-                        if (!body.isConnected) return;
-                        next.versions.forEach(appendVersion); cursor = next.next;
-                        if (!cursor) more.remove();
-                    } catch (error) { toast(error.message); }
-                    finally { if (more.isConnected) more.disabled = false; }
-                }, 'secondary');
-                body.append(more);
+                        const page = await liveRequest('practice-versions?techniqueId=' + encodeURIComponent(technique.id) + (cursor ? '&before=' + encodeURIComponent(cursor) : ''));
+                        if (!connected() || !history.isConnected) return;
+                        more?.remove(); loaded = true;
+                        for (const value of page.versions) {
+                            const row = button('Bản ' + value.practice.edition + ' · ' + practiceStatus(value.practice) + (value.maintained ? '' : ' · Lịch sử'), () => readDetails(value.practice.id), 'text-button'); list.append(row);
+                        }
+                        cursor = page.next;
+                        if (cursor) { const next = button('Xem thêm', readHistory, 'text-button'); next.dataset.more = 'true'; list.append(next); }
+                    } catch (error) { if (connected() && history.isConnected) toast(error.message); }
+                    finally { if (more?.isConnected) more.disabled = false; }
+                }
+                history.addEventListener('toggle', () => { if (history.open && !loaded) readHistory(); }); body.append(history);
             }
-        } catch (error) { if (body.isConnected) { hint.textContent = error.message; body.append(button('Thử lại', () => openTechnique(technique), 'secondary')); } }
+        }
+        await readDetails(selected);
     }
     return { loadGame, loadGameVictories, showGamePanel, openTechnique, selectGameSchool, stopPractice, followGameGoal };
 }

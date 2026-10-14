@@ -1,10 +1,22 @@
 # Bàn giao Habit và Tu luyện
 
-## Mục tiêu Tu luyện hiện tại — đã giao staging
+## Điểm vào mới nhất14/10/2026 — phát hành Tu luyện v2
+
+[Bản chốt sản phẩm](CULTIVATION_FINAL_BRIEF.md), [PLAN](CULTIVATION_IMPLEMENTATION_PLAN.md) và **[PROGRESS§5.9/§6](CULTIVATION_IMPLEMENTATION_PROGRESS.md)** là nguồn hiện hành. [RELEASE](HABIT_GAME_RELEASE.md) ghi source/Worker/migration thật sau verify; các mục dưới giữ lịch sử.
+
+- Tầng theo ngày; sát thương tăng riêng từng kỳ theo habit; khuyết điểm kế thừa trong thuần khiết; tác dụng/tỷ lệ tăng đủ theo tầng; tối đa hai bản.
+- Hiện tại/Công pháp/Thử thách/Thành tựu; Phái → Môn → Tác dụng/Nâng cấp. Một số Sát thương chính; chi tiết/preview/nhật ký từ resolver server.
+- [HTML thử toàn bộ](prototypes/cultivation/kiem-y-demo.html), [cách thử](prototypes/cultivation/README.md): chung engine/actions/views, dữ liệu riêng, khôngcloudwrite. Không sửa công thức trong HTML sinh.
+- Footer chữ lớn,cropdesktop,cuộnNâng cấp đã sửa; browser44/44,bundlecontent1–5/v1–v2 và restoredDB chỉđọc đạt. Gates/release còn lại đọccheckpoint; không dựng lạiengine/probes.
+- Factory bảnmới3/4/6/8=21ngày,cấm32/ngoài42; lịchđãlưu/v1/snapshot giữnguyên. Simulation gốc/giới hạn tạiBALANCE.
+- Bộ ảnh hiện có,ngân sách0đ; agent mởxem320/360/390/1440,sáng/tối/chữ200%. Mỹthuật/trải nghiệm dàingày chờuser nghiệmthu.
+- Quyềncode theo yêu cầu mới nhất. AGENTS yêu cầu duyệt lại được user cung cấp trongturn hiện tại; scriptrehearsal được duyệt sửa riêng. Không tự sửa filecode khác.
+
+## Lịch sử redesign Tu luyện — bản đã giao staging trước vòng v2
 
 Source **`07e9aa0`** đã push trên `review/p1-p3`; Worker **`db6b1f93-3532-4aac-972b-598fa48e5488`**. URL nghiệm thu: https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev/app/
 
-[RELEASE](HABIT_GAME_RELEASE.md), [checkpoint](HABIT_GAME_CULTIVATION_PROGRESS.md), [USER_GUIDE](HABIT_GAME_USER_GUIDE.md) và [REVIEW](HABIT_GAME_CULTIVATION_REVIEW.md) là tài liệu hiện hành. Các mục dưới là lịch sử trước redesign; không khởi động lại yêu cầu chờ duyệt HTML/hoãn art hoặc đưa Thần binh trở lại.
+[RELEASE](HABIT_GAME_RELEASE.md), [checkpoint](HABIT_GAME_CULTIVATION_PROGRESS.md), [USER_GUIDE](HABIT_GAME_USER_GUIDE.md) và [REVIEW](HABIT_GAME_CULTIVATION_REVIEW.md) mô tả bản phát hành trên. Kế hoạch/checkpoint v2 ở đầu tài liệu là điểm vào cho lượt chạy mới; các mục dưới giữ lịch sử. Không khởi động lại goal cũ hoặc đưa Thần binh trở lại.
 
 - Hiện tại/Công pháp/Vượt tầng/Thành tựu; 22 tầng/18 cơ duyên/39 môn; discovery che bí tịch, cập nhật bộ chiêu nguyên tử, chiến thắng đầu tiên nạp khi cần.
 - 61 raster/122 WebP/39 SVG cuối đã xem trong UI và hash live khớp. Content `than-lo-4`, engine `battle-v1`; snapshot/quyền/preset/receipt cũ giữ. Không đổi schema 0037.
@@ -16,7 +28,7 @@ Source **`07e9aa0`** đã push trên `review/p1-p3`; Worker **`db6b1f93-3532-4aa
 
 User duyệt `web/index.html`, `web/styles.css` để sửa icon Thói quen thành SVG ô tick và tạo duy nhất `docs/prototypes/cultivation/index.html` để chốt lại UX Tu luyện. Commit **`b419934`** đã push trên `review/p1-p3`. Icon đã lên staging, version **`d4990393-e797-4e8c-ba9d-fcd822af51aa`**; HTML/CSS live HTTP200 và SHA256 khớp local. Deploy readiness4/4, dry-run và check:web45 đạt. Không có migration.
 
-Bản HTML có **Hiện tại → Công pháp → Vượt tầng → Thành tựu**; 39 công pháp/40 boss lấy từ catalog dự án, 22 trận chính thành tầng và 18 cơ duyên. Thử chọn/luyện lại bản, chuẩn bị tối đa5môn, chiêu theo ngày, mở bí tịch, cứu/tử trận và chiến tích. Bỏ Thần binh khỏi phương án; dùng dấu ấn thay chỗ, chưa làm lại art. [Thiết kế và cách thử](HABIT_GAME_CULTIVATION_UX.md) ghi đầy đủ thay đổi, phần discovery mới và tương thích vũ khí cần xử lý sau.
+Bản HTML có **Hiện tại → Công pháp → Vượt tầng → Thành tựu**; 39 công pháp/40 boss lấy từ catalog dự án, 22 trận chính thành tầng và 18 cơ duyên. Thử chọn/luyện lại bản, chuẩn bị tối đa 5 môn, chiêu theo ngày, mở bí tịch, cứu/tử trận và chiến tích. Bỏ Thần binh khỏi phương án; dùng dấu ấn thay chỗ, chưa làm lại art. [Thiết kế và cách thử](HABIT_GAME_CULTIVATION_UX.md) ghi đầy đủ thay đổi, phần discovery mới và tương thích vũ khí cần xử lý sau.
 
 Chrome kiểm các luồng chính, màn hình320–1440, chữ200%, keyboard/dark/short sheet và icon app thật; HTML không tải tài nguyên ngoài. Đây là emulation/dữ liệu mẫu. **Tab Tu luyện thật chưa được thay theo HTML.** Việc tiếp theo là user mở bản thử, góp ý/duyệt luồng; lập inventory và xin duyệt code riêng trước khi áp dụng. Không chạy lại triển khai toàn game hoặc sinh art ở bước này.
 
@@ -54,7 +66,7 @@ Cập nhật trước: 2026-10-12. Toàn scope đã triển khai, migrate/deploy
 
 ## Phạm vi và bằng chứng
 
-Habit tùy chỉnh/theo dõi/lịch-nhắc/đặt chỗ, luyện bốn tầng/tinh thuần nghiêm, trận nhiều ngày/chiêu/rút/tử trận/cứu, đủ5phái/39côngpháp/15chương tới DIỆT THẦN/40encounters/tuyến phụ/3thần binh/11chiến tích. Có truyện/nhân vật/ảnh cuối, onboarding/thư viện/nhật ký/presets/export/settings/bot. Task/ngủ5phúthoàntác/focus/checkin/reminders/đột phá được giữ bằng regressions.
+Habit tùy chỉnh/theo dõi/lịch-nhắc/đặt chỗ, luyện bốn tầng/tinh thuần nghiêm, trận nhiều ngày/chiêu/rút/tử trận/cứu, đủ5phái/39côngpháp/15chương tới DIỆT THẦN/40 encounters/tuyến phụ/3thần binh/11chiến tích. Có truyện/nhân vật/ảnh cuối, onboarding/thư viện/nhật ký/presets/export/settings/bot. Task/ngủ5phúthoàntác/focus/checkin/reminders/đột phá được giữ bằng regressions.
 
 - Gates phát hành nội dung trước vòng UX: **317main+25experiments+33browser,0fail/0skip**, typecheck/check:web45modules/build:check/staging:check đạt. Gates bản UX hiện tại nằm ở đầu tài liệu và UX_REVIEW.
 - QA: actualChrome360/390/414/1440/light-dark/large text/keyboard/slow-offline; fullcampaign80previews/30chapters/30endings/lower-fold đã xem. Localpipeline tạo130WebP/39SVG; finals/workflow/manifest ởGit, không cần model chạy khi dùng app.
@@ -77,4 +89,4 @@ Habit tùy chỉnh/theo dõi/lịch-nhắc/đặt chỗ, luyện bốn tầng/ti
 - Nudge ngủ lịch sử chưa có rootcause đã chứng minh. Hai finalsendrace thực tế đã reproduceD1/fix/regression và deploy; configuredpersonalreminders vẫn gửi. Tin đã dispatch không thu hồi bởi báo ngủ.
 - Model/venv/sourcePNG/QA/artifacts/backups ở `D:/Tro-ly-AI-art`, ngoàiGit; không còn art/test/tail process của đợt này cần giữ chạy.
 
-Việc tiếp theo là user nghiệm thu và nêu findings cụ thể. Giữ luật đã chốt ở REVIEW và phạm vi của yêu cầu mới; không chạy lại toàncampaign hoặc mở thêm scope khi chưa có rủi ro cụ thể. Secrets ở môi trường/.env, không in/commit; ngân sách bổ sung0đ. Không production/forcepush/phá dữ liệu/tin thử.
+Việc tiếp theo là user nghiệm thu và nêu findings cụ thể. Giữ luật đã chốt ở REVIEW và phạm vi của yêu cầu mới; không chạy lại toàncampaign hoặc mở thêm scope khi chưa có rủi ro cụ thể. Secrets ở môi trường/.env, không in/commit; ngân sách bổ sung 0đ. Không production/forcepush/phá dữ liệu/tin thử.

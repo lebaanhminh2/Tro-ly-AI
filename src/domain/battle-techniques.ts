@@ -6,7 +6,8 @@ export type BattleEffect =
     | { kind: 'guard'; value: number }
     | { kind: 'guard_strike'; powerPerStack: number; maximum: number }
     | { kind: 'illusion'; consume: boolean; use: 'guard' | 'heal' | 'strike' | 'dodge'; value: number }
-    | { kind: 'lifesteal'; percent: number }
+    | { kind: 'lifesteal'; percent: number; lowHpThreshold?: number; lowHpBonus?: number }
+    | { kind: 'school_combo'; school: string; value: number }
     | { kind: 'foresight'; turns: number }
     | { kind: 'mark'; power: number; delay: number }
     | { kind: 'mark_combo'; powerPerMark: number; maximum: number }

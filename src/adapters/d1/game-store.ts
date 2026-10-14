@@ -1,5 +1,7 @@
 import { habitWeekStart, type HabitDefinition } from '../../domain/habits.ts';
-import { PRACTICE_RULE, settlePracticeDay, type PracticeSource, type PracticeVersion, type PracticeWeek } from '../../domain/practice.ts';
+import { settlePracticeDay, type PracticeSource, type PracticeVersion, type PracticeWeek } from '../../domain/practice.ts';
+import { TIME_PRACTICE_RULE, type PracticeMember } from '../../domain/practice-progression.ts';
+import { profileForPractice } from '../../domain/technique-profile.ts';
 import { INITIAL_TECHNIQUES, techniqueById } from '../../domain/techniques.ts';
 import type { GameChange, GameOverview, GameSaved, GameSelection, GameSnapshot, GameStore, StoredPractice } from '../../ports/game-store.ts';
 import type { HabitDay } from '../../ports/habit-store.ts';
@@ -9,8 +11,17 @@ import { prepareBattleSettlement } from './battle-settlement.ts';
 
 type Account = { version: number; joined_day: number; anchor_start: number; next_day: number };
 type SelectionRow = { from_day: number; mode: GameSelection['mode']; practice_id: string | null; battle_id: string | null };
-type VersionRow = { id: string; state_json: string; version: number; created: number };
-const stored = (row: VersionRow): StoredPractice => ({ practice: JSON.parse(row.state_json) as PracticeVersion, version: row.version, created: row.created });
+type VersionRow = { id: string; state_json: string; version: number; created: number; maintained?: number };
+const stored = (row: VersionRow): StoredPractice => ({ practice: JSON.parse(row.state_json) as PracticeVersion, version: row.version,
+    created: row.created, maintained: row.maintained !== 0 });
+export function practiceJson(version: PracticeVersion): string {
+    if (!version.time) return JSON.stringify(version);
+    return JSON.stringify({ ...version, time: { ...version.time, periods: version.time.periods.map(period => ({ ...period, members: [] })) } });
+}
+export function practiceStrengthScore(version: PracticeVersion): number {
+    const profile = profileForPractice(version, 100000);
+    return profile ? profile.damagePower : 0;
+}
 const selection = (row: SelectionRow): GameSelection => ({ fromDay: row.from_day, mode: row.mode, practiceId: row.practice_id, battleId: row.battle_id });
 const idle = (day: number): GameSelection => ({ fromDay: day, mode: 'idle', practiceId: null, battleId: null });
 
@@ -18,6 +29,20 @@ export class D1GameStore implements GameStore {
     private db: Database;
     private defer?: (statements: Statement[]) => void;
     constructor(db: Database, defer?: (statements: Statement[]) => void) { this.db = db; this.defer = defer; }
+    private async hydrate(owner: string, values: StoredPractice[]): Promise<void> {
+        const time = values.filter(value => value.practice.time?.periods.some(period => period.bound));
+        if (!time.length) return;
+        const rows = (await query(this.db, `SELECT practice_id,tier,habit_id,successes_milli,misses_milli,cadence_json
+            FROM practice_tier_sources WHERE owner=? AND practice_id IN(SELECT value FROM json_each(?)) ORDER BY practice_id,tier,habit_id`,
+            owner, JSON.stringify(time.map(value => value.practice.id))).all<{
+                practice_id: string; tier: number; habit_id: string; successes_milli: number; misses_milli: number; cadence_json: string;
+            }>()).results;
+        for (const value of time) for (const period of value.practice.time!.periods) period.members = rows
+            .filter(row => row.practice_id === value.practice.id && row.tier === period.tier).map(row => ({
+                habitId: row.habit_id, successesMilli: row.successes_milli, missesMilli: row.misses_milli,
+                cadence: JSON.parse(row.cadence_json) as PracticeMember['cadence'],
+            }));
+    }
     private async day(owner: string, now: number, readOnly = false): Promise<HabitDay> {
         const day = readOnly ? await query(this.db, 'SELECT day,start_at,end_at FROM schedule_days WHERE owner=? AND start_at<=? AND end_at>? ORDER BY start_at DESC LIMIT 1', owner, now, now)
             .first<{ day: number; start_at: number; end_at: number }>() : await new ScheduleStore(this.db).ensureDay(owner, now);
@@ -40,8 +65,9 @@ export class D1GameStore implements GameStore {
     }
     private async practice(owner: string, id: string | null): Promise<StoredPractice | null> {
         if (!id) return null;
-        const row = await query(this.db, 'SELECT id,state_json,version,created FROM practice_versions WHERE owner=? AND id=?', owner, id).first<VersionRow>();
-        return row ? stored(row) : null;
+        const row = await query(this.db, 'SELECT id,state_json,version,created,maintained FROM practice_versions WHERE owner=? AND id=?', owner, id).first<VersionRow>();
+        if (!row) return null;
+        const value = stored(row); await this.hydrate(owner, [value]); return value;
     }
     async read(owner: string, now: number, readOnly = false): Promise<GameOverview> {
         const day = await this.day(owner, now, readOnly);
@@ -57,8 +83,8 @@ export class D1GameStore implements GameStore {
             (SELECT json_group_array(technique_id) FROM (SELECT technique_id FROM technique_unlocks WHERE owner=? ORDER BY technique_id LIMIT 50)) AS owned,
             (SELECT json_group_array(json(state_json)) FROM (SELECT state_json FROM practice_week_audits WHERE owner=? AND closed_day IS NULL ORDER BY end_day,habit_id LIMIT 30)) AS audits,
             (SELECT json_group_array(json_object('day',day,'mode',mode,'result',json(result_json))) FROM (SELECT day,mode,result_json FROM game_days WHERE owner=? ORDER BY day DESC LIMIT 7)) AS recent,
-            (SELECT json_object('id',id,'state_json',state_json,'version',version,'created',created) FROM practice_versions WHERE owner=? AND id=(SELECT practice_id FROM current_selection)) AS current_practice,
-            (SELECT json_object('id',id,'state_json',state_json,'version',version,'created',created) FROM practice_versions WHERE owner=? AND id=(SELECT practice_id FROM pending_selection)) AS pending_practice)`,
+            (SELECT json_object('id',id,'state_json',state_json,'version',version,'created',created,'maintained',maintained) FROM practice_versions WHERE owner=? AND id=(SELECT practice_id FROM current_selection)) AS current_practice,
+            (SELECT json_object('id',id,'state_json',state_json,'version',version,'created',created,'maintained',maintained) FROM practice_versions WHERE owner=? AND id=(SELECT practice_id FROM pending_selection)) AS pending_practice)`,
             owner, day.day, owner, day.day, owner, owner, owner, owner, owner, owner)
             .first<{ account: string | null; current: string | null; pending: string | null; owned: string; audits: string; recent: string;
                 current_practice: string | null; pending_practice: string | null }>();
@@ -69,6 +95,7 @@ export class D1GameStore implements GameStore {
         const owned = [...new Set([...INITIAL_TECHNIQUES, ...JSON.parse(snapshot.owned) as string[]])];
         const currentPractice = snapshot.current_practice ? stored(JSON.parse(snapshot.current_practice) as VersionRow) : null;
         const pendingPractice = snapshot.pending_practice ? stored(JSON.parse(snapshot.pending_practice) as VersionRow) : null;
+        await this.hydrate(owner, [currentPractice, pendingPractice].filter((value): value is StoredPractice => !!value));
         return { day, version: account?.version ?? 0, current, pending, currentPractice, pendingPractice, owned,
             settledThrough: account ? account.nextDay - 1 : null,
             audits: JSON.parse(snapshot.audits) as PracticeWeek[],
@@ -83,11 +110,24 @@ export class D1GameStore implements GameStore {
             if (!match || !Number.isSafeInteger(Number(match[1]))) throw Error('INVALID_GAME_HISTORY');
             created = Number(match[1]); id = match[2]!;
         }
-        const rows = (await query(this.db, `SELECT id,state_json,version,created FROM practice_versions
+        const rows = (await query(this.db, `SELECT id,state_json,version,created,maintained FROM practice_versions
             WHERE owner=? AND technique_id=? AND (created<? OR (created=? AND id>?)) ORDER BY created DESC,id LIMIT ?`,
             owner, techniqueId, created, created, id, limit + 1).all<VersionRow>()).results;
         const page = rows.slice(0, limit).map(stored), last = page.at(-1);
+        await this.hydrate(owner, page);
         return { versions: page, next: rows.length > limit && last ? last.created + ':' + last.practice.id : null };
+    }
+    async technique(owner: string, techniqueId: string, versionId: string | null) {
+        techniqueById(techniqueId);
+        if (versionId && !/^[a-zA-Z0-9_-]{8,110}$/.test(versionId)) throw Error('INVALID_GAME_HISTORY');
+        const rows = (await query(this.db, `SELECT id,state_json,version,created,maintained FROM practice_versions
+            WHERE owner=? AND technique_id=? AND (maintained=1 OR id=?)
+            ORDER BY maintained DESC,json_array_length(state_json,'$.tiers') DESC,strength_score DESC,created DESC,id LIMIT 3`,
+            owner, techniqueId, versionId ?? '').all<VersionRow>()).results;
+        const values = rows.map(stored); await this.hydrate(owner, values);
+        const selected = versionId ? values.find(value => value.practice.id === versionId) ?? null : values[0] ?? null;
+        if (versionId && !selected) throw Error('PRACTICE_NOT_FOUND');
+        return { versions: values.filter(value => value.maintained), selected };
     }
     async mutate(owner: string, id: string, input: Record<string, unknown>, now: number,
         apply: (snapshot: GameSnapshot) => { change: GameChange; result: GameSaved }): Promise<GameSaved> {
@@ -115,8 +155,17 @@ export class D1GameStore implements GameStore {
         ];
         if (!account) statements.push(...INITIAL_TECHNIQUES.map(techniqueId => query(this.db,
             'INSERT OR IGNORE INTO technique_unlocks(owner,technique_id,source,created) VALUES(?,?,?,?)', owner, techniqueId, 'starter', now)));
-        if (change.practice) statements.push(query(this.db, 'INSERT INTO practice_versions(owner,id,technique_id,state_json,created_day,created,updated) VALUES(?,?,?,?,?,?,?)',
-            owner, change.practice.id, change.practice.techniqueId, JSON.stringify(change.practice), day.day, now, now));
+        if (change.practice) {
+            // The retained slot is the strongest opened tier, then earned force,
+            // then quality. Every other edition remains immutable history.
+            statements.push(query(this.db, `UPDATE practice_versions SET maintained=CASE WHEN id=(
+                SELECT id FROM practice_versions WHERE owner=? AND technique_id=? AND maintained=1 ORDER BY
+                json_array_length(state_json,'$.tiers') DESC,strength_score DESC,
+                json_extract(state_json,'$.tiers[#-1].purityBp') DESC,created DESC,id LIMIT 1) THEN 1 ELSE 0 END
+                WHERE owner=? AND technique_id=?`, owner, change.practice.techniqueId, owner, change.practice.techniqueId));
+            statements.push(query(this.db, 'INSERT INTO practice_versions(owner,id,technique_id,state_json,created_day,created,updated) VALUES(?,?,?,?,?,?,?)',
+                owner, change.practice.id, change.practice.techniqueId, practiceJson(change.practice), day.day, now, now));
+        }
         statements.push(
             query(this.db, 'DELETE FROM game_selections WHERE owner=? AND from_day>?', owner, day.day),
             query(this.db, 'INSERT INTO game_selections(owner,from_day,mode,practice_id,battle_id,created) VALUES(?,?,?,?,?,?)',
@@ -166,6 +215,7 @@ export class D1GameStore implements GameStore {
                 const definition = JSON.parse(row.definition_json) as HabitDefinition;
                 const totals = prior.find(total => total.habit_id === row.habit_id);
                 return { habitId: row.habit_id, successes: row.successes, misses: row.misses, mature: day.day - definition.commitmentFrom >= 7,
+                    eligible: !['not_started', 'archived'].includes(row.reason), cadence: definition.cadence,
                     weekly: definition.cadence.kind === 'weekly' && !['not_started', 'archived'].includes(row.reason)
                         ? { startDay: habitWeekStart(day.day), endDay: habitWeekStart(day.day) + 7, quota: definition.cadence.quota,
                             successesBefore: totals?.successes ?? 0, missesBefore: totals?.misses ?? 0 } : null };
@@ -173,12 +223,15 @@ export class D1GameStore implements GameStore {
             const weekRows = (await query(this.db, 'SELECT state_json FROM practice_week_audits WHERE owner=? AND (closed_day IS NULL OR end_day>?) ORDER BY end_day,habit_id LIMIT 60', owner, day.day).all<{ state_json: string }>()).results;
             const weeks = weekRows.map(row => JSON.parse(row.state_json) as PracticeWeek);
             const ids = [...new Set([selected.practiceId, ...weeks.flatMap(week => [week.fallback?.versionId, ...week.claims.map(claim => claim.versionId)])].filter((id): id is string => !!id))];
-            const versionRows = (await query(this.db, 'SELECT id,state_json,version,created FROM practice_versions WHERE owner=? AND id IN(SELECT value FROM json_each(?))', owner, JSON.stringify(ids)).all<VersionRow>()).results;
+            const versionRows = (await query(this.db, 'SELECT id,state_json,version,created,maintained FROM practice_versions WHERE owner=? AND id IN(SELECT value FROM json_each(?))', owner, JSON.stringify(ids)).all<VersionRow>()).results;
+            const versions = versionRows.map(stored); await this.hydrate(owner, versions);
             const outcome = settlePracticeDay(day.day, selected.mode === 'practice' ? selected.practiceId : null,
-                versionRows.map(row => stored(row).practice), weeks, sources);
-            const changedVersions = outcome.versions.filter(version => JSON.stringify(version) !== versionRows.find(row => row.id === version.id)?.state_json);
+                versions.map(value => value.practice), weeks, sources);
+            const changedVersions = outcome.versions.filter(version => JSON.stringify(version) !== JSON.stringify(versions.find(value => value.practice.id === version.id)?.practice));
             const changedWeeks = outcome.weeks.filter(week => JSON.stringify(week) !== weekRows.find(row => (JSON.parse(row.state_json) as PracticeWeek).key === week.key)?.state_json);
             const battle = selected.mode === 'battle' ? await prepareBattleSettlement(this.db, owner, selected.battleId!, day, now, sources) : null;
+            const rule = battle?.result ? battle.result.rule :
+                outcome.versions.find(version => version.id === selected.practiceId)?.rule ?? TIME_PRACTICE_RULE;
             const result = { progressMilli: outcome.progressMilli, directMisses: outcome.directMisses, weeklyMisses: outcome.weeklyMisses,
                 closedWeeks: outcome.closedWeeks, locked: outcome.locked,
                 ...(battle ? { battle: battle.result } : {}),
@@ -189,16 +242,27 @@ export class D1GameStore implements GameStore {
             const statements = [
                 query(this.db, 'INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM game_accounts WHERE owner=? AND version=? AND next_day=?) AND COALESCE((SELECT version FROM habit_accounts WHERE owner=?),0)=? AND NOT EXISTS(SELECT 1 FROM habits WHERE owner=? AND created_day<=? AND next_day<=? AND (archived_from IS NULL OR next_day<archived_from)) THEN 1 ELSE 0 END', owner, account.version, day.day, owner, aggregate?.version ?? 0, owner, day.day, day.day),
                 query(this.db, `UPDATE practice_versions SET version=version+1,updated=?,state_json=(SELECT json_extract(value,'$.state')
-                    FROM json_each(?) WHERE json_extract(value,'$.id')=practice_versions.id) WHERE owner=? AND id IN(SELECT json_extract(value,'$.id') FROM json_each(?))`,
-                    now, JSON.stringify(changedVersions.map(version => ({ id: version.id, state: version }))), owner, JSON.stringify(changedVersions.map(version => ({ id: version.id })))),
+                    FROM json_each(?) WHERE json_extract(value,'$.id')=practice_versions.id),
+                    strength_score=(SELECT json_extract(value,'$.score') FROM json_each(?) WHERE json_extract(value,'$.id')=practice_versions.id)
+                    WHERE owner=? AND id IN(SELECT json_extract(value,'$.id') FROM json_each(?))`,
+                    now, JSON.stringify(changedVersions.map(version => ({ id: version.id, state: JSON.parse(practiceJson(version)) }))),
+                    JSON.stringify(changedVersions.map(version => ({ id: version.id, score: practiceStrengthScore(version) }))),
+                    owner, JSON.stringify(changedVersions.map(version => ({ id: version.id })))),
+                query(this.db, `INSERT INTO practice_tier_sources(owner,practice_id,tier,habit_id,successes_milli,misses_milli,cadence_json)
+                    SELECT ?,json_extract(value,'$.id'),json_extract(value,'$.tier'),json_extract(value,'$.habitId'),
+                    json_extract(value,'$.successesMilli'),json_extract(value,'$.missesMilli'),json_extract(value,'$.cadence')
+                    FROM json_each(?) WHERE 1 ON CONFLICT(owner,practice_id,tier,habit_id) DO UPDATE SET
+                    successes_milli=excluded.successes_milli,misses_milli=excluded.misses_milli,cadence_json=excluded.cadence_json`,
+                    owner, JSON.stringify(changedVersions.flatMap(version => version.time?.periods.flatMap(period => period.members.map(member =>
+                        ({ id: version.id, tier: period.tier, ...member, cadence: JSON.stringify(member.cadence) }))) ?? []))),
                 query(this.db, `INSERT INTO practice_week_audits(owner,habit_id,start_day,end_day,closed_day,state_json)
                     SELECT ?,json_extract(value,'$.habitId'),json_extract(value,'$.startDay'),json_extract(value,'$.endDay'),json_extract(value,'$.closedDay'),value FROM json_each(?) WHERE 1
                     ON CONFLICT(owner,habit_id,start_day) DO UPDATE SET closed_day=excluded.closed_day,state_json=excluded.state_json`, owner, JSON.stringify(changedWeeks)),
                 ...(battle?.statements ?? []),
                 query(this.db, 'INSERT INTO game_days(owner,day,start_at,end_at,mode,practice_id,battle_id,rule,result_json,settled_at) VALUES(?,?,?,?,?,?,?,?,?,?)',
-                    owner, day.day, day.startAt, day.endAt, selected.mode, selected.practiceId, selected.battleId, battle ? 'battle-v1' : PRACTICE_RULE, JSON.stringify(result), now),
+                    owner, day.day, day.startAt, day.endAt, selected.mode, selected.practiceId, selected.battleId, rule, JSON.stringify(result), now),
                 query(this.db, `UPDATE habit_outcomes SET game_applied=1,receiver_json=json_object('mode',?,'practiceId',?,'battleId',?,'rule',?,'day',day) WHERE owner=? AND day=?`,
-                    selected.mode, selected.practiceId, selected.battleId, battle ? 'battle-v1' : PRACTICE_RULE, owner, day.day),
+                    selected.mode, selected.practiceId, selected.battleId, rule, owner, day.day),
                 query(this.db, 'UPDATE game_accounts SET next_day=next_day+1,version=version+1,updated=? WHERE owner=?', now, owner),
                 query(this.db, 'DELETE FROM transaction_guard'),
             ];

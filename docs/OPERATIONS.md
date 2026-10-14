@@ -1,6 +1,23 @@
 # Vận hành và ranh giới kỹ thuật
 
-## Vòng Tu luyện 2026-10-13
+## Vòng Tu luyện v2 ngày 2026-10-14
+
+Trạng thái thực tế ở [PROGRESS §5.9](CULTIVATION_IMPLEMENTATION_PROGRESS.md), source/Worker sau verify ở [RELEASE](HABIT_GAME_RELEASE.md). V2 dùng schema **0038**, hỗ trợ content **than-lo-1–5**, practice-v1/v2 và battle-v1/v2. Trận/bản đã lưu giữ rule, lịch và snapshot riêng. Không dùng binary pre-v2 để phục hồi sau writes v2; ưu tiên sửa tiến tới.
+
+### Rehearsal phục hồi tương thích v2
+
+Sau gates, build candidate từ đúng source bằng `wrangler deploy --env staging --dry-run --outdir <thư-mục-riêng>`. Export backup mới đúng DB staging, kiểm listing và xác nhận baseline0037 trước áp0038. Restore vào file SQLite mới, tuyệt đối không trỏ DB đang dùng:
+
+```powershell
+node scripts/rehearse-staging-upgrade.ts --backup <backup-moi.sql> --restore <ban-sao-moi.sqlite> --through 0037 --report <restore-proof.json>
+node scripts/rehearse-cultivation-release.ts --bundle <candidate/worker.js> --restored <ban-sao-moi.sqlite> --report <recovery-proof.json>
+```
+
+Rehearsal chạy bundle GET với fixture content1–5 và bản luyện v1/v2 trong Miniflare tạm; so profile/preview với domain, kiểm state/version không đổi. Bản sao dữ liệu thật chỉ mở read-only để kiểm integrity/FK/adapter reads/hash. Không chạy cron/outbox/Telegram. Report chỉ status/count/hash/version; SQL và báo cáo riêng tư giữ ngoài Git. Workerd cài local hiện chỉ hỗ trợ ngày2026-08-06; cloudconfig2026-09-11 giữ nguyên, nên rehearsal không là bằng chứng runtime cloud.
+
+Candidate tương thích đã kiểm phải được lưu cùng source commit, bundle hash và config. Không rollback schema, không import backup cũ đè writes mới. Nếu cần phục hồi dữ liệu thật, export trạng thái mới trước và lập repair có đối chiếu receipt/delta; quyền deploy không suy thành quyền xóa dữ liệu.
+
+## Vòng Tu luyện 2026-10-13 — lịch sử
 
 Redesign đang phát hành theo [CULTIVATION_PROGRESS](HABIT_GAME_CULTIVATION_PROGRESS.md); version/commit thật được ghi ở RELEASE sau verify. Vòng này không đổi schema, không cần apply lại migration hoặc restore DB. Trước publish vẫn kiểm staging config/listing và gates. Thay đổi content `than-lo-4` bảo toàn JSON trận cũ và dùng luật `battle-v1`.
 
@@ -12,7 +29,7 @@ Cập nhật 2026-10-12. Habit/Thần Lộ đã migrate/deploy staging và kiể
 
 TypeScript strict, Cloudflare Workers/D1/Cron, Telegram và web modules hiện có; Gemini direct adapter. Domain/application/ports không SQL/fetch/config, adapters triển khai persistence/provider. Schema từ migrations, interfaces từ source; không dùng bảng prototype trong docs cũ để thay state thật.
 
-Source migrations hiện tới0037;0031–0037 đã áp staging, listing sau release không còn pending. Trước đợt vận hành mới vẫn kiểm listing đúng target, không suy từ số file. Habit/luyện/battle đã phát hành và có owner API smoke200. Kiến trúc mở rộng tại [HABIT_GAME_ARCHITECTURE](HABIT_GAME_ARCHITECTURE.md).
+Source migrations hiện tới0038. Listing đúng target và RELEASE xác định migration đã áp; số file local không chứng minh remote đã áp. Habit/luyện/battle giữ kiến trúc tại [HABIT_GAME_ARCHITECTURE](HABIT_GAME_ARCHITECTURE.md); yêu cầu tương thích v2 ở [PLAN](CULTIVATION_IMPLEMENTATION_PLAN.md).
 
 ## Commands local
 
@@ -51,7 +68,7 @@ User đã cho tự commit/push/migrate/deploy staging cho nhiệm vụ Habit/Th�
 
 Rollback code/config hoặc feature off có chủ đích, tương thích schema/data/jobs đang có. Không rollback schema bằng xóa dữ liệu hoặc deploy binary không hiểu state mới. Backup phục vụ phục hồi có kiểm chứng, không là nút ghi đè tự động vào data thật.
 
-### Phục hồi bản đã phát hành
+### Phục hồi bản2026-10-12 — chỉ áp dụng trước dữ liệu v2
 
 Runtime release `bcd22bb`, Worker `d3923c51-3959-474d-8e9a-6d4bfbaf7415`, schema0037. Nếu lỗi ở thay đổi mới, ưu tiên fix tiến tới và chạy gates. Khi cần dựng lại release, tạo checkout/worktree riêng ở commit đó, cài dependencies bằng `npm.cmd ci`, kiểm đúng config/target và chạy gates trước `npm.cmd run deploy:staging`. Không reset worktree của user; không áp lại/down migration0031–0037. Candidate `fb3e76f` có cùng backend/schema/rules, chỉ khác runtime UI `web/ui/sheets.js`; sẽ bỏ queued-close fix, cần review lỗi cụ thể trước dùng. Chưa có version cloud của candidate nên không gọi `wrangler rollback` với ID giả hoặc tự chọn version pre-habit.
 

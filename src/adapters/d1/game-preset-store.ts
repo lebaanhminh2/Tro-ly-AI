@@ -31,7 +31,7 @@ export class D1GamePresetStore implements GamePresetStore {
         if (deleted) statements.push(query(this.db, 'DELETE FROM game_presets WHERE owner=? AND id=?', owner, preset.id));
         else {
             statements.push(query(this.db, `INSERT INTO transaction_guard SELECT CASE WHEN
-                (SELECT COUNT(*) FROM practice_versions WHERE owner=? AND id IN(SELECT value FROM json_each(?)) AND json_array_length(state_json,'$.tiers')>0)=? THEN 1 ELSE 0 END`,
+                (SELECT COUNT(*) FROM practice_versions WHERE owner=? AND maintained=1 AND id IN(SELECT value FROM json_each(?)) AND json_array_length(state_json,'$.tiers')>0)=? THEN 1 ELSE 0 END`,
                 owner, JSON.stringify(preset.versions), preset.versions.length),
                 query(this.db, `INSERT INTO game_presets(owner,id,name,versions_json,weapon_id,created,updated) VALUES(?,?,?,?,?,?,?)
                     ON CONFLICT(owner,id) DO UPDATE SET name=excluded.name,versions_json=excluded.versions_json,weapon_id=excluded.weapon_id,updated=excluded.updated`,

@@ -9,7 +9,20 @@ import { D1GameExportStore } from '../../adapters/d1/game-export-store.ts';
 import { bossById, GAME_CHAPTERS } from '../../domain/game-content.ts';
 import { discoveredBoss, playerGameCatalog } from '../../domain/game-discovery.ts';
 import { GAME_CHARACTERS } from '../../domain/game-characters.ts';
+import { practicePresentation, practiceUpgrade } from '../../domain/practice-presentation.ts';
+import type { PracticeForecastContext } from '../../domain/practice-progression.ts';
+import type { StoredPractice } from '../../ports/game-store.ts';
+import { techniqueById } from '../../domain/techniques.ts';
+import { battleChoiceDetail } from '../../domain/battle.ts';
 import { json, type MiniAppContext, type MiniAppInput } from './context.ts';
+
+function presentPractice(value: StoredPractice | null, context: PracticeForecastContext = {}) {
+    if (!value) return null;
+    const derived = practicePresentation(value.practice, 100, context);
+    const practice = value.practice.time ? { ...value.practice, time: { ...value.practice.time,
+        periods: value.practice.time.periods.map(period => ({ ...period, members: [] })) } } : value.practice;
+    return { ...value, practice, name: techniqueById(practice.techniqueId).name, ...derived };
+}
 
 export async function readGame({ env, owner, now }: MiniAppContext, url: URL): Promise<Response> {
     if (url.pathname === '/api/game-catalog') {
@@ -26,6 +39,30 @@ export async function readGame({ env, owner, now }: MiniAppContext, url: URL): P
     if (url.pathname === '/api/game-victories') return json(await new D1BattleStore(env.DB).victories(owner));
     const store = new D1GameStore(env.DB);
     const battles = new D1BattleStore(env.DB);
+    if (url.pathname === '/api/battle-choice') {
+        const battleId = url.searchParams.get('battleId') ?? '';
+        if (!/^[a-zA-Z0-9_-]{8,110}$/.test(battleId)) throw Error('INVALID_BATTLE_ID');
+        const [battle, game] = await Promise.all([battles.readBattle(owner, battleId), store.read(owner, now)]);
+        if (!battle) throw Error('BATTLE_NOT_FOUND');
+        const response = json({ day: game.day.day, gameVersion: game.version, battleVersion: battle.version,
+            ...battleChoiceDetail(battle.run.state, url.searchParams.get('techniqueId') ?? '') });
+        response.headers.set('Cache-Control', 'private, no-store');
+        return response;
+    }
+    if (url.pathname === '/api/game-technique') {
+        const techniqueId = url.searchParams.get('techniqueId') ?? '';
+        const [access, overview] = await Promise.all([battles.access(owner), store.read(owner, now)]);
+        const technique = playerGameCatalog(access).techniques.find(value => value.id === techniqueId);
+        if (!technique) throw Error('INVALID_TECHNIQUE');
+        if (technique.discovery === 'sealed') throw Error('TECHNIQUE_LOCKED');
+        const result = await store.technique(owner, techniqueId, url.searchParams.get('versionId'));
+        const context = { afterDay: overview.day.day, weeks: overview.audits };
+        const response = json({ technique, selected: presentPractice(result.selected, context),
+            versions: result.versions.map(value => presentPractice(value, context)),
+            upgrade: practiceUpgrade(result.selected?.practice ?? null, techniqueId, 100, context) });
+        response.headers.set('Cache-Control', 'private, no-store');
+        return response;
+    }
     if (url.pathname === '/api/game-boss' || url.pathname === '/api/game-chapter') {
         const access = await battles.access(owner);
         const canEnter = (id: string) => { const boss = bossById(id); return boss.requires.every(value => access.victories.includes(value))
@@ -51,7 +88,8 @@ export async function readGame({ env, owner, now }: MiniAppContext, url: URL): P
     if (url.pathname === '/api/practice-versions') {
         const techniqueId = url.searchParams.get('techniqueId');
         if (!techniqueId) throw Error('INVALID_TECHNIQUE');
-        return json(await store.versions(owner, techniqueId, url.searchParams.get('before'), Number(url.searchParams.get('limit') ?? 20)));
+        const page = await store.versions(owner, techniqueId, url.searchParams.get('before'), Number(url.searchParams.get('limit') ?? 20));
+        return json({ ...page, versions: page.versions.map(value => presentPractice(value)) });
     }
     // Opportunistic bounded closure, based only on already immutable outcomes.
     // No model calls or client-controlled clock/day and no chosen action added.
@@ -61,7 +99,11 @@ export async function readGame({ env, owner, now }: MiniAppContext, url: URL): P
     const game = await store.read(owner, now);
     const read = performance.now();
     const battle = await battles.overview(owner, game.day);
-    const response = json({ now, ...game, ...battle });
+    const context = { afterDay: game.day.day, weeks: game.audits };
+    const response = json({ now, ...game, ...battle,
+        currentPractice: presentPractice(game.currentPractice, context), pendingPractice: presentPractice(game.pendingPractice, context),
+        audits: game.audits.map(({ key, habitId, startDay, endDay, quota, successes, misses, closedDay }) =>
+            ({ key, habitId, startDay, endDay, quota, successes, misses, closedDay })) });
     response.headers.set('Server-Timing', `settle;dur=${(settled - started).toFixed(1)}, practice;dur=${(read - settled).toFixed(1)}, battle;dur=${(performance.now() - read).toFixed(1)}`);
     return response;
 }

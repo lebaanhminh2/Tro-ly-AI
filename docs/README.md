@@ -1,10 +1,11 @@
 # Tài liệu dự án
 
-Cập nhật 2026-10-12. Docs tách **source đang có**, **sản phẩm đích** và **bằng chứng đã chạy**; có tài liệu trên ổ đĩa không có nghĩa feature đã triển khai.
+Cập nhật 2026-10-14. Docs tách **source đang có**, **sản phẩm đích** và **bằng chứng đã chạy**; có tài liệu trên ổ đĩa không có nghĩa feature đã triển khai.
 
 ## Bắt đầu đúng nhiệm vụ
 
 - Tiếp tục công việc chung: [HANDOFF](HANDOFF.md), kiểm git status/HEAD rồi đọc phần liên quan.
+- Vòng Tu luyện v2 hiện tại: [bản chốt](CULTIVATION_FINAL_BRIEF.md) → [PLAN](CULTIVATION_IMPLEMENTATION_PLAN.md) → [PROGRESS §5.9/§6](CULTIVATION_IMPLEMENTATION_PROGRESS.md). [GOAL](CULTIVATION_GOAL.md) có prompt cho thread mới và cách tiếp tục goal đã có; [demo HTML](prototypes/cultivation/kiem-y-demo.html) dùng dữ liệu riêng. V2 đang local, chưa phát hành; không lấy release lịch sử bên dưới làm bằng chứng vòng này đã xong.
 - Triển khai toàn Habit/Thần Lộ: [HABIT_GAME_IMPLEMENTATION](HABIT_GAME_IMPLEMENTATION.md), prompt `/goal` ở mục 8. Sau đó REVIEW/PRODUCT/PROGRESS và docs chuyên đề theo bước.
 - Phạm vi mới đã phát hành staging: habit/theo dõi, luyện/chiến đấu, **5 phái/39 môn/15 chương**, truyện/nhân vật/ảnh thật, UX và vận hành. Ngân sách bổ sung0đ, ảnh local; xem [USER_GUIDE](HABIT_GAME_USER_GUIDE.md) để dùng và [RELEASE](HABIT_GAME_RELEASE.md) để nghiệm thu/bằng chứng.
 
@@ -13,6 +14,12 @@ Cập nhật 2026-10-12. Docs tách **source đang có**, **sản phẩm đích*
 | Tài liệu | Vai trò |
 | --- | --- |
 | [HANDOFF](HANDOFF.md) | Trạng thái hiện tại, quyền, next action, issue nền |
+| [CULTIVATION_FINAL_BRIEF](CULTIVATION_FINAL_BRIEF.md) | Tổng hợp sản phẩm Tu luyện v2 dành cho người dùng |
+| [CULTIVATION_IMPLEMENTATION_PLAN](CULTIVATION_IMPLEMENTATION_PLAN.md) | Luật cố định, kiến trúc, inventory và cổng bàn giao v2 |
+| [CULTIVATION_IMPLEMENTATION_PROGRESS](CULTIVATION_IMPLEMENTATION_PROGRESS.md) | Source, evidence và next action hiện hành của v2 |
+| [CULTIVATION_PROGRESSION_PROPOSAL](CULTIVATION_PROGRESSION_PROPOSAL.md) | Tầng, sát thương, thuần khiết và lộ trình39môn |
+| [CULTIVATION_EFFECT_GLOSSARY](CULTIVATION_EFFECT_GLOSSARY.md) | Một bộ tên, đơn vị và nghĩa hiệu ứng cho công pháp/boss |
+| [CULTIVATION_GOAL](CULTIVATION_GOAL.md) | Prompt và quyền chạy xuyên suốt v2 |
 | [PRODUCT_BRIEF](PRODUCT_BRIEF.md) | Minh Anh và trải nghiệm nền cần giữ, ranh giới mở rộng |
 | [OPERATIONS](OPERATIONS.md) | Stack, commands, config/secrets, staging/data recovery |
 | [TOOL_CALLING_PLAN](TOOL_CALLING_PLAN.md) | Tool/context boundaries, luồng chat/web và kiểm chứng AI |

@@ -1,4 +1,7 @@
 import { requireDay } from './habits.ts';
+import { TIME_PRACTICE_RULE, advanceTimePracticeDay, applyTimeWeeklyMiss, finalizeTimePractice,
+    validateTimePractice, type TimePractice } from './practice-progression.ts';
+import type { HabitCadence } from './habits.ts';
 
 export const PRACTICE_RULE = 'practice-v1';
 export const PRACTICE_TIERS = ['Nhập môn', 'Tiểu thành', 'Đại thành', 'Viên mãn'];
@@ -8,6 +11,7 @@ export type PracticeVersion = {
     id: string; techniqueId: string; edition: number; rule: string; createdDay: number; costsMilli: number[];
     tiers: PracticeTier[]; progressMilli: number; effortMilli: number; defectsMilli: number;
     draftStartedDay: number | null; pendingWeeks: string[];
+    time?: TimePractice;
 };
 export type PracticeClaim = { versionId: string; tier: number; effortMilli: number };
 export type PracticeWeek = {
@@ -17,6 +21,7 @@ export type PracticeWeek = {
     allocations: { versionId: string; tier: number; defectsMilli: number }[];
 };
 export type PracticeSource = { habitId: string; successes: number; misses: number; mature: boolean;
+    eligible?: boolean; cadence?: HabitCadence;
     weekly: null | { startDay: number; endDay: number; quota: number; successesBefore: number; missesBefore: number } };
 export type PracticeDayResult = { versions: PracticeVersion[]; weeks: PracticeWeek[];
     progressMilli: number; directMisses: number; weeklyMisses: number; closedWeeks: string[]; locked: { versionId: string; tier: number; purityBp: number }[] };
@@ -35,12 +40,13 @@ export function practicePurity(effortMilli: number, defectsMilli: number, tier: 
     return Math.min(ceiling, Math.max(100, Math.floor(10000 * (effortMilli / (effortMilli + 2 * defectsMilli)) ** (1 + .35 * (tier - 1)))));
 }
 function copyVersion(value: PracticeVersion): PracticeVersion {
-    if (value.rule !== PRACTICE_RULE) throw Error('PRACTICE_RULE_UNSUPPORTED');
+    if (![PRACTICE_RULE, TIME_PRACTICE_RULE].includes(value.rule)) throw Error('PRACTICE_RULE_UNSUPPORTED');
     if (value.tiers.length > 4 || value.costsMilli.length !== 4 ||
         ![value.progressMilli, value.effortMilli, value.defectsMilli, ...value.costsMilli].every(Number.isSafeInteger) ||
         value.progressMilli < 0 || value.effortMilli < 0 || value.defectsMilli < 0 || value.costsMilli.some(cost => cost <= 0))
         throw Error('INVALID_PRACTICE_VERSION');
-    return { ...value, tiers: value.tiers.map(tier => ({ ...tier })), pendingWeeks: [...value.pendingWeeks], costsMilli: [...value.costsMilli] };
+    if (value.rule === TIME_PRACTICE_RULE) validateTimePractice(value);
+    return structuredClone(value);
 }
 function allocate(total: number, claims: PracticeClaim[]): { versionId: string; tier: number; defectsMilli: number }[] {
     const sum = claims.reduce((count, claim) => count + claim.effortMilli, 0);
@@ -86,7 +92,8 @@ export function settlePracticeDay(day: number, activeId: string | null, existing
     const directMisses = sources.filter(source => !source.weekly).reduce((total, source) => total + source.misses, 0);
     const receivesPractice = !!active && active.tiers.length < 4;
     let progressMilli = 0;
-    if (active && active.tiers.length < 4) {
+    if (active?.rule === TIME_PRACTICE_RULE) progressMilli = advanceTimePracticeDay(active, day, sources, weeks);
+    if (active?.rule === PRACTICE_RULE && active.tiers.length < 4) {
         const tier = active.tiers.length + 1, successful = sources.filter(source => source.successes);
         const speed = successful.length ? 1000 + Math.min(Math.max(successful.filter(source => source.mature).length - 1, 0), 5) * 120 : 0;
         progressMilli = Math.min(speed, active.costsMilli[tier - 1]! - active.progressMilli);
@@ -115,14 +122,23 @@ export function settlePracticeDay(day: number, activeId: string | null, existing
         for (const allocation of week.allocations) {
             const version = versions.find(version => version.id === allocation.versionId);
             if (!version) throw Error('PRACTICE_NOT_FOUND');
-            if (version.tiers.length + 1 !== allocation.tier) throw Error('PRACTICE_AUDIT_LOCKED');
-            version.defectsMilli += allocation.defectsMilli;
-            if (version.draftStartedDay === null) version.draftStartedDay = day;
+            if (version.rule === TIME_PRACTICE_RULE) applyTimeWeeklyMiss(version, allocation.tier, week.habitId, allocation.defectsMilli);
+            else {
+                if (version.tiers.length + 1 !== allocation.tier) throw Error('PRACTICE_AUDIT_LOCKED');
+                version.defectsMilli += allocation.defectsMilli;
+                if (version.draftStartedDay === null) version.draftStartedDay = day;
+            }
         }
         for (const version of versions) version.pendingWeeks = version.pendingWeeks.filter(key => key !== week.key);
     }
     const locked: PracticeDayResult['locked'] = [];
     for (const version of versions) {
+        if (version.rule === TIME_PRACTICE_RULE) {
+            const previouslyOpened = existingVersions.find(previous => previous.id === version.id)!.tiers.length;
+            finalizeTimePractice(version, weeks, day);
+            for (const tier of version.tiers.slice(previouslyOpened)) locked.push({ versionId: version.id, tier: tier.tier, purityBp: tier.purityBp });
+            continue;
+        }
         if (version.tiers.length >= 4 || version.pendingWeeks.length || version.progressMilli < version.costsMilli[version.tiers.length]!) continue;
         const tier = version.tiers.length + 1;
         const purityBp = practicePurity(version.effortMilli, version.defectsMilli, tier, version.tiers.at(-1)?.purityBp ?? 10000);

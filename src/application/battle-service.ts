@@ -1,6 +1,6 @@
 import { fighterForRank, payBattleDeath, payBattleRescue } from '../domain/battle-economy.ts';
 import { assertBattleCanChange } from '../domain/battle-run.ts';
-import { resolveBattleTurn, validateBattleState, withdrawBattle } from '../domain/battle.ts';
+import { CURRENT_BATTLE_RULE, resolveBattleTurn, validateBattleState, withdrawBattle } from '../domain/battle.ts';
 import { bossById, bossForNewBattle, bossIntents, GAME_CONTENT_VERSION } from '../domain/game-content.ts';
 import { armedBattleState, battleWeapon } from '../domain/game-rewards.ts';
 import type { BattleChange, BattleSaved, BattleStore, StoredBattle } from '../ports/battle-store.ts';
@@ -58,7 +58,7 @@ export class BattleService {
                 battle = { version: 1, status: 'prepared', created: now, content: structuredClone(boss),
                     resumePracticeId: previousSelection.mode === 'practice' ? previousSelection.practiceId : null,
                     run: { id: 'b_' + id, bossId: boss.id, contentVersion: GAME_CONTENT_VERSION, combatRank: rank, weaponId,
-                        state: armedBattleState(fighterForRank(rank), boss, snapshot.loadout, bossIntents(boss), weaponId),
+                        state: armedBattleState(fighterForRank(rank), boss, snapshot.loadout, bossIntents(boss), weaponId, CURRENT_BATTLE_RULE),
                         startsDay: day + 1, lastDay: null, waitDays: 0, rescueUntilDay: null, deathPaid: false } };
                 change = { kind: 'prepare', battle, selection: { fromDay: day + 1, mode: 'battle', practiceId: null, battleId: battle.run.id } };
             } else {
@@ -69,6 +69,8 @@ export class BattleService {
                     if (day >= battle.run.startsDay || battle.status !== 'prepared' || snapshot.pending?.battleId !== battle.run.id)
                         throw Error('BATTLE_CANCEL_UNAVAILABLE');
                     if (snapshot.loadout.length !== (input.versions as string[]).length) throw Error('INVALID_BATTLE_LOADOUT');
+                    if (battle.run.state.rule !== CURRENT_BATTLE_RULE && snapshot.loadout.some(skill => skill.strength))
+                        throw Error('BATTLE_LEGACY_LOADOUT');
                     // An old prepared battle keeps its content, rank and weapon
                     // snapshot; editing changes the editions only, never its clock.
                     battle.run.state.loadout = snapshot.loadout.map(skill => ({ ...skill }));
@@ -97,6 +99,7 @@ export class BattleService {
                         if (state.status !== 'active' || state.exchangeAfterTurn !== state.turn || typeof input.removeId !== 'string' ||
                             typeof input.practiceId !== 'string' || snapshot.loadout.length !== 1) throw Error('BATTLE_EXCHANGE_UNAVAILABLE');
                         const index = state.loadout.findIndex(value => value.id === input.removeId), replacement = snapshot.loadout[0]!;
+                        if (state.rule !== CURRENT_BATTLE_RULE && replacement.strength) throw Error('BATTLE_LEGACY_LOADOUT');
                         if (index < 0 || state.loadout.some(value => value.id === replacement.id)) throw Error('INVALID_BATTLE_LOADOUT');
                         state.loadout[index] = replacement; state.exchangeAfterTurn = null;
                         change = { kind: 'exchange', battle };

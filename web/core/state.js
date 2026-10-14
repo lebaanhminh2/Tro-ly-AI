@@ -5,6 +5,7 @@ export function createAppState(live) {
     state.habitHistory = null;
     state.gameData = null;
     state.gameCatalog = null;
+    state.gameCatalogLoading = false;
     state.gameVictories = null;
     state.gameVictoriesLoading = false;
     state.gameVictoriesError = null;

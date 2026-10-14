@@ -1,0 +1,23 @@
+{
+  "id": "kiem-y-v2-dai-thanh-clean",
+  "model": "Lykon/dreamshaper-8",
+  "revision": "a7e52b98680b1ba8ff7bce97c7f9f2e2e5337917",
+  "mode": "local inpainting, original AI sword composited through preservation mask",
+  "source": "tieu-thanh.png",
+  "sourceSha256": "12d66a7c4a3ca51544d350b60d0b406380a532aac4342805c13282f4d536d8e5",
+  "originalSword": "base-b.png",
+  "mask": "sword-preserve-mask.png",
+  "prompt": "masterpiece, premium abstract fantasy energy illustration, flowing icy blue plasma, luminous white silver silk ribbons, elegant sweeping sharp streams of light, scattered tiny crystalline sparks, black navy mist, dramatic cold rim lighting, clean cinematic composition, dark background",
+  "negative": "person, people, character, face, warrior, creature, bird, dragon, weapon, sword, blade, handle, hilt, dagger, spear, shield, armor, text, logo, watermark, pixel art, blurry, clutter, ring, circle, portal, moon, planet, buildings",
+  "seed": 65812,
+  "strength": 0.68,
+  "steps": 24,
+  "guidance": 8,
+  "dimensions": [
+    640,
+    448
+  ],
+  "seconds": 133.31,
+  "sha256": "c2f9ac899f0a50c2e8c05e46ca4b28d6f564e95c04504d19d3a09a4d1a5a398f",
+  "qa": "pending review"
+}

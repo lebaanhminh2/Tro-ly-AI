@@ -1,4 +1,4 @@
-import { newPracticeVersion } from '../domain/practice.ts';
+import { newTimePracticeVersion } from '../domain/practice-progression.ts';
 import { techniqueById } from '../domain/techniques.ts';
 import type { GameSaved, GameSelection, GameStore } from '../ports/game-store.ts';
 
@@ -34,11 +34,12 @@ export class PracticeService {
                 if (snapshot.priorVersions && input.confirmRestart !== true) throw Error('CONFIRM_PRACTICE_RESTART');
                 if (snapshot.createdToday >= 7) throw Error('PRACTICE_DAILY_LIMIT');
                 practiceId = 'p_' + id;
-                practice = newPracticeVersion(practiceId, technique.id, snapshot.day.day, technique.trainingFactor, snapshot.priorVersions + 1);
+                practice = newTimePracticeVersion(practiceId, technique.id, snapshot.day.day, technique.trainingFactor, snapshot.priorVersions + 1);
             }
             if (operation === 'continue_practice') {
                 const stored = snapshot.requestedPractice;
                 if (!stored) throw Error('PRACTICE_NOT_FOUND');
+                if (stored.maintained === false) throw Error('PRACTICE_ARCHIVED');
                 if (stored.practice.tiers.length >= 4) throw Error('PRACTICE_COMPLETE');
                 practiceId = stored.practice.id;
             }

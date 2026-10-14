@@ -32,7 +32,9 @@ test('pre-habit SQL backup restores, keeps legacy data and supports production h
         const rows = before.flatMap(table => source.prepare('SELECT * FROM "' + table.table + '"').all().map(row => 'INSERT INTO "' + table.table + '" VALUES(' + Object.values(row).map(literal).join(',') + ');'));
         writeFileSync(backup, [...schema, ...rows].join('\n')); source.close();
         const result = rehearseUpgrade(backup, target, '0030');
-        assert.equal(result.applied.length, 7); assert.equal(result.legacyDataUnchanged, true); assert.deepEqual(result.legacyTables, before);
+        assert.deepEqual(result.applied, readdirSync('migrations').filter(file => /^\d{4}.*\.sql$/.test(file) && file.slice(0, 4) > '0030').sort());
+        assert.ok(result.applied.includes('0038_cultivation_progression.sql'));
+        assert.equal(result.legacyDataUnchanged, true); assert.deepEqual(result.legacyTables, before);
         assert.ok(result.newTables.some(table => table.table === 'habits')); assert.ok(result.newTables.some(table => table.table === 'battles'));
         const reopened = new DatabaseSync(target);
         try {
@@ -54,7 +56,11 @@ test('pre-habit SQL backup restores, keeps legacy data and supports production h
                 { operation: 'log', habitId: habit.habitId, version: 1, logVersion: 0, day: tomorrow.day.day, value: 20 }, at + dayMs);
             await habits.settle('123', at + 2 * dayMs, 10);
             await game.settle('123', at + 2 * dayMs, 2);
-            assert.equal((await game.versions('123', 'kiem-y', null, 20)).versions[0]!.practice.progressMilli, 1000);
+            const restoredPractice = (await game.versions('123', 'kiem-y', null, 20)).versions[0]!.practice;
+            assert.equal(restoredPractice.rule, 'practice-v2');
+            assert.equal(restoredPractice.progressMilli, 1000);
+            assert.equal(restoredPractice.time!.periods[0]!.days, 1);
+            assert.equal(reopened.prepare('SELECT COUNT(*) AS n FROM practice_tier_sources').get()!.n, 1);
             assert.deepEqual(await new HealthyStore(db).read('123'), healthy);
             assert.equal(reopened.prepare("SELECT state FROM outbox WHERE id='upgrade-delivery'").get()!.state, 'uncertain');
             assert.equal(reopened.prepare("SELECT title FROM tasks WHERE id='upgrade-task'").get()!.title, 'Đọc sách; không gửi tin thử');

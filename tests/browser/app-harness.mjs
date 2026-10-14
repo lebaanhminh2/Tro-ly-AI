@@ -11,10 +11,13 @@ import { checkinProgress } from '../../web/models/cultivation.js';
 import { assessHabitDay, newHabitPeriod } from '../../src/domain/habits.ts';
 import { TECHNIQUES, SCHOOLS, INITIAL_TECHNIQUES } from '../../src/domain/techniques.ts';
 import { newPracticeVersion } from '../../src/domain/practice.ts';
+import { newTimePracticeVersion } from '../../src/domain/practice-progression.ts';
+import { practicePresentation, practiceUpgrade } from '../../src/domain/practice-presentation.ts';
+import { practiceStrength } from '../../src/domain/technique-profile.ts';
 import { GAME_BOSSES, GAME_CHAPTERS, GAME_CONTENT_VERSION, bossById, bossIntents, publicGameCatalog } from '../../src/domain/game-content.ts';
 import { GAME_CHARACTERS } from '../../src/domain/game-characters.ts';
 import { playerGameCatalog } from '../../src/domain/game-discovery.ts';
-import { newBattleState, publicBattleState, resolveBattleTurn } from '../../src/domain/battle.ts';
+import { newBattleState, publicBattleState, battleChoiceDetail, resolveBattleTurn } from '../../src/domain/battle.ts';
 import { armedBattleState } from '../../src/domain/game-rewards.ts';
 import { fighterForRank, rescueQuote, payBattleRescue } from '../../src/domain/battle-economy.ts';
 import { GameExportService } from '../../src/application/game-export-service.ts';
@@ -74,7 +77,7 @@ function fixture() {
                 if (input.operation === 'prepare_battle') {
                     const content = bossById(input.bossId), id = 'b_' + input.id, combatRank = state.account.state.rank;
                     const loadout = input.versions.map(id => control.practiceVersions.find(version => version.practice.id === id)?.practice).filter(Boolean)
-                        .map(practice => ({ id: practice.techniqueId, versionId: practice.id, tier: practice.tiers.length, purityBp: practice.tiers.at(-1).purityBp }));
+                        .map(practice => ({ id: practice.techniqueId, versionId: practice.id, tier: practice.tiers.length, purityBp: practice.tiers.at(-1).purityBp, strength: practiceStrength(practice) }));
                     const run = { id, bossId: content.id, contentVersion: GAME_CONTENT_VERSION, combatRank, weaponId: null,
                         state: newBattleState(fighterForRank(combatRank), content.fighter, loadout, bossIntents(content), content.maxTurns, content.revival),
                         startsDay: game.day.day + 1, lastDay: null, waitDays: 0, rescueUntilDay: null, deathPaid: false };
@@ -87,12 +90,19 @@ function fixture() {
                     battle.version++;
                     if (input.operation === 'update_prepared_battle') {
                         const loadout = input.versions.map(id => control.practiceVersions.find(version => version.practice.id === id)?.practice).filter(Boolean)
-                            .map(practice => ({ id: practice.techniqueId, versionId: practice.id, tier: practice.tiers.length, purityBp: practice.tiers.at(-1).purityBp }));
+                            .map(practice => ({ id: practice.techniqueId, versionId: practice.id, tier: practice.tiers.length, purityBp: practice.tiers.at(-1).purityBp, strength: practiceStrength(practice) }));
                         run.state = newBattleState(fighterForRank(run.combatRank), battle.content.fighter, loadout, bossIntents(battle.content), battle.content.maxTurns, battle.content.revival);
                         battle.state = publicBattleState(run.state); run.weaponId = battle.weaponId = null;
                     }
                     if (input.operation === 'choose_battle') {
                         game.choices = [{ battleId: battle.id, techniqueId: input.techniqueId, acceptCost: input.acceptCost }];
+                    } else if (input.operation === 'exchange_battle') {
+                        const practice = control.practiceVersions.find(value => value.practice.id === input.practiceId)?.practice;
+                        const slot = run.state.loadout.findIndex(value => value.id === input.removeId);
+                        assert.ok(practice && slot >= 0 && run.state.exchangeAfterTurn === run.state.turn);
+                        run.state.loadout[slot] = { id: practice.techniqueId, versionId: practice.id,
+                            tier: practice.tiers.length, purityBp: practice.tiers.at(-1).purityBp, strength: practiceStrength(practice) };
+                        run.state.exchangeAfterTurn = null; battle.state = publicBattleState(run.state);
                     } else if (input.operation === 'rescue_battle') {
                         const paid = payBattleRescue(state.account.state, run.state, input.kind, run.combatRank, { rankLockUntilDay: null }, game.day.day);
                         state.account.state = paid.healthy; state.account.version++;
@@ -110,7 +120,7 @@ function fixture() {
             let stored;
             if (input.operation === 'start_practice') {
                 const edition = control.practiceVersions.filter(item => item.practice.techniqueId === input.techniqueId).length + 1;
-                stored = { practice: newPracticeVersion('p_' + input.id, input.techniqueId, control.game.day.day, 1000, edition), version: 1, created: now + edition };
+                stored = { practice: newTimePracticeVersion('p_' + input.id, input.techniqueId, control.game.day.day, TECHNIQUES.find(value => value.id === input.techniqueId).trainingFactor, edition), version: 1, created: now + edition };
                 control.practiceVersions.unshift(stored);
             } else if (input.operation === 'continue_practice') stored = control.practiceVersions.find(item => item.practice.id === input.practiceId);
             control.game.pending = { fromDay: control.game.day.day + 1, mode: stored ? 'practice' : 'idle', practiceId: stored?.practice.id ?? null, battleId: null };
@@ -261,6 +271,9 @@ function fixture() {
 }
 async function serve(control, baseline) {
     const root = resolve('web'), cache = new Map();
+    const presented = stored => stored ? { ...stored, maintained: stored.maintained !== false,
+        name: TECHNIQUES.find(value => value.id === stored.practice.techniqueId).name,
+        ...practicePresentation(stored.practice, 100, { afterDay: control.game.day.day, weeks: control.game.audits }) } : null;
     const server = createServer(async (request, response) => {
         try {
             const path = new URL(request.url, 'http://localhost').pathname;
@@ -279,6 +292,7 @@ async function serve(control, baseline) {
                     response.end(JSON.stringify({ error: 'AUTH_REQUIRED' }));
                     return;
                 }
+                if (request.method === 'GET') await control.readGates?.get(endpoint)?.();
                 if (request.method === 'GET' && control.readDelays?.[endpoint]) await delay(control.readDelays[endpoint]);
                 if (request.method === 'GET' && control.failedReads?.has(endpoint)) {
                     response.statusCode = 503;
@@ -292,7 +306,20 @@ async function serve(control, baseline) {
                     else
                         response.end(JSON.stringify(control.bootstrap()));
                 }
-                else if (endpoint === 'game' && request.method === 'GET') response.end(JSON.stringify(control.game));
+                else if (endpoint === 'game' && request.method === 'GET') response.end(JSON.stringify({ ...control.game,
+                    currentPractice: presented(control.game.currentPractice), pendingPractice: presented(control.game.pendingPractice) }));
+                else if (endpoint === 'game-technique') {
+                    const params = new URL(request.url, 'http://localhost').searchParams, id = params.get('techniqueId'), selectedId = params.get('versionId');
+                    const catalog = playerGameCatalog({ victories: control.game.victories, learned: control.game.learned ?? [], owned: control.game.owned });
+                    const technique = catalog.techniques.find(value => value.id === id);
+                    const versions = control.practiceVersions.filter(value => value.practice.techniqueId === id && value.maintained !== false).slice(0, 2);
+                    const selected = selectedId ? control.practiceVersions.find(value => value.practice.id === selectedId && value.practice.techniqueId === id) : versions[0] ?? null;
+                    if (!technique || technique.discovery === 'sealed' || selectedId && !selected) {
+                        response.statusCode = 409; response.end(JSON.stringify({ error: 'TECHNIQUE_LOCKED' })); return;
+                    }
+                    response.end(JSON.stringify({ technique, selected: presented(selected), versions: versions.map(presented),
+                        upgrade: practiceUpgrade(selected?.practice ?? null, id, 100, { afterDay: control.game.day.day, weeks: control.game.audits }) }));
+                }
                 else if (endpoint === 'game-catalog') response.end(JSON.stringify(baseline ? publicGameCatalog() : playerGameCatalog({
                     victories: control.game.victories, learned: control.game.learned ?? [], owned: control.game.owned
                 })));
@@ -321,23 +348,41 @@ async function serve(control, baseline) {
                     const ids = new URL(request.url, 'http://localhost').searchParams.getAll('versionId');
                     if (ids.length) {
                         response.end(JSON.stringify({ versions: ids.flatMap(id => {
-                            const practice = control.practiceVersions.find(entry => entry.practice.id === id)?.practice, tier = practice?.tiers.at(-1);
-                            return tier ? [{ ...tier, techniqueId: practice.techniqueId, versionId: id, edition: practice.edition, tier: practice.tiers.length }] : [];
+                            const practice = control.practiceVersions.find(entry => entry.maintained !== false && entry.practice.id === id)?.practice, tier = practice?.tiers.at(-1);
+                            return tier ? [{ ...tier, techniqueId: practice.techniqueId, versionId: id, edition: practice.edition, tier: practice.tiers.length,
+                                profile: practicePresentation(practice).profile, strength: practiceStrength(practice) }] : [];
                         }) })); return;
                     }
                     const best = new Map();
                     for (const entry of control.practiceVersions) {
-                        const practice = entry.practice, tier = practice.tiers.at(-1); if (!tier) continue;
-                        const value = { techniqueId: practice.techniqueId, versionId: practice.id, edition: practice.edition, tier: practice.tiers.length, purityBp: tier.purityBp }, previous = best.get(practice.techniqueId);
-                        if (!previous || value.tier > previous.tier || value.tier === previous.tier && value.purityBp > previous.purityBp) best.set(practice.techniqueId, value);
+                        const practice = entry.practice, tier = practice.tiers.at(-1); if (!tier || entry.maintained === false) continue;
+                        const value = { techniqueId: practice.techniqueId, versionId: practice.id, edition: practice.edition, tier: practice.tiers.length, purityBp: tier.purityBp,
+                            profile: practicePresentation(practice).profile, strength: practiceStrength(practice) }, previous = best.get(practice.techniqueId);
+                        if (!previous || value.tier > previous.tier || value.tier === previous.tier &&
+                            (value.profile.damage > previous.profile.damage || value.profile.damage === previous.profile.damage && value.purityBp > previous.purityBp)) best.set(practice.techniqueId, value);
                     }
                     response.end(JSON.stringify({ versions: [...best.values()] }));
                 }
-                else if (endpoint === 'battles') response.end(JSON.stringify({ battles: control.game.battles, next: null }));
-                else if (endpoint === 'battle-history') response.end(JSON.stringify({ events: [], next: null }));
+                else if (endpoint === 'battle-choice') {
+                    const params = new URL(request.url, 'http://localhost').searchParams;
+                    const run = control.battleRuns.get(params.get('battleId')), battle = control.game.battles.find(value => value.id === run?.id);
+                    if (!run || !battle) { response.statusCode = 404; response.end(JSON.stringify({ error: 'BATTLE_NOT_FOUND' })); return; }
+                    response.end(JSON.stringify({ day: control.game.day.day, gameVersion: control.game.version, battleVersion: battle.version,
+                        ...battleChoiceDetail(run.state, params.get('techniqueId')) }));
+                }
+                else if (endpoint === 'battles') {
+                    const before = new URL(request.url, 'http://localhost').searchParams.get('before') ?? '';
+                    (control.archiveReads ??= []).push(before);
+                    response.end(JSON.stringify(control.archivePages?.get(before) ?? { battles: control.game.battles, next: null }));
+                }
+                else if (endpoint === 'battle-history') {
+                    const before = Number(new URL(request.url, 'http://localhost').searchParams.get('before'));
+                    (control.historyReads ??= []).push(before);
+                    response.end(JSON.stringify(control.historyPages?.get(before) ?? { events: [], next: null }));
+                }
                 else if (endpoint === 'practice-versions') {
                     const id = new URL(request.url, 'http://localhost').searchParams.get('techniqueId');
-                    response.end(JSON.stringify({ versions: control.practiceVersions.filter(item => item.practice.techniqueId === id), next: null }));
+                    response.end(JSON.stringify({ versions: control.practiceVersions.filter(item => item.practice.techniqueId === id).map(presented), next: null }));
                 }
                 else if (endpoint === 'habits' && request.method === 'GET')
                     response.end(JSON.stringify(control.habits));
@@ -512,6 +557,19 @@ async function chrome() {
         };
         return {
             errors, evaluate, wait,
+            async scaleText(factor = 1) {
+                await evaluate(`(() => {
+                    const originals = globalThis.__qaTextOriginals ??= new Map();
+                    for (const [node, size] of originals) if (node.isConnected) node.style.fontSize = size;
+                    originals.clear();
+                    if (${factor} === 1) return;
+                    const sizes = [...document.querySelectorAll('body *')].map(node => [node, getComputedStyle(node).fontSize]);
+                    for (const [node, size] of sizes) {
+                        originals.set(node, node.style.fontSize);
+                        node.style.fontSize = parseFloat(size) * ${factor} + 'px';
+                    }
+                })()`);
+            },
             async networkConditions(offline = false, latency = 150, bytesPerSecond = 102400) {
                 await call('Network.enable');
                 await call('Network.emulateNetworkConditions', { offline, latency, downloadThroughput: bytesPerSecond,

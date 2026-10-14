@@ -35,3 +35,8 @@ export function currentBattle(data) {
     return battles.find(battle => battle.id === data.current?.battleId || battle.id === data.pending?.battleId)
         ?? battles[0];
 }
+
+export function latestBattleResult(data) {
+    return (data.battles ?? []).find(battle => ['won', 'dead', 'expired', 'withdrawn'].includes(battle.status)
+        && Number.isInteger(battle.finishedDay) && battle.finishedDay >= data.day.day - 1) ?? null;
+}

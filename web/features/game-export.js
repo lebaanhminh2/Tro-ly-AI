@@ -4,7 +4,7 @@ import { button, el } from '../ui/dom.js';
 export function createGameExportActions({ state, runtime, sheet, sheetContent, openSheet, toast }) {
     function openGameExport() {
         if (!state.live || !state.gameData) return;
-        openSheet('Xuất hành trình'); sheet.classList.add('settings-sheet-open');
+        openSheet('Xuất hồ sơ Tu luyện'); sheet.classList.add('settings-sheet-open');
         const body = el('div', undefined, 'settings-sheet-body'), wrap = el('label', 'Nhật ký', 'form-field'), select = el('select');
         for (const span of [30, 90, 365]) { const option = el('option', span + ' ngày gần nhất'); option.value = String(span); select.append(option); }
         wrap.append(select); const range = el('p', undefined, 'hint'), to = state.gameData.day.day;
@@ -17,7 +17,7 @@ export function createGameExportActions({ state, runtime, sheet, sheetContent, o
                 if (revision !== runtime.revision || !state.live) return;
                 const url = URL.createObjectURL(new Blob([JSON.stringify(result, null, 2) + '\n'], { type: 'application/json;charset=utf-8' })), link = el('a');
                 link.href = url; link.download = 'than-lo-' + span + '-ngay.json'; document.body.append(link); link.click(); link.remove();
-                setTimeout(() => URL.revokeObjectURL(url), 10000); toast('Đã xuất hành trình và nhật ký ' + span + ' ngày.');
+                setTimeout(() => URL.revokeObjectURL(url), 10000); toast('Đã xuất hồ sơ và nhật ký ' + span + ' ngày.');
             } catch (error) { toast(error.message); }
             finally { download.disabled = false; select.disabled = false; body.removeAttribute('aria-busy'); }
         }, 'primary');

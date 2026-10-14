@@ -84,7 +84,7 @@ test('feature tabs coalesce reads, show cached rows immediately and reconcile a 
         const transitionCalls = control.calls.slice(start);
         await browser.evaluate("window.scrollTo(0,300)"); const scroll = await browser.evaluate('scrollY');
         assert.ok(scroll > 100);
-        await browser.tap('[data-tab=game]'); await browser.wait("!!document.querySelector('.practice-intro')");
+        await browser.tap('[data-tab=game]'); await browser.wait("!!document.querySelector('.practice-card')");
         const returning = await browser.evaluate("(() => {const started=performance.now();document.querySelector('[data-tab=habits]').click();return {elapsed:performance.now()-started,rows:document.querySelectorAll('.habit-card').length,scroll:scrollY}})()");
         assert.equal(returning.rows, 8); assert.ok(returning.elapsed < 200, 'Cached screen renders within 200 ms in this localhost fixture');
         assert.ok(Math.abs(returning.scroll - scroll) <= 2, 'Returning keeps the habit list position');
@@ -94,7 +94,7 @@ test('feature tabs coalesce reads, show cached rows immediately and reconcile a 
         await browser.wait("document.querySelector('.habit-check[aria-busy=true]')?.textContent==='Đang lưu…'");
         assert.equal(await browser.evaluate("[...document.querySelectorAll('.bottom-nav button')].some(button=>button.disabled)"), false);
         await browser.tap('[data-tab=game]');
-        await browser.wait("document.querySelector('.practice-intro') && !document.querySelector('.feature-saving')");
+        await browser.wait("document.querySelector('.practice-card') && !document.querySelector('.feature-saving')");
         await browser.tap('[data-tab=habits]');
         await browser.wait("document.querySelector('.habit-check')?.getAttribute('aria-pressed')==='true'");
         assert.equal(control.posts.length, writes + 1);
@@ -137,7 +137,7 @@ test('acknowledged habit refresh failures reconcile before the next log and old 
         await browser.wait("document.querySelector('#toast').textContent.includes('Đã lưu trên server')");
         assert.equal(control.posts.length, before + 1); assert.equal(control.habits.habits[0].log.version, 1);
         assert.equal(await browser.evaluate("document.querySelector('.habit-check').getAttribute('aria-pressed')"), 'false', 'The failed refresh cannot fabricate a new authoritative log');
-        control.failedReads.clear(); await browser.tap('[data-tab=game]'); await browser.wait("!!document.querySelector('.practice-intro')");
+        control.failedReads.clear(); await browser.tap('[data-tab=game]'); await browser.wait("!!document.querySelector('.practice-card')");
         await browser.tap('[data-tab=habits]'); await browser.wait("document.querySelector('.habit-check')?.getAttribute('aria-pressed')==='true'");
         assert.equal(control.posts.length, before + 1, 'Reconciliation is read-only');
         await browser.evaluate("document.querySelector('.habit-check').click()");
@@ -216,8 +216,9 @@ test('announced read stance marks the repeated choice and allows a different cho
     const before = clone(state), server = await serve(control); let browser;
     try {
         browser = await chrome(); await browser.navigate(server.url, 320); await browser.wait("!!document.querySelector('.focus-flip-card')");
-        await browser.tap('[data-tab=game]'); await browser.wait("!!document.querySelector('.battle-choices')");
-        assert.equal(await browser.evaluate("document.querySelector('[data-choice-id=kiem-y]').textContent.includes('−65%')"), true);
+        await browser.tap('[data-tab=game]'); await browser.wait("!!document.querySelector('[data-write=battle-choice]')");
+        await browser.click('Chọn chiêu');
+        assert.equal(await browser.evaluate("document.querySelector('[data-choice-id=kiem-y]').textContent.includes('Bị đọc chiêu')"), true);
         assert.equal(await browser.evaluate("document.querySelector('[data-choice-id=lien-van]').textContent.includes('Bị đọc chiêu')"), false);
         assert.equal(await browser.evaluate("document.querySelector('.battle-intent').textContent.includes('Lặp chiêu')"), true);
         for (const [width, theme] of [[320, 'light'], [390, 'dark']]) {
@@ -226,8 +227,12 @@ test('announced read stance marks the repeated choice and allows a different cho
             assert.equal((await snapshot(browser)).overflow, false);
             if (process.env.UI_SCREENSHOT_DIR) await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'f6-read-stance-' + width + '-' + theme + '.png'));
         }
-        await browser.tap('[data-choice-id=kiem-y]'); await browser.wait("document.querySelector('[data-choice-id=kiem-y]').getAttribute('aria-pressed')==='true'");
-        await browser.tap('[data-choice-id=lien-van]'); await browser.wait("document.querySelector('[data-choice-id=lien-van]').getAttribute('aria-pressed')==='true'");
+        await browser.click('Kiếm Ý', '[data-choice-id] strong'); await browser.wait("!document.querySelector('.battle-choice-footer button').disabled");
+        assert.match(await browser.evaluate("document.querySelector('.battle-choice-detail .battle-warning').textContent"), /65%/);
+        await browser.click('Chọn Kiếm Ý', '.battle-choice-footer button'); await browser.wait("!document.querySelector('#sheet').open");
+        await browser.click('Đổi chiêu');
+        await browser.click('Liên Vân Kiếm', '[data-choice-id] strong'); await browser.wait("!document.querySelector('.battle-choice-footer button').disabled");
+        await browser.click('Chọn Liên Vân Kiếm', '.battle-choice-footer button'); await browser.wait("!document.querySelector('#sheet').open");
         assert.equal(control.game.choices[0].techniqueId, 'lien-van'); assert.deepEqual(state, before);
         assert.equal(control.posts.length, 2); assert.ok(control.posts.every(post => post.input.operation === 'choose_battle'));
         assert.deepEqual(browser.errors, []);
@@ -248,16 +253,16 @@ test('returning player sees the real next goal, opens its screen and habit audit
     const server = await serve(control); let browser;
     try {
         browser = await chrome(); await browser.navigate(server.url, 320); await browser.wait("!!document.querySelector('.focus-flip-card')");
-        await browser.tap('[data-tab=game]'); await browser.wait("!!document.querySelector('.game-next-step')");
-        assert.equal(await browser.evaluate("document.querySelector('.game-next-step h3').textContent"), bossById('song-nha').name);
+        await browser.tap('[data-tab=game]'); await browser.wait("!!document.querySelector('.cultivation-current')");
+        assert.equal(await browser.evaluate("document.querySelector('.cultivation-current h2').textContent"), 'Kiếm Ý');
         assert.equal(await browser.evaluate("document.querySelector('.game-return-summary').textContent.includes('rút an toàn')"), true);
         for (const [width, theme] of [[320, 'light'], [390, 'dark']]) {
-            await browser.resize(width, 844); await browser.evaluate("document.documentElement.dataset.theme='" + theme + "';document.querySelector('.game-next-step').scrollIntoView({block:'center'})");
+            await browser.resize(width, 844); await browser.evaluate("document.documentElement.dataset.theme='" + theme + "';document.querySelector('.cultivation-current').scrollIntoView({block:'center'})");
             await browser.evaluate("new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))");
             assert.equal((await snapshot(browser)).overflow, false);
             if (process.env.UI_SCREENSHOT_DIR) await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'f6-next-goal-' + width + '-' + theme + '.png'));
         }
-        await browser.click('Xem thử thách');
+        await browser.click('Thử thách', '.game-navigation button');
         await browser.wait("!!document.querySelector('.floor-row[data-boss-id=song-nha]') && document.querySelector('.game-navigation [data-game-panel=journey]').getAttribute('aria-current')==='page'");
         assert.equal(await browser.evaluate("document.querySelector('.floor-row[data-boss-id=song-nha]').classList.contains('is-locked')"), false);
         assert.equal(await browser.evaluate("document.querySelector('#sheet').open"), false);
@@ -266,9 +271,8 @@ test('returning player sees the real next goal, opens its screen and habit audit
         control.game.currentPractice.practice.tiers = []; control.game.currentPractice.practice.progressMilli = 3000;
         control.game.currentPractice.practice.pendingWeeks = ['audit_week'];
         await browser.tap('[data-tab=game]'); await browser.click('Hiện tại', '.game-navigation button');
-        await browser.wait("document.querySelector('.game-next-step h3').textContent==='Tới Nhập môn'");
-        assert.equal(await browser.evaluate("document.querySelector('.practice-wait-note').textContent.includes('cam kết tuần')"), true);
-        await browser.click('Xem thói quen'); await browser.wait("!!document.querySelector('.habits-page')");
+        await browser.wait("document.querySelector('.cultivation-current').innerText.includes('chờ cam kết tuần')");
+        await browser.tap('[data-tab=habits]'); await browser.wait("!!document.querySelector('.habits-page')");
         assert.equal(control.posts.length, 0); assert.deepEqual(browser.errors, []);
     } finally { if (browser) await browser.close(); await server.close(); }
 });
@@ -1057,11 +1061,12 @@ test('experience choices persist without writes, keep settings drafts and make t
         await browser.wait("!!document.querySelector('.focus-flip-card')");
         const writes = control.posts.length;
         await browser.evaluate("document.querySelector('[data-tab=game]').click()");
-        await browser.wait("!!document.querySelector('.game-start-guide')");
-        await browser.click('Xem cách chơi');
+        await browser.wait("!!document.querySelector('.practice-card')");
+        assert.equal(await browser.evaluate("document.querySelector('#sheet').open"), false, 'The guide is opened only on request');
+        await browser.click('Cách chơi');
         await browser.wait("document.querySelectorAll('.game-guide-steps li').length===4");
         assert.equal((await snapshot(browser)).overflow, false);
-        await browser.evaluate("document.querySelector('[data-sheet-close]').click()"); await browser.click('Để sau');
+        await browser.evaluate("document.querySelector('[data-sheet-close]').click()");
         assert.equal(await browser.evaluate("!!document.querySelector('.game-start-guide')"), false);
         await browser.evaluate("document.querySelector('#settings').click();document.querySelector('#sheet input[type=time]').value='06:00'; document.querySelector('#sheet input[type=time]').dispatchEvent(new Event('input')); const select=document.querySelector('.settings-experience select');select.value='hide';select.dispatchEvent(new Event('change'))");
         assert.equal(await browser.evaluate("getComputedStyle(document.querySelector('[data-tab=game]')).display"), 'none');
@@ -1091,7 +1096,7 @@ test('game export downloads a versioned JSON snapshot, preserves editions and re
     try {
         browser = await chrome(); await browser.navigate(server.url, 320); await browser.wait("!!document.querySelector('.focus-flip-card')");
         await browser.evaluate("document.querySelector('[data-tab=game]').click()"); await browser.wait("!!document.querySelector('.practice-card')");
-        await browser.click('Thành tựu', '.game-navigation button'); await browser.tap('.game-export-controls summary'); await browser.click('Xuất hành trình');
+        await browser.click('Thành tựu', '.game-navigation button'); await browser.tap('.game-export-controls summary'); await browser.click('Xuất hồ sơ');
         assert.equal((await snapshot(browser)).overflow, false);
         await browser.evaluate("window.gameExportBlob=null;window.gameExportName=null;const exportCreate=URL.createObjectURL.bind(URL);URL.createObjectURL=blob=>{window.gameExportBlob=blob;return exportCreate(blob)};HTMLAnchorElement.prototype.click=function(){window.gameExportName=this.download};document.querySelector('#sheet select').value='365';document.querySelector('#sheet select').dispatchEvent(new Event('change'))");
         if (process.env.UI_SCREENSHOT_DIR) await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'f5-game-export-320-light.png'));

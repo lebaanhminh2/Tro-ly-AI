@@ -1,6 +1,49 @@
 # Habit và Tu luyện — bằng chứng phát hành
 
-## Tu luyện redesign — staging ngày 2026-10-13
+## Tu luyện v2 — ngày 2026-10-14
+
+**Gates nguồn cuối đã đạt; đang chuẩn bị commit/migration/deploy. Chưa phát hành v2 tại thời điểm ghi phần này.** Trạng thái từng bước ở [PROGRESS §5.9](CULTIVATION_IMPLEMENTATION_PROGRESS.md).
+
+### Phạm vi giao
+
+- Hiện tại / Công pháp / Thử thách / Thành tựu; Phái → Môn → Tác dụng / Nâng cấp, 39 môn và 40 encounter. Mỗi thẻ một số Sát thương nổi bật; hiệu ứng, điều kiện và cái giá đọc thống nhất, nhật ký có breakdown mở thêm.
+- Tầng theo số ngày luyện; damage tăng độc lập từng kỳ theo habit. Thuần khiết giữ khuyết điểm kế thừa, trần và phần mất; 80/90/100% là Tinh Thuần/Chí Thuần/Thông Thần. Tối đa hai bản được duy trì, lịch sử và snapshot vẫn giữ.
+- Bản v2 mới dùng lịch3/4/6/8: thường21/cấm32/ngoài42 ngày. Lịch đã lưu và bản v1 giữ riêng. Contentthan-lo-5, practice-v2/battle-v2 cho bản/trận mới; content1–4 và rulev1 vẫn được đọc đúng.
+- [Demo HTML](prototypes/cultivation/kiem-y-demo.html)354.409byte đóng gói production engine/actions/views; dữ liệu mẫu riêng, networkAPI bị chặn. Giữ ảnh hiện có, bốn raster kiếm tổng69.742byte; không sinh ảnh mới hoặc dùng dịch vụ trả phí.
+
+### Gates và review trước release
+
+| Cổng | Kết quả nguồn cuối | Artifact private |
+| --- | --- | --- |
+| Main |378/378,0fail/skip,819,84s |`delivered-main.log` |
+| Browser |44/44,0fail/skip |`checked-browser.log` |
+| Typecheck / web |exit0;47modules |`delivered-typecheck.log`, `delivered-web.log` |
+| Build / staging check |exit0;230assets,719,90KiB/gzip166,71KiB |`delivered-build.log`, `delivered-staging.log` |
+| Visual |320/360/390/1440,hai theme/chữ200%,104demo captures; agent mở contact sheets và màn thật |Ảnh nguồn cuối và `review-demo-*` |
+| Restore mới |0038 áp được trên bản sao, integrityok,0FK;99bảng cũ unchanged,1bảng mới |`delivered-restore.json` |
+| Recovery bundle |content1–5/practice-v1/v2 GET200/parity,401khôngauth,state/version giữ; restoredDB read-only |`delivered-recovery.json` |
+
+Đã sửa footer chữ lớn bằng chuyển ghi chú dài vào body, ảnh desktop contain và đưa phần Nâng cấp vào viewport khi đổi mục. Preview/nhật ký dùng metadata resolver; không đổi công thức phòng ngự hoặc kinh tế nền. Huyền Quy/Kiếm Ý/Thôn Thiên có ca trigger/benefit/limit cụ thể tại [BALANCE](HABIT_GAME_BALANCE.md); matrix earned giữ fingerprint và giới hạn của report gốc.
+
+### Hiệu năng có điều kiện
+
+Năm mẫu local cuối,390×844,latency150ms,100KiB/s,không CPU throttle: shell13,6–17,6ms; nội dung303–313,8ms; ảnh trong viewport740,8–759,1ms; mở cache5,2–6,8ms; chi tiết734,7–775,2ms. `delivered-performance.json` giữ hashes từng nguồn. Fixture không bao gồm Worker/D1; không dùng số này làm latency staging hoặc chứng minh nhanh hơn bản cũ.
+
+D1 local với lịch34 đã lưu và4tầng×30habit: peak22SQL/ngày, overview13SQL/25.281byte, detail7SQL/14.618byte. Không viết các phép tính game vào UI/LLM.
+
+### Backup và phục hồi
+
+Backup mới `.wrangler/cultivation-v2-final-qa/staging-before-v2-release-20261014.sql`,1.632.676byte, SHA256 `0FF106002333390C413E07DC5F94FF7D5BF1D4418F85A79775269E1375751B7D`. File và CLI output riêng tư không commit.
+
+Recovery candidate là bundle nguồn cuối719,90KiB, SHA256 `567a9edf921e4b5cfb56d823d2049ca9e09e1a8a6ff763584fe8fc14bdb65b87`. Rehearsal offline hỗ trợ content1–5/v1–v2; workerd local tối đa2026-08-06, cloudconfig2026-09-11 giữ nguyên. Sau writesv2, không dùng binarypre-v2 hoặc restore backup đè writes mới. Commands và cách phục hồi ở [OPERATIONS](OPERATIONS.md).
+
+### Kiểm sau phát hành
+
+Chưa thực hiện tại checkpoint này. Cần ghi sourcecommit, WorkerID, migrationlisting, static/hash/auth/Origin, ownerGET bằng phiên thật và latencylive trước báo hoàn tất. Không tạo dữ liệu cá nhân thử hoặc gửi tin thử. Art/trải nghiệm dài ngày chờ người dùng nghiệm thu; Chrome emulation không thay thiết bị thật.
+
+---
+
+## Tu luyện redesign — staging ngày 2026-10-13 — lịch sử
 
 **Source `07e9aa0` đã commit/push trên `review/p1-p3`, deploy exit 0 và kiểm sau phát hành.** Worker version: **`db6b1f93-3532-4aac-972b-598fa48e5488`**.
 

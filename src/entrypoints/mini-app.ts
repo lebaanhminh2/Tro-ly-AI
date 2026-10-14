@@ -51,7 +51,7 @@ export async function miniAppApi(request: Request, env: Env, now = Date.now()): 
     }
     try {
         const context = { env, owner, now, healthy: new HealthyStore(env.DB) };
-        if (request.method === 'GET' && ['/api/game', '/api/game-catalog', '/api/game-boss', '/api/game-chapter', '/api/game-presets', '/api/game-victories', '/api/game-export', '/api/practice-versions', '/api/battle-history', '/api/battle-loadout', '/api/battles'].includes(url.pathname))
+        if (request.method === 'GET' && ['/api/game', '/api/game-catalog', '/api/game-technique', '/api/game-boss', '/api/game-chapter', '/api/game-presets', '/api/game-victories', '/api/game-export', '/api/practice-versions', '/api/battle-history', '/api/battle-loadout', '/api/battle-choice', '/api/battles'].includes(url.pathname))
             return await readGame(context, url);
         if (request.method === 'GET' && ['/api/habits', '/api/habit-history', '/api/habit-report'].includes(url.pathname))
             return await readHabits(context, url);
@@ -85,7 +85,9 @@ export async function miniAppApi(request: Request, env: Env, now = Date.now()): 
             GAME_EXPORT_UNAVAILABLE: 'Chưa xuất được hành trình. Cậu thử lại nhé.',
             GAME_CHANGED: 'Tiến độ vừa được cập nhật. Tải lại để tiếp tục nhé.', GAME_DAY_CLOSED: 'Ngày này đã kết thúc. Tải lại để chọn cho ngày hiện tại.',
             TECHNIQUE_LOCKED: 'Cậu chưa có quyền học công pháp này.', CONFIRM_PRACTICE_RESTART: 'Xác nhận luyện một bản mới từ Nhập môn. Bản cũ vẫn được giữ.',
-            PRACTICE_NOT_FOUND: 'Không tìm thấy bản luyện này.', PRACTICE_COMPLETE: 'Bản này đã Viên mãn. Cậu có thể luyện bản mới nếu muốn cải thiện tinh thuần.',
+            PRACTICE_NOT_FOUND: 'Không tìm thấy bản luyện này.', PRACTICE_COMPLETE: 'Bản này đã hoàn tất 4 tầng. Có thể luyện lại để cải thiện độ thuần khiết.',
+            PRACTICE_ARCHIVED: 'Bản này chỉ còn trong lịch sử. Chọn một trong hai bản đang được duy trì.',
+            BATTLE_LEGACY_LOADOUT: 'Trận theo cơ chế trước không nhận bản luyện mới. Kết thúc trận rồi dùng bản này ở trận kế tiếp.',
             PRACTICE_DAILY_LIMIT: 'Cậu đã tạo đủ 7 bản luyện mới trong ngày. Có thể tiếp tục bản đang có.',
             BATTLE_ACTIVE: 'Kết thúc trận trước khi chọn lịch luyện mới.',
             BATTLE_CHANGED: 'Trận vừa được cập nhật. Tải lại trước khi chọn tiếp.', BATTLE_NOT_FOUND: 'Không tìm thấy trận này.',

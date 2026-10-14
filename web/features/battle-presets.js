@@ -1,7 +1,7 @@
 import { liveRequest } from '../core/http.js';
 import { button, el } from '../ui/dom.js';
 
-export function battlePresetControls({ data, selectors, addVersion, performLive, toast, presetSnapshot }) {
+export function battlePresetControls({ data, getVersions, setVersions, addVersion, performLive, toast, presetSnapshot }) {
     const root = el('details', undefined, 'battle-editions battle-presets');
     root.append(el('summary', 'Bộ chiêu đã lưu'));
     const pickerWrap = el('label', 'Dùng lại một bộ', 'form-field'), picker = el('select'); pickerWrap.append(picker);
@@ -53,18 +53,18 @@ export function battlePresetControls({ data, selectors, addVersion, performLive,
         try {
             const resolved = preset.versions.length ? await liveRequest('battle-loadout?' + new URLSearchParams(preset.versions.map(id => ['versionId', id]))) : { versions: [] };
             if (!root.isConnected) return;
-            if (resolved.versions.length !== preset.versions.length || preset.versions.length > selectors.length) {
-                notice.textContent = 'Một bản luyện trong bộ này chưa dùng được. Các ô hiện tại được giữ; cậu có thể chỉnh và cập nhật bộ.'; return;
+            if (resolved.versions.length !== preset.versions.length || preset.versions.length > 5) {
+                notice.textContent = 'Một bản luyện trong bộ này chưa dùng được. Bộ đang chọn được giữ; cậu có thể chỉnh và lưu lại.'; return;
             }
             for (const version of resolved.versions) addVersion(version);
-            selectors.forEach((select, index) => { select.value = preset.versions[index] ?? ''; select.dispatchEvent(new Event('change')); });
-            notice.textContent = 'Đã áp dụng “' + preset.name + '”. Cậu vẫn có thể chỉnh các ô trước khi xuất chiến.';
+            if (!setVersions(preset.versions)) { notice.textContent = 'Bộ đã lưu không còn hợp lệ. Bộ đang chọn được giữ.'; return; }
+            notice.textContent = 'Đã áp dụng “' + preset.name + '”. Có thể chỉnh trước khi xuất chiến.';
         } catch (error) { if (root.isConnected) notice.textContent = error.message; }
         finally { busy = false; if (root.isConnected) sync(); }
     }
     async function mutate(operation) {
         if (!snapshot || busy) return;
-        const versions = selectors.map(select => select.value).filter(Boolean);
+        const versions = getVersions();
         if (!pending && operation === 'save') {
             if (!name.value.trim()) { name.focus(); toast('Đặt tên cho bộ chiêu nhé.'); return; }
             const skills = versions.map(id => data.versions.find(version => version.versionId === id)?.techniqueId);
@@ -84,7 +84,7 @@ export function battlePresetControls({ data, selectors, addVersion, performLive,
         await load(result?.deleted ? '' : result?.presetId ?? picker.value, result ? presetSnapshot?.() : null);
         if (result) {
             if (result.deleted) name.value = '';
-            notice.textContent = result.deleted ? 'Đã xóa bộ chiêu. Các ô đang chọn vẫn được giữ.' : 'Đã lưu bộ chiêu để dùng lại trên các thiết bị.';
+            notice.textContent = result.deleted ? 'Đã xóa bộ đã lưu. Bộ đang chọn được giữ.' : 'Đã lưu bộ chiêu để dùng lại trên các thiết bị.';
         }
         sync();
     }

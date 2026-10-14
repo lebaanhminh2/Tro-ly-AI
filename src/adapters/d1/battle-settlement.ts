@@ -37,7 +37,7 @@ export async function prepareBattleSettlement(db: Database, owner: string, id: s
                 ON CONFLICT(owner) DO UPDATE SET state_json=excluded.state_json,version=version+1,updated=excluded.updated`, owner, JSON.stringify(paid.healthy), now));
         outcome.entries.push({ kind: 'cost', text: 'Tử trận: mất ' + qiSpent + ' Tu Vi; cảnh giới và vật phẩm được giữ.', amount: qiSpent });
     }
-    const result = { status: battle.run.state.status, turn: battle.run.state.turn, fought: outcome.fought, castExecuted,
+    const result = { rule: battle.run.state.rule, status: battle.run.state.status, turn: battle.run.state.turn, fought: outcome.fought, castExecuted,
         player: battle.run.state.player, boss: battle.run.state.boss, contribution: { habits: castExecuted ? habits : 0, tasks: usedTasks.length * 50 },
         tasks: usedTasks.map(task => ({ taskId: task.task_id, title: task.title })), waitDays: battle.run.waitDays, qiSpent };
     if (['won', 'expired', 'withdrawn', 'dead'].includes(battle.status)) battle.finishedDay = day.day;

@@ -23,13 +23,13 @@ export function battleWeapon(id: string) {
     if (!weapon) throw Error('INVALID_GAME_WEAPON');
     return weapon;
 }
-export function armedBattleState(player: BattleFighter, boss: GameBoss, loadout: BattleState['loadout'], intents: BattleState['intents'], weaponId: string | null): BattleState {
+export function armedBattleState(player: BattleFighter, boss: GameBoss, loadout: BattleState['loadout'], intents: BattleState['intents'], weaponId: string | null, rule = 'battle-v1'): BattleState {
     const weapon = weaponId ? battleWeapon(weaponId) : null, fighter = { ...player };
     if (weapon) {
         fighter.maxHp = Math.max(1, Math.floor(fighter.maxHp * weapon.hpFactor / 1000)); fighter.hp = fighter.maxHp;
         fighter.attack = Math.max(1, Math.floor(fighter.attack * weapon.attackFactor / 1000));
     }
-    const state = newBattleState(fighter, boss.fighter, loadout, intents, boss.maxTurns, boss.revival);
+    const state = newBattleState(fighter, boss.fighter, loadout, intents, boss.maxTurns, boss.revival, rule);
     if (weapon?.shieldFactor) state.statuses.push({ key: 'weapon:thach-tam', kind: 'shield', target: 'player',
         value: Math.floor(fighter.attack * weapon.shieldFactor / 1000), expiresTurn: 2, dueTurn: null });
     return state;
