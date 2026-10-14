@@ -2,7 +2,7 @@
 
 ## Tu luyện v2 — ngày 2026-10-14
 
-**Gates nguồn cuối đã đạt; đang chuẩn bị commit/migration/deploy. Chưa phát hành v2 tại thời điểm ghi phần này.** Trạng thái từng bước ở [PROGRESS §5.9](CULTIVATION_IMPLEMENTATION_PROGRESS.md).
+**Gates nguồn cuối đạt; source commit đầu8dffbe8. Đang hoàn tất artifact/migration/deploy, chưa phát hành v2 tại thời điểm ghi phần này.** Trạng thái từng bước ở [PROGRESS §5.9](CULTIVATION_IMPLEMENTATION_PROGRESS.md).
 
 ### Phạm vi giao
 
@@ -30,6 +30,8 @@
 Năm mẫu local cuối,390×844,latency150ms,100KiB/s,không CPU throttle: shell13,6–17,6ms; nội dung303–313,8ms; ảnh trong viewport740,8–759,1ms; mở cache5,2–6,8ms; chi tiết734,7–775,2ms. `delivered-performance.json` giữ hashes từng nguồn. Fixture không bao gồm Worker/D1; không dùng số này làm latency staging hoặc chứng minh nhanh hơn bản cũ.
 
 D1 local với lịch34 đã lưu và4tầng×30habit: peak22SQL/ngày, overview13SQL/25.281byte, detail7SQL/14.618byte. Không viết các phép tính game vào UI/LLM.
+
+Đóng gói Git: metadata gốc được stage no-filters để giữ CRLF/hash nguồn.26record trong Git index và12checkout-filter cases true/false/input khớp hash; không tạo .gitattributes khi chưa được user duyệt.
 
 ### Backup và phục hồi
 
