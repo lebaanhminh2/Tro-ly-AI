@@ -9,11 +9,10 @@ import { handleReminders } from './mini-app/reminders.ts';
 import { handleSchedule } from './mini-app/schedule.ts';
 import { handleTasks } from './mini-app/tasks.ts';
 import { handleHabits, readHabits } from './mini-app/habits.ts';
-import { handleGame, handleGamePresets, readGame } from './mini-app/game.ts';
 const taskRoutes = new Set(['/api/tasks', '/api/tasks-delete']);
 const reminderRoutes = new Set(['/api/reminders', '/api/reminder-instance']);
 const scheduleRoutes = new Set(['/api/settings', '/api/schedule', '/api/day-plan', '/api/task-work', '/api/task-focus', '/api/session', '/api/timeline', '/api/sleep']);
-const writeRoutes = new Set([...taskRoutes, ...reminderRoutes, ...scheduleRoutes, '/api/cultivation', '/api/habits', '/api/game', '/api/game-presets']);
+const writeRoutes = new Set([...taskRoutes, ...reminderRoutes, ...scheduleRoutes, '/api/cultivation', '/api/habits']);
 export async function miniAppApi(request: Request, env: Env, now = Date.now()): Promise<Response> {
     const receivedAt = Date.now();
     const url = new URL(request.url);
@@ -51,8 +50,6 @@ export async function miniAppApi(request: Request, env: Env, now = Date.now()): 
     }
     try {
         const context = { env, owner, now, healthy: new HealthyStore(env.DB) };
-        if (request.method === 'GET' && ['/api/game', '/api/game-catalog', '/api/game-technique', '/api/game-boss', '/api/game-chapter', '/api/game-presets', '/api/game-victories', '/api/game-export', '/api/practice-versions', '/api/battle-history', '/api/battle-loadout', '/api/battle-choice', '/api/battles'].includes(url.pathname))
-            return await readGame(context, url);
         if (request.method === 'GET' && ['/api/habits', '/api/habit-history', '/api/habit-report'].includes(url.pathname))
             return await readHabits(context, url);
         if (request.method === 'GET' && url.pathname === '/api/bootstrap')
@@ -66,8 +63,6 @@ export async function miniAppApi(request: Request, env: Env, now = Date.now()): 
         const input = await readInput(request);
         if (input instanceof Response)
             return input;
-        if (url.pathname === '/api/game-presets') return await handleGamePresets(context, input);
-        if (url.pathname === '/api/game') return await handleGame({ ...context, now: now + Math.max(0, Date.now() - receivedAt) }, input);
         if (url.pathname === '/api/habits') return await handleHabits({ ...context, now: now + Math.max(0, Date.now() - receivedAt) }, input);
         if (taskRoutes.has(url.pathname))
             return await handleTasks(context, input, url.pathname) ?? json({ error: 'NOT_FOUND' }, 404);
@@ -79,36 +74,6 @@ export async function miniAppApi(request: Request, env: Env, now = Date.now()): 
     }
     catch (error) {
         const code = error instanceof Error ? error.message : '';
-        const gameErrors: Record<string, string> = {
-            GAME_WEAPON_RETIRED: 'Bộ chiêu mới chỉ dùng công pháp. Tải lại Tu luyện để chuẩn bị trận.',
-            GAME_EXPORT_TOO_LARGE: 'Dữ liệu vượt giới hạn một lần xuất. Chọn khoảng ngắn hơn để xuất nhật ký nhé.',
-            GAME_EXPORT_UNAVAILABLE: 'Chưa xuất được hành trình. Cậu thử lại nhé.',
-            GAME_CHANGED: 'Tiến độ vừa được cập nhật. Tải lại để tiếp tục nhé.', GAME_DAY_CLOSED: 'Ngày này đã kết thúc. Tải lại để chọn cho ngày hiện tại.',
-            TECHNIQUE_LOCKED: 'Cậu chưa có quyền học công pháp này.', CONFIRM_PRACTICE_RESTART: 'Xác nhận luyện một bản mới từ Nhập môn. Bản cũ vẫn được giữ.',
-            PRACTICE_NOT_FOUND: 'Không tìm thấy bản luyện này.', PRACTICE_COMPLETE: 'Bản này đã hoàn tất 4 tầng. Có thể luyện lại để cải thiện độ thuần khiết.',
-            PRACTICE_ARCHIVED: 'Bản này chỉ còn trong lịch sử. Chọn một trong hai bản đang được duy trì.',
-            BATTLE_LEGACY_LOADOUT: 'Trận theo cơ chế trước không nhận bản luyện mới. Kết thúc trận rồi dùng bản này ở trận kế tiếp.',
-            PRACTICE_DAILY_LIMIT: 'Cậu đã tạo đủ 7 bản luyện mới trong ngày. Có thể tiếp tục bản đang có.',
-            BATTLE_ACTIVE: 'Kết thúc trận trước khi chọn lịch luyện mới.',
-            BATTLE_CHANGED: 'Trận vừa được cập nhật. Tải lại trước khi chọn tiếp.', BATTLE_NOT_FOUND: 'Không tìm thấy trận này.',
-            BOSS_LOCKED: 'Chưa đủ điều kiện thử thách. Xem tầng trước và các môn cần luyện trong Vượt tầng nhé.', GAME_CATCHING_UP: 'Đang chốt ngày trước. Cập nhật kết quả rồi chọn tiếp nhé.',
-            GAME_WEAPON_LOCKED: 'Cậu chưa sở hữu thần binh này.',
-            GAME_PRESETS_CHANGED: 'Bộ chiêu đã thay đổi ở nơi khác. Tải lại danh sách rồi lưu tiếp; lựa chọn đang chỉnh vẫn được giữ.',
-            GAME_PRESET_NOT_FOUND: 'Bộ chiêu này không còn trong danh sách. Tải lại để kiểm tra nhé.',
-            GAME_PRESET_LIMIT: 'Cậu có thể lưu tối đa 6 bộ chiêu. Chọn một bộ để cập nhật hoặc xóa trước khi thêm.',
-            BATTLE_COST_NOT_ACCEPTED: 'Cần xác nhận cái giá trước khi chọn chiêu hoặc cứu mạng.',
-            BATTLE_INSUFFICIENT_HP: 'HP hiện tại chưa đủ để trả giá thi triển chiêu này.', BATTLE_NOT_ACTIVE: 'Trận hiện không còn chờ chọn chiêu.',
-            BATTLE_NOT_STARTED: 'Trận bắt đầu từ ngày sinh hoạt kế tiếp.', BATTLE_NOT_CURRENT: 'Trận này không thuộc chế độ của hôm nay.',
-            BATTLE_RESCUE_UNAFFORDABLE: 'Chưa đủ Tu Vi hoặc cảnh giới để cứu theo cách này.', BATTLE_RESCUE_UNAVAILABLE: 'Quyền cứu này không còn dùng được trong trận.',
-            BATTLE_RESCUE_EXPIRED: 'Đã hết thời gian quyết định cứu mạng.', BATTLE_CANCEL_UNAVAILABLE: 'Chỉ hủy chuẩn bị trước ngày xuất chiến.',
-            BATTLE_WITHDRAWAL_UNAVAILABLE: 'Chỉ rút trước lượt; sau khi hết HP cần chọn cứu hoặc chấp nhận tử trận.',
-            BATTLE_TECHNIQUE_COOLDOWN: 'Chiêu này còn đang hồi. Chọn một chiêu khác cho lượt hôm nay.',
-            HEALTHY_CHANGED: 'Tu Vi hoặc cảnh giới vừa thay đổi. Tải lại để xem cái giá hiện tại.',
-            BREAKTHROUGH_COMBAT_COOLDOWN: 'Nghịch Mệnh còn đang hồi; chưa thể đột phá lại trong những ngày này.',
-            CONFIRM_BATTLE_WITHDRAWAL: 'Xác nhận rút lui trước lượt hôm nay.', CONFIRM_BATTLE_DEATH: 'Xác nhận tử trận và khoản tổn thất trước khi tiếp tục.',
-            BATTLE_DEATH_UNAVAILABLE: 'Trận không còn chờ quyết định tử trận.', BATTLE_EXCHANGE_UNAVAILABLE: 'Lượt hiện tại chưa mở quyền đổi một ô công pháp.',
-        };
-        if (gameErrors[code]) return json({ error: code, message: gameErrors[code] }, 409);
         const habitErrors: Record<string, string> = {
             HABIT_CHANGED: 'Thói quen vừa thay đổi. Tải lại để tiếp tục nhé.', HABIT_LOG_CHANGED: 'Lần ghi này đã thay đổi ở một nơi khác. Tải lại để kiểm tra.',
             HABIT_DAY_CLOSED: 'Ngày này đã kết thúc. Cậu chỉ có thể ghi cho ngày hiện tại.', HABIT_ARCHIVED: 'Thói quen này đã có lịch lưu trữ.',

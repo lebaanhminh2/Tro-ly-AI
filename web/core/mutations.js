@@ -9,7 +9,7 @@ export function createMutations({ state, runtime, sheet, render, toast, showBrow
         runtime.saving = true;
         runtime.revision++;
         const writeRevision = runtime.revision;
-        const featureWrite = path === 'habits' || path === 'game' || path === 'game-presets';
+        const featureWrite = path === 'habits';
         if (featureWrite) {
             state.featureSaving = { path, habitId: input.habitId ?? null };
             if (!sheet.open) render();
@@ -23,14 +23,14 @@ export function createMutations({ state, runtime, sheet, render, toast, showBrow
         try {
             // Reconcile an acknowledged write before allowing another state-changing action.
             if (runtime.refreshPending) {
-                applySnapshot(state, await refreshLive({ activeOffset: state.activeTasksOffset ?? 0, includeHabits: runtime.pendingReceipt?.path === 'habits' || state.tab === 'habits', includeGame: runtime.pendingReceipt?.path === 'game' || state.tab === 'game' }));
+                applySnapshot(state, await refreshLive({ activeOffset: state.activeTasksOffset ?? 0, includeHabits: runtime.pendingReceipt?.path === 'habits' || state.tab === 'habits' }));
                 if (runtime.pendingReceipt)
                     settleRequest(runtime.pendingReceipt.path, runtime.pendingReceipt.input);
                 runtime.pendingReceipt = null;
                 runtime.refreshPending = false;
             }
             const includeHistory = path === 'tasks' || path === 'tasks-delete' || (state.tab === 'today' && state.mode === 'tasks');
-            const refreshOptions = { includeHistory, activeOffset: state.activeTasksOffset ?? 0, includeHabits: path === 'habits' || state.tab === 'habits', includeGame: path === 'game' || state.tab === 'game', scope: featureWrite ? path : 'all' };
+            const refreshOptions = { includeHistory, activeOffset: state.activeTasksOffset ?? 0, includeHabits: path === 'habits' || state.tab === 'habits', scope: featureWrite ? path : 'all' };
             let data;
             if (options.effect) {
                 const request = liveMutation(path, input, refreshOptions);

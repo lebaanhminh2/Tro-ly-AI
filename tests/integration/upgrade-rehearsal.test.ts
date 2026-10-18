@@ -10,11 +10,9 @@ import { sqliteDatabase } from '../../scripts/benchmark-habit-runtime.ts';
 import { ScheduleStore } from '../../src/adapters/d1/schedule-store.ts';
 import { HealthyStore } from '../../src/adapters/d1/healthy-store.ts';
 import { D1HabitStore } from '../../src/adapters/d1/habit-store.ts';
-import { D1GameStore } from '../../src/adapters/d1/game-store.ts';
 import { HabitService } from '../../src/application/habit-service.ts';
-import { PracticeService } from '../../src/application/practice-service.ts';
 
-test('pre-habit SQL backup restores, keeps legacy data and supports production habit/practice flows without dispatch or overwriting a DB', async () => {
+test('pre-habit SQL backup restores, keeps legacy data and supports production habit flows without dispatch or overwriting a DB', async () => {
     const directory = mkdtempSync(join(tmpdir(), 'assistant-upgrade-'));
     const backup = join(directory, 'backup.sql'), target = join(directory, 'restored.sqlite');
     try {
@@ -45,22 +43,13 @@ test('pre-habit SQL backup restores, keeps legacy data and supports production h
             const db = sqliteDatabase(reopened), at = Date.parse('2026-10-12T08:00:00+07:00'), dayMs = 86400000;
             await new ScheduleStore(db).configure('123', '05:30', '23:15', 0, at);
             const healthy = await new HealthyStore(db).read('123');
-            const habits = new D1HabitStore(db), game = new D1GameStore(db);
+            const habits = new D1HabitStore(db);
             const habit = await new HabitService(habits).execute('123', 'restore_new_habit',
                 { operation: 'create', definition: { name: 'Đọc sách', metric: 'duration', target: 20, cadence: { kind: 'daily' } } }, at);
-            const first = await game.read('123', at);
-            await new PracticeService(game).execute('123', 'restore_practice',
-                { operation: 'start_practice', techniqueId: 'kiem-y', day: first.day.day, version: 0 }, at);
             const tomorrow = await habits.today('123', at + dayMs);
             await new HabitService(habits).execute('123', 'restore_habit_log',
                 { operation: 'log', habitId: habit.habitId, version: 1, logVersion: 0, day: tomorrow.day.day, value: 20 }, at + dayMs);
             await habits.settle('123', at + 2 * dayMs, 10);
-            await game.settle('123', at + 2 * dayMs, 2);
-            const restoredPractice = (await game.versions('123', 'kiem-y', null, 20)).versions[0]!.practice;
-            assert.equal(restoredPractice.rule, 'practice-v2');
-            assert.equal(restoredPractice.progressMilli, 1000);
-            assert.equal(restoredPractice.time!.periods[0]!.days, 1);
-            assert.equal(reopened.prepare('SELECT COUNT(*) AS n FROM practice_tier_sources').get()!.n, 1);
             assert.deepEqual(await new HealthyStore(db).read('123'), healthy);
             assert.equal(reopened.prepare("SELECT state FROM outbox WHERE id='upgrade-delivery'").get()!.state, 'uncertain');
             assert.equal(reopened.prepare("SELECT title FROM tasks WHERE id='upgrade-task'").get()!.title, 'Đọc sách; không gửi tin thử');

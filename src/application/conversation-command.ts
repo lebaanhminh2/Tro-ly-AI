@@ -24,7 +24,11 @@ export async function runToolTurn(initial:ModelContent[],ports:ToolTurnPorts):Pr
    if(code==='AI_TRIAL_ENDED')return 'Đợt dùng thử AI đã hết thời hạn cấu hình. Các lời nhắc đã lưu vẫn chạy; cần mở lại thời hạn trước khi chat tiếp.';
    return fallback;
   }
-  if(ports.mode==='chat'&&response.calls.some(c=>!['respond','find_tasks','get_agenda','find_habits','get_game','show_work','ask_user'].includes(c.name)))return 'Muốn tớ thực hiện thay đổi, cậu gửi / rồi cách một dấu và nội dung nhé.';
+  // Persisted model steps from the retired feature must never execute or
+  // partially commit alongside a current action when an inbox turn resumes.
+  if(response.calls.some(c=>['get_game','practice_action'].includes(c.name)))
+   return 'Tu luyện đã ngừng hoạt động. Tớ chưa thực hiện thay đổi nào trong lượt này; task và thói quen vẫn dùng bình thường.';
+  if(ports.mode==='chat'&&response.calls.some(c=>!['respond','find_tasks','get_agenda','find_habits','show_work','ask_user'].includes(c.name)))return 'Muốn tớ thực hiện thay đổi, cậu gửi / rồi cách một dấu và nội dung nhé.';
   const question=response.calls.find(c=>c.name==='ask_user');
   if(question){if(response.calls.some(c=>!['ask_user','respond'].includes(c.name)))return 'Chưa thay đổi dữ liệu: cần làm rõ yêu cầu trước.';return typeof question.args.question==='string'?question.args.question:'Cậu nói rõ phần còn thiếu giúp tớ nhé?';}
   const unfilteredCalls=response.calls;

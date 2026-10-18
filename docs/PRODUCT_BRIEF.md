@@ -1,42 +1,31 @@
-# Minh Anh — sản phẩm nền và hướng mở rộng
+# Minh Anh — trợ lý cá nhân
 
-Cập nhật 2026-10-12. Brief này giữ trải nghiệm nền; source khảo sát `51f5ffd`, trạng thái thực tế xem [HANDOFF](HANDOFF.md). Đây không phải bảng cân bằng hoặc lời khẳng định tất cả luồng đã được audit live.
+Cập nhật 18/10/2026. Phạm vi hiện tại: task, thói quen, kế hoạch/lịch, focus, nhắc việc, ngủ/thức và tiến trình nền. Tu luyện/Thần Lộ, công pháp và chiến đấu đã ngừng hoạt động; không có game thay thế trong đợt dọn.
 
-## Mục tiêu
+## Trải nghiệm
 
-- Trợ lý cá nhân tiếng Việt, tăng năng suất trong sức tải thực tế, giúp bắt đầu sớm và giảm quyết định. Không hard-cap số task/ngày tùy tiện.
-- Telegram cho trò chuyện/nhận nhắc; web cho quản lý và thao tác rõ. Web cơ bản không cần Gemini khi lọc/tick/form.
-- Minh Anh là bạn gái-trợ lý hư cấu trưởng thành, tớ–cậu, giọng Bắc tự nhiên, trêu/động viên nhẹ; không đe dọa hoặc dùng tình cảm gây tội lỗi.
-- Múi giờ sinh hoạt hiện tại UTC+7; mobile ưu tiên iPhone, desktop dùng được. Không đòi máy cá nhân chạy liên tục để task/nhắc/game runtime hoạt động.
-- Gemini free theo cấu hình được xác minh, không paid fallback/ngân sách mới. Model đề xuất/diễn giải, server quyết định quyền và trạng thái.
+Trợ lý tiếng Việt giúp bắt đầu sớm và quản lý sức tải thực tế. Telegram dành cho trò chuyện và nhận nhắc; web dành cho quản lý/thao tác rõ, không cần model cho form và tick. Persona Minh Anh là nhân vật trưởng thành, tớ–cậu, giọng Bắc tự nhiên, động viên nhẹ; không dùng tình cảm gây áp lực. Múi giờ sinh hoạt UTC+7, ưu tiên điện thoại, vẫn dùng được trên desktop.
 
-## Task, kế hoạch và lời nhắc
+## Công việc, lịch và nhắc
 
-- Task có ID/mã ổn định, cha–con, deadline/estimate/work log/ghi chú theo source hiện tại. Task dở giữ identity và deadline; không nhân bản để xếp lại.
-- Cha–con có confirmation rõ ở thao tác ảnh hưởng cả nhóm; không suy “xong một bước” là xong cha. Thưởng task hợp lệ lần đầu theo source gốc, không nhân khi mở lại.
-- Hôm nay giúp thấy việc tiếp theo và toàn cảnh/thời gian tới deadline. Task đã xong không vào chỉnh xếp thời gian, history vẫn giữ.
-- `/lich` hoặc web chỉnh lịch là ý định thay đổi kế hoạch rõ; câu chat “bận” không tự dời task. Planner giữ free/busy/fixed/capacity/buffer, không giả mọi khoảng trống là sức tải 100%.
-- Lời nhắc riêng do user đặt khác lời thúc task tự động. Nhắc một lần/định kỳ có occurrence/version riêng; sửa/bỏ lần này khác sửa chuỗi, không send bù dồn sau outage.
-- ACK nhắc không tự hoàn thành task; chat thường đọc/trò chuyện theo policy hiện có, không âm thầm mutation.
+- Task có ID/mã ổn định, bước nhỏ, deadline, estimate, ghi chú và work log. Xếp lại giữ task/deadline; hoàn thành một buổi hoặc bước không tự hoàn thành cả task.
+- Thao tác ảnh hưởng nhóm có xác nhận theo luồng hiện có. Thưởng task hợp lệ lần đầu giữ nguyên; mở lại không nhân thưởng.
+- Hôm nay có kế hoạch, timeline và focus. Planner giữ free/busy/fixed/capacity/buffer, không coi mọi khoảng trống là sức tải đầy đủ. Chat “bận” không tự dời toàn bộ task.
+- Nhắc riêng do user đặt khác lời thúc tự động. Nhắc định kỳ có occurrence/version; bỏ một lần khác sửa chuỗi. ACK không tự hoàn thành task hoặc habit. Outage không gửi bù dồn.
+- Thói quen tự khai báo có tick/thời lượng/số lượng, ba lịch cam kết, nhắc tùy chọn, xếp thời gian, lịch sử và báo cáo/xuất. Quy tắc tại [HABITS](HABITS.md).
 
-## Ngủ, tập trung và tiến trình nền
+## Ngủ và điểm dùng chung
 
-- `/ngu` và web sleep báo trạng thái do user tự khai, không đo giấc ngủ. Sau đó ngừng lời thúc ngủ/task, context model biết state chuẩn; focus dùng ranh giới tương đương.
-- Lời nhắc user cấu hình vẫn chạy khi ngủ/focus, trừ manual pause/inactive theo source. Không chặn toàn outbox bằng sleep flag.
-- Ngủ không đóng ngày sinh hoạt. Undo 5 phút ghi “Hoàn tác”, giữ guards và đảo delta ngủ; không rewind đột phá/inventory/account. Không thêm giới hạn 1 lần/ngày.
-- Giờ ngủ hôm nay ở vùng Hỏa Mạch/Thành tích; điều khiển ngủ ở cài đặt. Hôm nay hiện thẻ sleep state theo cơ chế đã chốt.
-- Healthy, streak ngủ, rewards/checkin/gacha/items/rank/breakthrough hiện có tiếp tục theo domain/backend. Không sao chép bảng prototype cũ thành luật mới; `src/domain/healthy.ts` là nguồn hằng số hiện tại.
-- Ngày sinh hoạt tùy start/target/end snapshot; checkin theo ngày lịch Việt Nam. Đổi giờ không sửa lịch sử hoặc mở lại kỳ đã khóa.
+- Báo ngủ là trạng thái tự khai, không đo giấc ngủ. Ngủ/focus ngừng lời thúc phù hợp; nhắc user đã cấu hình vẫn theo cơ chế hiện có, trừ pause/inactive.
+- Ngủ không đóng ngày sinh hoạt. Hoàn tác ngủ trong 5 phút giữ guards và đảo delta ngủ, không rewind toàn tài khoản, đột phá hoặc inventory.
+- Giữ nguyên healthy, streak ngủ, điểm/vé, check-in, rút/ghép/vật phẩm, rank, đột phá và thành tích nền. Hằng số và luật nằm trong `src/domain/healthy.ts`, không lấy bảng prototype cũ làm luật mới.
+- Ngày sinh hoạt do server chốt từ lịch cài đặt; check-in theo ngày lịch Việt Nam. Đổi giờ không mở lại kỳ đã đóng.
+- Khóa rank/trận đang dở của game cũ không chặn đột phá hoặc chức năng nền. Dữ liệu game lịch sử được giữ nguyên trong DB, không hoàn tiền, phân phối lại thưởng hay kết toán tiếp.
 
-## UI và UX cần giữ
+## Yêu cầu giao diện và AI
 
-- Màn chính ngắn/gọn, thứ bậc chữ rõ, spacing theo nhóm thông tin, few accent colors, cả dark/light. Điều hướng có thể phát triển khi tính năng mới cần, có bằng chứng từ flow thật.
-- Touch targets khoảng≥44 px, safe-area, không overflow ngang hoặc chỉ dùng hover/màu để phân biệt. Header/nút đóng sheet luôn tiếp cận khi cuộn; focus/labels/reduced motion rõ.
-- Loading/empty/error/saving/read-only/conflict/auth expired có hướng xử lý. Success chỉ sau commit; POST đã lưu nhưng refresh lỗi phải reconcile, không retry nhân tác dụng.
-- Lore/trang trí không cản ghi task/habit. Không đặt thuật ngữ receipt/SQL/version trong luồng user nếu không giúp quyết định.
+Bốn tab: Hôm nay, Thói quen, Lời nhắc, Thành tích. Giữ sáng/tối, giảm chuyển động, safe-area, touch target, keyboard, label và sheet có nút đóng/lưu tiếp cận được. Danh sách/tên dài/chữ lớn không tràn ngang.
 
-## Mở rộng đã giao AI
+Loading, lỗi, hết phiên, read-only, đang lưu và conflict có cách xử lý. Chỉ báo thành công sau commit; POST đã lưu nhưng tải lại lỗi phải đối chiếu trạng thái trước thao tác tiếp, không tạo request mới để nhân tác dụng.
 
-Toàn Habit/Thần Lộ tại [HABIT_GAME_PRODUCT](HABIT_GAME_PRODUCT.md): habit độc lập/lịch tùy chọn, tracking, luyện và battle, đủ 5 phái/39 môn/15 chương, các tuyến phụ và art nguyên bản. [IMPLEMENTATION](HABIT_GAME_IMPLEMENTATION.md) sở hữu quyền/mốc/prompt goal, [REVIEW](HABIT_GAME_REVIEW.md) giữ lựa chọn user.
-
-Phần game có không gian riêng và có thể thu gọn; người không chơi vẫn quản lý task/habit/ngủ tốt. Không thay persona trợ lý bằng NPC game hoặc tạo currency/tích hợp nền tảng mới chưa cần thiết. AI tự chọn chi tiết thiết kế trong khung, tự test/review/sửa để user nghiệm thu cuối.
+Model đề xuất/diễn giải; backend quyết định owner, ngày, quyền và kết quả. Chat thường không âm thầm ghi. Provider lỗi không làm tắt web, luật nền hay nhắc đã lưu. Không thêm paid fallback hoặc quyền gọi live trong đợt dọn. Chi tiết tại [AI_TOOLS](AI_TOOLS.md).

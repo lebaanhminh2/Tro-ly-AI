@@ -1,8 +1,7 @@
 const storageKey = 'minh-anh-experience';
 
 export function normalizeExperience(value) {
-    return { gameVisible: value?.gameVisible !== false, motion: value?.motion === 'reduce' ? 'reduce' : 'system',
-        gameGuideDismissed: value?.gameGuideDismissed === true };
+    return { motion: value?.motion === 'reduce' ? 'reduce' : 'system' };
 }
 function readExperience() {
     try { return normalizeExperience(JSON.parse(localStorage.getItem(storageKey))); }

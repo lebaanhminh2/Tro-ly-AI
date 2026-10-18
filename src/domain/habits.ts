@@ -1,4 +1,4 @@
-// Self-reported tracking is separate from committed game contributions.
+// Self-reported tracking is separate from settled commitment outcomes.
 // All values use hundredths internally; the caller supplies server time/day.
 export type HabitMetric = 'check' | 'quantity' | 'duration';
 export type HabitCadence =

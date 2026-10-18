@@ -49,3 +49,39 @@ test('Telegram webhook acknowledges a directly replied appointment even without 
   assert.equal((await db.prepare("SELECT COUNT(*) AS n FROM outbox WHERE reminder_id='appointment:replied:2' AND state='pending'").first<{n:number}>())!.n,0);
  }finally{await mf.dispose();}
 });
+
+test('all cron phases keep habit settlement running without reading or settling legacy battles', async () => {
+ const {DatabaseSync}=await import('node:sqlite');
+ const {sqliteDatabase}=await import('../../scripts/benchmark-habit-runtime.ts');
+ const {ScheduleStore}=await import('../../src/adapters/d1/schedule-store.ts');
+ const {HabitService}=await import('../../src/application/habit-service.ts');
+ const {D1HabitStore}=await import('../../src/adapters/d1/habit-store.ts');
+ const {runScheduled}=await import('../../src/entrypoints/worker-scheduler.ts');
+ const raw=new DatabaseSync(':memory:');
+ try {
+  for(const file of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())raw.exec(readFileSync('migrations/'+file,'utf8'));
+  const db=sqliteDatabase(raw),dayMs=86400000;
+  let now=Date.parse('2026-10-18T10:00:00+07:00');
+  const schedule=new ScheduleStore(db);await schedule.configure('123','04:30','22:30',0,now-2*dayMs);
+  const habits=new D1HabitStore(db),service=new HabitService(habits);
+  const saved=await service.execute('123','retired_cron_habit',{operation:'create',definition:{name:'Read',metric:'duration',target:20,cadence:{kind:'daily'}}},now-2*dayMs);
+  const yesterday=await habits.today('123',now-dayMs);
+  await service.execute('123','retired_cron_log',{operation:'log',habitId:saved.habitId,version:1,logVersion:0,day:yesterday.day.day,value:20},now-dayMs);
+  const day=(await schedule.ensureDay('123',now))!;
+  raw.prepare('INSERT INTO game_accounts(owner,joined_day,anchor_start,next_day,updated,rank_lock_until_day) VALUES(?,?,?,?,?,?)')
+   .run('123',day.day-10,day.start_at-10*dayMs,day.day-5,now,day.day+10);
+  raw.prepare("INSERT INTO battles(owner,id,boss_id,status,starts_day,state_json,content_json,created,updated) VALUES('123','old_active','retired','active',?,'{}','{}',?,?)").run(day.day-5,now,now);
+  const legacy=()=>[raw.prepare('SELECT * FROM game_accounts').all(),raw.prepare('SELECT * FROM battles').all(),raw.prepare('SELECT * FROM game_days').all()];
+  const before=legacy(),seen=new Set<string>();
+  const guarded:Database={prepare:sql=>{assert.doesNotMatch(sql,/\b(?:game_accounts|game_days|game_receipts|battles|practice_versions)\b/i);return db.prepare(sql);},batch:writes=>db.batch(writes)};
+  const env={DB:guarded,TELEGRAM_USER_ID:'123',TELEGRAM_WEBHOOK_SECRET:'x'.repeat(32),TELEGRAM_BOT_TOKEN:'123:fake',ASSETS:{fetch:async()=>new Response('fixture')}};
+  const transport:typeof fetch=async()=>new Response(JSON.stringify({ok:true,result:{message_id:1}}),{headers:{'Content-Type':'application/json'}});
+  for(let minute=0;minute<12;minute++,now+=60000){
+   seen.add(String(Math.floor(now/60000)%4)+':'+String(Math.floor(now/240000)%3));
+   await runScheduled(env,{cardsEnabled:false,transport,clock:{now:()=>now},chat:undefined,flushCards:async()=>{}});
+  }
+  assert.equal(seen.size,12);
+  assert.ok(Number(raw.prepare('SELECT COUNT(*) AS n FROM habit_outcomes WHERE owner=?').get('123')!.n)>0);
+  assert.deepEqual(legacy(),before);
+ }finally{raw.close();}
+});

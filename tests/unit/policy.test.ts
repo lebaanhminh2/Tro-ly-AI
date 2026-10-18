@@ -22,3 +22,15 @@ test('policy does not use prior turn evidence as current authorization', () => {
   assert.equal(decision.reason, 'STALE_EVIDENCE');
   assert.equal(decision.pending, null);
 });
+
+test('runtime declarations and validation reject retired game tools while keeping habit tools', async () => {
+  const { TOOL_DECLARATIONS } = await import('../../src/ai/contracts.ts');
+  const { validateTool } = await import('../../src/ai/policy.ts');
+  type ToolCall = import('../../src/ai/contracts.ts').ToolCall;
+  const names = TOOL_DECLARATIONS.map(tool => String(tool.name));
+  assert.ok(names.includes('find_habits') && names.includes('habit_action'));
+  for (const name of ['get_game', 'practice_action'])
+    assert.throws(() => validateTool({ name, args: {} } as unknown as ToolCall, 0), /UNKNOWN_TOOL/);
+  assert.ok(!names.includes('get_game') && !names.includes('practice_action'));
+  validateTool({ name: 'find_habits', args: { query: '', status: 'active', cursor: 0 } }, 0);
+});

@@ -53,8 +53,6 @@ export async function bootstrap({ env, owner, now, healthy }: MiniAppContext): P
             return { id: a.id, origin: 'appointment', title: a.title, version: a.version, kind: 'once', times: [local.slice(11, 16)], weekdays: [], startDate: local.slice(0, 10), endDate: null, enabled: a.status === 'active', delivered: !!a.delivered, past: a.status === 'expired' };
         })];
     const rest = await new ScheduleStore(env.DB).restStatus(owner, now);
-    Object.assign(account, { combatRestrictions: await query(env.DB, 'SELECT rank_lock_until_day AS rankLockUntilDay FROM game_accounts WHERE owner=?', owner)
-        .first<{ rankLockUntilDay: number | null }>() });
     const dailyPlan = await new DayPlanStore(env.DB).ensure(owner, now);
     const activeOffset = tasks.filter(task => task.status === 'active').length;
     const known = new Set(tasks.map(task => task.id));

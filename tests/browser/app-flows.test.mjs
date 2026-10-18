@@ -10,19 +10,10 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { createDemo } from '../../web/demo/state.js';
 import { checkinProgress } from '../../web/models/cultivation.js';
 import { assessHabitDay, newHabitPeriod } from '../../src/domain/habits.ts';
-import { TECHNIQUES, SCHOOLS, INITIAL_TECHNIQUES } from '../../src/domain/techniques.ts';
-import { newPracticeVersion } from '../../src/domain/practice.ts';
-import { GAME_BOSSES, GAME_CHAPTERS, GAME_CONTENT_VERSION, bossById, bossIntents, publicGameCatalog } from '../../src/domain/game-content.ts';
-import { GAME_CHARACTERS } from '../../src/domain/game-characters.ts';
-import { playerGameCatalog } from '../../src/domain/game-discovery.ts';
-import { newBattleState, publicBattleState, resolveBattleTurn } from '../../src/domain/battle.ts';
-import { armedBattleState } from '../../src/domain/game-rewards.ts';
-import { fighterForRank, rescueQuote, payBattleRescue } from '../../src/domain/battle-economy.ts';
-import { GameExportService } from '../../src/application/game-export-service.ts';
 import { browserBin, fixture, serve, chrome, snapshot, clone, now } from './app-harness.mjs';
 
 
-test('six habits and game screens remain usable with large text, keyboard and a slow offline recovery', { skip: !browserBin, timeout: 120000 }, async () => {
+test('six habits and assistant screens remain usable with large text, keyboard and a slow offline recovery', { skip: !browserBin, timeout: 120000 }, async () => {
     const control = fixture();
     for (let index = 0; index < 6; index++) control.mutate('habits', { id: 'large_habit_' + index, operation: 'create',
         definition: { name: index ? ['Thiền buổi sáng', 'Đọc sách', 'Đi bộ', 'Viết nhật ký', 'Uống nước'][index - 1]
@@ -43,13 +34,13 @@ test('six habits and game screens remain usable with large text, keyboard and a 
         for (const [width, theme] of [[360, 'light'], [390, 'dark'], [414, 'light'], [1440, 'light']]) {
             await browser.resize(width, width < 900 ? 844 : 1000); await browser.colorScheme(theme);
             await browser.evaluate(`document.documentElement.dataset.theme=${JSON.stringify(theme)}`);
-            for (const tab of ['today', 'habits', 'game', 'reminders', 'achievements']) {
+            for (const tab of ['today', 'habits', 'reminders', 'achievements']) {
                 await browser.evaluate(`document.querySelector('[data-tab=${tab}]').click()`);
                 await browser.wait("!document.querySelector('#content [aria-busy=true]') && !!document.querySelector('#content section')");
                 if (tab === 'habits') await browser.wait("document.querySelectorAll('.habit-card').length===6");
                 await scaleText(); const view = await snapshot(browser);
                 assert.equal(view.overflow, false, tab + ' / text 200% / ' + width + ' / ' + theme);
-                const labelsOutside = await browser.evaluate("[...document.querySelectorAll('.bottom-nav button,.game-navigation button,.habit-filters button,.habit-navigation button')].filter(button=>{const rect=button.getBoundingClientRect();if(!rect.width)return false;const range=document.createRange();range.selectNodeContents(button);return [...range.getClientRects()].some(text=>text.left<rect.left-1||text.right>rect.right+1)}).map(button=>button.textContent)");
+                const labelsOutside = await browser.evaluate("[...document.querySelectorAll('.bottom-nav button,.habit-filters button,.habit-navigation button')].filter(button=>{const rect=button.getBoundingClientRect();if(!rect.width)return false;const range=document.createRange();range.selectNodeContents(button);return [...range.getClientRects()].some(text=>text.left<rect.left-1||text.right>rect.right+1)}).map(button=>button.textContent)");
                 assert.deepEqual(labelsOutside, [], 'Navigation labels must fit their touch controls at large text: ' + tab + '/' + width);
                 if (process.env.UI_SCREENSHOT_DIR && width < 900) await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'f6-large-' + tab + '-' + width + '-' + theme + '.png'));
                 measurements.push({ screen: tab, width, theme, textScale: 2, geometry: view.geometry });
@@ -76,7 +67,7 @@ test('feature tabs coalesce reads, show cached rows immediately and reconcile a 
     const server = await serve(control); let browser;
     try {
         browser = await chrome(); await browser.navigate(server.url, 390); await browser.wait("!!document.querySelector('.focus-flip-card')");
-        control.readDelays = { habits: 650, game: 650 };
+        control.readDelays = { habits: 650 };
         const start = control.calls.length;
         await browser.evaluate("document.querySelector('[data-tab=habits]').click();document.querySelector('[data-tab=habits]').click()");
         await browser.wait("document.querySelectorAll('.habit-card').length===8 && !document.querySelector('.feature-updating')");
@@ -84,7 +75,7 @@ test('feature tabs coalesce reads, show cached rows immediately and reconcile a 
         const transitionCalls = control.calls.slice(start);
         await browser.evaluate("window.scrollTo(0,300)"); const scroll = await browser.evaluate('scrollY');
         assert.ok(scroll > 100);
-        await browser.tap('[data-tab=game]'); await browser.wait("!!document.querySelector('.practice-card')");
+        await browser.tap('[data-tab=today]'); await browser.wait("!!document.querySelector('.focus-flip-card')");
         const returning = await browser.evaluate("(() => {const started=performance.now();document.querySelector('[data-tab=habits]').click();return {elapsed:performance.now()-started,rows:document.querySelectorAll('.habit-card').length,scroll:scrollY}})()");
         assert.equal(returning.rows, 8); assert.ok(returning.elapsed < 200, 'Cached screen renders within 200 ms in this localhost fixture');
         assert.ok(Math.abs(returning.scroll - scroll) <= 2, 'Returning keeps the habit list position');
@@ -93,13 +84,14 @@ test('feature tabs coalesce reads, show cached rows immediately and reconcile a 
         await browser.evaluate("document.querySelector('.habit-check').click()");
         await browser.wait("document.querySelector('.habit-check[aria-busy=true]')?.textContent==='Đang lưu…'");
         assert.equal(await browser.evaluate("[...document.querySelectorAll('.bottom-nav button')].some(button=>button.disabled)"), false);
-        await browser.tap('[data-tab=game]');
-        await browser.wait("document.querySelector('.practice-card') && !document.querySelector('.feature-saving')");
-        await browser.tap('[data-tab=habits]');
         await browser.wait("document.querySelector('.habit-check')?.getAttribute('aria-pressed')==='true'");
         assert.equal(control.posts.length, writes + 1);
         assert.equal(control.calls.slice(savingStart).includes('GET bootstrap'), false);
         assert.equal(control.calls.slice(savingStart).includes('GET history'), false);
+        await browser.tap('[data-tab=today]'); await browser.wait("!!document.querySelector('.focus-flip-card')");
+        await browser.tap('[data-tab=habits]'); await browser.wait("document.querySelector('.habit-check')?.getAttribute('aria-pressed')==='true'");
+        assert.equal(control.posts.length, writes + 1);
+
         assert.equal(control.habits.habits[0].log.value, 100); assert.deepEqual(browser.errors, []);
         if (process.env.UX_BASELINE_REF) {
             const original = fixture();
@@ -137,7 +129,7 @@ test('acknowledged habit refresh failures reconcile before the next log and old 
         await browser.wait("document.querySelector('#toast').textContent.includes('Đã lưu trên server')");
         assert.equal(control.posts.length, before + 1); assert.equal(control.habits.habits[0].log.version, 1);
         assert.equal(await browser.evaluate("document.querySelector('.habit-check').getAttribute('aria-pressed')"), 'false', 'The failed refresh cannot fabricate a new authoritative log');
-        control.failedReads.clear(); await browser.tap('[data-tab=game]'); await browser.wait("!!document.querySelector('.practice-card')");
+        control.failedReads.clear(); await browser.tap('[data-tab=today]'); await browser.wait("!!document.querySelector('.focus-flip-card')");
         await browser.tap('[data-tab=habits]'); await browser.wait("document.querySelector('.habit-check')?.getAttribute('aria-pressed')==='true'");
         assert.equal(control.posts.length, before + 1, 'Reconciliation is read-only');
         await browser.evaluate("document.querySelector('.habit-check').click()");
@@ -199,85 +191,7 @@ test('offline habit form preserves its draft and retry identity without reportin
     } finally { if (browser) await browser.close(); await server.close(); }
 });
 
-// Redesigned cultivation battle preparation/rescue coverage lives in cultivation-flows.test.mjs.
 
-
-test('announced read stance marks the repeated choice and allows a different choice without resolving the day', { skip: !browserBin, timeout: 60000 }, async () => {
-    const control = fixture(), day = control.game.day.day, boss = bossById('ky-hanh-1'), id = 'read_browser_battle';
-    const initial = armedBattleState(fighterForRank(1), boss,
-        ['kiem-y', 'lien-van'].map(id => ({ id, versionId: 'browser_' + id, tier: 1, purityBp: 10000 })), bossIntents(boss), null);
-    const state = resolveBattleTurn(initial, { techniqueId: 'kiem-y', acceptCost: false, contribution: { habits: 300, tasks: 0 } }).state;
-    control.state.account.state.rank = 1;
-    control.game.current = { fromDay: day - 1, mode: 'battle', practiceId: null, battleId: id };
-    control.game.victories = ['truy-lenh', 'song-nha', 'thu-lenh', 'thiet-lenh-su'];
-    control.battleRuns.set(id, { id, bossId: boss.id, contentVersion: 'than-lo-3', combatRank: 1, state, startsDay: day - 1, lastDay: day - 1, waitDays: 0, rescueUntilDay: null, deathPaid: false });
-    control.game.battles = [{ id, version: 1, bossId: boss.id, status: 'active', startsDay: day - 1, waitDays: 0,
-        content: { ...boss, pattern: undefined, victory: undefined }, state: publicBattleState(state), rescue: rescueQuote(control.state.account.state, 1) }];
-    const before = clone(state), server = await serve(control); let browser;
-    try {
-        browser = await chrome(); await browser.navigate(server.url, 320); await browser.wait("!!document.querySelector('.focus-flip-card')");
-        await browser.tap('[data-tab=game]'); await browser.wait("!!document.querySelector('[data-write=battle-choice]')");
-        await browser.click('Chọn chiêu');
-        assert.equal(await browser.evaluate("document.querySelector('[data-choice-id=kiem-y]').textContent.includes('Bị đọc chiêu')"), true);
-        assert.equal(await browser.evaluate("document.querySelector('[data-choice-id=lien-van]').textContent.includes('Bị đọc chiêu')"), false);
-        assert.equal(await browser.evaluate("document.querySelector('.battle-intent').textContent.includes('Lặp chiêu')"), true);
-        for (const [width, theme] of [[320, 'light'], [390, 'dark']]) {
-            await browser.resize(width, 844); await browser.evaluate("document.documentElement.dataset.theme='" + theme + "';document.querySelector('.battle-intent').scrollIntoView({block:'start'})");
-            await browser.evaluate("new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))");
-            assert.equal((await snapshot(browser)).overflow, false);
-            if (process.env.UI_SCREENSHOT_DIR) await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'f6-read-stance-' + width + '-' + theme + '.png'));
-        }
-        await browser.click('Kiếm Ý', '[data-choice-id] strong'); await browser.wait("!document.querySelector('.battle-choice-footer button').disabled");
-        assert.match(await browser.evaluate("document.querySelector('.battle-choice-detail .battle-warning').textContent"), /65%/);
-        await browser.click('Chọn Kiếm Ý', '.battle-choice-footer button'); await browser.wait("!document.querySelector('#sheet').open");
-        await browser.click('Đổi chiêu');
-        await browser.click('Liên Vân Kiếm', '[data-choice-id] strong'); await browser.wait("!document.querySelector('.battle-choice-footer button').disabled");
-        await browser.click('Chọn Liên Vân Kiếm', '.battle-choice-footer button'); await browser.wait("!document.querySelector('#sheet').open");
-        assert.equal(control.game.choices[0].techniqueId, 'lien-van'); assert.deepEqual(state, before);
-        assert.equal(control.posts.length, 2); assert.ok(control.posts.every(post => post.input.operation === 'choose_battle'));
-        assert.deepEqual(browser.errors, []);
-    } finally { if (browser) await browser.close(); await server.close(); }
-});
-
-// Redesigned cultivation floor, victory and preset coverage lives in cultivation-flows.test.mjs.
-
-
-test('returning player sees the real next goal, opens its screen and habit audit without any automatic write', { skip: !browserBin, timeout: 60000 }, async () => {
-    const control = fixture(), day = control.game.day.day;
-    const practice = newPracticeVersion('return_edition', 'kiem-y', day - 10);
-    practice.tiers = [{ tier: 1, purityBp: 8000, effortMilli: 3000, defectsMilli: 375, startedDay: day - 10, lockedDay: day - 5 }];
-    control.game.current = { fromDay: day - 10, mode: 'practice', practiceId: practice.id, battleId: null };
-    control.game.currentPractice = { practice, version: 1, created: now - 86400000 * 10 };
-    control.game.learned = ['kiem-y']; control.game.victories = ['truy-lenh']; control.game.settledThrough = day - 1;
-    control.game.recent = [{ day: day - 1, mode: 'battle', result: { progressMilli: 0, directMisses: 0, weeklyMisses: 0, battle: { status: 'withdrawn', waitDays: 3 } } }];
-    const server = await serve(control); let browser;
-    try {
-        browser = await chrome(); await browser.navigate(server.url, 320); await browser.wait("!!document.querySelector('.focus-flip-card')");
-        await browser.tap('[data-tab=game]'); await browser.wait("!!document.querySelector('.cultivation-current')");
-        assert.equal(await browser.evaluate("document.querySelector('.cultivation-current h2').textContent"), 'Kiếm Ý');
-        assert.equal(await browser.evaluate("document.querySelector('.game-return-summary').textContent.includes('rút an toàn')"), true);
-        for (const [width, theme] of [[320, 'light'], [390, 'dark']]) {
-            await browser.resize(width, 844); await browser.evaluate("document.documentElement.dataset.theme='" + theme + "';document.querySelector('.cultivation-current').scrollIntoView({block:'center'})");
-            await browser.evaluate("new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))");
-            assert.equal((await snapshot(browser)).overflow, false);
-            if (process.env.UI_SCREENSHOT_DIR) await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'f6-next-goal-' + width + '-' + theme + '.png'));
-        }
-        await browser.click('Thử thách', '.game-navigation button');
-        await browser.wait("!!document.querySelector('.floor-row[data-boss-id=song-nha]') && document.querySelector('.game-navigation [data-game-panel=journey]').getAttribute('aria-current')==='page'");
-        assert.equal(await browser.evaluate("document.querySelector('.floor-row[data-boss-id=song-nha]').classList.contains('is-locked')"), false);
-        assert.equal(await browser.evaluate("document.querySelector('#sheet').open"), false);
-        // A new unfinished edition shows its real weekly audit and links to
-        // tracking. Navigation itself never fills a log or changes practice.
-        control.game.currentPractice.practice.tiers = []; control.game.currentPractice.practice.progressMilli = 3000;
-        control.game.currentPractice.practice.pendingWeeks = ['audit_week'];
-        await browser.tap('[data-tab=game]'); await browser.click('Hiện tại', '.game-navigation button');
-        await browser.wait("document.querySelector('.cultivation-current').innerText.includes('chờ cam kết tuần')");
-        await browser.tap('[data-tab=habits]'); await browser.wait("!!document.querySelector('.habits-page')");
-        assert.equal(control.posts.length, 0); assert.deepEqual(browser.errors, []);
-    } finally { if (browser) await browser.close(); await server.close(); }
-});
-
-// Redesigned cultivation library and practice coverage lives in cultivation-flows.test.mjs.
 
 test('habit rows keep one secondary line, log controls draft changes and Undo respects versions and day boundaries', { skip: !browserBin, timeout: 90000 }, async () => {
     const control = fixture(), day = control.habits.day.day;
@@ -467,7 +381,7 @@ test('habit mobile flow creates three cadences, edits quantity without duplicate
         assert.ok(exported.history.some(row => row.value === 1500 && row.note === '<img src=x onerror=alert(1)>'));
         assert.equal('account' in exported, false); assert.equal('tasks' in exported, false);
         assert.equal(await browser.evaluate("window.exportFilename.endsWith('.json')"), true);
-        assert.equal(control.posts.length, writes, 'Export cannot mutate any habit or game reward');
+        assert.equal(control.posts.length, writes, 'Export cannot mutate any habit or shared reward');
         assert.deepEqual(control.state.account, original);
         assert.deepEqual(control.state.tasks, tasks);
         assert.deepEqual(browser.errors, []);
@@ -1054,62 +968,28 @@ test('plan editor reorders only unfinished tasks and preserves completed minutes
     }
 });
 
-test('experience choices persist without writes, keep settings drafts and make the game guide optional', { skip: !browserBin, timeout: 60000 }, async () => {
+test('motion preferences survive retired game settings and reload without writes or lost settings drafts', { skip: !browserBin, timeout: 60000 }, async () => {
     const control = fixture(), server = await serve(control); let browser;
     try {
         browser = await chrome(); await browser.navigate(server.url, 320);
         await browser.wait("!!document.querySelector('.focus-flip-card')");
+        await browser.evaluate("localStorage.setItem('minh-anh-experience',JSON.stringify({gameVisible:false,gameGuideDismissed:false,motion:'system'}))");
+        await browser.navigate(server.url, 320); await browser.wait("!!document.querySelector('.focus-flip-card')");
         const writes = control.posts.length;
-        await browser.evaluate("document.querySelector('[data-tab=game]').click()");
-        await browser.wait("!!document.querySelector('.practice-card')");
-        assert.equal(await browser.evaluate("document.querySelector('#sheet').open"), false, 'The guide is opened only on request');
-        await browser.click('Cách chơi');
-        await browser.wait("document.querySelectorAll('.game-guide-steps li').length===4");
-        assert.equal((await snapshot(browser)).overflow, false);
-        await browser.evaluate("document.querySelector('[data-sheet-close]').click()");
-        assert.equal(await browser.evaluate("!!document.querySelector('.game-start-guide')"), false);
-        await browser.evaluate("document.querySelector('#settings').click();document.querySelector('#sheet input[type=time]').value='06:00'; document.querySelector('#sheet input[type=time]').dispatchEvent(new Event('input')); const select=document.querySelector('.settings-experience select');select.value='hide';select.dispatchEvent(new Event('change'))");
-        assert.equal(await browser.evaluate("getComputedStyle(document.querySelector('[data-tab=game]')).display"), 'none');
+        assert.deepEqual(await browser.evaluate("[...document.querySelectorAll('[data-tab]')].map(button=>button.dataset.tab)"), ['today', 'habits', 'reminders', 'achievements']);
+        await browser.evaluate("document.querySelector('#settings').click();document.querySelector('#sheet input[type=time]').value='06:00';document.querySelector('#sheet input[type=time]').dispatchEvent(new Event('input'));const select=document.querySelector('.settings-experience select');select.value='reduce';select.dispatchEvent(new Event('change'))");
         assert.equal(await browser.evaluate("document.querySelector('#sheet input[type=time]').value"), '06:00');
-        await browser.evaluate("{ const select=document.querySelectorAll('.settings-experience select')[1];select.value='reduce';select.dispatchEvent(new Event('change')); }");
+        assert.equal(await browser.evaluate("document.querySelectorAll('.settings-experience select').length"), 1);
         assert.equal(await browser.evaluate("document.documentElement.dataset.motion"), 'reduce');
         assert.equal(await browser.evaluate("getComputedStyle(document.querySelector('.focus-flip-card')).transitionDuration"), '0s');
         await browser.evaluate("document.querySelector('.settings-sheet-body').scrollTop=document.querySelector('.settings-sheet-body').scrollHeight");
-        if (process.env.UI_SCREENSHOT_DIR) await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'f5-experience-settings-320-light.png'));
+        if (process.env.UI_SCREENSHOT_DIR) await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'cleanup-motion-settings-320-light.png'));
         await browser.navigate(server.url, 320); await browser.wait("!!document.querySelector('.focus-flip-card')");
-        assert.equal(await browser.evaluate("document.querySelector('[data-tab=game]').hidden"), true);
         assert.equal(await browser.evaluate("document.documentElement.dataset.motion"), 'reduce');
-        await browser.evaluate("{ document.querySelector('#settings').click(); const select=document.querySelector('.settings-experience select');select.value='show';select.dispatchEvent(new Event('change'));document.querySelector('[data-sheet-close]').click();document.querySelector('[data-tab=game]').click(); }");
-        await browser.wait("!!document.querySelector('.practice-card')");
-        assert.equal(await browser.evaluate("!!document.querySelector('.game-start-guide')"), false);
-        await browser.click('Cách chơi'); await browser.click('Đến Thói quen');
-        await browser.wait("!!document.querySelector('.habits-page')");
         assert.equal((await snapshot(browser)).overflow, false);
-        assert.equal(control.posts.length, writes); assert.deepEqual(browser.errors, []);
-    } finally { if (browser) await browser.close(); await server.close(); }
-});
-
-test('game export downloads a versioned JSON snapshot, preserves editions and recovers from a bounded export error without writes', { skip: !browserBin, timeout: 60000 }, async () => {
-    const control = fixture(), practice = newPracticeVersion('export_browser01', 'kiem-y', control.game.day.day, 1000, 1);
-    control.practiceVersions.push({ practice, version: 1, created: now });
-    const server = await serve(control); let browser;
-    try {
-        browser = await chrome(); await browser.navigate(server.url, 320); await browser.wait("!!document.querySelector('.focus-flip-card')");
-        await browser.evaluate("document.querySelector('[data-tab=game]').click()"); await browser.wait("!!document.querySelector('.practice-card')");
-        await browser.click('Thành tựu', '.game-navigation button'); await browser.tap('.game-export-controls summary'); await browser.click('Xuất hồ sơ');
-        assert.equal((await snapshot(browser)).overflow, false);
-        await browser.evaluate("window.gameExportBlob=null;window.gameExportName=null;const exportCreate=URL.createObjectURL.bind(URL);URL.createObjectURL=blob=>{window.gameExportBlob=blob;return exportCreate(blob)};HTMLAnchorElement.prototype.click=function(){window.gameExportName=this.download};document.querySelector('#sheet select').value='365';document.querySelector('#sheet select').dispatchEvent(new Event('change'))");
-        if (process.env.UI_SCREENSHOT_DIR) await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'f5-game-export-320-light.png'));
-        await browser.click('Tải JSON'); await browser.wait("!!window.gameExportBlob");
-        const exported = JSON.parse(await browser.evaluate("gameExportBlob.text()"));
-        assert.equal(exported.format, 'assistant-than-lo'); assert.equal(exported.version, 1);
-        assert.equal(exported.range.to - exported.range.from, 364); assert.deepEqual(exported.practiceVersions[0].practice, practice);
-        assert.equal(await browser.evaluate("gameExportName"), 'than-lo-365-ngay.json');
-        control.failGameExport = true; await browser.evaluate("window.gameExportBlob=null"); await browser.click('Tải JSON');
-        await browser.wait("document.querySelector('#toast').textContent.includes('vượt giới hạn')");
-        assert.equal(await browser.evaluate("window.gameExportBlob"), null);
-        assert.equal(await browser.evaluate("[...document.querySelectorAll('#sheet button')].find(button=>button.textContent==='Tải JSON').disabled"), false);
-        assert.equal(control.posts.length, 0); assert.deepEqual(browser.errors, []);
+        assert.equal(control.posts.length, writes);
+        assert.ok(!control.calls.some(call => /\b(game|battle|practice)/.test(call)));
+        assert.deepEqual(browser.errors, []);
     } finally { if (browser) await browser.close(); await server.close(); }
 });
 

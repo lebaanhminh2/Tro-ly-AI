@@ -9,18 +9,6 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { createDemo } from '../../web/demo/state.js';
 import { checkinProgress } from '../../web/models/cultivation.js';
 import { assessHabitDay, newHabitPeriod } from '../../src/domain/habits.ts';
-import { TECHNIQUES, SCHOOLS, INITIAL_TECHNIQUES } from '../../src/domain/techniques.ts';
-import { newPracticeVersion } from '../../src/domain/practice.ts';
-import { newTimePracticeVersion } from '../../src/domain/practice-progression.ts';
-import { practicePresentation, practiceUpgrade } from '../../src/domain/practice-presentation.ts';
-import { practiceStrength } from '../../src/domain/technique-profile.ts';
-import { GAME_BOSSES, GAME_CHAPTERS, GAME_CONTENT_VERSION, bossById, bossIntents, publicGameCatalog } from '../../src/domain/game-content.ts';
-import { GAME_CHARACTERS } from '../../src/domain/game-characters.ts';
-import { playerGameCatalog } from '../../src/domain/game-discovery.ts';
-import { newBattleState, publicBattleState, battleChoiceDetail, resolveBattleTurn } from '../../src/domain/battle.ts';
-import { armedBattleState } from '../../src/domain/game-rewards.ts';
-import { fighterForRank, rescueQuote, payBattleRescue } from '../../src/domain/battle-economy.ts';
-import { GameExportService } from '../../src/application/game-export-service.ts';
 // Real-browser smoke tests. Only localhost fixtures are used; no .env or cloud data.
 const browserBin = process.env.BROWSER_BIN || [
     'C:/Program Files/Google/Chrome/Application/chrome.exe',
@@ -48,12 +36,8 @@ function fixture() {
         progress: { completions: [], milestones: [], achievements: [] }, sessions: [], events: []
     };
     const control = { state, authenticated: true, failBootstrap: false, calls: [], posts: [], receipts: new Map(),
-        habits: { now, day: { day: operatingDay, startAt: start, endAt: start + 86400000 }, habits: [] },
-        presets: { version: 0, presets: [] }, presetRequests: [],
-        battleRuns: new Map(), practiceVersions: [], game: { now, day: { day: operatingDay, startAt: start, endAt: start + 86400000 }, version: 0,
-            current: { fromDay: operatingDay, mode: 'idle', practiceId: null, battleId: null }, pending: null,
-            currentPractice: null, pendingPractice: null, owned: INITIAL_TECHNIQUES, settledThrough: operatingDay - 1, audits: [], recent: [], battles: [], victories: [], choices: [], rewards: [],
-            combatEconomy: { healthyVersion: state.account.version, qi: state.account.state.qi, rank: state.account.state.rank, rankLockUntilDay: null } } };
+        habits: { now, day: { day: operatingDay, startAt: start, endAt: start + 86400000 }, habits: [] }
+    };
     control.bootstrap = () => ({ ...state, checkin: checkinProgress(state.account.state, now) });
     control.mutate = (path, input) => {
         if (control.receipts.has(input.id))
@@ -61,73 +45,7 @@ function fixture() {
         control.posts.push({ path, input: clone(input) });
         let result = { saved: true };
         const task = state.tasks.find(t => t.id === input.taskId);
-        if (path === 'game-presets') {
-            const presetId = input.presetId ?? 'set_' + input.id, index = control.presets.presets.findIndex(preset => preset.id === presetId);
-            if (input.operation === 'delete') control.presets.presets.splice(index, 1);
-            else {
-                const preset = { id: presetId, name: input.name, versions: input.versions, weaponId: input.weaponId };
-                if (index < 0) control.presets.presets.push(preset); else control.presets.presets[index] = preset;
-            }
-            result = { saved: true, version: ++control.presets.version, presetId, deleted: input.operation === 'delete' };
-        }
-        else if (path === 'game') {
-            control.game.version++;
-            if (input.operation.includes('battle')) {
-                const game = control.game;
-                if (input.operation === 'prepare_battle') {
-                    const content = bossById(input.bossId), id = 'b_' + input.id, combatRank = state.account.state.rank;
-                    const loadout = input.versions.map(id => control.practiceVersions.find(version => version.practice.id === id)?.practice).filter(Boolean)
-                        .map(practice => ({ id: practice.techniqueId, versionId: practice.id, tier: practice.tiers.length, purityBp: practice.tiers.at(-1).purityBp, strength: practiceStrength(practice) }));
-                    const run = { id, bossId: content.id, contentVersion: GAME_CONTENT_VERSION, combatRank, weaponId: null,
-                        state: newBattleState(fighterForRank(combatRank), content.fighter, loadout, bossIntents(content), content.maxTurns, content.revival),
-                        startsDay: game.day.day + 1, lastDay: null, waitDays: 0, rescueUntilDay: null, deathPaid: false };
-                    control.battleRuns.set(id, run);
-                    game.battles.unshift({ id, bossId: content.id, version: 1, status: 'prepared', startsDay: run.startsDay, weaponId: run.weaponId, content,
-                        state: publicBattleState(run.state), rescue: rescueQuote(state.account.state, combatRank) });
-                    game.pending = { fromDay: run.startsDay, mode: 'battle', practiceId: null, battleId: id };
-                } else {
-                    const battle = game.battles.find(battle => battle.id === input.battleId), run = control.battleRuns.get(battle.id);
-                    battle.version++;
-                    if (input.operation === 'update_prepared_battle') {
-                        const loadout = input.versions.map(id => control.practiceVersions.find(version => version.practice.id === id)?.practice).filter(Boolean)
-                            .map(practice => ({ id: practice.techniqueId, versionId: practice.id, tier: practice.tiers.length, purityBp: practice.tiers.at(-1).purityBp, strength: practiceStrength(practice) }));
-                        run.state = newBattleState(fighterForRank(run.combatRank), battle.content.fighter, loadout, bossIntents(battle.content), battle.content.maxTurns, battle.content.revival);
-                        battle.state = publicBattleState(run.state); run.weaponId = battle.weaponId = null;
-                    }
-                    if (input.operation === 'choose_battle') {
-                        game.choices = [{ battleId: battle.id, techniqueId: input.techniqueId, acceptCost: input.acceptCost }];
-                    } else if (input.operation === 'exchange_battle') {
-                        const practice = control.practiceVersions.find(value => value.practice.id === input.practiceId)?.practice;
-                        const slot = run.state.loadout.findIndex(value => value.id === input.removeId);
-                        assert.ok(practice && slot >= 0 && run.state.exchangeAfterTurn === run.state.turn);
-                        run.state.loadout[slot] = { id: practice.techniqueId, versionId: practice.id,
-                            tier: practice.tiers.length, purityBp: practice.tiers.at(-1).purityBp, strength: practiceStrength(practice) };
-                        run.state.exchangeAfterTurn = null; battle.state = publicBattleState(run.state);
-                    } else if (input.operation === 'rescue_battle') {
-                        const paid = payBattleRescue(state.account.state, run.state, input.kind, run.combatRank, { rankLockUntilDay: null }, game.day.day);
-                        state.account.state = paid.healthy; state.account.version++;
-                        state.account.combatRestrictions = paid.restrictions;
-                        run.state = paid.battle; run.combatRank = paid.combatRank; run.rescueUntilDay = null;
-                        battle.state = publicBattleState(run.state); battle.status = run.state.status;
-                        game.combatEconomy = { healthyVersion: state.account.version, qi: paid.healthy.qi, rank: paid.healthy.rank, rankLockUntilDay: paid.restrictions.rankLockUntilDay };
-                    } else if (input.operation === 'cancel_battle') {
-                        battle.status = 'cancelled'; game.pending = null;
-                    }
-                }
-                result = { saved: true, version: game.version };
-                control.receipts.set(input.id, clone(result)); return result;
-            }
-            let stored;
-            if (input.operation === 'start_practice') {
-                const edition = control.practiceVersions.filter(item => item.practice.techniqueId === input.techniqueId).length + 1;
-                stored = { practice: newTimePracticeVersion('p_' + input.id, input.techniqueId, control.game.day.day, TECHNIQUES.find(value => value.id === input.techniqueId).trainingFactor, edition), version: 1, created: now + edition };
-                control.practiceVersions.unshift(stored);
-            } else if (input.operation === 'continue_practice') stored = control.practiceVersions.find(item => item.practice.id === input.practiceId);
-            control.game.pending = { fromDay: control.game.day.day + 1, mode: stored ? 'practice' : 'idle', practiceId: stored?.practice.id ?? null, battleId: null };
-            control.game.pendingPractice = stored ?? null;
-            result = { saved: true, effectiveFrom: control.game.pending.fromDay, practiceId: stored?.practice.id ?? null, version: control.game.version };
-        }
-        else if (path === 'habits') {
+        if (path === 'habits') {
             const day = control.habits.day.day;
             let view = control.habits.habits.find(item => item.habit.id === input.habitId);
             if (input.operation === 'create') {
@@ -271,9 +189,6 @@ function fixture() {
 }
 async function serve(control, baseline) {
     const root = resolve('web'), cache = new Map();
-    const presented = stored => stored ? { ...stored, maintained: stored.maintained !== false,
-        name: TECHNIQUES.find(value => value.id === stored.practice.techniqueId).name,
-        ...practicePresentation(stored.practice, 100, { afterDay: control.game.day.day, weeks: control.game.audits }) } : null;
     const server = createServer(async (request, response) => {
         try {
             const path = new URL(request.url, 'http://localhost').pathname;
@@ -305,84 +220,6 @@ async function serve(control, baseline) {
                     }
                     else
                         response.end(JSON.stringify(control.bootstrap()));
-                }
-                else if (endpoint === 'game' && request.method === 'GET') response.end(JSON.stringify({ ...control.game,
-                    currentPractice: presented(control.game.currentPractice), pendingPractice: presented(control.game.pendingPractice) }));
-                else if (endpoint === 'game-technique') {
-                    const params = new URL(request.url, 'http://localhost').searchParams, id = params.get('techniqueId'), selectedId = params.get('versionId');
-                    const catalog = playerGameCatalog({ victories: control.game.victories, learned: control.game.learned ?? [], owned: control.game.owned });
-                    const technique = catalog.techniques.find(value => value.id === id);
-                    const versions = control.practiceVersions.filter(value => value.practice.techniqueId === id && value.maintained !== false).slice(0, 2);
-                    const selected = selectedId ? control.practiceVersions.find(value => value.practice.id === selectedId && value.practice.techniqueId === id) : versions[0] ?? null;
-                    if (!technique || technique.discovery === 'sealed' || selectedId && !selected) {
-                        response.statusCode = 409; response.end(JSON.stringify({ error: 'TECHNIQUE_LOCKED' })); return;
-                    }
-                    response.end(JSON.stringify({ technique, selected: presented(selected), versions: versions.map(presented),
-                        upgrade: practiceUpgrade(selected?.practice ?? null, id, 100, { afterDay: control.game.day.day, weeks: control.game.audits }) }));
-                }
-                else if (endpoint === 'game-catalog') response.end(JSON.stringify(baseline ? publicGameCatalog() : playerGameCatalog({
-                    victories: control.game.victories, learned: control.game.learned ?? [], owned: control.game.owned
-                })));
-                else if (endpoint === 'game-victories') response.end(JSON.stringify({ victories: control.victoryRecords ?? [] }));
-                else if (endpoint === 'game-export') {
-                    if (control.failGameExport) {
-                        response.statusCode = 409; response.end(JSON.stringify({ error: 'GAME_EXPORT_TOO_LARGE', message: 'Dữ liệu vượt giới hạn một lần xuất.' })); return;
-                    }
-                    const params = new URL(request.url, 'http://localhost').searchParams;
-                    const service = new GameExportService({ read: async () => ({ profile: { account: null, cultivation: control.state.account.state,
-                        owned: control.game.owned, victories: control.game.victories, entitlements: control.game.rewards, presets: control.presets.presets },
-                        selections: [], practiceVersions: control.practiceVersions, days: [], battles: [], events: [], weeklyAudits: [] }) });
-                    response.end(JSON.stringify(await service.read('123', Number(params.get('from')), Number(params.get('to')), now)));
-                }
-                else if (endpoint === 'game-presets' && request.method === 'GET') response.end(JSON.stringify(control.presets));
-                else if (endpoint === 'game-boss') {
-                    const boss = bossById(new URL(request.url, 'http://localhost').searchParams.get('bossId'));
-                    response.end(JSON.stringify({ boss: { ...boss, pattern: undefined, victory: control.game.victories.includes(boss.id) ? boss.victory : undefined } }));
-                }
-                else if (endpoint === 'game-chapter') {
-                    const chapter = GAME_CHAPTERS.find(value => value.number === Number(new URL(request.url, 'http://localhost').searchParams.get('chapter')));
-                    response.end(JSON.stringify({ chapter: { ...chapter, conclusion: chapter.encounters.every(id => control.game.victories.includes(id)) ? chapter.conclusion : undefined },
-                        characters: GAME_CHARACTERS.filter(character => chapter.characters.includes(character.id)) }));
-                }
-                else if (endpoint === 'battle-loadout') {
-                    const ids = new URL(request.url, 'http://localhost').searchParams.getAll('versionId');
-                    if (ids.length) {
-                        response.end(JSON.stringify({ versions: ids.flatMap(id => {
-                            const practice = control.practiceVersions.find(entry => entry.maintained !== false && entry.practice.id === id)?.practice, tier = practice?.tiers.at(-1);
-                            return tier ? [{ ...tier, techniqueId: practice.techniqueId, versionId: id, edition: practice.edition, tier: practice.tiers.length,
-                                profile: practicePresentation(practice).profile, strength: practiceStrength(practice) }] : [];
-                        }) })); return;
-                    }
-                    const best = new Map();
-                    for (const entry of control.practiceVersions) {
-                        const practice = entry.practice, tier = practice.tiers.at(-1); if (!tier || entry.maintained === false) continue;
-                        const value = { techniqueId: practice.techniqueId, versionId: practice.id, edition: practice.edition, tier: practice.tiers.length, purityBp: tier.purityBp,
-                            profile: practicePresentation(practice).profile, strength: practiceStrength(practice) }, previous = best.get(practice.techniqueId);
-                        if (!previous || value.tier > previous.tier || value.tier === previous.tier &&
-                            (value.profile.damage > previous.profile.damage || value.profile.damage === previous.profile.damage && value.purityBp > previous.purityBp)) best.set(practice.techniqueId, value);
-                    }
-                    response.end(JSON.stringify({ versions: [...best.values()] }));
-                }
-                else if (endpoint === 'battle-choice') {
-                    const params = new URL(request.url, 'http://localhost').searchParams;
-                    const run = control.battleRuns.get(params.get('battleId')), battle = control.game.battles.find(value => value.id === run?.id);
-                    if (!run || !battle) { response.statusCode = 404; response.end(JSON.stringify({ error: 'BATTLE_NOT_FOUND' })); return; }
-                    response.end(JSON.stringify({ day: control.game.day.day, gameVersion: control.game.version, battleVersion: battle.version,
-                        ...battleChoiceDetail(run.state, params.get('techniqueId')) }));
-                }
-                else if (endpoint === 'battles') {
-                    const before = new URL(request.url, 'http://localhost').searchParams.get('before') ?? '';
-                    (control.archiveReads ??= []).push(before);
-                    response.end(JSON.stringify(control.archivePages?.get(before) ?? { battles: control.game.battles, next: null }));
-                }
-                else if (endpoint === 'battle-history') {
-                    const before = Number(new URL(request.url, 'http://localhost').searchParams.get('before'));
-                    (control.historyReads ??= []).push(before);
-                    response.end(JSON.stringify(control.historyPages?.get(before) ?? { events: [], next: null }));
-                }
-                else if (endpoint === 'practice-versions') {
-                    const id = new URL(request.url, 'http://localhost').searchParams.get('techniqueId');
-                    response.end(JSON.stringify({ versions: control.practiceVersions.filter(item => item.practice.techniqueId === id).map(presented), next: null }));
                 }
                 else if (endpoint === 'habits' && request.method === 'GET')
                     response.end(JSON.stringify(control.habits));
@@ -420,28 +257,6 @@ async function serve(control, baseline) {
                     let body = '';
                     for await (const part of request)
                         body += part;
-                    if (endpoint === 'game') {
-                        const input = JSON.parse(body), battle = control.game.battles.find(battle => battle.id === input.battleId);
-                        if (!control.receipts.has(input.id) && (input.version !== control.game.version || input.day !== control.game.day.day || battle && input.battleVersion !== battle.version)) {
-                            response.statusCode = 409;
-                            response.end(JSON.stringify({ error: 'GAME_CHANGED', message: 'Tiến trình đã thay đổi. Tải lại trước khi lưu.' })); return;
-                        }
-                        if (control.gameAckOutage) {
-                            control.gameAckOutage = false; control.mutate(endpoint, input); response.statusCode = 503;
-                            response.end(JSON.stringify({ error: 'OPERATION_NOT_CONFIRMED' })); return;
-                        }
-                    }
-                    if (endpoint === 'game-presets') {
-                        const input = JSON.parse(body); control.presetRequests.push(input);
-                        if (!control.receipts.has(input.id) && input.version !== control.presets.version) {
-                            response.statusCode = 409;
-                            response.end(JSON.stringify({ error: 'GAME_PRESETS_CHANGED', message: 'Bộ chiêu đã thay đổi ở nơi khác.' })); return;
-                        }
-                        if (control.presetAckOutage) {
-                            control.presetAckOutage = false; control.mutate(endpoint, input); response.statusCode = 503;
-                            response.end(JSON.stringify({ error: 'OPERATION_NOT_CONFIRMED' })); return;
-                        }
-                    }
                     if (endpoint === 'sleep' && control.sleepError) {
                         response.statusCode = 409;
                         response.end(JSON.stringify({ error: 'SLEEP_UNDO_LOCKED', message: 'Không thể hoàn tác sau khi đột phá.' }));

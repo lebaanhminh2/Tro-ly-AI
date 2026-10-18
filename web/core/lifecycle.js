@@ -5,11 +5,9 @@ import { renderReminders } from '../views/reminders.js';
 import { updateTimelineClock } from '../views/timeline.js';
 import { renderToday } from '../views/today.js';
 import { renderHabits } from '../views/habits.js';
-import { renderGame } from '../views/game.js';
 import { settleRequest } from './http.js';
 import { connectLive, refreshLive } from './live-data.js';
 import { applySnapshot } from './state.js';
-import { experiencePreferences } from './experience.js';
 export function createLifecycle({ state, runtime, ui, content, sheet, renderBrowserLogin, showBrowserLogin, connected, toast }) {
     let focusExpiryTimer, refreshing = false, lastRefresh = 0;
     const featureScroll = new Map();
@@ -41,16 +39,14 @@ export function createLifecycle({ state, runtime, ui, content, sheet, renderBrow
             return;
         if (renderedScreen) featureScroll.set(renderedScreen, window.scrollY);
         clearTimeout(focusExpiryTimer);
-        const gameVisible = experiencePreferences().gameVisible;
-        if (!gameVisible && state.tab === 'game') state.tab = 'today';
+        if (!['today', 'habits', 'reminders', 'achievements'].includes(state.tab)) state.tab = 'today';
         const screen = state.tab === 'habits' ? 'habits:' + (state.habitPanel ?? 'today') + ':' + (state.habitFilter ?? 'active')
-            : state.tab === 'game' ? 'game:' + (state.gamePanel ?? 'practice') : null;
+            : null;
         const previousScroll = document.querySelector('.time-scroll');
         if (previousScroll)
             state.timelineScroll = previousScroll.scrollTop;
         content.removeAttribute('aria-busy');
         for (const b of document.querySelectorAll('[data-tab]')) {
-            if (b.dataset.tab === 'game') b.hidden = !gameVisible;
             if (b.dataset.tab === state.tab)
                 b.setAttribute('aria-current', 'page');
             else
@@ -85,7 +81,7 @@ export function createLifecycle({ state, runtime, ui, content, sheet, renderBrow
         }
         else {
             content.removeAttribute('aria-busy');
-            content.append(state.tab === 'today' ? renderToday(ui, state) : state.tab === 'habits' ? renderHabits(ui, state) : state.tab === 'game' ? renderGame(ui, state) : state.tab === 'reminders' ? renderReminders(ui, state) : renderAchievements(ui, state));
+            content.append(state.tab === 'today' ? renderToday(ui, state) : state.tab === 'habits' ? renderHabits(ui, state) : state.tab === 'reminders' ? renderReminders(ui, state) : renderAchievements(ui, state));
         }
         const now = (state.serverNow ?? Date.now()) + Date.now() - (state.loadedAt ?? Date.now());
         const boundaries = (state.dailyPlan?.plan?.items ?? []).flatMap(item => (item.windows ?? []).flatMap(slot => [slot.start, slot.end]));
@@ -117,14 +113,14 @@ export function createLifecycle({ state, runtime, ui, content, sheet, renderBrow
     async function refreshOnReturn() {
         if (!state.live || !state.loaded || runtime.saving || runtime.focusAnimating || sheet.open || state.timelineDragging || state.historyLoading || state.activeTasksLoading)
             return;
-        if (!runtime.refreshPending && (state.tab === 'habits' || state.tab === 'game')) {
-            return state.tab === 'habits' ? ui.loadHabits() : ui.loadGame();
+        if (!runtime.refreshPending && state.tab === 'habits') {
+            return ui.loadHabits();
         }
         if (refreshing || (!state.baseDirty && Date.now() - lastRefresh < 2000)) return;
         refreshing = true;
         const revision = runtime.revision;
         try {
-            const latest = await refreshLive({ activeOffset: state.activeTasksOffset ?? 0, includeHabits: state.tab === 'habits' || runtime.pendingReceipt?.path === 'habits', includeGame: state.tab === 'game' || runtime.pendingReceipt?.path === 'game' });
+            const latest = await refreshLive({ activeOffset: state.activeTasksOffset ?? 0, includeHabits: state.tab === 'habits' || runtime.pendingReceipt?.path === 'habits' });
             // A newer write, logout or open editor makes this response obsolete.
             if (revision !== runtime.revision || runtime.saving || !state.loaded || sheet.open || state.timelineDragging || state.historyLoading || state.activeTasksLoading)
                 return;
@@ -135,7 +131,6 @@ export function createLifecycle({ state, runtime, ui, content, sheet, renderBrow
             runtime.refreshPending = false;
             lastRefresh = Date.now();
             render();
-            if (state.tab === 'game' && !state.gameCatalog) await ui.loadGame({ catalogOnly: true });
         }
         catch (error) {
             if (revision !== runtime.revision)

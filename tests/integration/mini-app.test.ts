@@ -312,3 +312,45 @@ test('Mini App persists task notes and hides delivered one-time reminders next o
   const tomorrowBody=await tomorrow.json() as {reminders:{id:string}[]};assert.ok(!tomorrowBody.reminders.some(item=>item.id==='delivered-once'));assert.ok(!tomorrowBody.reminders.some(item=>item.id==='web-once'));
  }finally{await mf.dispose();}
 });
+
+test('retired game routes leave legacy records untouched and old rank locks cannot block shared rewards', async () => {
+ const {ScheduleStore}=await import('../../src/adapters/d1/schedule-store.ts');
+ const {DatabaseSync}=await import('node:sqlite');
+ const {sqliteDatabase}=await import('../../scripts/benchmark-habit-runtime.ts');
+ const raw=new DatabaseSync(':memory:');
+ try {
+  for(const file of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())raw.exec(readFileSync('migrations/'+file,'utf8'));
+  const db=sqliteDatabase(raw),now=Date.parse('2026-10-18T10:00:00+07:00'),token='123:fake';
+  const schedule=new ScheduleStore(db);await schedule.configure('123','04:30','22:30',0,now);
+  const day=(await schedule.ensureDay('123',now))!;
+  raw.prepare('INSERT INTO game_accounts(owner,joined_day,anchor_start,next_day,updated,rank_lock_until_day) VALUES(?,?,?,?,?,?)')
+   .run('123',day.day-10,day.start_at-10*86400000,day.day-5,now,day.day+10);
+  raw.prepare("INSERT INTO battles(owner,id,boss_id,status,starts_day,state_json,content_json,created,updated) VALUES('123','old_active','retired','awaiting_rescue',?,'{}','{}',?,?)").run(day.day-5,now,now);
+  const legacy=()=>[raw.prepare('SELECT * FROM game_accounts').all(),raw.prepare('SELECT * FROM battles').all(),raw.prepare('SELECT * FROM game_receipts').all()];
+  const before=legacy();
+  const healthy=new HealthyStore(db);
+  await healthy.mutate('123','retirement_seed','fixture',{},now,state=>({state:{...state,qi:100,earned:100,streak:35,bestStreak:35,tickets:1},result:{}}));
+  const guarded:Database={prepare:sql=>{assert.doesNotMatch(sql,/\b(?:game_accounts|game_receipts|battles|practice_versions)\b/i);return db.prepare(sql);},batch:writes=>db.batch(writes)};
+  const env={DB:guarded,TELEGRAM_USER_ID:'123',TELEGRAM_WEBHOOK_SECRET:'x'.repeat(32),TELEGRAM_BOT_TOKEN:token};
+  const params=new URLSearchParams({auth_date:String(Math.floor(now/1000)),user:JSON.stringify({id:123})});
+  params.set('hash',createHmac('sha256',createHmac('sha256','WebAppData').update(token).digest()).update([...params].sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>k+'='+v).join('\n')).digest('hex'));
+  const auth={'X-Telegram-Init-Data':params.toString()};
+  const request=(path:string,method='GET',headers:Record<string,string>=auth,body?:unknown)=>miniAppApi(new Request('https://local/api/'+path,{method,headers:{Origin:'https://local',...headers},...(method==='POST'?{body:JSON.stringify(body??{id:'retired_request',operation:'start_practice'})}:{})}),env,now);
+  for(const path of ['game','game-catalog','game-technique','game-boss','game-chapter','game-presets','game-victories','game-export','practice-versions','battle-history','battle-loadout','battle-choice','battles']){
+   assert.equal((await request(path)).status,404,path);
+   assert.equal((await request(path,'POST')).status,404,path);
+  }
+  assert.equal((await request('game','POST',{})).status,401);
+  assert.equal((await request('game','POST',{...auth,Origin:'https://other'})).status,403);
+  const bootstrap=await request('bootstrap');assert.equal(bootstrap.status,200);
+  const view=await bootstrap.json() as {account:Record<string,unknown>};
+  assert.equal('combatRestrictions' in view.account,false);
+  const input={id:'retirement_checkin',operation:'checkin'};
+  const claim=await request('cultivation','POST',auth,input);assert.equal(claim.status,200);const claimed=await claim.json();
+  assert.deepEqual(await(await request('cultivation','POST',auth,input)).json(),claimed);
+  const attempt={id:'retirement_breakthrough',operation:'breakthrough',item:null};
+  const result=await request('cultivation','POST',auth,attempt);assert.equal(result.status,200);const saved=await result.json();
+  assert.deepEqual(await(await request('cultivation','POST',auth,attempt)).json(),saved);
+  assert.deepEqual(legacy(),before);
+ }finally{raw.close();}
+});

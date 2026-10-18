@@ -3,7 +3,6 @@ import { breakthroughPenalties, checkinProgress, dailyRewardLabel, loot, realms,
 import { button, el } from '../ui/dom.js';
 import { playEffect } from '../ui/effects.js';
 import { renderRewardCalendar } from '../views/achievements.js';
-import { habitDate } from '../models/habits.js';
 export function createCultivationActions(context) {
     const { state, runtime, ui, sheet, sheetContent, openSheet, confirm, performLive, render, toast } = context;
     function openShare() {
@@ -215,10 +214,6 @@ export function createCultivationActions(context) {
         if (!target)
             return;
         openSheet('Đột phá · ' + target.name);
-        if (c.rankLockUntilDay !== null && c.rankLockUntilDay !== undefined && demoDay() < c.rankLockUntilDay) {
-            sheetContent.append(el('p', 'Nghịch Mệnh đang hồi. Có thể đột phá lại từ ' + habitDate(c.rankLockUntilDay) + '.', 'hint'));
-            return;
-        }
         const penalty = (state.breakthroughPenalties ?? breakthroughPenalties)[c.rank];
         sheetContent.append(el('p', 'Cần ' + target.qi + ' tu vi và ' + target.days + ' ngày ngủ đúng giờ. Thành công không tiêu hao tu vi; thất bại trừ ' + penalty + ' tu vi.', 'hint'));
         const select = el('select'), label = el('label', 'Dùng Phá Cảnh Phù', 'form-field'), none = el('option', 'Không dùng phù');

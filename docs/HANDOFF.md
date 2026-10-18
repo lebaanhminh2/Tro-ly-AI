@@ -1,91 +1,55 @@
-# Bàn giao Habit và Tu luyện
+# Bàn giao đợt dọn dự án
 
-## Điểm vào mới nhất14/10/2026 — Tu luyện v2 đã giao staging
+Cập nhật 18/10/2026. Phạm vi được người dùng duyệt: bỏ Tu luyện/Thần Lộ, công pháp, luyện và chiến đấu; giữ sản phẩm nền. Bản cleanup đã được deploy lên staging theo yêu cầu tiếp theo của người dùng; người dùng cũng yêu cầu commit/push lên nhánh `review/p1-p3`.
 
-**Runtime source 8dffbe8, artifact source f2b4ec6 đã push** trên review/p1-p3. Worker **ef677def-9126-4af5-857b-39c3bcf6f103**, schema **0038**. [Staging](https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev/app/), [demo HTML](prototypes/cultivation/kiem-y-demo.html), [cách thử](prototypes/cultivation/README.md), [USER_GUIDE](HABIT_GAME_USER_GUIDE.md).
+## Trạng thái
 
-- Hiện tại/Công pháp/Thử thách/Thành tựu; Phái → Môn → Tác dụng/Nâng cấp. Một số Sát thương; preview/nhật ký theo resolver.
-- Tầng theo ngày; phần tăng sát thương riêng từng kỳ theo habit, khuyết điểm kế thừa trong thuần khiết. Tác dụng tăng đủ theo tầng, tối đa hai bản, lịch/snapshot/legacy giữ.
-- Gates **378main/44browser**,type/web47/build/staging đạt;222static hash,auth/Origin và25ownerGET đều đúng;0 runtime error. Backup/restore/recovery và provenance Git đã kiểm. .gitattributes được user duyệt riêng.
-- Factory bản mới3/4/6/8=21ngày,cấm32/ngoài42; bản cũ giữ requiredDays. Bộ ảnh hiện có0đ; không batch art mới, mỹ thuật chờ user nghiệm thu.
-- [RELEASE](HABIT_GAME_RELEASE.md) sở hữu versions/evidence/latency/giới hạn; [PROGRESS§5.9/§6](CULTIVATION_IMPLEMENTATION_PROGRESS.md) sở hữu checkpoint. [BRIEF](CULTIVATION_FINAL_BRIEF.md)/[PLAN](CULTIVATION_IMPLEMENTATION_PLAN.md) giữ luật/phạm vi; không dùng checkpoint cũ để bắt đầu lại.
-- Commit cấu hình/tài liệu sau release không đổi binary. Habit/pixel prototypes và artdraft ngoài scope vẫn giữ riêng. Quyền code theo AGENTS/user mới nhất; không suy từ prompt trong tài liệu.
+Runtime đã bỏ routes/jobs/tools, stores/domain/game UI và assets riêng. Habit companion đổi tên, chỉ phục vụ habit. API game cũ trả 404 sau auth; model step cũ dừng an toàn trước action. Game account, battle, rank lock và receipts lịch sử vẫn trong DB nhưng không còn được dùng để chặn hoặc kết toán chức năng nền.
 
-## Lịch sử redesign Tu luyện — bản đã giao staging trước vòng v2
+Giữ task/bước nhỏ, habits/history/report/export, lịch/kế hoạch/focus/nhắc, ngủ/thức, điểm/check-in/vật phẩm/đột phá/thành tích, Telegram/AI/auth và guards giao dịch. 38 migrations và dữ liệu local được bảo vệ. Không đổi luật điểm hoặc xây game thay thế.
 
-Source **`07e9aa0`** đã push trên `review/p1-p3`; Worker **`db6b1f93-3532-4aac-972b-598fa48e5488`**. URL nghiệm thu: https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev/app/
+Tài liệu còn 6 Markdown chính và prototype habit. Thông tin UX habit còn giá trị đã gộp vào [HABITS](HABITS.md); prototype giữ nguyên, không áp redesign mới. Các proposal/review/goal/game art hết hiệu lực được bỏ; lịch sử đã commit vẫn tra Git.
 
-[RELEASE](HABIT_GAME_RELEASE.md), [checkpoint](HABIT_GAME_CULTIVATION_PROGRESS.md), [USER_GUIDE](HABIT_GAME_USER_GUIDE.md) và [REVIEW](HABIT_GAME_CULTIVATION_REVIEW.md) mô tả bản phát hành trên. Kế hoạch/checkpoint v2 ở đầu tài liệu là điểm vào cho lượt chạy mới; các mục dưới giữ lịch sử. Không khởi động lại goal cũ hoặc đưa Thần binh trở lại.
+## Checkpoint và phạm vi
 
-- Hiện tại/Công pháp/Vượt tầng/Thành tựu; 22 tầng/18 cơ duyên/39 môn; discovery che bí tịch, cập nhật bộ chiêu nguyên tử, chiến thắng đầu tiên nạp khi cần.
-- 61 raster/122 WebP/39 SVG cuối đã xem trong UI và hash live khớp. Content `than-lo-4`, engine `battle-v1`; snapshot/quyền/preset/receipt cũ giữ. Không đổi schema 0037.
-- Main 329 + experiments 25 trước sửa cuối; targeted loader/discovery 9, settlement 1 và practice/battle 19 đạt; final browser 35/35, typecheck/check:web 45/dry-run/readiness đạt. 216 statics live hash match, tám GET 401/Origin 403, runtime 66 events/một cron đúng version outcome ok.
-- Owner browser isolated 401; không giả phiên/log hoặc gửi tin. Chưa claim owner API 200 hay tải đầu nhanh hơn; bootstrap latency cũ là giới hạn đã biết. USER_GUIDE có hướng dẫn nghiệm thu.
-- Backup trước release ở `.wrangler/cultivation-qa/staging/`, ngoài Git. Rollback cần binary hiểu v4; ưu tiên sửa tiến tới, không restore đè dữ liệu mới. Hai phần dirty riêng `docs/HABIT_GAME_UX_REVIEW.md` và `docs/prototypes/habits/` giữ ngoài commit.
+- Branch ban đầu: `review/p1-p3`, HEAD `956b03c34838a06a13e98f0362601d9f3fe2649c`.
+- Backup: `.wrangler/cleanup-checkpoint-20261018-956b03c.zip` (418 file, 11.676.506 bytes).
+- Manifest: `.wrangler/cleanup-checkpoint-20261018-956b03c.json`, chứa đường dẫn đã duyệt, hashes, Git status ban đầu và dữ liệu kiểm kê.
+- ZIP SHA256: `2f32d91eb50a1d6134d8fb0fb90af1e5eadb4abdccb431999ddd0072b54c1cf8`.
+- Đã bảo toàn bản sửa sẵn `docs/HABIT_GAME_UX_REVIEW.md` và toàn bộ 41 file untracked trong ZIP trước khi dọn; prototype habit tiếp tục được giữ trong working tree.
 
-## Cập nhật 13/10/2026: icon và bản thử Tu luyện
+Khôi phục theo từng file từ ZIP vào thư mục riêng, kiểm hash rồi review diff trước thay thế. Không reset/clean hoặc giải nén đè cả kho. Backup là checkpoint local, không phải snapshot DB hoặc bản deploy. Hướng dẫn dữ liệu tại [OPERATIONS](OPERATIONS.md).
 
-User duyệt `web/index.html`, `web/styles.css` để sửa icon Thói quen thành SVG ô tick và tạo duy nhất `docs/prototypes/cultivation/index.html` để chốt lại UX Tu luyện. Commit **`b419934`** đã push trên `review/p1-p3`. Icon đã lên staging, version **`d4990393-e797-4e8c-ba9d-fcd822af51aa`**; HTML/CSS live HTTP200 và SHA256 khớp local. Deploy readiness4/4, dry-run và check:web45 đạt. Không có migration.
+## Kiểm chứng
 
-Bản HTML có **Hiện tại → Công pháp → Vượt tầng → Thành tựu**; 39 công pháp/40 boss lấy từ catalog dự án, 22 trận chính thành tầng và 18 cơ duyên. Thử chọn/luyện lại bản, chuẩn bị tối đa 5 môn, chiêu theo ngày, mở bí tịch, cứu/tử trận và chiến tích. Bỏ Thần binh khỏi phương án; dùng dấu ấn thay chỗ, chưa làm lại art. [Thiết kế và cách thử](HABIT_GAME_CULTIVATION_UX.md) ghi đầy đủ thay đổi, phần discovery mới và tương thích vũ khí cần xử lý sau.
+Baseline trước sửa: typecheck, check:web (47 modules), build dry-run, 378 main +25 experiments +44 browser đạt, không fail/skip. Browser baseline cần chạy ngoài sandbox Windows do lỗi GPU/CDP của Chrome trong sandbox.
 
-Chrome kiểm các luồng chính, màn hình320–1440, chữ200%, keyboard/dark/short sheet và icon app thật; HTML không tải tài nguyên ngoài. Đây là emulation/dữ liệu mẫu. **Tab Tu luyện thật chưa được thay theo HTML.** Việc tiếp theo là user mở bản thử, góp ý/duyệt luồng; lập inventory và xin duyệt code riêng trước khi áp dụng. Không chạy lại triển khai toàn game hoặc sinh art ở bước này.
+Sau sửa: **246 main +25 experiments +25 browser đạt, 0 fail/skip**. Các tests game đã duyệt gỡ được loại theo tính năng; tests nền vẫn giữ. Có regression cho 13 endpoint game cũ (GET/POST), auth/Origin, rank lock cũ không chặn check-in/đột phá, journal replay hai tool đã nghỉ và đủ 12 tổ hợp cron không đọc/ghi bảng game.
 
-`docs/HABIT_GAME_UX_REVIEW.md` và `docs/prototypes/habits/` có thay đổi từ vòng trước, vẫn nằm ngoài hai commit của vòng icon/HTML này.
+Typecheck, check:web (33 modules), build dry-run local/staging và diff whitespace đạt. Worker 719,90→446,05 KiB (gzip 166,71→103,67 KiB). Bốn fixture benchmark habit 6/30×1095 ngày, backlog 7/365 ngày đạt; migration/restore trên DB tạm giữ legacy data và không dispatch. Đã xem ảnh habit, Hôm nay, Thành tích và cài đặt sau sửa; browser kiểm mobile/desktop, chữ lớn, sáng/tối, mất mạng và nháp.
 
-## Cập nhật ngày 13/10/2026: áp dụng demo đã duyệt vào app
+Đối chiếu checkpoint: 183 file cần giữ +22 file state local khớp SHA256; 38 migrations và prototype habit nguyên vẹn. ZIP 418 mục khớp hash, chứa toàn bộ 41 file untracked ban đầu. Git diff chỉ nằm trong danh sách được duyệt, link tài liệu hợp lệ.
 
-User đã duyệt 10 file cho phần Thói quen, push/deploy staging; sau đó duyệt thêm 4 file để đổi thứ tự thanh tab và tên Tu luyện. Runtime commit **`6c2da9d`** đã push trên `review/p1-p3` và deploy Worker `personal-assistant-staging`, version **`09ee5a4c-aba8-44f8-b85d-6d7b3de1f86f`**. URL nghiệm thu: https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev/app/ . Không cần migration trong vòng này.
+| Phần | File trước → sau |
+| --- | --- |
+| Toàn dự án, không tính ignored/dependencies/Git | 586 →225 |
+| src | 106 →73 |
+| web | 222 →35 |
+| tests | 71 →46 |
+| scripts | 16 →5 |
+| docs | 112 →7 |
+| experiments / migrations | 13 /38, giữ nguyên |
 
-- Thanh tab: **Hôm nay → Thói quen → Lời nhắc → Tu luyện → Thành tích**. Tên Tu luyện đã đồng bộ ở tiêu đề, quay lại, cài đặt và hướng dẫn; ID/API của game giữ nguyên.
-- Mỗi habit có tick đầu dòng. Tick đặt đúng mục tiêu của metric, bỏ tick về 0. Nút tiến độ của thời lượng/số lượng cùng kiểu chữ, nền, viền; chỉ số đã làm nhấn nhẹ.
-- Dưới tên có đúng một dòng phụ, ưu tiên nghĩa vụ cần đạt hôm nay, chưa bắt đầu/ngoài lịch, rồi giờ xếp và tiến độ tuần/lịch lặp. Dòng dài dùng dấu ba chấm; `+N` luôn còn chỗ, mở các thông tin còn lại trong chi tiết.
-- Slider/bộ đếm nằm trong bảng ghi nhận, giữ ô nhập chính xác. Các thay đổi là nháp đến khi Lưu, thay tổng hôm nay; hỗ trợ số lẻ và vượt mục tiêu. Thêm/sửa dùng lựa chọn gọn, giữ nháp khi đổi loại và có header/footer cố định.
-- Toast **Hoàn tác** ghi nhận tồn tại 6 giây, phục hồi đúng tổng và ghi chú trước thao tác, kể cả partial/vượt mục tiêu. Kiểm tra ngày sinh hoạt, phiên đăng nhập/revision, version habit/log và refresh chưa hoàn tất trước khi gửi; backend tiếp tục xác thực ngày/version. Đây là Hoàn tác habit, độc lập với cơ chế Hoàn tác ngủ 5 phút.
-- Tiến bộ 7 ngày là một bảng chung; 30 ngày là tỷ lệ và số ngày đạt/cam kết từng habit. Chỉ lấy ngày đã kết thúc; trung tính loại khỏi mẫu số, chưa có kết quả dùng dấu `—`. Lịch sử/bộ lọc/xuất dữ liệu vẫn truy cập được.
-- Report bổ sung `byHabit` trong API chung, hai truy vấn D1 cho toàn bộ danh sách. Chỉ tải khi mở Tiến bộ, gộp yêu cầu đang chờ, cache tối đa 60 giây, bỏ response lỗi thời và vô hiệu hóa sau ghi. Không dùng số đo fixture làm bằng chứng tốc độ trên điện thoại thật.
+Đã bỏ 361 file dự án và 14 output simulation, tổng 83.139.123 bytes (79,29 MiB); simulation chiếm 69,11 MiB. Dung lượng file dự án từ 12.464.221 bytes xuống khoảng 1,68 MB. Checkpoint ZIP 11,14 MiB và artifact kiểm tra khoảng 20,7 MiB được giữ; không coi tổng tệp đã xóa là mức giải phóng ròng. .wrangler từ khoảng 1,614 GB còn 1,572 GB tại lần đo cuối; các browser profiles lớn vẫn còn.
 
-**Kiểm chứng vòng này:** `check:web` 45 modules, typecheck, **318 main tests + 37 browser tests, 0 fail/skip**, staging dry run và readiness/deploy đạt. Kiểm riêng sau đổi tab/tên: 3 browser flows đạt. Đã xem ảnh app với dữ liệu mẫu ở `D:/Tro-ly-AI-art/habit-production/`, gồm sáng/tối, danh sách, ghi thời lượng/số lượng, thêm habit và tiến bộ. Browser kiểm mạng chậm/mất mạng, chữ lớn, version và đổi ngày; đây là Chrome emulation/local fixtures, chưa phải nghiệm thu trên máy user.
+Logs/build/ảnh ở `.wrangler/cleanup-validation-20261018-956b03c/`. Kết quả chỉ chứng minh local bằng fixtures, không thay nghiệm thu thiết bị thật hoặc owner API staging.
 
-**Sau deploy:** trang `/app/` và 8 asset sửa đều HTTP 200, SHA256 khớp bản local; thanh tab/tên mới đúng. API report khi chưa đăng nhập trả 401. Chưa kiểm owner report bằng phiên đăng nhập staging trong vòng này và không tạo dữ liệu cá nhân thử. Bản prototype và phần UX_REVIEW đã sửa từ trước vẫn ở working tree riêng, không gộp vào commit runtime này.
+## Staging và giới hạn
 
-## Bàn giao trước vòng 13/10
+Đã deploy `personal-assistant-staging` ngày 18/10/2026, version `4469dfad-7311-486c-b856-7c68e0fc12ad`, phục vụ 100% traffic. URL: https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev/app/ . Version trước cleanup là `ef677def-9126-4af5-857b-39c3bcf6f103`.
 
-Cập nhật trước: 2026-10-12. Toàn scope đã triển khai, migrate/deploy staging và kiểm sau publish. Các checkpoint dưới đây là lịch sử, không bắt đầu lại từ đầu.
+Trước deploy, typecheck/check:web/staging dry-run và readiness gate đạt; remote không có migration chờ áp dụng. Không áp migration hoặc reset DB. Sau deploy, 35 assets khớp SHA256 local, 149 file đầu vào không đổi, 4 tab đúng, API thiếu auth trả 401 và assets game đã gỡ trả 404. Chưa kiểm mutation bằng phiên đăng nhập người dùng trên staging. Bằng chứng ở `.wrangler/cleanup-validation-20261018-956b03c/deploy-source.json`, `staging-deploy-verification.json` trong cùng thư mục và `logs/staging-deploy.log`.
 
-**Vòng sửa sau phản hồi nghiệm thu:** user đánh giá UI/UX/luồng và tốc độ của **hai tab Thói quen/Thần Lộ** chưa đạt, rồi cho phép agent tự chụp, đánh giá và sửa sau khi trình inventory. [UX_REVIEW](HABIT_GAME_UX_REVIEW.md) ghi findings, luồng, inventory và bằng chứng. Bản sửa đã qua **317 main +25 experiments +37 browser,0fail/skip**, typecheck/check:web45modules/staging:check; đã push/deploy staging. Các gates kỹ thuật không thay nghiệm thu trải nghiệm của user.
+Browser profiles/cache lớn trong .wrangler được giữ vì chưa đủ bằng chứng nguồn gốc/tình trạng đang dùng. Không dọn node_modules, secrets, state, SQL/SQLite backups hoặc thư mục ngoài workspace. Chỉ các simulation output đã kiểm kê và duyệt mới bị xóa.
 
-## Bản đã phát hành
-
-- App: https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev/app/
-- Runtime commit `59517aa`, đã push trên `review/p1-p3`. Các cập nhật bàn giao tiếp theo chỉ đổi tài liệu; kiểm `git status`/HEAD trước vòng mới.
-- Worker `personal-assistant-staging`, version `662c9da0-304c-4141-9f90-2ff32a5ae985`. Vòng UX không có migration; deploy exit0 (`ux-staging-deploy.log` ngoài Git).
-- D1 `assistant-staging`, ID `5457c401-45d9-4b19-b76e-0eceec67a223`;0031–0037 áp thành công, listing không còn pending. Cron/webhook/secrets giữ cấu hình hiện có.
-- User đã xác nhận **mở app và đăng nhập được** trên bản trước `bcd22bb`; owner APIs200 cũng thuộc bản đó. Vòng UX mới dùng browser fixtures để kiểm chức năng; không có phiên đăng nhập staging mới để xác nhận owner APIs/timing. Kiểm public assets/auth và natural tail được ghi trong UX_REVIEW.
-
-## Phạm vi và bằng chứng
-
-Habit tùy chỉnh/theo dõi/lịch-nhắc/đặt chỗ, luyện bốn tầng/tinh thuần nghiêm, trận nhiều ngày/chiêu/rút/tử trận/cứu, đủ5phái/39côngpháp/15chương tới DIỆT THẦN/40 encounters/tuyến phụ/3thần binh/11chiến tích. Có truyện/nhân vật/ảnh cuối, onboarding/thư viện/nhật ký/presets/export/settings/bot. Task/ngủ5phúthoàntác/focus/checkin/reminders/đột phá được giữ bằng regressions.
-
-- Gates phát hành nội dung trước vòng UX: **317main+25experiments+33browser,0fail/0skip**, typecheck/check:web45modules/build:check/staging:check đạt. Gates bản UX hiện tại nằm ở đầu tài liệu và UX_REVIEW.
-- QA: actualChrome360/390/414/1440/light-dark/large text/keyboard/slow-offline; fullcampaign80previews/30chapters/30endings/lower-fold đã xem. Localpipeline tạo130WebP/39SVG; finals/workflow/manifest ởGit, không cần model chạy khi dùng app.
-- Balance:3200repeatcases không một chiêu spam vượt toàntruyện;30earnedimperfect/weekly và5mixedroutes tới40wins, earnedrescue thành công; unionearnedprofiles phủ11achievementIDs.
-- Actualbackup1.559.408bytes ngoàiGit đã restore/rehearse:72legacytables/1011rows count/hash giữ,27newtables/integrityok/FK0; productionreadflows trên copy khôngwrite/dispatch. Localruntime365daydrain và actualD1scale3nămlogs đã kiểm.
-- Sau deploy:215staticfiles+indexroute khớp SHA256, liveownerAPIs200; ba naturalcronoutcomeokCPU5–8ms. Không tạo habit/log cá nhân giả hoặc gửi tin thử.
-
-[RELEASE](HABIT_GAME_RELEASE.md) sở hữu evidence map/version/giới hạn; [PROGRESS](HABIT_GAME_PROGRESS.md) giữ decisions/checkpoints lịch sử; [ACCEPTANCE](HABIT_GAME_ACCEPTANCE.md) là tiêu chí kiểm chứng.
-
-## Hướng dẫn và phục hồi
-
-- [USER_GUIDE](HABIT_GAME_USER_GUIDE.md): bắt đầu, ngày/quota tuần, sửa cùng ngày, luyện/bản/tinh thuần, trận/rút/cứu, export và lỗi mạng. Người dùng không cần đọc thiết kế kỹ thuật để chơi.
-- [OPERATIONS](OPERATIONS.md): commands, backup/restore riêng và compatible code recovery. Không deploy Worker pre-habit khi đã có game data; không import backup cũ đè ghi nhận sau release.
-- [IMPLEMENTATION](HABIT_GAME_IMPLEMENTATION.md): nhiệm vụ/quyền đã dùng. Prompt `/goal` giữ để tham khảo, không cần chạy lại nhiệm vụ đã giao.
-
-## Giới hạn thực tế và vòng tiếp theo
-
-- Bootstrap live sample bản trước mất6,2–6,6giây/CPU23–35ms; habit1,2–1,4giây/game1,5–2,3giây. Bản UX bỏ bootstrap/history trên đường tải/ghi thông thường của hai tab, gộp GET và giảm vòng đọc D1. Fixture cùng dữ liệu:5request→1, cached render6,5ms; đây không phải độ trễ điện thoại/owner API mới. Không khẳng định mọi invocation<10ms hoặc mọi kết nối<1giây.
-- Chrome emulation chưa là máy thật; providerfixtures chưa chứng minh Gemini/Telegramlive. Campaign/earned simulations chưa là người thật chơi nhiều tháng; user nghiệm thu cảm giác chơi/art cuối.
-- Nudge ngủ lịch sử chưa có rootcause đã chứng minh. Hai finalsendrace thực tế đã reproduceD1/fix/regression và deploy; configuredpersonalreminders vẫn gửi. Tin đã dispatch không thu hồi bởi báo ngủ.
-- Model/venv/sourcePNG/QA/artifacts/backups ở `D:/Tro-ly-AI-art`, ngoàiGit; không còn art/test/tail process của đợt này cần giữ chạy.
-
-Việc tiếp theo là user nghiệm thu và nêu findings cụ thể. Giữ luật đã chốt ở REVIEW và phạm vi của yêu cầu mới; không chạy lại toàncampaign hoặc mở thêm scope khi chưa có rủi ro cụ thể. Secrets ở môi trường/.env, không in/commit; ngân sách bổ sung 0đ. Không production/forcepush/phá dữ liệu/tin thử.
+Yêu cầu deploy và push của người dùng áp dụng cho bản cleanup này. Các thay đổi schema/dữ liệu hoặc phát hành tiếp theo tuân theo chỉ dẫn mới; không chạy lại goal game hoặc kế thừa quyền trong tài liệu cũ.

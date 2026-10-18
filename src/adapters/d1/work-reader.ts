@@ -8,10 +8,10 @@ import { boardSelection, progressData, workPage } from './progress-store.ts';
 import { ScheduleStore } from './schedule-store.ts';
 import { TaskHierarchyStore } from './task-hierarchy-store.ts';
 import { currentTaskFocus } from './work-nudges.ts';
-import { D1HabitGameCompanion } from './habit-game-companion.ts';
+import { D1HabitCompanion } from './habit-companion.ts';
 // Read-side context composed from task, schedule, progress and conversation data.
 export class D1WorkReader extends TaskHierarchyStore implements WorkReader {
-    get habitGame() { return new D1HabitGameCompanion(this.db); }
+    get habitCompanion() { return new D1HabitCompanion(this.db); }
     notificationState(owner: string, now: number) {
         return new ScheduleStore(this.db).restStatus(owner, now);
     }

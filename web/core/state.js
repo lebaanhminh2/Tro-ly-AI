@@ -3,13 +3,6 @@ export function createAppState(live) {
     const state = createDemo();
     state.habitData = null;
     state.habitHistory = null;
-    state.gameData = null;
-    state.gameCatalog = null;
-    state.gameCatalogLoading = false;
-    state.gameVictories = null;
-    state.gameVictoriesLoading = false;
-    state.gameVictoriesError = null;
-    state.gameVictoryFocus = null;
     state.live = live;
     if (live) {
         state.tasks = [];

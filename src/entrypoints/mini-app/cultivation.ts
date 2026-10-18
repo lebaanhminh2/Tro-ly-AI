@@ -2,7 +2,6 @@ import { query } from '../../adapters/d1/database.ts';
 import { ScheduleStore } from '../../adapters/d1/schedule-store.ts';
 import { breakthrough, CHARMS, drawReward, fuseCharm, operatingDay, useProtection, type Charm } from '../../domain/healthy.ts';
 import { json, type MiniAppContext, type MiniAppInput } from './context.ts';
-import { assertCombatBreakthroughAllowed } from '../../domain/battle-economy.ts';
 export async function handleCultivation({ env, owner, now, healthy }: MiniAppContext, input: MiniAppInput): Promise<Response> {
     if (Object.keys(input).some(k => !['id', 'operation', 'item'].includes(k)))
         return json({ error: 'INVALID_REQUEST' }, 400);
@@ -25,8 +24,6 @@ export async function handleCultivation({ env, owner, now, healthy }: MiniAppCon
     const activeDay = await new ScheduleStore(env.DB).ensureDay(owner, now);
     const day = activeDay?.day ?? operatingDay(now, settings.start_minutes), random = () => crypto.getRandomValues(new Uint32Array(1))[0]! / 4294967296;
     const item = input.item;
-    const restriction = operation === 'breakthrough' ? await query(env.DB, 'SELECT rank_lock_until_day FROM game_accounts WHERE owner=?', owner)
-        .first<{ rank_lock_until_day: number | null }>() : null;
     if (operation === 'protect' && !['heart', 'peace'].includes(String(item)))
         return json({ error: 'INVALID_ITEM' }, 400);
     if (operation === 'fuse' && (!Object.hasOwn(CHARMS, String(item)) || item === 'supreme'))
@@ -48,11 +45,8 @@ export async function handleCultivation({ env, owner, now, healthy }: MiniAppCon
         }
         if (operation === 'protect')
             return { state: useProtection(state, item as 'heart' | 'peace', day), result: { protected: true } };
-        assertCombatBreakthroughAllowed({ rankLockUntilDay: restriction?.rank_lock_until_day ?? null }, day);
         const r = breakthrough(state, day, now, item as Charm | null ?? null, random());
-        return { state: r.state, result: { success: r.success, chance: r.chance, penalty: r.penalty }, statements: [
-            query(env.DB, 'INSERT INTO transaction_guard SELECT CASE WHEN COALESCE((SELECT rank_lock_until_day FROM game_accounts WHERE owner=?),?)<=? THEN 1 ELSE 0 END', owner, day, day)
-        ] };
+        return { state: r.state, result: { success: r.success, chance: r.chance, penalty: r.penalty } };
     });
     return json({ result, account: await healthy.read(owner) });
 }

@@ -12,10 +12,6 @@ import { createSleepActions } from './features/sleep.js';
 import { createTaskActions } from './features/tasks.js';
 import { createTodayPlanActions } from './features/today-plan.js';
 import { createHabitActions } from './features/habits.js';
-import { createGameActions } from './features/game.js';
-import { createGameGuideActions } from './features/game-guide.js';
-import { createGameExportActions } from './features/game-export.js';
-import { createBattleActions } from './features/battle.js';
 import * as dom from './ui/dom.js';
 import { createFeedback } from './ui/feedback.js';
 import { createSheets } from './ui/sheets.js';
@@ -25,8 +21,6 @@ const runtime = createRuntimeState();
 const content = document.querySelector('#content'), sheet = document.querySelector('#sheet'), sheetContent = document.querySelector('#sheet-content');
 const actions = {};
 const forward = {};
-for (const name of ['loadGame', 'loadGameVictories', 'showGamePanel', 'openTechnique', 'selectGameSchool', 'stopPractice', 'followGameGoal', 'chooseBattle', 'openBattleChoices', 'cancelBattle', 'withdrawBattle', 'rescueBattle', 'acceptBattleDeath', 'prepareBoss', 'openBattleHistory', 'openBattleExchange', 'openGameChapter', 'selectGameChapter', 'openBattleArchive', 'openGameGuide', 'dismissGameGuide', 'openGameExport'])
-    forward[name] = (...args) => actions[name](...args);
 for (const name of ['loadHabits', 'openHabit', 'openHabitDetails', 'openHabitLog', 'openHabitSlot', 'showHabitInList', 'toggleHabit', 'setHabitFilter', 'showHabitPanel', 'loadHabitHistory', 'setHabitReportSpan', 'setHabitHistoryStatus', 'exportHabits', 'openHabitExport'])
     forward[name] = (...args) => actions[name](...args);
 forward.loadActiveTasks = (...args) => actions.loadActiveTasks(...args);
@@ -48,10 +42,6 @@ Object.assign(actions, createScheduleActions(context));
 Object.assign(actions, createSleepActions(context));
 Object.assign(actions, createCultivationActions(context));
 Object.assign(actions, createHabitActions(context));
-Object.assign(actions, createGameActions(context));
-Object.assign(actions, createGameGuideActions(context));
-Object.assign(actions, createGameExportActions(context));
-Object.assign(actions, createBattleActions(context));
 Object.assign(actions, createBrowserLoginActions(context));
 Object.assign(actions, createLifecycle(context));
 applyTheme();
@@ -87,7 +77,7 @@ for (const b of document.querySelectorAll('[data-tab]'))
         state.screenState = 'ready';
         actions.render();
         actions.refreshOnReturn();
-        if (state.tab !== 'habits' && state.tab !== 'game') window.scrollTo(0, 0);
+        if (state.tab !== 'habits') window.scrollTo(0, 0);
     });
 if (state.live)
     actions.startConnection();

@@ -5,8 +5,6 @@ import { Miniflare } from 'miniflare';
 import type { Database } from '../../src/adapters/d1/database.ts';
 import { ScheduleStore } from '../../src/adapters/d1/schedule-store.ts';
 import { D1HabitStore } from '../../src/adapters/d1/habit-store.ts';
-import { D1GameStore } from '../../src/adapters/d1/game-store.ts';
-import { PracticeService } from '../../src/application/practice-service.ts';
 
 test('D1 three-year history remains paginated and a year of backlog advances one bounded day without duplicate sources or healthy rewards', async () => {
     const mf = new Miniflare({ modules: true, script: 'export default {fetch(){return new Response("ok")}}', d1Databases: ['DB'] });
@@ -30,14 +28,10 @@ test('D1 three-year history remains paginated and a year of backlog advances one
             db.prepare("INSERT INTO habit_outcomes(owner,habit_id,day,revision_day,status,reason,value,successes,misses,game_applied,settled_at) SELECT d.owner,h.id,d.day,?,'achieved','target_met',2000,1,0,1,? FROM habit_days d JOIN habits h ON h.owner=d.owner WHERE d.owner=? AND d.day<?")
                 .bind(firstDay, now, '123', oldest),
         ]);
-        const game = new D1GameStore(db);
-        await new PracticeService(game).execute('123', 'scale_history_practice', { operation: 'start_practice', techniqueId: 'kiem-y', day: day.day, version: 0 }, now);
-        await db.prepare('UPDATE game_accounts SET joined_day=?,anchor_start=?,next_day=? WHERE owner=?')
-            .bind(firstDay, day.startAt - 1095 * dayMs, oldest, '123').run();
         const healthyBefore = (await db.prepare('SELECT * FROM cultivation_accounts ORDER BY owner').all()).results;
         let queries = 0;
         const measured: Database = { prepare: sql => { queries++; return db.prepare(sql); }, batch: statements => db.batch(statements) };
-        const store = new D1HabitStore(measured), measuredGame = new D1GameStore(measured);
+        const store = new D1HabitStore(measured);
         queries = 0;
         const today = await store.today('123', now); assert.equal(today.habits.length, 30); assert.ok(queries <= 25);
         queries = 0;
@@ -50,8 +44,6 @@ test('D1 three-year history remains paginated and a year of backlog advances one
         assert.equal((await store.settleBatch('123', now, 30)).processed, 30); assert.ok(queries <= 20);
         assert.equal((await db.prepare('SELECT MIN(next_day) AS day FROM habits').first<{ day: number }>())!.day, oldest + 1);
         queries = 0;
-        assert.equal((await measuredGame.settle('123', now, 1)).processed, 1); assert.ok(queries <= 50);
-        assert.equal((await db.prepare('SELECT next_day FROM game_accounts WHERE owner=?').bind('123').first<{ next_day: number }>())!.next_day, oldest + 1);
         queries = 0;
         assert.equal((await store.settleBatch('123', now, 30)).processed, 30); assert.ok(queries <= 20);
         assert.equal((await db.prepare('SELECT MIN(next_day) AS day FROM habits').first<{ day: number }>())!.day, oldest + 2);
