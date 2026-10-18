@@ -1,0 +1,31 @@
+name: Verify
+on:
+  pull_request:
+  push:
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run typecheck
+      - run: npm run typecheck:web
+      - run: npm run check:web
+      - run: npm run test:all
+      - name: Require a browser
+        run: |
+          BROWSER_BIN=$(command -v google-chrome || command -v chromium)
+          test -n "$BROWSER_BIN"
+          echo "BROWSER_BIN=$BROWSER_BIN" >> "$GITHUB_ENV"
+      - run: npm run test:browser
+      - run: npm run build:check
+      - run: npm run staging:check

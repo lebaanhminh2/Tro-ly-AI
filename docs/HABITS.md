@@ -4,11 +4,11 @@ Cập nhật 18/10/2026. Nguồn: `src/domain/habits.ts`, `src/application/habit
 
 ## Ghi nhận và ngày sinh hoạt
 
-| Kiểu | Tổng tự khai báo trong ngày |
-| --- | --- |
-| Tick | 0 hoặc 1 |
-| Thời lượng | Phút, ví dụ 15/20 |
-| Số lượng | Giá trị và đơn vị, ví dụ 5/10 trang |
+| Kiểu       | Tổng tự khai báo trong ngày         |
+| ---------- | ----------------------------------- |
+| Tick       | 0 hoặc 1                            |
+| Thời lượng | Phút, ví dụ 15/20                   |
+| Số lượng   | Giá trị và đơn vị, ví dụ 5/10 trang |
 
 Ghi là **thay tổng hôm nay**, không cộng lại mỗi lần mở bảng. Giá trị không âm, hữu hạn, tối đa hai chữ số thập phân; domain lưu số nguyên nhân 100, web/tools dùng đơn vị thật. Tên tối đa 100 ký tự, đơn vị 20, ghi chú 300. Target dương; metric tick có target 1. Backend kiểm giới hạn và độ chính xác, không làm tròn partial thành đạt.
 
@@ -20,10 +20,10 @@ Receipt của request đã commit có thể được đọc lại sau khi sang n
 
 ## Lịch và hiệu lực
 
-| Lịch | Cam kết bắt đầu | Kết quả khi đóng ngày |
-| --- | --- | --- |
-| Hằng ngày | Ngày sinh hoạt kế tiếp | Đạt hoặc thiếu |
-| Chọn thứ | Ngày sinh hoạt kế tiếp | Ngày được chọn đạt/thiếu; ngày khác trung tính |
+| Lịch        | Cam kết bắt đầu            | Kết quả khi đóng ngày                                               |
+| ----------- | -------------------------- | ------------------------------------------------------------------- |
+| Hằng ngày   | Ngày sinh hoạt kế tiếp     | Đạt hoặc thiếu                                                      |
+| Chọn thứ    | Ngày sinh hoạt kế tiếp     | Ngày được chọn đạt/thiếu; ngày khác trung tính                      |
 | X ngày/tuần | Thứ Hai kế tiếp, quota 1–7 | Đạt được tính tối đa quota; chưa đủ nhưng còn cơ hội thì trung tính |
 
 Có thể tracking ngay trước khi cam kết có hiệu lực; không phạt cho quá khứ. Weekly là số **ngày đạt khác nhau**, không phải số lần cộng trong một ngày. Đã đủ quota thì ghi thêm vẫn được theo dõi, không tạo thêm thành công cam kết.
@@ -40,6 +40,8 @@ Q=3, đạt ngày đầu rồi không đạt nữa: ngày 2–5 trung tính, ng�
 Sửa định nghĩa có hiệu lực ngày kế tiếp; nếu lịch cũ hoặc mới là weekly thì thứ Hai kế tiếp. Giờ nhắc cập nhật ngay theo thao tác riêng. Lưu trữ/khôi phục có ngày hiệu lực tương ứng, giữ nghĩa vụ đã phát sinh và lịch sử. Không có xóa vĩnh viễn trong UI/API habit. Bản thay đổi đang hẹn được hiển thị riêng, không giả là đã áp dụng cho hôm nay.
 
 ## Theo dõi, tiến bộ và thao tác hiện có
+
+Danh sách luôn giữ các thói quen đang hoạt động, độc lập với số mục đã lưu trữ. API `GET /api/habits?archived=1&offset=0` trả thêm tối đa 50 mục lưu trữ cùng `archivePage.nextCursor`; giao diện có tải thêm ở danh sách và bộ lọc lịch sử. JSON export đọc các trang còn lại trước khi xuất để không mất định nghĩa cũ. Tìm kiếm companion phân trang tại DB, hỗ trợ tên tiếng Việt không dấu và tìm được mục nằm sau trang lưu trữ đầu tiên.
 
 - Danh sách giữ habit đang hoạt động, gồm ngoài lịch/chưa bắt đầu; phân biệt partial, đạt tự khai, trung tính, thiếu đã chốt và kỳ đang xử lý.
 - Tick đầu dòng dùng cho cả ba metric: đặt đúng target hoặc về 0. Toast Hoàn tác 6 giây khôi phục tổng/ghi chú trước thao tác, có kiểm ngày, phiên, version và trạng thái đối chiếu. Cơ chế này độc lập với Hoàn tác ngủ 5 phút.

@@ -18,18 +18,27 @@
     "try:ai": "node experiments/ai-trial/try-ai.ts",
     "typecheck": "tsc --noEmit",
     "check:web": "node scripts/check-web.mjs",
-    "test:browser": "node --test tests/browser/*.test.mjs"
+    "test:browser": "node --test tests/browser/*.test.mjs",
+    "typecheck:web": "tsc -p tsconfig.web.json",
+    "lint": "eslint src web scripts/*.mjs eslint.config.mjs",
+    "format:check": "node scripts/format.mjs --check",
+    "format": "node scripts/format.mjs --write"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^24.0.0",
+    "eslint": "^10.13.0",
+    "globals": "^16.5.0",
+    "miniflare": "^4.0.0",
+    "prettier": "^3.9.10",
     "typescript": "~5.8.3",
-    "wrangler": "^4.0.0",
-    "miniflare": "^4.0.0"
+    "typescript-eslint": "^8.71.2",
+    "wrangler": "^4.0.0"
   },
   "overrides": {
     "miniflare": {
-      "sharp": "0.35.4",
-      "undici": "7.29.0"
+      "sharp": "0.35.5",
+      "undici": "7.29.1"
     }
   }
 }
