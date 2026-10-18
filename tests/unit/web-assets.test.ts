@@ -287,11 +287,41 @@ test('schedule sheet locks the page and only edits explicitly selected tasks', (
     ),
   );
 });
-test('reward result stays visually plain without a decorative star prefix', () => {
-  assert.ok(contains(app, 'reveal.textContent=rewardLabels[saved.reward]??saved.reward'));
-  assert.ok(contains(app, "result.textContent=reward.label+' · Còn '"));
-  assert.ok(!contains(app, "textContent='✦ '+(rewardLabels"));
-  assert.ok(!contains(app, "textContent='✦ '+reward.label"));
+test('single and ten-draw results sum qi and group items with plain reward names', async () => {
+  const featurePath = '../../web/features/cultivation.js';
+  const { summarizeDrawRewards } = await import(featurePath);
+  assert.deepEqual(summarizeDrawRewards(['qi1']), { qi: 1, items: [] });
+  assert.deepEqual(summarizeDrawRewards(['qi2']), { qi: 2, items: [] });
+  for (const [reward, label] of [
+    ['basic', 'Phá Cảnh Phù sơ cấp'],
+    ['keepsake', 'Tín vật Minh Anh'],
+    ['heart', 'Hộ Tâm Phù'],
+    ['peace', 'An Tâm Phù'],
+  ]) {
+    assert.deepEqual(summarizeDrawRewards([reward]), { qi: 0, items: [{ label, amount: 1 }] });
+  }
+  const summary = summarizeDrawRewards([
+    'qi1',
+    'qi2',
+    'basic',
+    'basic',
+    'keepsake',
+    'heart',
+    'peace',
+    'qi2',
+    'basic',
+    'keepsake',
+  ]);
+  assert.deepEqual(summary, {
+    qi: 5,
+    items: [
+      { label: 'Phá Cảnh Phù sơ cấp', amount: 3 },
+      { label: 'Tín vật Minh Anh', amount: 2 },
+      { label: 'Hộ Tâm Phù', amount: 1 },
+      { label: 'An Tâm Phù', amount: 1 },
+    ],
+  });
+  assert.ok(summary.items.every(({ label }) => !label.includes('✦') && !label.includes('★')));
 });
 test('checkin calendar reveals all30 rewards, upcoming days and received/today states only when opened', async () => {
   const viewPath = '../../web/views/achievements.js',

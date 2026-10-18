@@ -12,6 +12,128 @@ const livePath = '../../web/core/live-data.js';
 const statePath = '../../web/core/state.js';
 const lifecyclePath = '../../web/core/lifecycle.js';
 const mutationPath = '../../web/core/mutations.js';
+
+test('habit ticket acknowledgement updates the balance with a narrow refresh and after refresh failure', async (t) => {
+  const { createMutations } = await import(mutationPath),
+    { createAppState, createRuntimeState } = await import(statePath);
+  const oldFetch = globalThis.fetch,
+    oldDocument = (globalThis as any).document;
+  t.after(() => {
+    globalThis.fetch = oldFetch;
+    (globalThis as any).document = oldDocument;
+  });
+  (globalThis as any).document = { querySelectorAll: () => [] };
+  const state = createAppState(true),
+    runtime = createRuntimeState();
+  state.live = true;
+  state.loaded = true;
+  state.tab = 'habits';
+  let balance = 7,
+    offline = false;
+  const calls: string[] = [];
+  globalThis.fetch = async (url, options) => {
+    calls.push((options?.method ?? 'GET') + ' ' + url);
+    if (options?.method === 'POST')
+      return new Response(
+        JSON.stringify({
+          saved: true,
+          ticketAwarded: 1,
+          account: { state: { earned: 0, tickets: balance } },
+        }),
+      );
+    if (offline) throw Error('REFRESH_OFFLINE');
+    return new Response(JSON.stringify({ day: { day: 1 }, habits: [] }));
+  };
+  const controller = createMutations({
+    state,
+    runtime,
+    sheet: { open: false, querySelector: () => null, close() {} },
+    render() {},
+    toast() {},
+    showBrowserLogin() {},
+  });
+  const first = await controller.performLive(
+    'habits',
+    { operation: 'log', value: 1 },
+    { silent: true },
+  );
+  assert.equal(first.ticketAwarded, 1);
+  assert.equal(state.cultivation.tickets, 7);
+  assert.equal(
+    calls.some((call) => call.includes('bootstrap')),
+    false,
+  );
+  balance = 8;
+  offline = true;
+  await controller.performLive('habits', { operation: 'log', value: 2 }, { silent: true });
+  assert.equal(state.cultivation.tickets, 8);
+  assert.equal(runtime.refreshPending, true);
+});
+
+test('an unconfirmed x10 blocks other writes and retries the same receipt before allowing another draw', async (t) => {
+  const { createMutations } = await import(mutationPath),
+    { createAppState, createRuntimeState } = await import(statePath);
+  const oldFetch = globalThis.fetch,
+    oldDocument = (globalThis as any).document;
+  t.after(() => {
+    globalThis.fetch = oldFetch;
+    (globalThis as any).document = oldDocument;
+  });
+  (globalThis as any).document = { querySelectorAll: () => [] };
+  const state = createAppState(true),
+    runtime: any = createRuntimeState();
+  state.live = true;
+  state.loaded = true;
+  state.tab = 'achievements';
+  let tickets = 12,
+    lost = true;
+  const posts: any[] = [],
+    receipts = new Map();
+  globalThis.fetch = async (_url, options) => {
+    if (options?.method === 'POST') {
+      const input = JSON.parse(String(options.body));
+      posts.push(input);
+      if (!receipts.has(input.id)) {
+        tickets -= input.count;
+        receipts.set(input.id, {
+          result: { count: input.count, rewards: Array(input.count).fill('basic') },
+          account: { state: { earned: 0, tickets } },
+        });
+      }
+      if (lost) {
+        lost = false;
+        throw Error('RESPONSE_LOST');
+      }
+      return new Response(JSON.stringify(receipts.get(input.id)));
+    }
+    const data = bootstrap();
+    data.account.state = { ...data.account.state, tickets } as any;
+    return new Response(JSON.stringify(data));
+  };
+  const controller = createMutations({
+    state,
+    runtime,
+    sheet: { open: false, querySelector: () => null, close() {} },
+    render() {},
+    toast() {},
+    showBrowserLogin() {},
+  });
+  assert.equal(await controller.performLive('cultivation', { operation: 'draw', count: 10 }), null);
+  assert.equal(tickets, 2);
+  assert.equal(runtime.pendingDraw.count, 10);
+  assert.equal(await controller.performLive('cultivation', { operation: 'draw', count: 1 }), null);
+  assert.equal(await controller.performLive('habits', { operation: 'log', value: 1 }), null);
+  assert.equal(posts.length, 1);
+  const saved = await controller.performLive('cultivation', { operation: 'draw', count: 10 });
+  assert.equal(saved.rewards.length, 10);
+  assert.equal(tickets, 2);
+  assert.equal(posts[0].id, posts[1].id);
+  assert.equal(runtime.pendingDraw, null);
+  assert.equal(state.cultivation.tickets, 2);
+  await controller.performLive('cultivation', { operation: 'draw', count: 1 });
+  assert.equal(tickets, 1);
+  assert.notEqual(posts[2].id, posts[0].id);
+});
 test('habit archive pagination keeps active rows, merges IDs and discards an obsolete account response', async (t) => {
   const path = '../../web/features/habits.js',
     { createHabitActions } = await import(path);

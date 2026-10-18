@@ -65,6 +65,14 @@ export function renderHabits(ui, state) {
   );
   if (state.habitLoading) summary.append(el('small', 'Đang cập nhật…', 'feature-updating'));
   root.append(summary);
+  if (state.habitFilter !== 'archived')
+    root.append(
+      el(
+        'p',
+        'Đạt mục tiêu đúng ngày cam kết: +1 vé quay. Tối đa 1 vé mỗi thói quen/ngày; lịch tuần giới hạn theo số ngày cam kết.',
+        'hint habit-ticket-hint',
+      ),
+    );
   if (!list.length)
     root.append(
       el(

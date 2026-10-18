@@ -171,6 +171,31 @@ export class HealthyStore {
       };
     });
   }
+  // Join the habit log's guarded batch. SQL updates the current balance, so a
+  // concurrent task reward/check-in cannot be overwritten by a stale snapshot.
+  prepareHabitTicket(owner: string, habitId: string, day: number, weekStart: number, now: number) {
+    return [
+      query(
+        this.db,
+        'INSERT INTO habit_ticket_awards(owner,habit_id,day,week_start,created) VALUES(?,?,?,?,?)',
+        owner,
+        habitId,
+        day,
+        weekStart,
+        now,
+      ),
+      query(
+        this.db,
+        `INSERT INTO cultivation_accounts(owner,state_json,updated) VALUES(?,?,?)
+         ON CONFLICT(owner) DO UPDATE SET
+         state_json=json_set(cultivation_accounts.state_json,'$.tickets',COALESCE(json_extract(cultivation_accounts.state_json,'$.tickets'),0)+1),
+         version=cultivation_accounts.version+1,updated=excluded.updated`,
+        owner,
+        JSON.stringify({ ...initialHealthy(), tickets: 1 }),
+        now,
+      ),
+    ];
+  }
   async awardTask(owner: string, taskId: string, now: number) {
     return this.mutate(owner, 'ticket:' + taskId, 'task-ticket', { taskId }, now, (state) => {
       const next = { ...state, tickets: state.tickets + 1 };

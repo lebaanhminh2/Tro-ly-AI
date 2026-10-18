@@ -3,6 +3,16 @@ import * as prettier from 'prettier';
 
 // Incremental format baseline: extend this list when another module is cleaned.
 const paths = [
+  'src/domain/healthy.ts',
+  'src/entrypoints/mini-app/cultivation.ts',
+  'web/features/cultivation.js',
+  'web/demo/cultivation.js',
+  'web/ui/sheets.js',
+  'tests/browser/app-harness.mjs',
+  'tests/integration/habits.test.ts',
+  'tests/integration/habit-tickets-and-draw.test.ts',
+  'tests/integration/upgrade-rehearsal.test.ts',
+  'tests/unit/healthy.test.ts',
   '.github/workflows/ci.yml',
   '.prettierrc.json',
   '.vscode/settings.json',

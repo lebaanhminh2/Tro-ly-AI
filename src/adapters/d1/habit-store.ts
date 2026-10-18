@@ -2,6 +2,7 @@ import {
   assessHabitDay,
   definitionOnDay,
   habitPreview,
+  habitWeekStart,
   newHabitPeriod,
   type HabitDefinition,
   type HabitPeriod,
@@ -26,6 +27,7 @@ import { RecurrenceStore } from './recurrence-store.ts';
 import { minutes } from '../../domain/healthy.ts';
 import { TimelineStore } from './timeline-store.ts';
 import { DayPlanStore } from './day-plan-store.ts';
+import { HealthyStore } from './healthy-store.ts';
 
 type HabitRow = {
   id: string;
@@ -85,8 +87,8 @@ const nameStages = Object.entries(nameGroups)
   })
   .join(',');
 
-// The habit aggregate has its own guard and receipts. Logging a habit never
-// changes the existing healthy account or mints an ordinary task ticket.
+// Habit logs, ticket awards and their receipt share one guarded transaction.
+// Settlements remain independent and never mint historical ticket rewards.
 export class D1HabitStore implements HabitStore {
   private db: Database;
   private defer?: (statements: Statement[]) => void;
@@ -414,6 +416,23 @@ export class D1HabitStore implements HabitStore {
     }
     const { change, result } = apply(snapshot),
       statements = this.changeStatements(owner, day, now, change);
+    if (change.kind === 'log' && snapshot.habit) {
+      result.ticketAwarded = 0;
+      if (
+        await this.ticketEligible(owner, snapshot.habit, day.day, snapshot.log.value, change.value)
+      ) {
+        statements.push(
+          ...new HealthyStore(this.db).prepareHabitTicket(
+            owner,
+            change.habitId,
+            day.day,
+            habitWeekStart(day.day),
+            now,
+          ),
+        );
+        result.ticketAwarded = 1;
+      }
+    }
     if (
       (change.kind === 'create' || change.kind === 'revision') &&
       change.reminderTime !== undefined
@@ -513,6 +532,48 @@ export class D1HabitStore implements HabitStore {
       throw error;
     }
     return result;
+  }
+  private async ticketEligible(
+    owner: string,
+    habit: HabitRecord,
+    day: number,
+    before: number,
+    value: number,
+  ) {
+    const revision = definitionOnDay(habit, day);
+    if (!revision || before >= revision.definition.target || value < revision.definition.target)
+      return false;
+    const definition = revision.definition,
+      weekStart = habitWeekStart(day);
+    const awards = await query(
+      this.db,
+      'SELECT day FROM habit_ticket_awards WHERE owner=? AND habit_id=? AND week_start=? LIMIT 7',
+      owner,
+      habit.id,
+      weekStart,
+    ).all<{ day: number }>();
+    if (awards.results.some((award) => award.day === day)) return false;
+    let period = newHabitPeriod(definition, day);
+    if (definition.cadence.kind === 'weekly' && day >= definition.commitmentFrom) {
+      if (awards.results.length >= definition.cadence.quota) return false;
+      const logs = await query(
+        this.db,
+        'SELECT day,value FROM habit_logs WHERE owner=? AND habit_id=? AND day>=? AND day<? ORDER BY day LIMIT 6',
+        owner,
+        habit.id,
+        weekStart,
+        day,
+      ).all<{ day: number; value: number }>();
+      for (let closed = weekStart; closed < day; closed++)
+        period = assessHabitDay(
+          definition,
+          closed,
+          logs.results.find((log) => log.day === closed)?.value ?? 0,
+          period,
+          revision.archivedFrom ?? habit.archivedFrom,
+        ).period;
+    } else period.closedThrough = day - 1;
+    return habitPreview(habit, day, value, period)?.successes === 1;
   }
   private async reminderTime(owner: string, habitId: string): Promise<string | null> {
     const row = await query(

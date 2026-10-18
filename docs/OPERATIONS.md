@@ -1,6 +1,6 @@
 # Vận hành và phục hồi
 
-Cập nhật 18/10/2026. Stack: TypeScript strict, Cloudflare Workers/D1/Cron, Telegram, web ES modules và adapter Gemini. Domain/application/ports giữ ranh giới; adapters triển khai SQL/provider. Có 39 migrations local: 0001–0038 giữ nguyên, 0039 là migration cộng thêm của đợt hardening. Đã đối chiếu remote staging đủ 39 migration và không còn migration chờ áp; trạng thái môi trường khác phải kiểm tra riêng.
+Cập nhật 18/10/2026. Stack: TypeScript strict, Cloudflare Workers/D1/Cron, Telegram, web ES modules và adapter Gemini. Domain/application/ports giữ ranh giới; adapters triển khai SQL/provider. Có 40 migrations local: 0001–0039 giữ nguyên, 0040 bổ sung sổ nhận vé habit và chỉ mục tuần. Lần đối chiếu staging gần nhất đã đủ 39 migration của bản hardening; 0040 chưa áp remote. Trạng thái môi trường đích phải kiểm tra riêng trước phát hành.
 
 ## Kiểm tra local
 
@@ -42,6 +42,8 @@ Config thật từ `wrangler.jsonc`; owner allowlist và auth từ source/config
 Đợt dọn ban đầu chỉ local; sau đó người dùng yêu cầu deploy staging và commit/push bản cleanup lên nhánh `review/p1-p3`. Bản cleanup là version `4469dfad-7311-486c-b856-7c68e0fc12ad` ngày 18/10/2026; xem [HANDOFF](HANDOFF.md) để đối chiếu kiểm chứng. Sau khi người dùng duyệt hardening và yêu cầu tiếp tục, đã áp migration 0039 rồi phát hành staging version `a659e5d1-5cc7-403a-8592-d97d31c0ca48` cùng ngày. Mốc Time Travel trước migration: `0000091f-00000000-00005108-a7af28c207d13b45f5410c6206fd49e0`. Không reset DB, đổi webhook hoặc gửi tin thử/gọi AI trả phí trong lần kiểm tra phát hành. Quyền trong goal/tài liệu cũ không có hiệu lực cho nhiệm vụ mới; thay đổi schema/dữ liệu cần chỉ dẫn riêng.
 
 ## Dữ liệu và tương thích
+
+Tính năng vé habit và quay ×10 hiện ở local, chưa phát hành. Cần áp `0040_habit_ticket_awards.sql` trên môi trường đích trước runtime mới. Migration chỉ thêm bảng sổ nhận vé và chỉ mục, không backfill log lịch sử hoặc sửa số dư hiện tại. Hoàn thành habit hợp lệ cấp một vé trong cùng transaction với log và receipt; giữ version fencing cho cả habit và tài khoản vé. Quay ×10 dùng đúng mười vé, mười lần lấy mẫu server độc lập và một receipt; retry trả lại kết quả cũ kể cả khi thiết lập/ngày hoặc trạng thái tài khoản đã đổi. Các client cũ gửi draw không có `count` vẫn quay một lần. Xem quy tắc giới hạn/ngày, tuần và hoàn tác tại [HABITS](HABITS.md).
 
 Đợt hardening thêm migration `0039_runtime_hardening.sql`; đã áp thành công trên `assistant-staging` trước khi deploy runtime mới. Migration thêm số dư thời gian có dấu, con trỏ quét nhắc việc và chỉ mục, không sửa migration cũ hay xóa bảng. Đối chiếu sau migration: vẫn có 19 bản ghi kế hoạch, tất cả số dư khởi tạo khớp thời gian còn lại, bảng con trỏ và bốn chỉ mục mới đã tồn tại. Số phút vượt ước lượng từng bị bản cũ làm mất không thể phục hồi chắc chắn; số dư ban đầu giữ đúng thời gian còn lại hiện có. Cần áp 0039 trên từng môi trường đích trước khi chạy runtime mới.
 

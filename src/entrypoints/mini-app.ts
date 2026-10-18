@@ -127,6 +127,15 @@ export async function miniAppApi(request: Request, env: Env, now = Date.now()): 
       SLEEP_UNDO_LOCKED: 'Không thể hoàn tác vì kết quả tu luyện đã thay đổi sau khi báo ngủ.',
     };
     if (sleepErrors[code]) return json({ error: code, message: sleepErrors[code] }, 409);
+    if (code === 'NO_TICKETS')
+      return json(
+        {
+          error: code,
+          message:
+            'Chưa đủ vé cho lượt quay này. Hoàn thành task, thói quen hoặc điểm danh để nhận thêm vé.',
+        },
+        409,
+      );
     if (code === 'SETUP_REQUIRED') return json({ error: code }, 409);
     if (code.startsWith('TIMELINE_')) return json({ error: code }, 409);
     if (

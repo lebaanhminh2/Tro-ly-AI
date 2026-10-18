@@ -11,6 +11,164 @@ import { createDemo } from '../../web/demo/state.js';
 import { checkinProgress } from '../../web/models/cultivation.js';
 import { assessHabitDay, newHabitPeriod } from '../../src/domain/habits.ts';
 import { browserBin, fixture, serve, chrome, snapshot, clone, now } from './app-harness.mjs';
+
+test(
+  'habit completion awards one visible ticket through undo and redo, then x10 keeps mobile controls reachable',
+  { skip: !browserBin, timeout: 90000 },
+  async () => {
+    const control = fixture(),
+      day = control.habits.day.day;
+    const definition = {
+      name: 'Đọc mỗi ngày',
+      metric: 'check',
+      target: 100,
+      unit: 'lần',
+      note: '',
+      cadence: { kind: 'daily' },
+      commitmentFrom: day - 1,
+    };
+    control.habits.habits = [
+      {
+        habit: {
+          id: 'habit_ticket_demo',
+          version: 1,
+          createdDay: day - 1,
+          archivedFrom: null,
+          revisions: [{ fromDay: day - 1, definition }],
+        },
+        definition,
+        pending: null,
+        log: { value: 0, note: '', version: 0 },
+        preview: null,
+        slot: null,
+        reminderTime: null,
+      },
+    ];
+    control.state.account.state.tickets = 10;
+    const server = await serve(control);
+    let browser;
+    try {
+      browser = await chrome();
+      await browser.navigate(server.url, 320);
+      await browser.wait("!!document.querySelector('.focus-flip-card')");
+      await browser.evaluate("document.querySelector('[data-tab=habits]').click()");
+      await browser.wait("!!document.querySelector('.habit-check')");
+      await browser.evaluate("document.querySelector('.habit-check').click()");
+      await browser.wait(
+        "!!document.querySelector('.habit-check.checked')&&!document.querySelector('.habit-check').disabled",
+      );
+      assert.equal(control.state.account.state.tickets, 11);
+      await browser.wait("document.body.textContent.includes('+1 vé quay!')");
+      await browser.click('Hoàn tác');
+      await browser.wait(
+        "!!document.querySelector('.habit-check:not(.checked)')&&!document.querySelector('.habit-check').disabled",
+      );
+      assert.equal(control.state.account.state.tickets, 11);
+      await browser.evaluate("document.querySelector('.habit-check').click()");
+      await browser.wait(
+        "!!document.querySelector('.habit-check.checked')&&!document.querySelector('.habit-check').disabled",
+      );
+      assert.equal(control.state.account.state.tickets, 11);
+      await browser.evaluate("document.querySelector('[data-tab=achievements]').click()");
+      await browser.wait("!!document.querySelector('.checkin-claim')");
+      await browser.evaluate(
+        "[...document.querySelectorAll('button')].find(b=>b.textContent.startsWith('Quay thưởng ·')).click()",
+      );
+      await browser.evaluate('document.querySelector(\'[data-draw-count="10"]\').click()');
+      await browser.wait("!!document.querySelector('.mystery-revealed')");
+      assert.equal(control.state.account.state.tickets, 1);
+      assert.equal(
+        control.posts.filter((p) => p.path === 'cultivation' && p.input.operation === 'draw')
+          .length,
+        1,
+      );
+      for (const width of [320, 390, 900]) {
+        await browser.resize(width, 720);
+        await browser.evaluate(
+          "document.querySelector('.draw-probabilities').open=true;document.querySelector('.draw-body').scrollTop=9999",
+        );
+        const layout = await browser.evaluate(`(()=>{
+          const panel=document.querySelector('#sheet').getBoundingClientRect();
+          const actions=[...document.querySelectorAll('[data-draw-count]')].map(b=>{const r=b.getBoundingClientRect();return {top:r.top,bottom:r.bottom,height:r.height,disabled:b.disabled}});
+          return {panelBottom:panel.bottom,actions,overflow:document.documentElement.scrollWidth>innerWidth+1};
+        })()`);
+        assert.equal(layout.overflow, false);
+        assert.ok(
+          layout.actions.every(
+            (a) => a.height >= 44 && a.bottom <= layout.panelBottom + 1 && a.top >= 0,
+          ),
+        );
+        assert.equal(layout.actions[0].disabled, false);
+        assert.equal(layout.actions[1].disabled, true);
+      }
+      await browser.resize(390, 720);
+      if (process.env.UI_SCREENSHOT_DIR)
+        await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'draw-x10-mobile.png'));
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      if (browser) await browser.close();
+      await server.close();
+    }
+  },
+);
+
+test(
+  'lost x10 response can be recovered after reopening the sheet without spending twice',
+  { skip: !browserBin, timeout: 90000 },
+  async () => {
+    const control = fixture();
+    control.state.account.state.tickets = 12;
+    const server = await serve(control);
+    let browser;
+    try {
+      browser = await chrome();
+      await browser.navigate(server.url, 390);
+      await browser.wait("!!document.querySelector('.focus-flip-card')");
+      await browser.evaluate("document.querySelector('[data-tab=achievements]').click()");
+      await browser.wait("!!document.querySelector('.checkin-claim')");
+      await browser.evaluate(`(()=>{
+        const original=window.fetch;let lost=true;
+        window.fetch=async(...args)=>{const response=await original(...args);
+          if(lost&&String(args[0]).endsWith('/api/cultivation')&&args[1]?.method==='POST'){lost=false;throw Error('LOST_RESPONSE');}
+          return response;};
+        [...document.querySelectorAll('button')].find(b=>b.textContent.startsWith('Quay thưởng ·')).click();
+      })()`);
+      await browser.evaluate('document.querySelector(\'[data-draw-count="10"]\').click()');
+      await browser.wait(
+        "document.querySelector('[data-draw-count=\"10\"]').textContent.includes('Kiểm tra lại')",
+      );
+      assert.equal(control.state.account.state.tickets, 2);
+      assert.equal(
+        await browser.evaluate('document.querySelector(\'[data-draw-count="1"]\').disabled'),
+        true,
+      );
+      await browser.evaluate("document.querySelector('[data-sheet-close]').click()");
+      await browser.wait("!document.querySelector('#sheet').open");
+      await browser.evaluate(
+        "[...document.querySelectorAll('button')].find(b=>b.textContent.startsWith('Quay thưởng ·')).click()",
+      );
+      await browser.wait(
+        "document.querySelector('[data-draw-count=\"10\"]').textContent.includes('Kiểm tra lại')",
+      );
+      await browser.evaluate('document.querySelector(\'[data-draw-count="10"]\').click()');
+      await browser.wait("!!document.querySelector('.mystery-revealed')");
+      assert.equal(control.state.account.state.tickets, 2);
+      assert.equal(
+        control.posts.filter((p) => p.path === 'cultivation' && p.input.operation === 'draw')
+          .length,
+        1,
+      );
+      assert.equal(
+        await browser.evaluate("document.querySelector('[data-ticket-balance]').textContent"),
+        '2',
+      );
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      if (browser) await browser.close();
+      await server.close();
+    }
+  },
+);
 test(
   'all four mobile navigation icons and labels share rows across screen sizes',
   { skip: !browserBin, timeout: 60000 },
@@ -2191,7 +2349,7 @@ test(
           await browser.evaluate(
             "[...document.querySelectorAll('button')].find(b=>b.textContent.startsWith('Quay thưởng ·')).click()",
           );
-          await browser.click('Dùng 1 vé');
+          await browser.evaluate('document.querySelector(\'[data-draw-count="1"]\').click()');
           await browser.wait("!!document.querySelector('.mystery-revealed')");
           assert.equal(control.state.account.state.tickets, tickets - 1);
           await browser.evaluate("document.querySelector('[data-sheet-close]').click()");

@@ -18,6 +18,14 @@ Ngày sinh hoạt là cửa sổ server chốt, UTC+7. Ngủ không đóng ngày
 
 Receipt của request đã commit có thể được đọc lại sau khi sang ngày; request cũ chưa commit phải báo conflict, không áp sang ngày mới. Ví dụ 15→20→15 phút với target 20: preview thay đổi chưa đạt→đạt→chưa đạt; kết quả chốt dựa trên tổng hợp lệ cuối.
 
+## Vé quay khi hoàn thành
+
+Khi một lần ghi mới đưa tổng hôm nay từ dưới mục tiêu lên đạt mục tiêu, habit nhận ngay **1 vé quay** dùng chung với task/check-in. Chỉ thưởng vào ngày cam kết có hiệu lực, đúng lịch và chưa lưu trữ; ngày theo dõi thử hoặc ngoài lịch không thưởng. Tối đa một vé cho mỗi habit/ngày. Habit linh hoạt theo tuần nhận tối đa quota vé trong tuần và không thưởng thêm khi số ngày đạt cam kết đã đủ quota, kể cả các ngày được ghi trước tính năng này.
+
+Hoàn tác hoặc giảm tổng vẫn sửa log và kết quả báo cáo bình thường; vé đã cấp được giữ lại, hoàn thành lại cùng ngày không cấp thêm. Vé đã nhận vẫn tính vào giới hạn tuần khi hoàn tác. Ghi thêm vượt mục tiêu, sửa ghi chú, đọc báo cáo và kết toán cron không tạo vé. Không phát bù lịch sử. Log, sổ nhận vé và receipt cùng một giao dịch; retry, hai tab và mất phản hồi không tạo thêm vé.
+
+Vòng quay có ×1 dùng một vé và ×10 dùng mười vé, cùng xác suất từng lượt. ×10 trả mười kết quả trong một giao dịch và một receipt; thiếu vé thì không trừ một phần. Giao diện gộp kết quả theo loại, chỉ chạy một hiệu ứng ngắn. Khi chưa xác nhận được lượt quay do mất mạng, cần kiểm tra lại lượt đó trước thao tác ghi khác trong phiên hiện tại. Tài khoản tạm ngưng vẫn theo quy tắc quay hiện hành; thưởng habit không tự kích hoạt lại tài khoản.
+
 ## Lịch và hiệu lực
 
 | Lịch        | Cam kết bắt đầu            | Kết quả khi đóng ngày                                               |

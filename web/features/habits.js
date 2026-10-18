@@ -235,7 +235,11 @@ export function createHabitActions(context) {
       logVersion = saved.log.version;
     const expires = Date.now() + 6000;
     toast(
-      value >= view.definition.target / 100 ? 'Đã đạt mục tiêu hôm nay.' : 'Đã cập nhật hôm nay.',
+      result.ticketAwarded === 1
+        ? 'Đạt mục tiêu · +1 vé quay!'
+        : value >= view.definition.target / 100
+          ? 'Đã đạt mục tiêu hôm nay.'
+          : 'Đã cập nhật hôm nay.',
       {
         label: 'Hoàn tác',
         run: async () => {
@@ -267,7 +271,12 @@ export function createHabitActions(context) {
             },
             { silent: true },
           );
-          if (undone && !runtime.refreshPending) toast('Đã hoàn tác.');
+          if (undone && !runtime.refreshPending)
+            toast(
+              result.ticketAwarded === 1
+                ? 'Đã hoàn tác ghi nhận. Vé đã nhận được giữ lại; hoàn thành lại hôm nay không thêm vé.'
+                : 'Đã hoàn tác.',
+            );
         },
       },
     );

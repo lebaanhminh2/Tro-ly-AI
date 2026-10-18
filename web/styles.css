@@ -4910,7 +4910,7 @@ dialog.schedule-sheet-open .sheet-submit .primary {
   }
   dialog:not(.task-sheet-open):not(.schedule-sheet-open):not(.reward-sheet-open):not(
       .settings-sheet-open
-    ) {
+    ):not(.draw-sheet-open) {
     height: fit-content;
   }
   dialog .sheet-handle {
@@ -6228,4 +6228,150 @@ dialog.reward-sheet-open .checkin-calendar-content {
   .reminder-list .chevron {
     display: none;
   }
+}
+
+/* Keep the balance and draw controls visible while rewards scroll. */
+dialog.draw-sheet-open {
+  display: flex;
+  flex-direction: column;
+  height: min(88dvh, 680px);
+  max-height: 88dvh;
+  overflow: hidden;
+  padding-bottom: 0;
+}
+dialog.draw-sheet-open #sheet-content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+dialog.draw-sheet-open .sheet-handle,
+dialog.draw-sheet-open .sheet-title-row,
+dialog.draw-sheet-open #sheet-feedback {
+  flex: 0 0 auto;
+}
+dialog.draw-sheet-open .sheet-title-row {
+  position: static;
+  margin-bottom: 12px;
+}
+.draw-balance {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex: 0 0 auto;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+}
+.draw-balance strong {
+  font-size: 28px;
+  font-variant-numeric: tabular-nums;
+}
+.draw-hint {
+  flex: 0 0 auto;
+  margin: 10px 0;
+  font-size: 12px;
+}
+.draw-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px 3px 16px;
+}
+.draw-result.mystery-card {
+  display: block;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.45;
+  letter-spacing: 0;
+  color: var(--text);
+  background: var(--soft);
+  min-height: 180px;
+  padding: 20px 14px;
+}
+.draw-result h3 {
+  margin: 8px 0 12px;
+  font-size: 18px;
+}
+.draw-result .hint {
+  font-size: 12px;
+}
+.draw-seal {
+  display: block;
+  font-size: 40px;
+  color: var(--accent);
+}
+.draw-rewards {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+.draw-rewards li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  overflow-wrap: anywhere;
+}
+.draw-rewards .draw-qi {
+  font-weight: 700;
+}
+.draw-rewards li > span {
+  min-width: 0;
+}
+.draw-rewards li > strong {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.draw-probabilities {
+  margin-top: 14px;
+  font-size: 13px;
+}
+.draw-probabilities summary {
+  min-height: 44px;
+  cursor: pointer;
+  padding: 12px 0;
+}
+.draw-odds-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+}
+.draw-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  flex: 0 0 auto;
+  padding: 14px 0 max(16px, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+.draw-actions button {
+  min-height: 48px;
+  padding: 10px 8px;
+  font-size: 13px;
+  touch-action: manipulation;
+}
+.draw-actions .secondary {
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.habit-ticket-hint {
+  margin: 0 0 14px;
+  font-size: 12px;
 }

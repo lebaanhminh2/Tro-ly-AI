@@ -37,10 +37,13 @@ export async function readHabits({ env, owner, now }: MiniAppContext, url: URL):
   });
 }
 export async function handleHabits(
-  { env, owner, now }: MiniAppContext,
+  { env, owner, now, healthy }: MiniAppContext,
   input: MiniAppInput,
 ): Promise<Response> {
   const { id, ...command } = input;
   const result = await new HabitService(new D1HabitStore(env.DB)).execute(owner, id, command, now);
-  return json(result);
+  return json({
+    ...result,
+    ...(command.operation === 'log' ? { account: await healthy.read(owner) } : {}),
+  });
 }

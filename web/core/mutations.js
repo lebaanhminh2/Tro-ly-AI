@@ -13,10 +13,22 @@ export function createMutations({
 }) {
   async function performLive(path, input, options = {}) {
     if (runtime.saving) return null;
+    if (runtime.pendingDraw?.revision !== runtime.revision) runtime.pendingDraw = null;
+    if (
+      runtime.pendingDraw &&
+      (path !== 'cultivation' ||
+        input.operation !== 'draw' ||
+        (input.count ?? 1) !== runtime.pendingDraw.count)
+    ) {
+      toast('Còn một lượt quay chưa xác nhận. Mở Quay thưởng và kiểm tra lại lượt đó trước nhé.');
+      return null;
+    }
     runtime.saving = true;
     runtime.revision++;
     const writeRevision = runtime.revision;
     const featureWrite = path === 'habits';
+    const drawWrite = path === 'cultivation' && input.operation === 'draw';
+    let drawAttempt;
     if (featureWrite) {
       state.featureSaving = { path, habitId: input.habitId ?? null };
       if (!sheet.open) render();
@@ -58,6 +70,13 @@ export function createMutations({
         includeHabits: path === 'habits' || state.tab === 'habits',
         scope: featureWrite ? path : 'all',
       };
+      if (drawWrite) {
+        drawAttempt = runtime.pendingDraw ?? {
+          count: input.count ?? 1,
+          revision: runtime.revision,
+        };
+        runtime.pendingDraw = drawAttempt;
+      }
       let data;
       if (options.effect) {
         const request = liveMutation(path, input, refreshOptions);
@@ -71,7 +90,9 @@ export function createMutations({
           throw error;
         }
       } else data = await liveMutation(path, input, refreshOptions);
-      if (featureWrite && writeRevision !== runtime.revision) return null;
+      if ((featureWrite || path === 'cultivation') && writeRevision !== runtime.revision)
+        return null;
+      if (drawWrite && runtime.pendingDraw === drawAttempt) runtime.pendingDraw = null;
       const result = data.result?.result ?? data.result;
       if (data.refreshError) {
         if (featureWrite) state.baseDirty = true;
@@ -96,6 +117,9 @@ export function createMutations({
         return result;
       }
       applySnapshot(state, data);
+      if (featureWrite && data.result?.account) {
+        state.cultivation = mapAccount(data.result.account, state.day?.day);
+      }
       if (
         !options.keepSheet &&
         (!featureWrite || sheet.querySelector('#sheet-content')?.firstElementChild === editor)
@@ -115,7 +139,14 @@ export function createMutations({
         );
       return result;
     } catch (error) {
-      if (featureWrite && writeRevision !== runtime.revision) return null;
+      if ((featureWrite || path === 'cultivation') && writeRevision !== runtime.revision)
+        return null;
+      if (
+        drawAttempt &&
+        !['NETWORK_UNCONFIRMED', 'OPERATION_NOT_CONFIRMED'].includes(error.code) &&
+        runtime.pendingDraw === drawAttempt
+      )
+        runtime.pendingDraw = null;
       options.onError?.(error);
       if (error.code === 'AUTH_REQUIRED' && !globalThis.Telegram?.WebApp?.initData) {
         showBrowserLogin();
@@ -135,6 +166,10 @@ export function createMutations({
       runtime.saving = false;
       state.featureSaving = null;
       runtime.revision++;
+      if (runtime.pendingDraw === drawAttempt && drawAttempt) {
+        if (authChanged) runtime.pendingDraw = null;
+        else drawAttempt.revision = runtime.revision;
+      }
       controls.forEach(({ button, disabled }) => {
         if (button.isConnected) button.disabled = disabled;
       });

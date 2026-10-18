@@ -59,6 +59,7 @@ export type HabitSaved = {
   day: number;
   version: number;
   effectiveFrom?: number;
+  ticketAwarded?: 0 | 1;
 };
 export type HabitHistoryRow = {
   habitId: string;
