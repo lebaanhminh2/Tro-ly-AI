@@ -150,6 +150,10 @@ export function createBeastActions(context) {
     runtime.saving = true;
     const revision = ++runtime.revision;
     state.beastBusy = true;
+    const sheetControls = [
+      ...sheetContent.querySelectorAll('button:not([data-sheet-close]), input'),
+    ].map((control) => ({ control, disabled: control.disabled }));
+    for (const { control } of sheetControls) control.disabled = true;
     render();
     let result = null;
     try {
@@ -172,6 +176,8 @@ export function createBeastActions(context) {
       const unchanged = revision === runtime.revision;
       runtime.saving = false;
       state.beastBusy = false;
+      for (const { control, disabled } of sheetControls)
+        if (control.isConnected) control.disabled = disabled || !!runtime.pendingBeast;
       runtime.revision++;
       render();
       if (unchanged && !runtime.pendingBeast) {
@@ -784,29 +790,36 @@ export function createBeastActions(context) {
     else timer = setTimeout(finish, 1800);
   }
   function openBeastAlchemy() {
-    openSheet('Lò đan · Tịnh Linh Đan');
+    openSheet('Lò đan');
+    context.sheet.classList.add('beast-sheet-open');
     const isCurrent = currentSheet();
     const alchemy = state.beastData?.account.state.alchemy;
     if (!alchemy) return;
-    const art = furnaceArt(alchemy.days === 30 ? 'ready' : 'idle');
-    sheetContent.append(
-      art,
-      el('h3', alchemy.days === 30 ? 'Linh khí đã viên mãn' : 'Ủ linh khí qua từng ngày'),
-      el('p', `${alchemy.days}/30 ngày · Kho đan: ${alchemy.inventory}`, 'beast-alchemy-count'),
-      el(
-        'p',
-        'Ngày đủ habit tích một ngày. Ngày nghỉ tạm dừng; ngày thiếu đứt chuỗi. Đủ 30 giữ sẵn đến khi luyện.',
-        'hint',
-      ),
-      el(
-        'p',
-        `Thành công 40%. Đã thất bại ${alchemy.failures}/2 mẻ; sau hai thất bại mẻ tiếp theo bảo đảm. Mỗi mẻ dùng trọn chuỗi đã chuẩn bị.`,
-        'hint',
-      ),
+    const ready = alchemy.days === 30,
+      guaranteed = alchemy.failures >= 2;
+    const overview = el('div', undefined, 'beast-alchemy-overview');
+    const copy = el('div');
+    copy.append(
+      el('p', 'TỊNH LINH ĐAN', 'beast-eyebrow'),
+      el('h3', ready ? 'Sẵn sàng luyện đan' : `Còn ${30 - alchemy.days} ngày đủ habit`),
+      el('p', `${alchemy.days}/30 ngày`, 'beast-alchemy-count'),
     );
+    overview.append(furnaceArt(ready ? 'ready' : 'idle'), copy);
+    const progress = el('progress', undefined, 'beast-alchemy-progress');
+    progress.max = 30;
+    progress.value = alchemy.days;
+    progress.setAttribute('aria-label', 'Tiến độ tích ngày luyện đan');
+    const chance = el(
+      'p',
+      guaranteed ? 'Mẻ tiếp theo chắc chắn thành công' : 'Tỷ lệ thành công 40%',
+      'beast-alchemy-chance',
+    );
+    if (guaranteed) chance.classList.add('is-guaranteed');
     const craft = button(
       'Luyện Tịnh Linh Đan',
       async () => {
+        if (craft.disabled) return;
+        craft.textContent = 'Đang luyện…';
         const result = await mutateBeast({ operation: 'craft' });
         if (result) {
           if (isCurrent()) showAlchemyResult(result);
@@ -816,28 +829,93 @@ export function createBeastActions(context) {
                 ? 'Tịnh Linh Đan đã thành · Đã cất vào kho.'
                 : 'Mẻ đan chưa thành · Đã giữ tiến độ bảo hiểm.',
             );
-        }
+        } else if (isCurrent()) openBeastAlchemy();
       },
-      'primary',
+      'primary beast-alchemy-craft',
     );
-    craft.disabled = alchemy.days < 30 || state.beastBusy;
-    sheetContent.append(craft, el('h3', 'Linh thú có thể luyện lại'));
+    craft.disabled = !ready || state.beastBusy || !!runtime.pendingBeast;
+    const stock = el('section', undefined, 'beast-alchemy-stock');
+    stock.append(
+      el('h3', 'Kho đan: ' + alchemy.inventory),
+      el('p', 'Dùng 1 đan để mở lại lượt luyện của một linh thú.', 'hint'),
+    );
+    const use = button('Dùng đan · Chọn linh thú', openBeastElixirPicker, 'secondary');
+    use.disabled = !alchemy.inventory || state.beastBusy || !!runtime.pendingBeast;
+    stock.append(use);
+    const rules = el('details', undefined, 'beast-alchemy-rules');
+    rules.append(
+      el('summary', 'Cách tích ngày & bảo hiểm'),
+      el(
+        'p',
+        'Mỗi ngày đủ habit tích 1 ngày. Ngày nghỉ giữ tiến độ; ngày thiếu bắt đầu lại từ 0. Đủ 30 ngày sẽ giữ đến khi luyện.',
+        'hint',
+      ),
+      el(
+        'p',
+        `Mỗi mẻ dùng trọn 30 ngày, kể cả khi thất bại. Hai mẻ thất bại liên tiếp thì mẻ thứ ba chắc chắn thành công. Đã thất bại: ${alchemy.failures}/2 mẻ.`,
+        'hint',
+      ),
+    );
+    sheetContent.append(overview, progress, chance, craft, stock, rules);
+    if (runtime.pendingBeast)
+      sheetContent.append(button('Kiểm tra kết quả trước', recoverBeast, 'primary'));
+  }
+  function openBeastElixirPicker() {
+    openSheet('Chọn linh thú luyện lại');
+    context.sheet.classList.add('beast-sheet-open');
+    const isCurrent = currentSheet();
+    const inventory = state.beastData?.account.state.alchemy.inventory ?? 0;
+    sheetContent.append(el('p', `Kho đan: ${inventory} · Mỗi lượt dùng 1 đan`, 'hint'));
+    const list = el('div', undefined, 'beast-elixir-picker');
     for (const beast of state.beastCollection?.beasts ?? [])
       if (['sealed', 'completed'].includes(beast.attempt.status)) {
-        const species = beastSpecies(state.beastData, beast.speciesId);
-        const control = button(
-          species.forms[beastProgress(state.beastData, beast).form - 1] +
-            ' · ' +
-            beastIdentity(beast) +
-            ' · Dùng 1 đan',
-          () => resetBeast(beast),
+        const p = beastProgress(state.beastData, beast);
+        const control = button('', () => resetBeast(beast), 'beast-picker-item');
+        const copy = el('span', undefined, 'beast-picker-copy');
+        copy.append(
+          el('strong', p.species.forms[p.form - 1]),
+          el(
+            'small',
+            `${beastIdentity(beast)} · ${beast.attempt.status === 'sealed' ? 'Đã khóa lượt' : 'Hoàn tất'} · ${beastPurityLabel(p)}`,
+          ),
+          el('small', 'Dùng 1 đan', 'beast-picker-role'),
         );
-        control.disabled = !alchemy.inventory;
-        sheetContent.append(control);
+        control.append(portrait(p.species, p.form, true, p.perfect, p.awakened), copy);
+        control.disabled = !inventory || state.beastBusy || !!runtime.pendingBeast;
+        list.append(control);
       }
+    sheetContent.append(list);
+    if (!list.childElementCount)
+      sheetContent.append(
+        el(
+          'p',
+          state.beastCollection?.nextCursor
+            ? 'Chưa có linh thú phù hợp trong trang này. Tải thêm để tìm tiếp.'
+            : 'Chưa có linh thú đã khóa lượt hoặc hoàn tất để luyện lại.',
+          'beast-empty-note',
+        ),
+      );
+    if (state.beastCollection?.nextCursor) {
+      const more = button(
+        'Tải thêm linh thú',
+        async () => {
+          more.disabled = true;
+          more.textContent = 'Đang tải…';
+          await loadBeasts(true);
+          if (isCurrent()) {
+            openBeastElixirPicker();
+            if (state.beastError) toast(state.beastError);
+          }
+        },
+        'secondary',
+      );
+      sheetContent.append(more);
+    }
+    sheetContent.append(button('Trở lại Lò đan', openBeastAlchemy, 'text-button'));
   }
   function showAlchemyResult(result) {
     openSheet('Linh khí đang kết tụ');
+    context.sheet.classList.add('beast-sheet-open');
     const stage = el('div', undefined, 'beast-alchemy-result');
     stage.append(furnaceArt('ready'));
     const finish = () => {
@@ -849,12 +927,14 @@ export function createBeastActions(context) {
         el(
           'p',
           result.success
-            ? 'Một cơ hội bắt đầu lại đang chờ trong kho đan.'
-            : 'Chuỗi đã dùng cho mẻ này. Tiến độ bảo hiểm được giữ cho mẻ tiếp theo.',
+            ? 'Đã thêm 1 đan vào kho. Cậu có thể chọn linh thú để luyện lại.'
+            : `Đã dùng 30 ngày. Bảo hiểm: ${state.beastData?.account.state.alchemy.failures ?? 0}/2 mẻ thất bại.`,
           'hint',
         ),
         button('Trở lại Lò đan', openBeastAlchemy, 'primary'),
       );
+      if (result.success)
+        stage.append(button('Chọn linh thú luyện lại', openBeastElixirPicker, 'secondary'));
     };
     stage.append(button('Bỏ qua hiệu ứng', finish, 'text-button'));
     sheetContent.append(stage);
@@ -966,7 +1046,7 @@ export function createBeastActions(context) {
     const p = beastProgress(state.beastData, beast);
     confirm(
       'Luyện lại ' + p.species.forms[p.form - 1] + ' · ' + beastIdentity(beast) + '?',
-      `Dùng 1 Tịnh Linh Đan. Dạng ${p.form}, ${beastPoints(beast.attempt.earned)} điểm thực và ${beastPoints(beast.attempt.gray)} tạp chất của lượt này sẽ trở về dạng I, 0 điểm, 0 tạp chất. Không tự đổi linh thú đang luyện.`,
+      `Dùng 1 Tịnh Linh Đan để trở về dạng I, xóa ${beastPoints(beast.attempt.earned)} điểm thực và ${beastPoints(beast.attempt.gray)} tạp chất. Tuyệt kỹ của cá thể này sẽ bị hủy. Không tự đổi linh thú đang luyện.`,
       async () => {
         const result = await mutateBeast({ operation: 'reset', beastId: beast.id });
         if (result) toast('Đã mở một lượt luyện mới từ dạng I.');
@@ -975,6 +1055,7 @@ export function createBeastActions(context) {
   }
   async function openBeastTower() {
     openSheet('Tháp giao ước');
+    context.sheet.classList.add('beast-sheet-open');
     const isCurrent = currentSheet(),
       loadingHint = el('p', 'Đang mở tháp…', 'hint');
     sheetContent.append(loadingHint);
@@ -983,8 +1064,9 @@ export function createBeastActions(context) {
     if (!isCurrent() || revision !== runtime.revision) return;
     loadingHint.remove();
     const data = state.beastTower;
-    if (!data) {
+    if (!data || state.towerError) {
       sheetContent.append(el('p', state.towerError ?? 'Chưa tải được lượt tháp.', 'hint'));
+      sheetContent.append(button('Thử lại', openBeastTower, 'secondary'));
       return;
     }
     const run = data.run;
@@ -993,7 +1075,9 @@ export function createBeastActions(context) {
       const step = el(
         'div',
         undefined,
-        'beast-tower-step' + ((run?.cleared ?? 0) > i ? ' is-cleared' : ''),
+        'beast-tower-step' +
+          ((run?.cleared ?? 0) > i ? ' is-cleared' : '') +
+          (run?.floor === i + 1 && run?.status === 'choosing' ? ' is-current' : ''),
       );
       step.append(el('strong', 'Tầng ' + (i + 1)), el('small', reward));
       track.append(step);
@@ -1002,13 +1086,19 @@ export function createBeastActions(context) {
     if (runtime.pendingBeast)
       sheetContent.append(button('Kiểm tra kết quả trước', recoverBeast, 'primary'));
     if (!run) {
-      sheetContent.append(
-        el(
-          'p',
-          'Một lượt miễn phí mỗi ngày. Đủ habit hôm nay và ít nhất một task công việc hoàn tất hợp lệ để bắt đầu.',
-          'hint',
-        ),
-      );
+      const eligibility = data.eligibility;
+      const requirements = el('ul', undefined, 'beast-tower-requirements');
+      for (const [met, text] of [
+        [eligibility.achieved > 0 && eligibility.missed === 0, 'Hoàn thành đủ habit hôm nay'],
+        [!!eligibility.taskId, 'Hoàn thành 1 task công việc hợp lệ hôm nay'],
+      ]) {
+        const item = el('li', (met ? '✓ ' : '○ ') + text);
+        item.dataset.met = String(met);
+        requirements.append(item);
+      }
+      sheetContent.append(el('p', 'Một lượt miễn phí mỗi ngày.', 'hint'), requirements);
+      if (eligibility.rescueAvailable)
+        sheetContent.append(el('p', 'Đã có bảo hộ: cứu 1 bẫy ở tầng 1–3.', 'beast-tower-risk'));
       const start = button(
         'Bắt đầu leo tháp',
         async () => {
@@ -1023,7 +1113,14 @@ export function createBeastActions(context) {
     }
     if (['claimed', 'expired', 'failed'].includes(run.status)) {
       sheetContent.append(
-        el('h3', run.status === 'failed' ? 'Giao ước chưa thành' : 'Quà đã vào ví'),
+        el(
+          'h3',
+          run.status === 'failed'
+            ? 'Giao ước chưa thành'
+            : run.cleared
+              ? 'Quà đã vào ví'
+              : 'Lượt tháp đã kết thúc',
+        ),
         el(
           'p',
           run.status === 'failed'
@@ -1037,9 +1134,15 @@ export function createBeastActions(context) {
     }
     sheetContent.append(
       el('h3', 'Tầng ' + run.floor),
-      el('p', 'Đang mạo hiểm: ' + beastRewardLabel(run.atRisk), 'beast-tower-risk'),
+      el(
+        'p',
+        (run.cleared ? 'Quà chưa nhận: ' : '') + beastRewardLabel(run.atRisk),
+        'beast-tower-risk',
+      ),
     );
-    if (run.rescued)
+    if (run.rescueAvailable)
+      sheetContent.append(el('p', 'Bảo hộ sẵn sàng · Cứu 1 bẫy ở tầng 1–3.', 'hint'));
+    if (run.lastResult === 'rescued')
       sheetContent.append(
         el('p', 'Phân thân đã cứu một lần. Các lá đã xáo lại; vẫn còn một bẫy.', 'hint'),
       );
@@ -1072,7 +1175,7 @@ export function createBeastActions(context) {
             const result = await mutateBeast({ operation: 'tower_claim', runVersion: run.version });
             if (result && isCurrent()) openBeastTower();
           },
-          'primary',
+          'primary beast-tower-claim',
         ),
       );
       if (run.floor < 4)
@@ -1100,10 +1203,14 @@ export function createBeastActions(context) {
                     openBeastTower();
                 },
               ),
-            'secondary',
+            'secondary beast-tower-continue',
           ),
         );
     }
+    for (const control of sheetContent.querySelectorAll(
+      '.beast-tower-claim, .beast-tower-continue',
+    ))
+      control.disabled = state.beastBusy || !!runtime.pendingBeast;
   }
   return {
     loadBeasts,

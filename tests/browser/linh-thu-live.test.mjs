@@ -275,6 +275,7 @@ test(
       await browser.wait("document.body.textContent.includes('Tịnh Linh Đan đã thành')");
       assert.equal((await beasts.read('123')).state.alchemy.inventory, 1);
       await browser.click('Trở lại Lò đan');
+      await browser.click('Dùng đan · Chọn linh thú');
       await browser.evaluate(
         "[...document.querySelectorAll('#sheet button')].find(b=>b.textContent.includes('Dùng 1 đan')).click()",
       );

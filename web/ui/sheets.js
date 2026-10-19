@@ -11,6 +11,7 @@ export function createSheets({ sheet, sheetContent, render }) {
   function resetSheetLayout() {
     sheet.classList.remove('task-sheet-open', 'schedule-sheet-open', 'reward-sheet-open');
     sheet.classList.remove('settings-sheet-open', 'draw-sheet-open');
+    sheet.classList.remove('beast-sheet-open');
     sheet.scrollTop = 0;
   }
   function closeSheet() {

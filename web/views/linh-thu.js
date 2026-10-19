@@ -420,7 +420,11 @@ export function renderBeastTowerEntry(ui, state) {
           : 'Đã chơi hôm nay · Hẹn cậu ngày kế tiếp.'
         : data?.eligibility.eligible
           ? 'Đủ điều kiện · Một lượt miễn phí đã sẵn sàng.'
-          : 'Đủ habit hôm nay + một task công việc hợp lệ.',
+          : !data
+            ? 'Mở tháp để xem điều kiện hôm nay.'
+            : !data.eligibility.taskId
+              ? 'Còn thiếu task công việc hoàn tất hợp lệ hôm nay.'
+              : 'Hoàn thành đủ habit hôm nay để mở tháp.',
       'hint',
     ),
   );

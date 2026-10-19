@@ -6,6 +6,185 @@ import { serve, chrome, browserBin, clone } from './app-harness.mjs';
 import { beastFixture } from './linh-thu-fixture.mjs';
 
 test(
+  'alchemy stays compact, explains guarantee, locks pending writes, and pages the reset picker',
+  { skip: !browserBin, timeout: 60000 },
+  async () => {
+    const control = beastFixture(),
+      original = control.beastApi;
+    Object.assign(control.beastData.account.state.alchemy, { days: 30, failures: 2, inventory: 2 });
+    const eligible = {
+      ...clone(control.beastData.selected[0]),
+      id: 'sealed_fixture',
+      attemptId: 'sealed_attempt',
+      attempt: { ...control.beastData.selected[0].attempt, status: 'sealed' },
+    };
+    let page = 0;
+    const committed = Promise.withResolvers(),
+      reply = Promise.withResolvers();
+    control.beastApi = async (request, endpoint) => {
+      if (endpoint === 'linh-thu/collection') {
+        const more = new URL(request.url, 'http://localhost').searchParams.has('cursor');
+        page++;
+        return {
+          body: {
+            beasts: more ? [eligible] : [control.beastData.selected[0]],
+            nextCursor: more ? null : 'page_two',
+          },
+        };
+      }
+      const result = await original(request, endpoint);
+      if (request.method === 'POST') {
+        committed.resolve();
+        await reply.promise;
+      }
+      return result;
+    };
+    const server = await serve(control);
+    let browser;
+    try {
+      browser = await chrome();
+      await browser.reducedMotion();
+      await browser.navigate(server.url, 390);
+      await browser.wait("!!document.querySelector('.focus-flip-card')");
+      await browser.evaluate("document.querySelector('[data-tab=beasts]').click()");
+      await browser.wait("!!document.querySelector('.beast-hero')");
+      await browser.click('Lò đan · 30/30');
+      assert.equal(
+        await browser.evaluate("document.querySelector('.beast-alchemy-chance').textContent"),
+        'Mẻ tiếp theo chắc chắn thành công',
+      );
+      assert.equal(
+        await browser.evaluate("document.querySelector('.beast-alchemy-rules').open"),
+        false,
+      );
+      for (const [width, height] of [
+        [320, 640],
+        [390, 844],
+        [1440, 900],
+      ]) {
+        await browser.resize(width, height);
+        assert.equal(
+          await browser.evaluate(
+            "document.querySelector('#sheet').scrollWidth>document.querySelector('#sheet').clientWidth",
+          ),
+          false,
+        );
+        assert.equal(
+          await browser.evaluate(
+            "document.querySelector('.beast-alchemy-craft').getBoundingClientRect().bottom>innerHeight",
+          ),
+          false,
+        );
+      }
+      await browser.click('Dùng đan · Chọn linh thú');
+      assert.equal(
+        await browser.evaluate(
+          "document.querySelectorAll('.beast-elixir-picker .beast-picker-item').length",
+        ),
+        0,
+      );
+      await browser.click('Tải thêm linh thú');
+      await browser.wait(
+        "document.querySelectorAll('.beast-elixir-picker .beast-picker-item').length===1",
+      );
+      assert.ok(page >= 2);
+      await browser.click('Trở lại Lò đan');
+      await browser.click('Luyện Tịnh Linh Đan');
+      await committed.promise;
+      assert.equal(
+        await browser.evaluate("document.querySelector('.beast-alchemy-craft').disabled"),
+        true,
+      );
+      assert.equal(
+        await browser.evaluate("document.querySelector('.beast-alchemy-craft').textContent"),
+        'Đang luyện…',
+      );
+      await browser.evaluate("document.querySelector('.beast-alchemy-craft').click()");
+      assert.equal(control.posts.length, 1);
+      reply.resolve();
+      await browser.wait("!!document.querySelector('.beast-alchemy-result')");
+      assert.equal(control.beastData.account.state.alchemy.inventory, 3);
+      await browser.click('Trở lại Lò đan');
+      assert.equal(await browser.evaluate("document.querySelector('progress').value"), 0);
+      assert.equal(
+        await browser.evaluate("document.querySelector('.beast-alchemy-craft').disabled"),
+        true,
+      );
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      reply.resolve();
+      await browser?.close();
+      await server.close();
+    }
+  },
+);
+
+test(
+  'tower shows each missing requirement and retries a failed read instead of offering stale actions',
+  { skip: !browserBin, timeout: 60000 },
+  async () => {
+    const control = beastFixture(),
+      original = control.beastApi;
+    control.beastApi = async (request, endpoint) => {
+      if (endpoint === 'linh-thu/tower')
+        return {
+          body: {
+            eligibility: {
+              day: control.habits.day.day,
+              achieved: 2,
+              missed: 0,
+              taskId: null,
+              eligible: false,
+            },
+            run: null,
+            account: control.beastData.account,
+            wallet: control.beastData.wallet,
+          },
+        };
+      return original(request, endpoint);
+    };
+    const server = await serve(control);
+    let browser;
+    try {
+      browser = await chrome();
+      await browser.navigate(server.url, 390);
+      await browser.wait("!!document.querySelector('.focus-flip-card')");
+      await browser.evaluate("document.querySelector('[data-tab=habits]').click()");
+      await browser.wait("!!document.querySelector('.beast-tower-entry')");
+      await browser.click('Vào tháp');
+      await browser.wait("!!document.querySelector('.beast-tower-requirements')");
+      assert.deepEqual(
+        await browser.evaluate(
+          "[...document.querySelectorAll('.beast-tower-requirements li')].map(node=>node.dataset.met)",
+        ),
+        ['true', 'false'],
+      );
+      assert.equal(
+        await browser.evaluate("document.querySelector('#sheet .primary').disabled"),
+        true,
+      );
+      await browser.press('Escape');
+      control.failedReads = new Set(['linh-thu/tower']);
+      await browser.click('Vào tháp');
+      await browser.wait(
+        "[...document.querySelectorAll('#sheet button')].some(button=>button.textContent==='Thử lại')",
+      );
+      assert.equal(
+        await browser.evaluate("!!document.querySelector('.beast-tower-requirements')"),
+        false,
+      );
+      control.failedReads.clear();
+      await browser.click('Thử lại');
+      await browser.wait("!!document.querySelector('.beast-tower-requirements')");
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      await browser?.close();
+      await server.close();
+    }
+  },
+);
+
+test(
   'purity artwork follows completed individuals across hero, collection and detail without leaking into previews or summons',
   { skip: !browserBin, timeout: 60000 },
   async () => {
@@ -489,7 +668,7 @@ test(
       await finishRead(browser, 'linh-thu/collection', before);
       assert.equal(
         await browser.evaluate("document.querySelector('#sheet-title').textContent"),
-        'Lò đan · Tịnh Linh Đan',
+        'Lò đan',
       );
       await browser.press('Escape');
       const reads = await browser.evaluate(
