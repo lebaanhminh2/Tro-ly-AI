@@ -1,5 +1,7 @@
 import { query } from '../../adapters/d1/database.ts';
 import { ScheduleStore } from '../../adapters/d1/schedule-store.ts';
+import { prepareBeastEffect } from '../../adapters/d1/linh-thu-effects.ts';
+import { prepareBeastDraw } from '../../adapters/d1/linh-thu-draw.ts';
 import {
   breakthrough,
   CHARMS,
@@ -28,8 +30,13 @@ export async function handleCultivation(
   if (operation === 'draw' && count !== 1 && count !== 10)
     return json({ error: 'INVALID_DRAW_COUNT' }, 400);
   // Recover a committed draw before checking settings/day or drawing again.
-  if (operation === 'draw') {
-    const saved = await healthy.receipt<Record<string, unknown>>(owner, input.id, 'draw', input);
+  if (['draw', 'fuse', 'breakthrough'].includes(String(operation))) {
+    const saved = await healthy.receipt<Record<string, unknown>>(
+      owner,
+      input.id,
+      String(operation),
+      input,
+    );
     if (saved) return json({ result: saved.result, account: await healthy.read(owner) });
   }
   if (operation === 'checkin') {
@@ -62,6 +69,35 @@ export async function handleCultivation(
     !Object.hasOwn(CHARMS, String(item))
   )
     return json({ error: 'INVALID_ITEM' }, 400);
+  const before =
+    operation === 'fuse' || operation === 'breakthrough' ? await healthy.read(owner) : null;
+  const prepared = before
+    ? operation === 'fuse'
+      ? fuseCharm(before.state, item as Charm, random())
+      : breakthrough(before.state, day, now, (item as Charm | null) ?? null, random())
+    : null;
+  const effect = prepared
+    ? await prepareBeastEffect(
+        env.DB,
+        owner,
+        {
+          kind: operation === 'fuse' ? 'fusion' : 'breakthrough',
+          sourceId: input.id,
+          day,
+          at: now,
+          qualified: operation === 'breakthrough' && !prepared.success,
+          success: prepared.success,
+          actualQiLoss: operation === 'breakthrough' ? before!.state.qi - prepared.state.qi : 0,
+          ...(operation === 'fuse' ? { fusionTier: String(item) } : {}),
+        },
+        now,
+        random,
+      )
+    : null;
+  const beastDraw =
+    operation === 'draw'
+      ? await prepareBeastDraw(env.DB, owner, input.id, day, now, count as 1 | 10, random)
+      : null;
   const result = await healthy.mutate<Record<string, unknown>>(
     owner,
     input.id,
@@ -72,6 +108,7 @@ export async function handleCultivation(
       if (state.suspended) throw Error('ACCOUNT_SUSPENDED');
       if (operation === 'draw' && state.tickets < Number(count)) throw Error('NO_TICKETS');
       if (operation === 'draw') {
+        if (beastDraw) return beastDraw(state);
         const r = drawRewards(state, count as 1 | 10, random);
         return {
           state: r.state,
@@ -79,18 +116,44 @@ export async function handleCultivation(
         };
       }
       if (operation === 'fuse') {
-        const r = fuseCharm(state, item as Charm, random());
-        return { state: r.state, result: { success: r.success } };
+        const r = prepared!;
+        return {
+          state: effect ? effect.apply(r.state) : r.state,
+          result: { success: r.success, ...(effect ? { beastEffect: effect.result } : {}) },
+          statements: [
+            query(
+              env.DB,
+              'INSERT INTO transaction_guard SELECT CASE WHEN (SELECT version FROM cultivation_accounts WHERE owner=?)=? THEN 1 ELSE 0 END',
+              owner,
+              before!.version + 1,
+            ),
+            ...(effect?.statements ?? []),
+          ],
+        };
       }
       if (operation === 'protect')
         return {
           state: useProtection(state, item as 'heart' | 'peace', day),
           result: { protected: true },
         };
-      const r = breakthrough(state, day, now, (item as Charm | null) ?? null, random());
+      const r = prepared as ReturnType<typeof breakthrough>;
       return {
-        state: r.state,
-        result: { success: r.success, chance: r.chance, penalty: r.penalty },
+        state: effect ? effect.apply(r.state) : r.state,
+        result: {
+          success: r.success,
+          chance: r.chance,
+          penalty: r.penalty,
+          ...(effect ? { beastEffect: effect.result } : {}),
+        },
+        statements: [
+          query(
+            env.DB,
+            'INSERT INTO transaction_guard SELECT CASE WHEN (SELECT version FROM cultivation_accounts WHERE owner=?)=? THEN 1 ELSE 0 END',
+            owner,
+            before!.version + 1,
+          ),
+          ...(effect?.statements ?? []),
+        ],
       };
     },
   );

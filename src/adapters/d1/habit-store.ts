@@ -868,6 +868,34 @@ export class D1HabitStore implements HabitStore {
       ).first<DayRow>())!,
     );
   }
+  // Downstream features consume committed assessments, never reimplement quota rules.
+  async assessedDay(owner: string, ordinal: number, now: number) {
+    const day = await this.historicDay(owner, ordinal);
+    if (now < day.endAt) return { ready: false as const, day };
+    const version =
+      (
+        await query(this.db, 'SELECT version FROM habit_accounts WHERE owner=?', owner).first<{
+          version: number;
+        }>()
+      )?.version ?? 0;
+    const pending = await query(
+      this.db,
+      'SELECT 1 AS found FROM habits WHERE owner=? AND created_day<=? AND next_day<=? AND (archived_from IS NULL OR next_day<archived_from) LIMIT 1',
+      owner,
+      ordinal,
+      ordinal,
+    ).first();
+    if (pending) return { ready: false as const, day };
+    const outcomes = (
+      await query(
+        this.db,
+        'SELECT habit_id,status FROM habit_outcomes WHERE owner=? AND day=? ORDER BY habit_id',
+        owner,
+        ordinal,
+      ).all<{ habit_id: string; status: 'achieved' | 'missed' | 'neutral' }>()
+    ).results;
+    return { ready: true as const, day, version, outcomes };
+  }
   // One bounded group at the oldest day. Shared reads and JSON writes avoid
   // consuming the Free invocation budget once per habit in the same day.
   async settleBatch(

@@ -403,6 +403,12 @@ async function serve(control, baseline) {
           response.end(JSON.stringify({ error: 'AUTH_REQUIRED' }));
           return;
         }
+        if (control.api) {
+          const result = await control.api(request, endpoint);
+          response.statusCode = result.status;
+          response.end(await result.text());
+          return;
+        }
         if (request.method === 'GET') await control.readGates?.get(endpoint)?.();
         if (request.method === 'GET' && control.readDelays?.[endpoint])
           await delay(control.readDelays[endpoint]);
@@ -411,7 +417,20 @@ async function serve(control, baseline) {
           response.end(JSON.stringify({ error: 'OPERATION_NOT_CONFIRMED' }));
           return;
         }
-        if (endpoint === 'bootstrap') {
+        if (endpoint.startsWith('linh-thu') && control.beastApi) {
+          const result = await control.beastApi(request, endpoint);
+          response.statusCode = result.status ?? 200;
+          response.end(JSON.stringify(result.body));
+        } else if (endpoint === 'linh-thu/tower' && request.method === 'GET') {
+          response.end(
+            JSON.stringify({
+              eligibility: { day: control.habits.day.day, eligible: false },
+              run: null,
+              account: { version: 1, state: { summonTickets: 0 } },
+              wallet: control.state.account,
+            }),
+          );
+        } else if (endpoint === 'bootstrap') {
           if (control.failBootstrap) {
             response.statusCode = 503;
             response.end(JSON.stringify({ error: 'OPERATION_NOT_CONFIRMED' }));
@@ -541,7 +560,8 @@ async function serve(control, baseline) {
         return;
       }
       let body;
-      if (baseline) {
+      if (control.staticFiles?.has(relative)) body = control.staticFiles.get(relative);
+      else if (baseline) {
         if (!cache.has(relative))
           cache.set(
             relative,
@@ -758,6 +778,13 @@ async function chrome() {
       async colorScheme(value) {
         await call('Emulation.setEmulatedMedia', {
           features: [{ name: 'prefers-color-scheme', value }],
+        });
+      },
+      async reducedMotion(enabled = true) {
+        await call('Emulation.setEmulatedMedia', {
+          features: [
+            { name: 'prefers-reduced-motion', value: enabled ? 'reduce' : 'no-preference' },
+          ],
         });
       },
       async screenshot(path) {

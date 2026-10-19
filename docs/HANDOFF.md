@@ -1,5 +1,7 @@
 # Bàn giao đợt dọn dự án
 
+> Cập nhật19/10/2026: người dùng đã duyệt bản hiện tại và cho phép phát hành staging. Linh thú gồm luyện/đồng hành, triệu hồi, lò đan,18bộ kỹ năng, tháp bốn tầng trong Habit và108ảnh runtime đã phát hành;0041 đã áp. Version `ff342cb0-4a7c-4b6b-b43c-bc3297a7a559` nhận100% lưu lượng, kiểm sau deploy đạt. [Mở staging](https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev/app/), [hồ sơ phát hành](LINH_THU_RELEASE.md), [ảnh](../output/imagegen/catalog-v3/index.html), [kiểm tra](LINH_THU_ACCEPTANCE.md) và [vận hành](LINH_THU_OPERATIONS.md). 95%/100% dùng tạm, sửa riêng sau. Phần dưới giữ lịch sử cleanup 18/10, không phải trạng thái Linh thú hiện hành.
+
 Cập nhật 18/10/2026. Phạm vi được người dùng duyệt: bỏ Tu luyện/Thần Lộ, công pháp, luyện và chiến đấu; giữ sản phẩm nền. Bản cleanup đã được deploy lên staging theo yêu cầu tiếp theo của người dùng; người dùng cũng yêu cầu commit/push lên nhánh `review/p1-p3`.
 
 ## Trạng thái

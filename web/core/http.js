@@ -1,6 +1,14 @@
 // Owns transport and retry identities, including ambiguous network failures.
 const pendingRequests = new Map();
 const inFlightReads = new Map();
+export function requestIdentity(path, input, restoredId) {
+  const key = path + JSON.stringify(input);
+  if (restoredId && !/^[a-zA-Z0-9_-]{8,100}$/.test(restoredId))
+    throw Error('Invalid request identity');
+  if (!pendingRequests.has(key))
+    pendingRequests.set(key, { ...input, id: restoredId ?? crypto.randomUUID() });
+  return pendingRequests.get(key).id;
+}
 export function settleRequest(path, input) {
   pendingRequests.delete(path + JSON.stringify(input));
 }
@@ -49,7 +57,7 @@ async function transport(path, body) {
   const key = body ? path + JSON.stringify(body) : null;
   let request = body;
   if (key) {
-    if (!pendingRequests.has(key)) pendingRequests.set(key, { ...body, id: crypto.randomUUID() });
+    requestIdentity(path, body);
     request = pendingRequests.get(key);
   }
   let response;

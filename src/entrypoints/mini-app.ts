@@ -9,6 +9,7 @@ import { handleReminders, readReminders } from './mini-app/reminders.ts';
 import { handleSchedule } from './mini-app/schedule.ts';
 import { handleTasks } from './mini-app/tasks.ts';
 import { handleHabits, readHabits } from './mini-app/habits.ts';
+import { handleBeasts, readBeasts } from './mini-app/linh-thu.ts';
 import { logFailure } from '../adapters/observability.ts';
 const taskRoutes = new Set(['/api/tasks', '/api/tasks-delete']);
 const reminderRoutes = new Set(['/api/reminders', '/api/reminder-instance']);
@@ -28,6 +29,7 @@ const writeRoutes = new Set([
   ...scheduleRoutes,
   '/api/cultivation',
   '/api/habits',
+  '/api/linh-thu',
 ]);
 export async function miniAppApi(request: Request, env: Env, now = Date.now()): Promise<Response> {
   const receivedAt = Date.now();
@@ -73,6 +75,16 @@ export async function miniAppApi(request: Request, env: Env, now = Date.now()): 
   }
   try {
     const context = { env, owner, now, healthy: new HealthyStore(env.DB) };
+    if (
+      request.method === 'GET' &&
+      [
+        '/api/linh-thu',
+        '/api/linh-thu/collection',
+        '/api/linh-thu/receipt',
+        '/api/linh-thu/tower',
+      ].includes(url.pathname)
+    )
+      return await readBeasts(context, url);
     if (request.method === 'GET' && url.pathname === '/api/reminders')
       return await readReminders(context, url);
     if (
@@ -90,6 +102,7 @@ export async function miniAppApi(request: Request, env: Env, now = Date.now()): 
       return json({ error: 'NOT_FOUND' }, 404);
     const input = await readInput(request);
     if (input instanceof Response) return input;
+    if (url.pathname === '/api/linh-thu') return await handleBeasts(context, input);
     if (url.pathname === '/api/habits')
       return await handleHabits(
         { ...context, now: now + Math.max(0, Date.now() - receivedAt) },
@@ -108,6 +121,30 @@ export async function miniAppApi(request: Request, env: Env, now = Date.now()): 
     return await handleCultivation(context, input);
   } catch (error) {
     const code = error instanceof Error ? error.message : '';
+    const beastErrors: Record<string, string> = {
+      BEAST_CHANGED: 'Linh thú vừa có thay đổi. Tải lại để tiếp tục nhé.',
+      BEAST_DAY_CLOSED: 'Ngày này đã kết thúc. Tải lại để xem ngày hiện tại.',
+      BEAST_NO_SUMMON_TICKETS: 'Chưa đủ vé triệu hồi cho lượt này.',
+      BEAST_ALCHEMY_NOT_READY: 'Lò đan chưa tích đủ 30 ngày đạt thói quen.',
+      BEAST_NOT_FOUND: 'Không tìm thấy linh thú này trong bộ sưu tập.',
+      BEAST_PERFECT_REQUIRED: 'Luyện đầy dạng IV với độ thuần chính xác 100% để mở tuyệt kỹ.',
+      BEAST_COMPANION_REQUIRED: 'Chọn linh thú này đồng hành có hiệu lực trước khi kích hoạt.',
+      BEAST_ULTIMATE_WEEK_USED: 'Tài khoản đã dùng tuyệt kỹ tuần này. Tuần mới bắt đầu thứ Hai.',
+      BEAST_SLEEP_TARGET_PASSED: 'Kích hoạt bảo hộ trước mốc giờ ngủ và trước khi báo ngủ nhé.',
+      BEAST_CHOICE_CLOSED: 'Phần thưởng này đã được chọn hoặc không còn tồn tại.',
+      BEAST_SUMMON_CHOICE_PENDING: 'Chọn ứng viên của lần triệu hồi trước để tiếp tục nhé.',
+      BEAST_TRAINING_LOCKED: 'Lượt luyện này đã khóa. Cần Tịnh Linh Đan để luyện lại.',
+      BEAST_NO_ELIXIR: 'Cậu chưa có Tịnh Linh Đan.',
+      BEAST_RESET_NOT_AVAILABLE: 'Chỉ luyện lại khi lượt cũ đã khóa hoặc đã hoàn tất.',
+      TOWER_ALREADY_PLAYED: 'Cậu đã bắt đầu lượt tháp hôm nay. Tiếp tục lượt đã lưu nhé.',
+      TOWER_NOT_ELIGIBLE: 'Hoàn thành thói quen hôm nay và một task công việc hợp lệ để mở tháp.',
+      TOWER_NOT_STARTED: 'Cậu chưa bắt đầu lượt tháp hôm nay.',
+      TOWER_CHANGED: 'Lượt tháp đã thay đổi ở nơi khác. Tải lại để tiếp tục.',
+      TOWER_NOT_CHOOSING: 'Tầng này đã có kết quả. Kiểm tra trước khi đi tiếp nhé.',
+      TOWER_CANNOT_CONTINUE: 'Lượt này không thể đi tiếp.',
+      TOWER_CANNOT_CLAIM: 'Lượt này chưa có quà để nhận hoặc đã kết thúc.',
+    };
+    if (beastErrors[code]) return json({ error: code, message: beastErrors[code] }, 409);
     const habitErrors: Record<string, string> = {
       HABIT_CHANGED: 'Thói quen vừa thay đổi. Tải lại để tiếp tục nhé.',
       HABIT_LOG_CHANGED: 'Lần ghi này đã thay đổi ở một nơi khác. Tải lại để kiểm tra.',

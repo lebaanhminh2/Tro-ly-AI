@@ -12,6 +12,54 @@ import { HealthyStore } from '../../src/adapters/d1/healthy-store.ts';
 import { D1HabitStore } from '../../src/adapters/d1/habit-store.ts';
 import { HabitService } from '../../src/application/habit-service.ts';
 
+test('0041 preserves every pre-feature table and initializes no wallets, beasts or sample rewards', () => {
+  const db = new DatabaseSync(':memory:');
+  try {
+    for (const file of readdirSync('migrations')
+      .filter((file) => file.endsWith('.sql') && file < '0041')
+      .sort())
+      db.exec(readFileSync('migrations/' + file, 'utf8'));
+    db.prepare(
+      "INSERT INTO tasks(id,owner,title,created) VALUES('beast-upgrade-task','123','Existing task',1)",
+    ).run();
+    for (const owner of ['123', '456'])
+      db.prepare('INSERT INTO cultivation_accounts(owner,state_json,updated) VALUES(?,?,1)').run(
+        owner,
+        JSON.stringify({ ...initialHealthy(), tickets: 37, qi: 91 }),
+      );
+    db.prepare(
+      "INSERT INTO cultivation_receipts(owner,request_id,operation,request_json,result_json,created) VALUES('123','old_receipt','draw','{}','{}',1)",
+    ).run();
+    db.prepare(
+      "INSERT INTO sleep_assessments(owner,day,target,result,qi_delta,demoted,assessed_at) VALUES('123',20744,1,'unreported',-5,0,1)",
+    ).run();
+    const before = tableProofs(db);
+    db.exec(readFileSync('migrations/0041_linh_thu.sql', 'utf8'));
+    const names = new Set(before.map((table) => table.table));
+    assert.deepEqual(
+      tableProofs(db).filter((table) => names.has(table.table)),
+      before,
+    );
+    for (const table of [
+      'beast_accounts',
+      'beasts',
+      'beast_attempts',
+      'beast_roles',
+      'beast_day_settlements',
+      'beast_skill_events',
+      'beast_ultimates',
+      'beast_tower_runs',
+      'beast_choices',
+    ]) {
+      assert.equal(db.prepare('SELECT COUNT(*) AS n FROM ' + table).get()!.n, 0, table);
+    }
+    assert.deepEqual(db.prepare('PRAGMA foreign_key_check').all(), []);
+    assert.equal(db.prepare('PRAGMA integrity_check').get()!.integrity_check, 'ok');
+  } finally {
+    db.close();
+  }
+});
+
 test('pre-habit SQL backup restores, keeps legacy data and supports production habit flows without dispatch or overwriting a DB', async () => {
   const directory = mkdtempSync(join(tmpdir(), 'assistant-upgrade-'));
   const backup = join(directory, 'backup.sql'),

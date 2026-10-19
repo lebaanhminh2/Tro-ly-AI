@@ -6,6 +6,7 @@ import {
   type SleepAssessment,
   type HealthyState,
 } from '../../domain/healthy.ts';
+import { prepareBeastSleepEffect } from './linh-thu-effects.ts';
 
 type Account = { state_json: string; version: number };
 // Every write has an immutable request receipt. Random samples must be supplied
@@ -116,11 +117,26 @@ export class HealthyStore {
     }
     return outcome.result;
   }
-  prepareSleep(owner: string, state: HealthyState, input: SleepAssessment) {
-    const outcome = assessSleep(state, input);
+  prepareSleep(
+    owner: string,
+    state: HealthyState,
+    input: SleepAssessment,
+    effect?: Awaited<ReturnType<typeof prepareBeastSleepEffect>>,
+  ) {
+    const guarded = effect
+      ? {
+          ...state,
+          ...(effect.protectStreak ? { heartDay: input.day } : {}),
+          ...(effect.protectQi ? { peaceDay: input.day } : {}),
+        }
+      : state;
+    const outcome = assessSleep(guarded, input);
+    const baseState = outcome.state;
+    const next = outcome.applied && effect ? effect.apply(baseState) : baseState;
     const result = { applied: outcome.applied, delta: outcome.delta, demoted: outcome.demoted };
     return {
-      state: outcome.state,
+      state: next,
+      baseState,
       result,
       statements: outcome.applied
         ? [
@@ -136,18 +152,39 @@ export class HealthyStore {
               Number(outcome.demoted),
               input.assessedAt,
             ),
+            ...(effect?.statements ?? []),
           ]
         : [],
     };
   }
   async score(owner: string, input: SleepAssessment) {
+    const before = await this.read(owner);
+    const effect = await prepareBeastSleepEffect(
+      this.db,
+      owner,
+      before.state,
+      input,
+      () => crypto.getRandomValues(new Uint32Array(1))[0]! / 4294967296,
+    );
     return this.mutate(
       owner,
       'sleep:' + input.day,
       'sleep',
       { day: input.day },
       input.assessedAt,
-      (state) => this.prepareSleep(owner, state, input),
+      (state) => {
+        const scored = this.prepareSleep(owner, state, input, effect);
+        if (effect)
+          scored.statements.push(
+            query(
+              this.db,
+              'INSERT INTO transaction_guard SELECT CASE WHEN (SELECT version FROM cultivation_accounts WHERE owner=?)=? THEN 1 ELSE 0 END',
+              owner,
+              before.version + 1,
+            ),
+          );
+        return scored;
+      },
     );
   }
   async checkIn(owner: string, id: string, input: unknown, now: number) {

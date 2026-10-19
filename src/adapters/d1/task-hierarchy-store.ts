@@ -2,6 +2,7 @@ import type { Task } from '../../domain/work.ts';
 import type { Database, Statement } from './database.ts';
 import { query } from './database.ts';
 import { HealthyStore } from './healthy-store.ts';
+import { prepareBeastTaskEffect } from './linh-thu-effects.ts';
 import {
   archiveCompleted as archiveCompletedHistory,
   historyPage as readHistoryPage,
@@ -342,6 +343,16 @@ export class TaskHierarchyStore {
         ).results
       : [];
     const id = crypto.randomUUID();
+    const beastEffect =
+      operation === 'complete' && input.complete && !existingAward && task
+        ? await prepareBeastTaskEffect(
+            this.db,
+            owner,
+            task.id,
+            now,
+            () => crypto.getRandomValues(new Uint32Array(1))[0]! / 4294967296,
+          )
+        : null;
     return new HealthyStore(this.db, defer).mutate<Record<string, unknown>>(
       owner,
       requestId,
@@ -479,9 +490,15 @@ export class TaskHierarchyStore {
                 ),
               );
               return {
-                state: { ...state, tickets: state.tickets + 1 },
-                result: { id: task.id, ticket: 1 },
-                statements,
+                state: beastEffect
+                  ? beastEffect.apply({ ...state, tickets: state.tickets + 1 })
+                  : { ...state, tickets: state.tickets + 1 },
+                result: {
+                  id: task.id,
+                  ticket: 1,
+                  ...(beastEffect ? { beastEffect: beastEffect.result } : {}),
+                },
+                statements: [...statements, ...(beastEffect?.statements ?? [])],
               };
             }
           }

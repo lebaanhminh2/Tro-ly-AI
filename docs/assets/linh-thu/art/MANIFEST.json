@@ -1,0 +1,1086 @@
+{
+  "schemaVersion": 1,
+  "artVersion": 3,
+  "entries": [
+    {
+      "speciesId": "pyropup",
+      "form": 1,
+      "variant": "normal",
+      "source": "v3/pyropup/t1-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "﻿Use case: precise-object-edit. Asset: Pyropup UR T1. Keep exactly ONE head, a pudgy seated dark blue-black puppy with huge round curious eyes, cream cheeks and fluffy cream chest, short legs and small cream toe tips, red-orange ears and a small orange-red tail tip. Keep its playful little open mouth and pink tongue. It has no collar, no adult flame mantle, no extra heads and no adult fangs. Keep the same small rounded friendly puppy, with confident clean original linework.\n\nImage 1 is the EXACT evolution-stage identity and pose reference. Image 2 is the same species' refined T4 sprite and is ONLY a guide to crisp thick outlines, simple shading and clean large color blocks. Preserve Image 1's anatomy, head count, proportions, silhouette, expression, palette, existing markings and accessories. Do not transfer adult anatomy, extra heads, accessories or a later-stage crystal or flame mane from Image 2 onto this younger stage.\nStyle: expressive flat 2D cartoon game sprite, original bold dark colored outlines, a few large intentional flat shadow shapes. Clean the existing contours and clarify overlaps at higher resolution. Keep the source's compact chibi shape language and roughly the same visual complexity. Avoid realistic fur, detailed texture, many facets, fine cracks, extra spikes, painterly gradients, glossy 3D lighting, rim lights, particles, rings and scenery. No realistic wolf or realistic dinosaur anatomy.\nOne complete creature, matching source three-quarter right-facing pose, full ears, tail, paws and any existing flames or crystals visible. Transparent background, no source ground shadow, no text, watermark or UI, at least 8 percent clear margin.\r\n",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "pyropup",
+      "form": 2,
+      "variant": "normal",
+      "source": "v3/pyropup/t2-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "﻿Use case: precise-object-edit. Asset: Pyrohound UR T2. Keep exactly TWO heads on one stocky short-legged body, with two clearly separated faces and necks. Preserve the original different expressions: the foremost head slightly proud, the side head reacting outward. Keep dark pointed ears, cream muzzles and chests, red-orange flame scarf and flame-tipped tail, dark blue-black body, cream toe tips. No third head, no T4 collar or studded armor. Preserve the original compact stance and the stage-specific small fire mantle.\n\nImage 1 is the EXACT evolution-stage identity and pose reference. Image 2 is the same species' refined T4 sprite and is ONLY a guide to crisp thick outlines, simple shading and clean large color blocks. Preserve Image 1's anatomy, head count, proportions, silhouette, expression, palette, existing markings and accessories. Do not transfer adult anatomy, extra heads, accessories or a later-stage crystal or flame mane from Image 2 onto this younger stage.\nStyle: expressive flat 2D cartoon game sprite, original bold dark colored outlines, a few large intentional flat shadow shapes. Clean the existing contours and clarify overlaps at higher resolution. Keep the source's compact chibi shape language and roughly the same visual complexity. Avoid realistic fur, detailed texture, many facets, fine cracks, extra spikes, painterly gradients, glossy 3D lighting, rim lights, particles, rings and scenery. No realistic wolf or realistic dinosaur anatomy.\nOne complete creature, matching source three-quarter right-facing pose, full ears, tail, paws and any existing flames or crystals visible. Transparent background, no source ground shadow, no text, watermark or UI, at least 8 percent clear margin.\r\n",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "pyropup",
+      "form": 3,
+      "variant": "normal",
+      "source": "v3/pyropup/t3-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "﻿Use case: precise-object-edit. Asset: Hellhound UR T3. Keep exactly THREE heads with the original central proud face, left panting tongue and right barking jaw. One compact dark puppy-like body, short legs and cream toe tips, cream muzzles and chest, larger red-orange-yellow flame mantle. Keep the original stage-specific head layout and flames; it does not yet have the T4 large purple studded collar or fiery leg cuffs. Clarify separation of the three heads without spreading the body or adding anatomy.\n\nImage 1 is the EXACT evolution-stage identity and pose reference. Image 2 is the same species' refined T4 sprite and is ONLY a guide to crisp thick outlines, simple shading and clean large color blocks. Preserve Image 1's anatomy, head count, proportions, silhouette, expression, palette, existing markings and accessories. Do not transfer adult anatomy, extra heads, accessories or a later-stage crystal or flame mane from Image 2 onto this younger stage.\nStyle: expressive flat 2D cartoon game sprite, original bold dark colored outlines, a few large intentional flat shadow shapes. Clean the existing contours and clarify overlaps at higher resolution. Keep the source's compact chibi shape language and roughly the same visual complexity. Avoid realistic fur, detailed texture, many facets, fine cracks, extra spikes, painterly gradients, glossy 3D lighting, rim lights, particles, rings and scenery. No realistic wolf or realistic dinosaur anatomy.\nOne complete creature, matching source three-quarter right-facing pose, full ears, tail, paws and any existing flames or crystals visible. Transparent background, no source ground shadow, no text, watermark or UI, at least 8 percent clear margin.\r\n",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "pyropup",
+      "form": 4,
+      "variant": "normal",
+      "source": "v3/pyropup/t4-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "﻿Use case: precise-object-edit\nAsset: Pyrodaemon UR T4 game creature sprite, conservative refinement.\nImage 1 is the exact identity, anatomy, pose, palette and drawing-style edit target. Preserve its compact chibi three-headed fire hound: one large central head looking slightly upward with assured expression, smaller left head with tongue showing, smaller right head barking with open jaw. Keep exactly THREE heads on one stocky short-legged four-legged body. Keep head placement and characterful different expressions; each face must remain readable and distinct. Preserve pointed dark ears, cream muzzles and chests, dark blue-black body, the one broad dark purple collar with a few large pale studs, short stout paws with fire-red cuffs, curved fire-tipped tail, and red/orange/yellow flame mantle sweeping behind the heads.\nRetain the original's bold dark colored cartoon outline, expressive simple face shapes, big deliberate flat color blocks and only a few cel-shaded shadow shapes. Clean up soft source edges at higher resolution and clarify overlaps between the three heads, necks and front paws. Keep the same squat proportions and pose; make existing planted paws and confident central gaze read clearly. Its UR authority comes from a strong unified silhouette, THREE contrasting expressions and broad clean flames, not extra detail.\nDo not turn it into a realistic Cerberus or an adult wolf. No long legs, enlarged realistic muscles, new horns, extra heads, additional collars, intricate armor, realistic fur, strands, textures, metallic shine, gradient shading, glossy 3D lighting, particles, scattered flame fragments, floating rings or scenery. Keep approximately the same visual complexity as the original.\nFull creature, entire three heads, paws, flames and tail visible. Centered, three-quarter right-facing view matching source, generous 8 percent clear margin. Transparent background, remove the source ground shadow, no text or watermark. One sprite only.\r\n",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "rubblet",
+      "form": 1,
+      "variant": "normal",
+      "source": "v3/rubblet/t1-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "﻿Use case: precise-object-edit. Asset: Rubblet UR T1. Keep the tiny squat brown baby stone dinosaur with a very large rounded head, enormous blue-violet curious eye with cyan iris, rounded snout, ivory belly, stubby legs and a thick upward-curving tail. A few small purple/cyan crystal blocks run along the back and tail; small violet toe tips. Keep the original adorable baby proportions and clean simple spots. No adult face armor, crown of crystal, claws, added back plates or energy seams.\n\nImage 1 is the EXACT evolution-stage identity and pose reference. Image 2 is the same species' refined T4 sprite and is ONLY a guide to crisp thick outlines, simple shading and clean large color blocks. Preserve Image 1's anatomy, head count, proportions, silhouette, expression, palette, existing markings and accessories. Do not transfer adult anatomy, extra heads, accessories or a later-stage crystal or flame mane from Image 2 onto this younger stage.\nStyle: expressive flat 2D cartoon game sprite, original bold dark colored outlines, a few large intentional flat shadow shapes. Clean the existing contours and clarify overlaps at higher resolution. Keep the source's compact chibi shape language and roughly the same visual complexity. Avoid realistic fur, detailed texture, many facets, fine cracks, extra spikes, painterly gradients, glossy 3D lighting, rim lights, particles, rings and scenery. No realistic wolf or realistic dinosaur anatomy.\nOne complete creature, matching source three-quarter right-facing pose, full ears, tail, paws and any existing flames or crystals visible. Transparent background, no source ground shadow, no text, watermark or UI, at least 8 percent clear margin.\r\n",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "rubblet",
+      "form": 2,
+      "variant": "normal",
+      "source": "v3/rubblet/t2-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "﻿Use case: precise-object-edit. Asset: Cobbledon UR T2. Preserve the stocky squat brown young stone dinosaur with a broader boxy snout, confident cyan eye, cream belly and chin, thick curved tail, short forelimbs and broad planted hind feet. Keep the original stage-specific few purple/cyan crystal plates along the back and crystal toe tips. Keep the raised posture of the source, not the huge adult T4 crystal fan or head armor. Clarify the smile and foot silhouettes with the same bold simple cartoon shapes.\n\nImage 1 is the EXACT evolution-stage identity and pose reference. Image 2 is the same species' refined T4 sprite and is ONLY a guide to crisp thick outlines, simple shading and clean large color blocks. Preserve Image 1's anatomy, head count, proportions, silhouette, expression, palette, existing markings and accessories. Do not transfer adult anatomy, extra heads, accessories or a later-stage crystal or flame mane from Image 2 onto this younger stage.\nStyle: expressive flat 2D cartoon game sprite, original bold dark colored outlines, a few large intentional flat shadow shapes. Clean the existing contours and clarify overlaps at higher resolution. Keep the source's compact chibi shape language and roughly the same visual complexity. Avoid realistic fur, detailed texture, many facets, fine cracks, extra spikes, painterly gradients, glossy 3D lighting, rim lights, particles, rings and scenery. No realistic wolf or realistic dinosaur anatomy.\nOne complete creature, matching source three-quarter right-facing pose, full ears, tail, paws and any existing flames or crystals visible. Transparent background, no source ground shadow, no text, watermark or UI, at least 8 percent clear margin.\r\n",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "rubblet",
+      "form": 3,
+      "variant": "normal",
+      "source": "v3/rubblet/t3-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "﻿Use case: precise-object-edit. Asset: Rockzilla UR T3. Preserve the compact upright stocky brown stone dinosaur, stern violet eye, angular low brow, strong snout, short forearms, ivory belly bands, planted hind feet and thick tail. The back bears the original zigzag fan of broad violet/cyan crystal plates, smaller and simpler than T4. Preserve the T3 head and shoulder armor, simple big brown stone plates and a few large crystal facets. Do not replace it with the T4 helmet, huge adult claw caps or more back crystals.\n\nImage 1 is the EXACT evolution-stage identity and pose reference. Image 2 is the same species' refined T4 sprite and is ONLY a guide to crisp thick outlines, simple shading and clean large color blocks. Preserve Image 1's anatomy, head count, proportions, silhouette, expression, palette, existing markings and accessories. Do not transfer adult anatomy, extra heads, accessories or a later-stage crystal or flame mane from Image 2 onto this younger stage.\nStyle: expressive flat 2D cartoon game sprite, original bold dark colored outlines, a few large intentional flat shadow shapes. Clean the existing contours and clarify overlaps at higher resolution. Keep the source's compact chibi shape language and roughly the same visual complexity. Avoid realistic fur, detailed texture, many facets, fine cracks, extra spikes, painterly gradients, glossy 3D lighting, rim lights, particles, rings and scenery. No realistic wolf or realistic dinosaur anatomy.\nOne complete creature, matching source three-quarter right-facing pose, full ears, tail, paws and any existing flames or crystals visible. Transparent background, no source ground shadow, no text, watermark or UI, at least 8 percent clear margin.\r\n",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "rubblet",
+      "form": 4,
+      "variant": "normal",
+      "source": "v3/rubblet/t4-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "﻿Use case: precise-object-edit\nAsset: Meteorax UR T4 game creature sprite, conservative refinement.\nImage 1 is the exact identity, anatomy, pose, palette and drawing-style edit target. Preserve this compact stocky upright chibi stone dinosaur: huge low broad hind feet planted apart, small raised forearms, thick brown armored body, ivory belly with broad zigzag bands, heavy brow and upward right-facing snout, one visible angular violet/cyan eye, one curved tail with lightning-like cyan/violet pattern, and the dominant large lilac/cyan crystalline plates fanning upward along its back behind the head. Preserve the source's footprint, proportions and three-quarter right-facing stance.\nFaithfully reproduce its bold dark brown/violet outline, simple hand-drawn cartoon shapes, large brown stone color blocks, pale ivory belly, and few flat shadow colors. Clean up contours, the boundary of brow and eye, the separation of small forearms from shoulder plates, and the silhouettes of the already-large hind feet. Give the existing stance a clear sense of weight without changing its compact proportions. Crystal plates keep the SAME count and broad readable outlines with only two or three large lilac/cyan flat facets each, not many tiny reflective fragments. Retain the source's clean cyan seam accents sparingly.\nIt should feel like the original game's artist has made a slightly cleaner, more assured version of the SAME sprite. No realistic dragon or kaiju, new horns, wings, gold jewelry, added armor rows, additional floating crystals, rocks, particles or orbit rings. No realistic rock textures, tiny cracks, extra facets, gradients, bloom, glossy 3D material, painterly lighting or fur. Do not replace its shape language with a detailed fantasy illustration.\nFull creature, all crystal tips, forearms, hind feet and tail visible. Centered, matching source angle, at least 8 percent clear margin. Transparent background, no ground shadow, no text or watermark. One sprite only.\r\n",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "zappur",
+      "form": 4,
+      "variant": "normal",
+      "source": "v3/zappur/t4-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "﻿Use case: precise-object-edit\nAsset: Stormlion SSR T4 game sprite, restrained art correction study.\nInput image 1 is the edit target AND the sole style reference. Preserve its exact character design, compact chibi proportions, oversized head, small short body and legs, airborne charging pose, three-quarter right-facing angle, lightning mane silhouette, round dark ears, cream muzzle, curled tail, original orange/yellow/cream palette, and thick warm dark outlines. This original has intentional graphic shape design: reproduce its flat 2D cartoon drawing language faithfully.\nMake only a subtle confidence adjustment to the brow and gaze, and clarify the overlap of the visible front paws. Keep the playful personality. Carefully clean the existing contours and large color boundaries at higher resolution while retaining their original expressive character. Keep approximately the same number of shapes and the same very limited flat shadow colors as the original. Preserve the large cream lightning shapes and simple orange markings, without extra subdivisions. The result should feel like the same artist making a small deliberate refinement of the same sprite.\nDo not lengthen the legs or body, enlarge the chest, change into a realistic adult lion, add fur strands, narrow the outline, add complex facets, gradients, rim lighting, glow, sparkle, rings, armor, props, extra spikes, or new decorations. No painterly rendering, glossy 3D volumes, or polished fantasy illustration treatment. Do not invent details in the original's flat color areas. Keep the total visual complexity extremely close to the input.\nOne complete creature, entire mane and tail visible, centered, 8 percent clear margin. Transparent background, no ground shadow, no scenery, no text or watermark.\r\n",
+      "status": "user_approved"
+    },
+    {
+      "speciesId": "zappur",
+      "form": 4,
+      "variant": "awakened",
+      "source": "v3/zappur/t4-awakened.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "﻿Use case: precise-object-edit\nAsset: Stormlion SSR T4, awakened 95 percent purity preview.\nInput image 1 is the approved normal T4 edit target and sole style reference. Preserve the exact drawing: compact chibi proportions, enormous head, small body and short legs, charging pose, right-facing angle, lightning mane shapes, ears, tail, paws, bold dark brown contour, flat orange/yellow/cream color areas. Keep the same simple two-dimensional cartoon technique and minimal cel shading.\nMake just ONE tiny change: give the visible eye a warm amber iris with one crisp small white glint, creating a subtly alert awakened gaze. Preserve the eyelid and brow shapes and their personality. Everything else remains visually the same. This is a subtle awakening of normal T4, not an alternate skin or another evolution. Do not add decorations, change mane size, change anatomy, add fur strands, fine textures, gradients, glow, realistic lighting, rings, or painterly rendering.\nOne complete creature, transparent background, no shadow, no text or watermark, leave at least 8 percent clear margin.\r\n",
+      "status": "user_approved"
+    },
+    {
+      "speciesId": "zappur",
+      "form": 4,
+      "variant": "perfect",
+      "source": "v3/zappur/t4-perfect.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "﻿Use case: precise-object-edit\nAsset: Stormlion SSR T4, perfect 100 percent purity alternate appearance study, named Platinum Thunder King.\nInput image 1 is the approved normal T4 edit target AND the sole drawing-style reference. Preserve its exact compact chibi proportions, oversized head, short legs, charging pose, three-quarter right-facing angle, cheek and muzzle shapes, round ears, tail shape, paws and bold warm dark contour. Same species and same T4 anatomy, not an extra evolution. Match the simple flat 2D cartoon linework with large intentional color blocks and just one shadow color per material.\nCreate a distinctive but restrained perfect-form alternate skin with these coordinated changes only:\n1. Recolor the small orange body and paws to deep charcoal brown / dark plum-brown fur, with a small warm amber chest area. Keep the cream muzzle and the warm cream central face recognizable. Flat color blocks, no fur texture.\n2. Preserve the mane's existing large zigzag silhouette and the SAME number of major lightning blades. Change its orange-yellow fur areas to platinum ivory with a single pale gold shadow. The existing cream lightning blades become clear pale gold with warm amber outlines. A strong simple ivory-and-gold mane against dark short body gives an immediately distinct, legible royal appearance.\n3. Replace only the existing single forehead lightning crest with one compact integrated three-pronged thunder crest, ivory edges and a flat amber core. Keep it about the same size as the original crest. The three broad branches form a clean species-specific symbol, not a crown accessory. Use an amber eye with a single crisp white glint; retain the original gaze and expression.\nKeep the mane less visually busy than the source, not more. No new small spikes, no floating halo, ring, ornaments, armor, sparkles, particle background, fur strands, gradients, reflective metal, glossy material, dramatic rim lighting, painterly rendering or realistic adult lion anatomy. This is a simple expressive cartoon sprite in the exact same artist's hand as input 1.\nOne complete creature, transparent background, no ground shadow, no text or watermark, at least 8 percent clear margin. No additional characters or before-and-after layout.\r\n",
+      "status": "user_approved"
+    },
+    {
+      "speciesId": "pyropup",
+      "form": 4,
+      "variant": "awakened",
+      "source": "v3/pyropup/t4-awakened.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Edit target: the attached normal T4 Pyrodaemon asset. Create one transparent-background full-body mobile-game sprite of exactly this same three-headed chibi fire dog. Preserve exact anatomy, body proportions, pose, size, number of heads, number of legs, original expressions (playful left, proud middle, fierce right), facial shapes, orange noses, dark navy fur and cream muzzle/chest. Match bold dark colored outlines, flat large clean color blocks, two shadow levels maximum. Preserve the original compact silhouette and dark gaps within the flame mane. This is a purity variant of T4, not a fifth evolution. No glossy rendering, gradients, armor, jewelry, floating rings, scene, text, UI, particles or watermark. Full paws, ears and tail visible, generous transparent padding.\nVariant: 95% purity, awakened. Make an extremely restrained edit: the middle head's iris becomes a clearer rich molten amber with its existing tiny white highlight; replace the central collar stud with a small flat amber-gold stud, preserving size and collar design; add just a small warm ivory highlight inside the existing golden flame behind the middle head, under 3% of total sprite area. Keep the existing crimson/orange/golden fire silhouette, all dark segmentation and palette unchanged everywhere else. At least 95% visually identical to edit target. Do not inflate the fire mane, do not recolor all flames.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "pyropup",
+      "form": 4,
+      "variant": "perfect",
+      "source": "v3/pyropup/t4-perfect.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Edit target: the attached normal T4 Pyrodaemon asset. Create one transparent-background full-body mobile-game sprite of exactly this same three-headed chibi fire dog. Preserve exact anatomy, body proportions, pose, size, number of heads, number of legs, original expressions (playful left, proud middle, fierce right), facial shapes, orange noses, dark navy fur and cream muzzle/chest. Match bold dark colored outlines, flat large clean color blocks, two shadow levels maximum. Preserve the original compact silhouette and dark gaps within the flame mane. This is a purity variant of T4, not a fifth evolution. No glossy rendering, gradients, armor, jewelry, floating rings, scene, text, UI, particles or watermark. Full paws, ears and tail visible, generous transparent padding.\nVariant: 100% purity, perfected, art direction 'sovereign triple flame'. This must feel intentionally designed and more distinguished than normal T4, while keeping the same charming compact three-headed dog. Change only the flame mane, flame accents and collar studs. Reshape the mane into THREE clear dominant, swept-back flame tongues corresponding to the three heads; the middle flame sits highest. Together they suggest a natural flame crown, not a physical crown or a huge circular fireball. Preserve substantial dark-navy clefts between tongues and limit mane area to approximately the original. Make this silhouette noticeable even at 96px. Retain saturated deep crimson on flame edges, use rich molten amber/gold inside, and introduce small sharply bounded warm ivory inner cores in the THREE main tongues (ivory under 10% of total sprite area). Keep the dark segmentation and a few dark outer flame tips to frame faces. Match paw and tail flames to this restrained crimson-gold-ivory treatment. Faces and fur stay identical to original. Eyes amber, no glow. The collar remains dark purple with a neat flat gold central three-point flame-shaped stud and two small round gold studs; no new ornament outside collar. The three sculpted flame tongues and warm ivory cores supply the distinction, never an enlarged mane or neon color swap. No blue flames.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "frostnip",
+      "form": 4,
+      "variant": "normal",
+      "source": "v3/frostnip/t4-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Frostluna, SSR rank, evolution T4 of frostnip. Keep its exact T4 identity from the input; do not borrow anatomy from other tiers. Keep its confident final-form bearing, strong silhouette, clearly readable face and stable anatomy. Strength comes from the existing strong shapes, not extra decorations.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "frostnip",
+      "form": 1,
+      "variant": "normal",
+      "source": "v3/frostnip/t1-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Frostnip, SSR rank, evolution T1 of frostnip. Keep its exact T1 identity from the input; do not borrow anatomy from other tiers. Preserve its small youthful charm.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "frostnip",
+      "form": 2,
+      "variant": "normal",
+      "source": "v3/frostnip/t2-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Frostpaw, SSR rank, evolution T2 of frostnip. Keep its exact T2 identity from the input; do not borrow anatomy from other tiers. Preserve the distinct intermediate evolution, not merely a resized final form.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "frostnip",
+      "form": 3,
+      "variant": "normal",
+      "source": "v3/frostnip/t3-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Frostique, SSR rank, evolution T3 of frostnip. Keep its exact T3 identity from the input; do not borrow anatomy from other tiers. Preserve the distinct intermediate evolution, not merely a resized final form.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "zappur",
+      "form": 1,
+      "variant": "normal",
+      "source": "v3/zappur/t1-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Zappur, SSR rank, evolution T1 of zappur. Keep its exact T1 identity from the input; do not borrow anatomy from other tiers. Preserve its small youthful charm.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "zappur",
+      "form": 2,
+      "variant": "normal",
+      "source": "v3/zappur/t2-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Electroar, SSR rank, evolution T2 of zappur. Keep its exact T2 identity from the input; do not borrow anatomy from other tiers. Preserve the distinct intermediate evolution, not merely a resized final form.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "zappur",
+      "form": 3,
+      "variant": "normal",
+      "source": "v3/zappur/t3-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Blitzmane, SSR rank, evolution T3 of zappur. Keep its exact T3 identity from the input; do not borrow anatomy from other tiers. Preserve the distinct intermediate evolution, not merely a resized final form.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "skinklet",
+      "form": 4,
+      "variant": "normal",
+      "source": "v3/skinklet/t4-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Hychroma, SSR rank, evolution T4 of skinklet. Keep its exact T4 identity from the input; do not borrow anatomy from other tiers. Keep its confident final-form bearing, strong silhouette, clearly readable face and stable anatomy. Strength comes from the existing strong shapes, not extra decorations.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "skinklet",
+      "form": 1,
+      "variant": "normal",
+      "source": "v3/skinklet/t1-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Skinklet, SSR rank, evolution T1 of skinklet. Keep its exact T1 identity from the input; do not borrow anatomy from other tiers. Preserve its small youthful charm.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "skinklet",
+      "form": 2,
+      "variant": "normal",
+      "source": "v3/skinklet/t2-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Skinkoon, SSR rank, evolution T2 of skinklet. Keep its exact T2 identity from the input; do not borrow anatomy from other tiers. Preserve the distinct intermediate evolution, not merely a resized final form.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "skinklet",
+      "form": 3,
+      "variant": "normal",
+      "source": "v3/skinklet/t3-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Ninjaguana, SSR rank, evolution T3 of skinklet. Keep its exact T3 identity from the input; do not borrow anatomy from other tiers. Preserve the distinct intermediate evolution, not merely a resized final form.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "punchimp",
+      "form": 4,
+      "variant": "normal",
+      "source": "v3/punchimp/t4-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Rockong, SSR rank, evolution T4 of punchimp. Keep its exact T4 identity from the input; do not borrow anatomy from other tiers. Keep its confident final-form bearing, strong silhouette, clearly readable face and stable anatomy. Strength comes from the existing strong shapes, not extra decorations.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "punchimp",
+      "form": 1,
+      "variant": "normal",
+      "source": "v3/punchimp/t1-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Punchimp, SSR rank, evolution T1 of punchimp. Keep its exact T1 identity from the input; do not borrow anatomy from other tiers. Preserve its small youthful charm.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "punchimp",
+      "form": 2,
+      "variant": "normal",
+      "source": "v3/punchimp/t2-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Rockfu, SSR rank, evolution T2 of punchimp. Keep its exact T2 identity from the input; do not borrow anatomy from other tiers. Preserve the distinct intermediate evolution, not merely a resized final form.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "punchimp",
+      "form": 3,
+      "variant": "normal",
+      "source": "v3/punchimp/t3-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Rockwu, SSR rank, evolution T3 of punchimp. Keep its exact T3 identity from the input; do not borrow anatomy from other tiers. Preserve the distinct intermediate evolution, not merely a resized final form.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "shardsnail",
+      "form": 4,
+      "variant": "normal",
+      "source": "v3/shardsnail/t4-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Crystalsnail, SR rank, evolution T4 of shardsnail. Keep its exact T4 identity from the input; do not borrow anatomy from other tiers. Keep its confident final-form bearing, strong silhouette, clearly readable face and stable anatomy. Strength comes from the existing strong shapes, not extra decorations.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "shardsnail",
+      "form": 1,
+      "variant": "normal",
+      "source": "v3/shardsnail/t1-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Shardsnail, SR rank, evolution T1 of shardsnail. Keep its exact T1 identity from the input; do not borrow anatomy from other tiers. Preserve its small youthful charm.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "shardsnail",
+      "form": 2,
+      "variant": "normal",
+      "source": "v3/shardsnail/t2-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Gemsnail, SR rank, evolution T2 of shardsnail. Keep its exact T2 identity from the input; do not borrow anatomy from other tiers. Preserve the distinct intermediate evolution, not merely a resized final form.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "shardsnail",
+      "form": 3,
+      "variant": "normal",
+      "source": "v3/shardsnail/t3-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Jewelsnail, SR rank, evolution T3 of shardsnail. Keep its exact T3 identity from the input; do not borrow anatomy from other tiers. Preserve the distinct intermediate evolution, not merely a resized final form.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "flameow",
+      "form": 4,
+      "variant": "normal",
+      "source": "v3/flameow/t4-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Cinderclaw, SR rank, evolution T4 of flameow. Keep its exact T4 identity from the input; do not borrow anatomy from other tiers. Keep its confident final-form bearing, strong silhouette, clearly readable face and stable anatomy. Strength comes from the existing strong shapes, not extra decorations.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "flameow",
+      "form": 1,
+      "variant": "normal",
+      "source": "v3/flameow/t1-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Flameow, SR rank, evolution T1 of flameow. Keep its exact T1 identity from the input; do not borrow anatomy from other tiers. Preserve its small youthful charm.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "flameow",
+      "form": 2,
+      "variant": "normal",
+      "source": "v3/flameow/t2-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Nekoflare, SR rank, evolution T2 of flameow. Keep its exact T2 identity from the input; do not borrow anatomy from other tiers. Preserve the distinct intermediate evolution, not merely a resized final form.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "flameow",
+      "form": 3,
+      "variant": "normal",
+      "source": "v3/flameow/t3-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Silversear, SR rank, evolution T3 of flameow. Keep its exact T3 identity from the input; do not borrow anatomy from other tiers. Preserve the distinct intermediate evolution, not merely a resized final form.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "manteeny",
+      "form": 4,
+      "variant": "normal",
+      "source": "v3/manteeny/t4-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Orchitoria, SR rank, evolution T4 of manteeny. Keep its exact T4 identity from the input; do not borrow anatomy from other tiers. Keep its confident final-form bearing, strong silhouette, clearly readable face and stable anatomy. Strength comes from the existing strong shapes, not extra decorations.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "manteeny",
+      "form": 1,
+      "variant": "normal",
+      "source": "v3/manteeny/t1-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Manteeny, SR rank, evolution T1 of manteeny. Keep its exact T1 identity from the input; do not borrow anatomy from other tiers. Preserve its small youthful charm.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "manteeny",
+      "form": 2,
+      "variant": "normal",
+      "source": "v3/manteeny/t2-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Stalkerix, SR rank, evolution T2 of manteeny. Keep its exact T2 identity from the input; do not borrow anatomy from other tiers. Preserve the distinct intermediate evolution, not merely a resized final form.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "manteeny",
+      "form": 3,
+      "variant": "normal",
+      "source": "v3/manteeny/t3-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Serrabloom, SR rank, evolution T3 of manteeny. Keep its exact T3 identity from the input; do not borrow anatomy from other tiers. Preserve the distinct intermediate evolution, not merely a resized final form.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "fluffle",
+      "form": 4,
+      "variant": "normal",
+      "source": "v3/fluffle/t4-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Cosmoram, SR rank, evolution T4 of fluffle. Keep its exact T4 identity from the input; do not borrow anatomy from other tiers. Keep its confident final-form bearing, strong silhouette, clearly readable face and stable anatomy. Strength comes from the existing strong shapes, not extra decorations.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "fluffle",
+      "form": 1,
+      "variant": "normal",
+      "source": "v3/fluffle/t1-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Fluffle, SR rank, evolution T1 of fluffle. Keep its exact T1 identity from the input; do not borrow anatomy from other tiers. Preserve its small youthful charm.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "fluffle",
+      "form": 2,
+      "variant": "normal",
+      "source": "v3/fluffle/t2-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Nimbuzzy, SR rank, evolution T2 of fluffle. Keep its exact T2 identity from the input; do not borrow anatomy from other tiers. Preserve the distinct intermediate evolution, not merely a resized final form.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "fluffle",
+      "form": 3,
+      "variant": "normal",
+      "source": "v3/fluffle/t3-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Galewether, SR rank, evolution T3 of fluffle. Keep its exact T3 identity from the input; do not borrow anatomy from other tiers. Preserve the distinct intermediate evolution, not merely a resized final form.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "maskfry",
+      "form": 4,
+      "variant": "normal",
+      "source": "v3/maskfry/t4-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Dagondeep, SR rank, evolution T4 of maskfry. Keep its exact T4 identity from the input; do not borrow anatomy from other tiers. Keep its confident final-form bearing, strong silhouette, clearly readable face and stable anatomy. Strength comes from the existing strong shapes, not extra decorations.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "maskfry",
+      "form": 1,
+      "variant": "normal",
+      "source": "v3/maskfry/t1-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Maskfry, SR rank, evolution T1 of maskfry. Keep its exact T1 identity from the input; do not borrow anatomy from other tiers. Preserve its small youthful charm.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "maskfry",
+      "form": 2,
+      "variant": "normal",
+      "source": "v3/maskfry/t2-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Ospisces, SR rank, evolution T2 of maskfry. Keep its exact T2 identity from the input; do not borrow anatomy from other tiers. Preserve the distinct intermediate evolution, not merely a resized final form.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "maskfry",
+      "form": 3,
+      "variant": "normal",
+      "source": "v3/maskfry/t3-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Armorjaw, SR rank, evolution T3 of maskfry. Keep its exact T3 identity from the input; do not borrow anatomy from other tiers. Preserve the distinct intermediate evolution, not merely a resized final form.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "goonbug",
+      "form": 4,
+      "variant": "normal",
+      "source": "v3/goonbug/t4-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Beetleknight, SR rank, evolution T4 of goonbug. Keep its exact T4 identity from the input; do not borrow anatomy from other tiers. Keep its confident final-form bearing, strong silhouette, clearly readable face and stable anatomy. Strength comes from the existing strong shapes, not extra decorations.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "goonbug",
+      "form": 1,
+      "variant": "normal",
+      "source": "v3/goonbug/t1-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Goonbug, SR rank, evolution T1 of goonbug. Keep its exact T1 identity from the input; do not borrow anatomy from other tiers. Preserve its small youthful charm.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "goonbug",
+      "form": 2,
+      "variant": "normal",
+      "source": "v3/goonbug/t2-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Capobeetle, SR rank, evolution T2 of goonbug. Keep its exact T2 identity from the input; do not borrow anatomy from other tiers. Preserve the distinct intermediate evolution, not merely a resized final form.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "goonbug",
+      "form": 3,
+      "variant": "normal",
+      "source": "v3/goonbug/t3-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Donscarab, SR rank, evolution T3 of goonbug. Keep its exact T3 identity from the input; do not borrow anatomy from other tiers. Preserve the distinct intermediate evolution, not merely a resized final form.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "humbug",
+      "form": 4,
+      "variant": "normal",
+      "source": "v3/humbug/t4-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Hierotyrus, R rank, evolution T4 of humbug. Keep its exact T4 identity from the input; do not borrow anatomy from other tiers. Keep its confident final-form bearing, strong silhouette, clearly readable face and stable anatomy. Strength comes from the existing strong shapes, not extra decorations.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "humbug",
+      "form": 1,
+      "variant": "normal",
+      "source": "v3/humbug/t1-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Humbug, R rank, evolution T1 of humbug. Keep its exact T1 identity from the input; do not borrow anatomy from other tiers. Preserve its small youthful charm.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "humbug",
+      "form": 2,
+      "variant": "normal",
+      "source": "v3/humbug/t2-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Humbleetle, R rank, evolution T2 of humbug. Keep its exact T2 identity from the input; do not borrow anatomy from other tiers. Preserve the distinct intermediate evolution, not merely a resized final form.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "humbug",
+      "form": 3,
+      "variant": "normal",
+      "source": "v3/humbug/t3-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Zenscarab, R rank, evolution T3 of humbug. Keep its exact T3 identity from the input; do not borrow anatomy from other tiers. Preserve the distinct intermediate evolution, not merely a resized final form.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "hootlet",
+      "form": 4,
+      "variant": "normal",
+      "source": "v3/hootlet/t4-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Hypnostrix, R rank, evolution T4 of hootlet. Keep its exact T4 identity from the input; do not borrow anatomy from other tiers. Keep its confident final-form bearing, strong silhouette, clearly readable face and stable anatomy. Strength comes from the existing strong shapes, not extra decorations.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "hootlet",
+      "form": 1,
+      "variant": "normal",
+      "source": "v3/hootlet/t1-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Hootlet, R rank, evolution T1 of hootlet. Keep its exact T1 identity from the input; do not borrow anatomy from other tiers. Preserve its small youthful charm.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "hootlet",
+      "form": 2,
+      "variant": "normal",
+      "source": "v3/hootlet/t2-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Tikowl, R rank, evolution T2 of hootlet. Keep its exact T2 identity from the input; do not borrow anatomy from other tiers. Preserve the distinct intermediate evolution, not merely a resized final form.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "hootlet",
+      "form": 3,
+      "variant": "normal",
+      "source": "v3/hootlet/t3-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Chronerva, R rank, evolution T3 of hootlet. Keep its exact T3 identity from the input; do not borrow anatomy from other tiers. Preserve the distinct intermediate evolution, not merely a resized final form.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "gibber",
+      "form": 4,
+      "variant": "normal",
+      "source": "v3/gibber/t4-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Terraton, R rank, evolution T4 of gibber. Keep its exact T4 identity from the input; do not borrow anatomy from other tiers. Keep its confident final-form bearing, strong silhouette, clearly readable face and stable anatomy. Strength comes from the existing strong shapes, not extra decorations.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "gibber",
+      "form": 1,
+      "variant": "normal",
+      "source": "v3/gibber/t1-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Gibber, R rank, evolution T1 of gibber. Keep its exact T1 identity from the input; do not borrow anatomy from other tiers. Preserve its small youthful charm.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "gibber",
+      "form": 2,
+      "variant": "normal",
+      "source": "v3/gibber/t2-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Turtuff, R rank, evolution T2 of gibber. Keep its exact T2 identity from the input; do not borrow anatomy from other tiers. Preserve the distinct intermediate evolution, not merely a resized final form.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "gibber",
+      "form": 3,
+      "variant": "normal",
+      "source": "v3/gibber/t3-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Rockshell, R rank, evolution T3 of gibber. Keep its exact T3 identity from the input; do not borrow anatomy from other tiers. Preserve the distinct intermediate evolution, not merely a resized final form.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "voltfawn",
+      "form": 4,
+      "variant": "normal",
+      "source": "v3/voltfawn/t4-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Magnedart, R rank, evolution T4 of voltfawn. Keep its exact T4 identity from the input; do not borrow anatomy from other tiers. Keep its confident final-form bearing, strong silhouette, clearly readable face and stable anatomy. Strength comes from the existing strong shapes, not extra decorations.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "voltfawn",
+      "form": 1,
+      "variant": "normal",
+      "source": "v3/voltfawn/t1-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Voltfawn, R rank, evolution T1 of voltfawn. Keep its exact T1 identity from the input; do not borrow anatomy from other tiers. Preserve its small youthful charm.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "voltfawn",
+      "form": 2,
+      "variant": "normal",
+      "source": "v3/voltfawn/t2-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Sparkdoe, R rank, evolution T2 of voltfawn. Keep its exact T2 identity from the input; do not borrow anatomy from other tiers. Preserve the distinct intermediate evolution, not merely a resized final form.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "voltfawn",
+      "form": 3,
+      "variant": "normal",
+      "source": "v3/voltfawn/t3-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Zapantler, R rank, evolution T3 of voltfawn. Keep its exact T3 identity from the input; do not borrow anatomy from other tiers. Preserve the distinct intermediate evolution, not merely a resized final form.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "cheerling",
+      "form": 4,
+      "variant": "normal",
+      "source": "v3/cheerling/t4-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Cheerstella, R rank, evolution T4 of cheerling. Keep its exact T4 identity from the input; do not borrow anatomy from other tiers. Keep its confident final-form bearing, strong silhouette, clearly readable face and stable anatomy. Strength comes from the existing strong shapes, not extra decorations.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "cheerling",
+      "form": 1,
+      "variant": "normal",
+      "source": "v3/cheerling/t1-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Cheerling, R rank, evolution T1 of cheerling. Keep its exact T1 identity from the input; do not borrow anatomy from other tiers. Preserve its small youthful charm.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "cheerling",
+      "form": 2,
+      "variant": "normal",
+      "source": "v3/cheerling/t2-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Cheerlet, R rank, evolution T2 of cheerling. Keep its exact T2 identity from the input; do not borrow anatomy from other tiers. Preserve the distinct intermediate evolution, not merely a resized final form.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "cheerling",
+      "form": 3,
+      "variant": "normal",
+      "source": "v3/cheerling/t3-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Cheerspring, R rank, evolution T3 of cheerling. Keep its exact T3 identity from the input; do not borrow anatomy from other tiers. Preserve the distinct intermediate evolution, not merely a resized final form.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "funglet",
+      "form": 4,
+      "variant": "normal",
+      "source": "v3/funglet/t4-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Ecstamira, R rank, evolution T4 of funglet. Keep its exact T4 identity from the input; do not borrow anatomy from other tiers. Keep its confident final-form bearing, strong silhouette, clearly readable face and stable anatomy. Strength comes from the existing strong shapes, not extra decorations.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "funglet",
+      "form": 1,
+      "variant": "normal",
+      "source": "v3/funglet/t1-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Funglet, R rank, evolution T1 of funglet. Keep its exact T1 identity from the input; do not borrow anatomy from other tiers. Preserve its small youthful charm.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "funglet",
+      "form": 2,
+      "variant": "normal",
+      "source": "v3/funglet/t2-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Trippet, R rank, evolution T2 of funglet. Keep its exact T2 identity from the input; do not borrow anatomy from other tiers. Preserve the distinct intermediate evolution, not merely a resized final form.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "funglet",
+      "form": 3,
+      "variant": "normal",
+      "source": "v3/funglet/t3-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Asset: a crisp mobile-game creature sprite. Input image 1 is the edit target and sole character/style reference. Reproduce exactly the same creature, evolution form, compact chibi proportions, original pose, facing direction, expression, limb count and silhouette. Preserve the species identity and its limited original color palette. Preserve thick colored dark outlines, large flat color blocks, very few hard-edged shadows. Make only deliberate small improvements: resolve the existing overlaps of limbs and props, clarify eyes and brows without changing personality, clean contours and color boundaries at high resolution. Keep approximately the same number of shapes as the reference. The result should feel like the original artist refining this exact drawing. Do not reinterpret it into a new species or evolution. Do not inflate aura, mane, wings or body. No realistic anatomy, fur strands, busy facets, invented armor, gradients, painterly texture, glossy 3D, rim light, glow, sparks, rings, ground shadow or scenery. One full creature including ALL ears, horns, tail, feet and weapon, centered in a transparent square canvas, at least 8 percent transparent margin. No text or watermark.\nSubject: Hyphoria, R rank, evolution T3 of funglet. Keep its exact T3 identity from the input; do not borrow anatomy from other tiers. Preserve the distinct intermediate evolution, not merely a resized final form.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "rubblet",
+      "form": 4,
+      "variant": "awakened",
+      "source": "v3/rubblet/t4-awakened.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Input image 1 is the sole edit target and style reference: the new NORMAL T4 of this species. Create one transparent-background full-body purity variant, preserving species identity, original chibi proportions, pose, facial expression, visible hands/feet, tail and weapon, head-body ratio and dark colored outline weight. Match the same flat 2D cartoon design with a few large clean shapes and at most two shadow levels. This is a T4 appearance variant, not a fifth evolution. No realistic anatomy, thin outlines, glossy 3D, gradients, glare, glow, scenery, ground shadow, text, watermark or busy particles. Entire creature and all extremities inside the square with 8 percent transparent padding. The face must remain the visual focus. Subject: Meteorax, UR, T4. 95% awakened: an extremely restrained change. Keep at least 95 percent of the drawing visually unchanged. Give the existing eyes one clearer warm ivory/cool cyan highlight consistent with the species palette. Make just one existing small forehead or chest marking a slightly lighter clean ivory accent, without inventing new ornaments. Preserve all existing main colors and the exact silhouette. Do not recolor the whole creature or add a new motif.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "rubblet",
+      "form": 4,
+      "variant": "perfect",
+      "source": "v3/rubblet/t4-perfect.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Input image 1 is the sole edit target and style reference: the new NORMAL T4 of this species. Create one transparent-background full-body purity variant, preserving species identity, original chibi proportions, pose, facial expression, visible hands/feet, tail and weapon, head-body ratio and dark colored outline weight. Match the same flat 2D cartoon design with a few large clean shapes and at most two shadow levels. This is a T4 appearance variant, not a fifth evolution. No realistic anatomy, thin outlines, glossy 3D, gradients, glare, glow, scenery, ground shadow, text, watermark or busy particles. Entire creature and all extremities inside the square with 8 percent transparent padding. The face must remain the visual focus. Subject: Meteorax, UR, T4. 100% perfected: make the existing signature feature feel intentional and special through a small structural motif, rather than a global color swap. Keep brown stone body and cream belly. Sculpt the existing crystal fan into a clearer radial crown with three dominant long dark-obsidian points, restrained violet facet edges and a single pale-violet diamond core embedded in its central plate. The fan remains attached to its back, not a floating halo. Match the tail tip and claws to the violet accents. Keep the overall fan footprint and solid heavy stance. Keep the total detail density close to normal T4 and the light-colored accent areas under 20 percent of the sprite. No added standalone objects or accessories.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "frostnip",
+      "form": 4,
+      "variant": "awakened",
+      "source": "v3/frostnip/t4-awakened.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Input image 1 is the sole edit target and style reference: the new NORMAL T4 of this species. Create one transparent-background full-body purity variant, preserving species identity, original chibi proportions, pose, facial expression, visible hands/feet, tail and weapon, head-body ratio and dark colored outline weight. Match the same flat 2D cartoon design with a few large clean shapes and at most two shadow levels. This is a T4 appearance variant, not a fifth evolution. No realistic anatomy, thin outlines, glossy 3D, gradients, glare, glow, scenery, ground shadow, text, watermark or busy particles. Entire creature and all extremities inside the square with 8 percent transparent padding. The face must remain the visual focus. Subject: Frostluna, SSR, T4. 95% awakened: an extremely restrained change. Keep at least 95 percent of the drawing visually unchanged. Give the existing eyes one clearer warm ivory/cool cyan highlight consistent with the species palette. Make just one existing small forehead or chest marking a slightly lighter clean ivory accent, without inventing new ornaments. Preserve all existing main colors and the exact silhouette. Do not recolor the whole creature or add a new motif.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "frostnip",
+      "form": 4,
+      "variant": "perfect",
+      "source": "v3/frostnip/t4-perfect.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Input image 1 is the sole edit target and style reference: the new NORMAL T4 of this species. Create one transparent-background full-body purity variant, preserving species identity, original chibi proportions, pose, facial expression, visible hands/feet, tail and weapon, head-body ratio and dark colored outline weight. Match the same flat 2D cartoon design with a few large clean shapes and at most two shadow levels. This is a T4 appearance variant, not a fifth evolution. No realistic anatomy, thin outlines, glossy 3D, gradients, glare, glow, scenery, ground shadow, text, watermark or busy particles. Entire creature and all extremities inside the square with 8 percent transparent padding. The face must remain the visual focus. Subject: Frostluna, SSR, T4. 100% perfected: make the existing signature feature feel intentional and special through a small structural motif, rather than a global color swap. Keep the blue-white frost cat and its curved moon tail. Refine the existing crescent into a clean slender inner ivory crescent nested inside its ice-blue tail, with three large simple ice sections rather than many shards. Change just the three large forehead spots into a small coherent ivory moon-petal motif. Keep the face dark blue and visible. Preserve the cat sitting in its own tail crescent; no additional moon disk or floating ring. Keep the total detail density close to normal T4 and the light-colored accent areas under 20 percent of the sprite. No added standalone objects or accessories.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "skinklet",
+      "form": 4,
+      "variant": "awakened",
+      "source": "v3/skinklet/t4-awakened.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Input image 1 is the sole edit target and style reference: the new NORMAL T4 of this species. Create one transparent-background full-body purity variant, preserving species identity, original chibi proportions, pose, facial expression, visible hands/feet, tail and weapon, head-body ratio and dark colored outline weight. Match the same flat 2D cartoon design with a few large clean shapes and at most two shadow levels. This is a T4 appearance variant, not a fifth evolution. No realistic anatomy, thin outlines, glossy 3D, gradients, glare, glow, scenery, ground shadow, text, watermark or busy particles. Entire creature and all extremities inside the square with 8 percent transparent padding. The face must remain the visual focus. Subject: Hychroma, SSR, T4. 95% awakened: an extremely restrained change. Keep at least 95 percent of the drawing visually unchanged. Give the existing eyes one clearer warm ivory/cool cyan highlight consistent with the species palette. Make just one existing small forehead or chest marking a slightly lighter clean ivory accent, without inventing new ornaments. Preserve all existing main colors and the exact silhouette. Do not recolor the whole creature or add a new motif.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "skinklet",
+      "form": 4,
+      "variant": "perfect",
+      "source": "v3/skinklet/t4-perfect.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Input image 1 is the sole edit target and style reference: the new NORMAL T4 of this species. Create one transparent-background full-body purity variant, preserving species identity, original chibi proportions, pose, facial expression, visible hands/feet, tail and weapon, head-body ratio and dark colored outline weight. Match the same flat 2D cartoon design with a few large clean shapes and at most two shadow levels. This is a T4 appearance variant, not a fifth evolution. No realistic anatomy, thin outlines, glossy 3D, gradients, glare, glow, scenery, ground shadow, text, watermark or busy particles. Entire creature and all extremities inside the square with 8 percent transparent padding. The face must remain the visual focus. Subject: Hychroma, SSR, T4. 100% perfected: make the existing signature feature feel intentional and special through a small structural motif, rather than a global color swap. Keep the compact purple/cyan ninja chameleon. Refine its existing spiral tail to a clear two-color deep-violet and warm-ivory spiral with a cyan outer edge, forming one readable spiral seal. The existing cloak gains one clean ivory angular hem, not extra armor. Keep both hands, spell shapes, eye gaze and stance intact; no extra limbs or floating shuriken. Keep the total detail density close to normal T4 and the light-colored accent areas under 20 percent of the sprite. No added standalone objects or accessories.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "punchimp",
+      "form": 4,
+      "variant": "awakened",
+      "source": "v3/punchimp/t4-awakened.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Input image 1 is the sole edit target and style reference: the new NORMAL T4 of this species. Create one transparent-background full-body purity variant, preserving species identity, original chibi proportions, pose, facial expression, visible hands/feet, tail and weapon, head-body ratio and dark colored outline weight. Match the same flat 2D cartoon design with a few large clean shapes and at most two shadow levels. This is a T4 appearance variant, not a fifth evolution. No realistic anatomy, thin outlines, glossy 3D, gradients, glare, glow, scenery, ground shadow, text, watermark or busy particles. Entire creature and all extremities inside the square with 8 percent transparent padding. The face must remain the visual focus. Subject: Rockong, SSR, T4. 95% awakened: an extremely restrained change. Keep at least 95 percent of the drawing visually unchanged. Give the existing eyes one clearer warm ivory/cool cyan highlight consistent with the species palette. Make just one existing small forehead or chest marking a slightly lighter clean ivory accent, without inventing new ornaments. Preserve all existing main colors and the exact silhouette. Do not recolor the whole creature or add a new motif.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "punchimp",
+      "form": 4,
+      "variant": "perfect",
+      "source": "v3/punchimp/t4-perfect.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Input image 1 is the sole edit target and style reference: the new NORMAL T4 of this species. Create one transparent-background full-body purity variant, preserving species identity, original chibi proportions, pose, facial expression, visible hands/feet, tail and weapon, head-body ratio and dark colored outline weight. Match the same flat 2D cartoon design with a few large clean shapes and at most two shadow levels. This is a T4 appearance variant, not a fifth evolution. No realistic anatomy, thin outlines, glossy 3D, gradients, glare, glow, scenery, ground shadow, text, watermark or busy particles. Entire creature and all extremities inside the square with 8 percent transparent padding. The face must remain the visual focus. Subject: Rockong, SSR, T4. 100% perfected: make the existing signature feature feel intentional and special through a small structural motif, rather than a global color swap. Keep exactly the monkey warrior, staff, compact powerful stance and long sweeping head ribbons. Replace a few existing cream armor inlays with warm antique-gold and ivory shapes that form a coherent three-point crest on its existing headpiece. The two ends of the existing staff have a restrained matching triple-notch gold pattern. Keep brown fur dark, face light, all hands visible. No extra weapons, crown halo, new cape or giant energy disk. Keep the total detail density close to normal T4 and the light-colored accent areas under 20 percent of the sprite. No added standalone objects or accessories.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "shardsnail",
+      "form": 4,
+      "variant": "awakened",
+      "source": "v3/shardsnail/t4-awakened.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Input image 1 is the sole edit target and style reference: the new NORMAL T4 of this species. Create one transparent-background full-body purity variant, preserving species identity, original chibi proportions, pose, facial expression, visible hands/feet, tail and weapon, head-body ratio and dark colored outline weight. Match the same flat 2D cartoon design with a few large clean shapes and at most two shadow levels. This is a T4 appearance variant, not a fifth evolution. No realistic anatomy, thin outlines, glossy 3D, gradients, glare, glow, scenery, ground shadow, text, watermark or busy particles. Entire creature and all extremities inside the square with 8 percent transparent padding. The face must remain the visual focus. Subject: Crystalsnail, SR, T4. 95% awakened: an extremely restrained change. Keep at least 95 percent of the drawing visually unchanged. Give the existing eyes one clearer warm ivory/cool cyan highlight consistent with the species palette. Make just one existing small forehead or chest marking a slightly lighter clean ivory accent, without inventing new ornaments. Preserve all existing main colors and the exact silhouette. Do not recolor the whole creature or add a new motif.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "shardsnail",
+      "form": 4,
+      "variant": "perfect",
+      "source": "v3/shardsnail/t4-perfect.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Input image 1 is the sole edit target and style reference: the new NORMAL T4 of this species. Create one transparent-background full-body purity variant, preserving species identity, original chibi proportions, pose, facial expression, visible hands/feet, tail and weapon, head-body ratio and dark colored outline weight. Match the same flat 2D cartoon design with a few large clean shapes and at most two shadow levels. This is a T4 appearance variant, not a fifth evolution. No realistic anatomy, thin outlines, glossy 3D, gradients, glare, glow, scenery, ground shadow, text, watermark or busy particles. Entire creature and all extremities inside the square with 8 percent transparent padding. The face must remain the visual focus. Subject: Crystalsnail, SR, T4. 100% perfected: make the existing signature feature feel intentional and special through a small structural motif, rather than a global color swap. Keep the amber snail and its brown spiral shell. Reshape only the large crystal cluster on the existing shell so three dominant ivory-lilac crystal points frame the spiral; a small violet diamond is embedded in the spiral center. Preserve visible shell material and one clearly readable spiral, without a halo or many small crystals. Keep the total detail density close to normal T4 and the light-colored accent areas under 20 percent of the sprite. No added standalone objects or accessories.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "flameow",
+      "form": 4,
+      "variant": "awakened",
+      "source": "v3/flameow/t4-awakened.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Input image 1 is the sole edit target and style reference: the new NORMAL T4 of this species. Create one transparent-background full-body purity variant, preserving species identity, original chibi proportions, pose, facial expression, visible hands/feet, tail and weapon, head-body ratio and dark colored outline weight. Match the same flat 2D cartoon design with a few large clean shapes and at most two shadow levels. This is a T4 appearance variant, not a fifth evolution. No realistic anatomy, thin outlines, glossy 3D, gradients, glare, glow, scenery, ground shadow, text, watermark or busy particles. Entire creature and all extremities inside the square with 8 percent transparent padding. The face must remain the visual focus. Subject: Cinderclaw, SR, T4. 95% awakened: an extremely restrained change. Keep at least 95 percent of the drawing visually unchanged. Give the existing eyes one clearer warm ivory/cool cyan highlight consistent with the species palette. Make just one existing small forehead or chest marking a slightly lighter clean ivory accent, without inventing new ornaments. Preserve all existing main colors and the exact silhouette. Do not recolor the whole creature or add a new motif.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "flameow",
+      "form": 4,
+      "variant": "perfect",
+      "source": "v3/flameow/t4-perfect.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Input image 1 is the sole edit target and style reference: the new NORMAL T4 of this species. Create one transparent-background full-body purity variant, preserving species identity, original chibi proportions, pose, facial expression, visible hands/feet, tail and weapon, head-body ratio and dark colored outline weight. Match the same flat 2D cartoon design with a few large clean shapes and at most two shadow levels. This is a T4 appearance variant, not a fifth evolution. No realistic anatomy, thin outlines, glossy 3D, gradients, glare, glow, scenery, ground shadow, text, watermark or busy particles. Entire creature and all extremities inside the square with 8 percent transparent padding. The face must remain the visual focus. Subject: Cinderclaw, SR, T4. 100% perfected: make the existing signature feature feel intentional and special through a small structural motif, rather than a global color swap. Keep the dark fire cat, cream face, agile stance and original fire ribbons. Shape the existing forehead fire into a distinct three-tip compact flame crest with warm ivory cores and deep vermilion borders. Match just the main paw flame cores to ivory. Retain orange/gold fire and clear dark gaps between body and flame; no flames filling the background. Keep the total detail density close to normal T4 and the light-colored accent areas under 20 percent of the sprite. No added standalone objects or accessories.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "manteeny",
+      "form": 4,
+      "variant": "awakened",
+      "source": "v3/manteeny/t4-awakened.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Input image 1 is the sole edit target and style reference: the new NORMAL T4 of this species. Create one transparent-background full-body purity variant, preserving species identity, original chibi proportions, pose, facial expression, visible hands/feet, tail and weapon, head-body ratio and dark colored outline weight. Match the same flat 2D cartoon design with a few large clean shapes and at most two shadow levels. This is a T4 appearance variant, not a fifth evolution. No realistic anatomy, thin outlines, glossy 3D, gradients, glare, glow, scenery, ground shadow, text, watermark or busy particles. Entire creature and all extremities inside the square with 8 percent transparent padding. The face must remain the visual focus. Subject: Orchitoria, SR, T4. 95% awakened: an extremely restrained change. Keep at least 95 percent of the drawing visually unchanged. Give the existing eyes one clearer warm ivory/cool cyan highlight consistent with the species palette. Make just one existing small forehead or chest marking a slightly lighter clean ivory accent, without inventing new ornaments. Preserve all existing main colors and the exact silhouette. Do not recolor the whole creature or add a new motif.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "manteeny",
+      "form": 4,
+      "variant": "perfect",
+      "source": "v3/manteeny/t4-perfect.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Input image 1 is the sole edit target and style reference: the new NORMAL T4 of this species. Create one transparent-background full-body purity variant, preserving species identity, original chibi proportions, pose, facial expression, visible hands/feet, tail and weapon, head-body ratio and dark colored outline weight. Match the same flat 2D cartoon design with a few large clean shapes and at most two shadow levels. This is a T4 appearance variant, not a fifth evolution. No realistic anatomy, thin outlines, glossy 3D, gradients, glare, glow, scenery, ground shadow, text, watermark or busy particles. Entire creature and all extremities inside the square with 8 percent transparent padding. The face must remain the visual focus. Subject: Orchitoria, SR, T4. 100% perfected: make the existing signature feature feel intentional and special through a small structural motif, rather than a global color swap. Keep the orchid mantis, original limbs, pink flower skirt and two clearly separated scythes. Sculpt the existing petal crown as three larger ivory-pink petals with rich magenta tips; make the two scythe inner edges warm ivory, with a small pink notch matching the crown. Preserve green body and the reference stance. Do not add wings, arms or flower rings. Keep the total detail density close to normal T4 and the light-colored accent areas under 20 percent of the sprite. No added standalone objects or accessories.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "fluffle",
+      "form": 4,
+      "variant": "awakened",
+      "source": "v3/fluffle/t4-awakened.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Input image 1 is the sole edit target and style reference: the new NORMAL T4 of this species. Create one transparent-background full-body purity variant, preserving species identity, original chibi proportions, pose, facial expression, visible hands/feet, tail and weapon, head-body ratio and dark colored outline weight. Match the same flat 2D cartoon design with a few large clean shapes and at most two shadow levels. This is a T4 appearance variant, not a fifth evolution. No realistic anatomy, thin outlines, glossy 3D, gradients, glare, glow, scenery, ground shadow, text, watermark or busy particles. Entire creature and all extremities inside the square with 8 percent transparent padding. The face must remain the visual focus. Subject: Cosmoram, SR, T4. 95% awakened: an extremely restrained change. Keep at least 95 percent of the drawing visually unchanged. Give the existing eyes one clearer warm ivory/cool cyan highlight consistent with the species palette. Make just one existing small forehead or chest marking a slightly lighter clean ivory accent, without inventing new ornaments. Preserve all existing main colors and the exact silhouette. Do not recolor the whole creature or add a new motif.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "fluffle",
+      "form": 4,
+      "variant": "perfect",
+      "source": "v3/fluffle/t4-perfect.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Input image 1 is the sole edit target and style reference: the new NORMAL T4 of this species. Create one transparent-background full-body purity variant, preserving species identity, original chibi proportions, pose, facial expression, visible hands/feet, tail and weapon, head-body ratio and dark colored outline weight. Match the same flat 2D cartoon design with a few large clean shapes and at most two shadow levels. This is a T4 appearance variant, not a fifth evolution. No realistic anatomy, thin outlines, glossy 3D, gradients, glare, glow, scenery, ground shadow, text, watermark or busy particles. Entire creature and all extremities inside the square with 8 percent transparent padding. The face must remain the visual focus. Subject: Cosmoram, SR, T4. 100% perfected: make the existing signature feature feel intentional and special through a small structural motif, rather than a global color swap. Keep the floating cloud ram with coiled orange horns and white-blue clouds. Refine its existing two horns into matching ivory-and-antique-gold coils, keeping the curl shape. Within the existing forehead cloud, shape one clean small four-point ivory star surrounded by a deep blue patch. Keep clouds in a few large scallops, no galaxy texture or floating star field. Keep the total detail density close to normal T4 and the light-colored accent areas under 20 percent of the sprite. No added standalone objects or accessories.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "maskfry",
+      "form": 4,
+      "variant": "awakened",
+      "source": "v3/maskfry/t4-awakened.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Input image 1 is the sole edit target and style reference: the new NORMAL T4 of this species. Create one transparent-background full-body purity variant, preserving species identity, original chibi proportions, pose, facial expression, visible hands/feet, tail and weapon, head-body ratio and dark colored outline weight. Match the same flat 2D cartoon design with a few large clean shapes and at most two shadow levels. This is a T4 appearance variant, not a fifth evolution. No realistic anatomy, thin outlines, glossy 3D, gradients, glare, glow, scenery, ground shadow, text, watermark or busy particles. Entire creature and all extremities inside the square with 8 percent transparent padding. The face must remain the visual focus. Subject: Dagondeep, SR, T4. 95% awakened: an extremely restrained change. Keep at least 95 percent of the drawing visually unchanged. Give the existing eyes one clearer warm ivory/cool cyan highlight consistent with the species palette. Make just one existing small forehead or chest marking a slightly lighter clean ivory accent, without inventing new ornaments. Preserve all existing main colors and the exact silhouette. Do not recolor the whole creature or add a new motif.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "maskfry",
+      "form": 4,
+      "variant": "perfect",
+      "source": "v3/maskfry/t4-perfect.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Input image 1 is the sole edit target and style reference: the new NORMAL T4 of this species. Create one transparent-background full-body purity variant, preserving species identity, original chibi proportions, pose, facial expression, visible hands/feet, tail and weapon, head-body ratio and dark colored outline weight. Match the same flat 2D cartoon design with a few large clean shapes and at most two shadow levels. This is a T4 appearance variant, not a fifth evolution. No realistic anatomy, thin outlines, glossy 3D, gradients, glare, glow, scenery, ground shadow, text, watermark or busy particles. Entire creature and all extremities inside the square with 8 percent transparent padding. The face must remain the visual focus. Subject: Dagondeep, SR, T4. 100% perfected: make the existing signature feature feel intentional and special through a small structural motif, rather than a global color swap. Keep the armored deep-sea creature, pale mask and dark blue body. Shape the existing large shoulder-fin plates as a coherent three-pronged tide crest, with warm ivory inner inlays and restrained turquoise edges. Face mask remains the dominant light area. Retain the original fin count, posture and armor coverage; no extra tentacles or aura. Keep the total detail density close to normal T4 and the light-colored accent areas under 20 percent of the sprite. No added standalone objects or accessories.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "goonbug",
+      "form": 4,
+      "variant": "awakened",
+      "source": "v3/goonbug/t4-awakened.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Input image 1 is the sole edit target and style reference: the new NORMAL T4 of this species. Create one transparent-background full-body purity variant, preserving species identity, original chibi proportions, pose, facial expression, visible hands/feet, tail and weapon, head-body ratio and dark colored outline weight. Match the same flat 2D cartoon design with a few large clean shapes and at most two shadow levels. This is a T4 appearance variant, not a fifth evolution. No realistic anatomy, thin outlines, glossy 3D, gradients, glare, glow, scenery, ground shadow, text, watermark or busy particles. Entire creature and all extremities inside the square with 8 percent transparent padding. The face must remain the visual focus. Subject: Beetleknight, SR, T4. 95% awakened: an extremely restrained change. Keep at least 95 percent of the drawing visually unchanged. Give the existing eyes one clearer warm ivory/cool cyan highlight consistent with the species palette. Make just one existing small forehead or chest marking a slightly lighter clean ivory accent, without inventing new ornaments. Preserve all existing main colors and the exact silhouette. Do not recolor the whole creature or add a new motif.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "goonbug",
+      "form": 4,
+      "variant": "perfect",
+      "source": "v3/goonbug/t4-perfect.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Input image 1 is the sole edit target and style reference: the new NORMAL T4 of this species. Create one transparent-background full-body purity variant, preserving species identity, original chibi proportions, pose, facial expression, visible hands/feet, tail and weapon, head-body ratio and dark colored outline weight. Match the same flat 2D cartoon design with a few large clean shapes and at most two shadow levels. This is a T4 appearance variant, not a fifth evolution. No realistic anatomy, thin outlines, glossy 3D, gradients, glare, glow, scenery, ground shadow, text, watermark or busy particles. Entire creature and all extremities inside the square with 8 percent transparent padding. The face must remain the visual focus. Subject: Beetleknight, SR, T4. 100% perfected: make the existing signature feature feel intentional and special through a small structural motif, rather than a global color swap. Keep the beetle knight, green body, dark joints and white wing cape. Refine the existing beetle horn into a simple three-notched ivory crest with one antique-gold center accent; repeat the same shield-shaped ivory inlay only on the existing chest plate. Keep wings mostly white and limbs readable. No new shield object, sword, extra legs or halo. Keep the total detail density close to normal T4 and the light-colored accent areas under 20 percent of the sprite. No added standalone objects or accessories.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "humbug",
+      "form": 4,
+      "variant": "awakened",
+      "source": "v3/humbug/t4-awakened.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Input image 1 is the sole edit target and style reference: the new NORMAL T4 of this species. Create one transparent-background full-body purity variant, preserving species identity, original chibi proportions, pose, facial expression, visible hands/feet, tail and weapon, head-body ratio and dark colored outline weight. Match the same flat 2D cartoon design with a few large clean shapes and at most two shadow levels. This is a T4 appearance variant, not a fifth evolution. No realistic anatomy, thin outlines, glossy 3D, gradients, glare, glow, scenery, ground shadow, text, watermark or busy particles. Entire creature and all extremities inside the square with 8 percent transparent padding. The face must remain the visual focus. Subject: Hierotyrus, R, T4. 95% awakened: an extremely restrained change. Keep at least 95 percent of the drawing visually unchanged. Give the existing eyes one clearer warm ivory/cool cyan highlight consistent with the species palette. Make just one existing small forehead or chest marking a slightly lighter clean ivory accent, without inventing new ornaments. Preserve all existing main colors and the exact silhouette. Do not recolor the whole creature or add a new motif.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "humbug",
+      "form": 4,
+      "variant": "perfect",
+      "source": "v3/humbug/t4-perfect.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Input image 1 is the sole edit target and style reference: the new NORMAL T4 of this species. Create one transparent-background full-body purity variant, preserving species identity, original chibi proportions, pose, facial expression, visible hands/feet, tail and weapon, head-body ratio and dark colored outline weight. Match the same flat 2D cartoon design with a few large clean shapes and at most two shadow levels. This is a T4 appearance variant, not a fifth evolution. No realistic anatomy, thin outlines, glossy 3D, gradients, glare, glow, scenery, ground shadow, text, watermark or busy particles. Entire creature and all extremities inside the square with 8 percent transparent padding. The face must remain the visual focus. Subject: Hierotyrus, R, T4. 100% perfected: make the existing signature feature feel intentional and special through a small structural motif, rather than a global color swap. Keep the orange/gold ceremonial scarab, spiral markings, triangle and paired side disks. Shape the existing central triangle into a clean ivory-and-antique-gold triangular seal with a small open amber eye. Pair the side disks into matching two-tone ivory/gold shapes. Keep the solid orange body and original appendage count; no rings or glyphs floating outside the creature. Keep the total detail density close to normal T4 and the light-colored accent areas under 20 percent of the sprite. No added standalone objects or accessories.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "hootlet",
+      "form": 4,
+      "variant": "awakened",
+      "source": "v3/hootlet/t4-awakened.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Input image 1 is the sole edit target and style reference: the new NORMAL T4 of this species. Create one transparent-background full-body purity variant, preserving species identity, original chibi proportions, pose, facial expression, visible hands/feet, tail and weapon, head-body ratio and dark colored outline weight. Match the same flat 2D cartoon design with a few large clean shapes and at most two shadow levels. This is a T4 appearance variant, not a fifth evolution. No realistic anatomy, thin outlines, glossy 3D, gradients, glare, glow, scenery, ground shadow, text, watermark or busy particles. Entire creature and all extremities inside the square with 8 percent transparent padding. The face must remain the visual focus. Subject: Hypnostrix, R, T4. 95% awakened: an extremely restrained change. Keep at least 95 percent of the drawing visually unchanged. Give the existing eyes one clearer warm ivory/cool cyan highlight consistent with the species palette. Make just one existing small forehead or chest marking a slightly lighter clean ivory accent, without inventing new ornaments. Preserve all existing main colors and the exact silhouette. Do not recolor the whole creature or add a new motif.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "hootlet",
+      "form": 4,
+      "variant": "perfect",
+      "source": "v3/hootlet/t4-perfect.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Input image 1 is the sole edit target and style reference: the new NORMAL T4 of this species. Create one transparent-background full-body purity variant, preserving species identity, original chibi proportions, pose, facial expression, visible hands/feet, tail and weapon, head-body ratio and dark colored outline weight. Match the same flat 2D cartoon design with a few large clean shapes and at most two shadow levels. This is a T4 appearance variant, not a fifth evolution. No realistic anatomy, thin outlines, glossy 3D, gradients, glare, glow, scenery, ground shadow, text, watermark or busy particles. Entire creature and all extremities inside the square with 8 percent transparent padding. The face must remain the visual focus. Subject: Hypnostrix, R, T4. 100% perfected: make the existing signature feature feel intentional and special through a small structural motif, rather than a global color swap. Keep the owl, readable eyes, pendulum and blue/gold feather fan. Organize the existing fan into five broad midnight-blue feather wedges with warm ivory tips, forming a quiet clock-like rhythm; no extra fan layers. The existing pendulum becomes a small ivory crescent in a gold outline, preserving its chain and position. Keep face and eyes unchanged; no floating clock face. Keep the total detail density close to normal T4 and the light-colored accent areas under 20 percent of the sprite. No added standalone objects or accessories.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "gibber",
+      "form": 4,
+      "variant": "awakened",
+      "source": "v3/gibber/t4-awakened.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Input image 1 is the sole edit target and style reference: the new NORMAL T4 of this species. Create one transparent-background full-body purity variant, preserving species identity, original chibi proportions, pose, facial expression, visible hands/feet, tail and weapon, head-body ratio and dark colored outline weight. Match the same flat 2D cartoon design with a few large clean shapes and at most two shadow levels. This is a T4 appearance variant, not a fifth evolution. No realistic anatomy, thin outlines, glossy 3D, gradients, glare, glow, scenery, ground shadow, text, watermark or busy particles. Entire creature and all extremities inside the square with 8 percent transparent padding. The face must remain the visual focus. Subject: Terraton, R, T4. 95% awakened: an extremely restrained change. Keep at least 95 percent of the drawing visually unchanged. Give the existing eyes one clearer warm ivory/cool cyan highlight consistent with the species palette. Make just one existing small forehead or chest marking a slightly lighter clean ivory accent, without inventing new ornaments. Preserve all existing main colors and the exact silhouette. Do not recolor the whole creature or add a new motif.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "gibber",
+      "form": 4,
+      "variant": "perfect",
+      "source": "v3/gibber/t4-perfect.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Input image 1 is the sole edit target and style reference: the new NORMAL T4 of this species. Create one transparent-background full-body purity variant, preserving species identity, original chibi proportions, pose, facial expression, visible hands/feet, tail and weapon, head-body ratio and dark colored outline weight. Match the same flat 2D cartoon design with a few large clean shapes and at most two shadow levels. This is a T4 appearance variant, not a fifth evolution. No realistic anatomy, thin outlines, glossy 3D, gradients, glare, glow, scenery, ground shadow, text, watermark or busy particles. Entire creature and all extremities inside the square with 8 percent transparent padding. The face must remain the visual focus. Subject: Terraton, R, T4. 100% perfected: make the existing signature feature feel intentional and special through a small structural motif, rather than a global color swap. Keep the low brown stone tortoise with a stable stance. Refine just the center plates of its existing shell into a three-part dark-brown keystone framing one warm ivory ancient-stone diamond. A few existing plate seams use amber. Preserve shell silhouette, head and feet, no enormous spikes or floating boulders. Keep the total detail density close to normal T4 and the light-colored accent areas under 20 percent of the sprite. No added standalone objects or accessories.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "voltfawn",
+      "form": 4,
+      "variant": "awakened",
+      "source": "v3/voltfawn/t4-awakened.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Input image 1 is the sole edit target and style reference: the new NORMAL T4 of this species. Create one transparent-background full-body purity variant, preserving species identity, original chibi proportions, pose, facial expression, visible hands/feet, tail and weapon, head-body ratio and dark colored outline weight. Match the same flat 2D cartoon design with a few large clean shapes and at most two shadow levels. This is a T4 appearance variant, not a fifth evolution. No realistic anatomy, thin outlines, glossy 3D, gradients, glare, glow, scenery, ground shadow, text, watermark or busy particles. Entire creature and all extremities inside the square with 8 percent transparent padding. The face must remain the visual focus. Subject: Magnedart, R, T4. 95% awakened: an extremely restrained change. Keep at least 95 percent of the drawing visually unchanged. Give the existing eyes one clearer warm ivory/cool cyan highlight consistent with the species palette. Make just one existing small forehead or chest marking a slightly lighter clean ivory accent, without inventing new ornaments. Preserve all existing main colors and the exact silhouette. Do not recolor the whole creature or add a new motif.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "voltfawn",
+      "form": 4,
+      "variant": "perfect",
+      "source": "v3/voltfawn/t4-perfect.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Input image 1 is the sole edit target and style reference: the new NORMAL T4 of this species. Create one transparent-background full-body purity variant, preserving species identity, original chibi proportions, pose, facial expression, visible hands/feet, tail and weapon, head-body ratio and dark colored outline weight. Match the same flat 2D cartoon design with a few large clean shapes and at most two shadow levels. This is a T4 appearance variant, not a fifth evolution. No realistic anatomy, thin outlines, glossy 3D, gradients, glare, glow, scenery, ground shadow, text, watermark or busy particles. Entire creature and all extremities inside the square with 8 percent transparent padding. The face must remain the visual focus. Subject: Magnedart, R, T4. 100% perfected: make the existing signature feature feel intentional and special through a small structural motif, rather than a global color swap. Keep the deer and two recognizable magnet poles, one red and one blue. Refine the existing antlers so each has one paired ivory inner segment and a neat dark outline, with three clear prongs as in the original anatomy. Add one small ivory horseshoe-shaped forehead marking, contained within its existing forehead patch. Keep natural body colors. No lightning mane, rings or extra antlers. Keep the total detail density close to normal T4 and the light-colored accent areas under 20 percent of the sprite. No added standalone objects or accessories.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "cheerling",
+      "form": 4,
+      "variant": "awakened",
+      "source": "v3/cheerling/t4-awakened.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Input image 1 is the sole edit target and style reference: the new NORMAL T4 of this species. Create one transparent-background full-body purity variant, preserving species identity, original chibi proportions, pose, facial expression, visible hands/feet, tail and weapon, head-body ratio and dark colored outline weight. Match the same flat 2D cartoon design with a few large clean shapes and at most two shadow levels. This is a T4 appearance variant, not a fifth evolution. No realistic anatomy, thin outlines, glossy 3D, gradients, glare, glow, scenery, ground shadow, text, watermark or busy particles. Entire creature and all extremities inside the square with 8 percent transparent padding. The face must remain the visual focus. Subject: Cheerstella, R, T4. 95% awakened: an extremely restrained change. Keep at least 95 percent of the drawing visually unchanged. Give the existing eyes one clearer warm ivory/cool cyan highlight consistent with the species palette. Make just one existing small forehead or chest marking a slightly lighter clean ivory accent, without inventing new ornaments. Preserve all existing main colors and the exact silhouette. Do not recolor the whole creature or add a new motif.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "cheerling",
+      "form": 4,
+      "variant": "perfect",
+      "source": "v3/cheerling/t4-perfect.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Input image 1 is the sole edit target and style reference: the new NORMAL T4 of this species. Create one transparent-background full-body purity variant, preserving species identity, original chibi proportions, pose, facial expression, visible hands/feet, tail and weapon, head-body ratio and dark colored outline weight. Match the same flat 2D cartoon design with a few large clean shapes and at most two shadow levels. This is a T4 appearance variant, not a fifth evolution. No realistic anatomy, thin outlines, glossy 3D, gradients, glare, glow, scenery, ground shadow, text, watermark or busy particles. Entire creature and all extremities inside the square with 8 percent transparent padding. The face must remain the visual focus. Subject: Cheerstella, R, T4. 100% perfected: make the existing signature feature feel intentional and special through a small structural motif, rather than a global color swap. Keep the white/purple long-eared star rabbit and its dancing pose. Shape the existing primary star ornament into a neat gold-outlined ivory five-point star, with two smaller matching star notches inside the existing ear ribbons. Keep the purple-and-white costume simple, face and limbs unchanged. No extra ribbons, star showers, floating objects or wings. Keep the total detail density close to normal T4 and the light-colored accent areas under 20 percent of the sprite. No added standalone objects or accessories.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "funglet",
+      "form": 4,
+      "variant": "awakened",
+      "source": "v3/funglet/t4-awakened.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Input image 1 is the sole edit target and style reference: the new NORMAL T4 of this species. Create one transparent-background full-body purity variant, preserving species identity, original chibi proportions, pose, facial expression, visible hands/feet, tail and weapon, head-body ratio and dark colored outline weight. Match the same flat 2D cartoon design with a few large clean shapes and at most two shadow levels. This is a T4 appearance variant, not a fifth evolution. No realistic anatomy, thin outlines, glossy 3D, gradients, glare, glow, scenery, ground shadow, text, watermark or busy particles. Entire creature and all extremities inside the square with 8 percent transparent padding. The face must remain the visual focus. Subject: Ecstamira, R, T4. 95% awakened: an extremely restrained change. Keep at least 95 percent of the drawing visually unchanged. Give the existing eyes one clearer warm ivory/cool cyan highlight consistent with the species palette. Make just one existing small forehead or chest marking a slightly lighter clean ivory accent, without inventing new ornaments. Preserve all existing main colors and the exact silhouette. Do not recolor the whole creature or add a new motif.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "funglet",
+      "form": 4,
+      "variant": "perfect",
+      "source": "v3/funglet/t4-perfect.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Input image 1 is the sole edit target and style reference: the new NORMAL T4 of this species. Create one transparent-background full-body purity variant, preserving species identity, original chibi proportions, pose, facial expression, visible hands/feet, tail and weapon, head-body ratio and dark colored outline weight. Match the same flat 2D cartoon design with a few large clean shapes and at most two shadow levels. This is a T4 appearance variant, not a fifth evolution. No realistic anatomy, thin outlines, glossy 3D, gradients, glare, glow, scenery, ground shadow, text, watermark or busy particles. Entire creature and all extremities inside the square with 8 percent transparent padding. The face must remain the visual focus. Subject: Ecstamira, R, T4. 100% perfected: make the existing signature feature feel intentional and special through a small structural motif, rather than a global color swap. Keep the sleepy mushroom creature with its asymmetric purple/blue/orange cap. Refine the existing cap spots into three clean warm-ivory crescent shapes that follow the cap curve, with one larger central crescent. Deepen only the existing cap underside to plum for clear contrast with the sleepy face. Keep original stalk, tendrils and silhouette; no new mushrooms, aura or spores. Keep the total detail density close to normal T4 and the light-colored accent areas under 20 percent of the sprite. No added standalone objects or accessories.",
+      "status": "provisional_user_authorized"
+    }
+  ]
+}

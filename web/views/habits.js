@@ -1,4 +1,5 @@
 import { cadenceLabel, habitDate, habitNumber, habitSummary } from '../models/habits.js';
+import { renderBeastTowerEntry } from './linh-thu.js';
 
 export function renderHabits(ui, state) {
   const { el, button, card, heading } = ui,
@@ -145,6 +146,7 @@ export function renderHabits(ui, state) {
     container.append(row);
   }
   root.append(container);
+  if (state.live && state.habitFilter !== 'archived') root.append(renderBeastTowerEntry(ui, state));
   if (state.habitFilter === 'archived' && state.habitData.archivePage?.nextCursor != null) {
     const more = button(
       state.habitArchiveLoading ? 'Đang tải…' : 'Tải thêm thói quen lưu trữ',

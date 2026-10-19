@@ -10,9 +10,14 @@ export function createMutations({
   toast,
   showBrowserLogin,
   refreshOnReturn,
+  ui,
 }) {
   async function performLive(path, input, options = {}) {
     if (runtime.saving) return null;
+    if (runtime.pendingBeast) {
+      toast('Còn một giao ước chưa xác nhận. Vào Linh thú và bấm Kiểm tra kết quả trước nhé.');
+      return null;
+    }
     if (runtime.pendingDraw?.revision !== runtime.revision) runtime.pendingDraw = null;
     if (
       runtime.pendingDraw &&
@@ -117,6 +122,7 @@ export function createMutations({
         return result;
       }
       applySnapshot(state, data);
+      if (featureWrite) ui?.loadTower?.();
       if (featureWrite && data.result?.account) {
         state.cultivation = mapAccount(data.result.account, state.day?.day);
       }

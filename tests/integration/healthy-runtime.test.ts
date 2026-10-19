@@ -175,7 +175,7 @@ test('inactive mode blocks all proactive outbox deliveries while replies still s
  }finally{await mf.dispose();}
 });
 
-test('cron settles inactive days before delivering previously queued notifications',async()=>{
+test('bounded cron catch-up holds queued notifications until inactive days are settled',async()=>{
  const {runScheduled}=await import('../../src/entrypoints/worker-scheduler.ts');
  const {ScheduleStore}=await import('../../src/adapters/d1/schedule-store.ts');
  const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
@@ -187,7 +187,10 @@ test('cron settles inactive days before delivering previously queued notificatio
   await db.prepare('INSERT INTO outbox(id,payload,available) VALUES(?,?,?)').bind('task-summary:123:queued',JSON.stringify({method:'sendMessage',chat_id:123,text:'Must not send'}),start).run();
   let sends=0;const transport=(async()=>{sends++;return Response.json({ok:true,result:{message_id:42}});}) as typeof fetch;
   const env={DB:db,TELEGRAM_USER_ID:'123',TELEGRAM_WEBHOOK_SECRET:'x'.repeat(32),TELEGRAM_BOT_TOKEN:'123:fake',AI_MODE:'off',DELIVERY_MODE:'outbox' as const,ASSETS:{fetch:async()=>new Response('asset')}};
-  await runScheduled(env,{cardsEnabled:false,transport,clock:{now:()=>now},chat:undefined,flushCards:async()=>{}});
+  for(let tick=0;tick<4;tick++){
+   await runScheduled(env,{cardsEnabled:false,transport,clock:{now:()=>now+tick*60000},chat:undefined,flushCards:async()=>{}});
+   assert.equal(sends,0,'No proactive messages between bounded sleep assessments');
+  }
   assert.equal((await new HealthyStore(db).read('123')).state.suspended,true);assert.equal(sends,0);
  }finally{await mf.dispose();}
 });

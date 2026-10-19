@@ -242,7 +242,16 @@ export function createCultivationActions(context) {
               : demoDrawBatch(state.cultivation, count);
             if (!saved || !reveal.isConnected) return;
             const rewards = saved.rewards ?? [saved.reward];
-            reveal.replaceChildren(el('h3', 'Đã nhận ' + rewards.length + ' phần thưởng'));
+            const pendingChoices = saved.choices?.length ?? 0;
+            reveal.replaceChildren(
+              el(
+                'h3',
+                'Đã nhận ' +
+                  rewards.length +
+                  ' phần thưởng' +
+                  (pendingChoices ? ' · ' + pendingChoices + ' lượt chờ chọn' : ''),
+              ),
+            );
             reveal.classList.add('mystery-revealed');
             const { qi, items } = summarizeDrawRewards(rewards);
             const list = el('ul', undefined, 'draw-rewards');
@@ -254,8 +263,23 @@ export function createCultivationActions(context) {
             }
             reveal.append(
               list,
-              el('p', rewards.length + ' lượt · Đã dùng ' + rewards.length + ' vé', 'hint'),
+              el(
+                'p',
+                (saved.count ?? rewards.length) +
+                  ' lượt · Đã dùng ' +
+                  (saved.count ?? rewards.length) +
+                  ' vé',
+                'hint',
+              ),
             );
+            if (pendingChoices)
+              reveal.append(
+                button(
+                  'Chọn phần thưởng từ linh thú',
+                  () => context.openBeastDrawChoices(),
+                  'primary',
+                ),
+              );
             if (!state.live) render();
           } finally {
             busy = false;

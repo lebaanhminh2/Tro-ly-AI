@@ -1,0 +1,1326 @@
+{
+  "version": 1,
+  "kind": "optimized reference, not redesigned production art",
+  "source": "docs/assets/linh-thu/reference",
+  "sourceRepository": "https://github.com/kenzkunz/tatari-companion",
+  "sourceCommit": "771b7c760d7cf47e19c355aa865ed6a1d2beaebf",
+  "sourceCatalogSha256": "bff8b8d1433f7a555f51907c86adee50b51ca36dd8802e4e9e8f6187408f4f09",
+  "encoder": {
+    "sharp": "0.35.5",
+    "webp": "1.6.0"
+  },
+  "full": {
+    "count": 72,
+    "size": 512,
+    "quality": 88,
+    "alphaQuality": 100,
+    "bytes": 2482172
+  },
+  "thumb": {
+    "count": 72,
+    "size": 128,
+    "quality": 82,
+    "alphaQuality": 100,
+    "bytes": 383408
+  },
+  "redesignedNormal": 0,
+  "redesignedPerfect": 0,
+  "entries": [
+    {
+      "speciesId": "pyropup",
+      "form": 1,
+      "source": "docs/assets/linh-thu/reference/ur/pyropup/t1-pyropup.webp",
+      "sourceSha256": "62b5661cc1f2fa113063b6d5c63ba2da1b4d4f99ddc0101fcdaac7ca903c0fd0",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/ur/pyropup/t1-pyropup.webp",
+          "bytes": 23698,
+          "sha256": "b1c1ff8c938bfc96607363c1f60d2a20b29640b32a08c1be8e57e97377324edb"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/ur/pyropup/t1-pyropup.webp",
+          "bytes": 4290,
+          "sha256": "fe833ab3da632402c3fd62f0e720dcb86217db766e83f904aea9e85162353478"
+        }
+      }
+    },
+    {
+      "speciesId": "pyropup",
+      "form": 2,
+      "source": "docs/assets/linh-thu/reference/ur/pyropup/t2-pyrohound.webp",
+      "sourceSha256": "5747cd61659aab30a89ed220c34a1a8407404e31c2b9d2b2171a82524afa77a3",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/ur/pyropup/t2-pyrohound.webp",
+          "bytes": 28290,
+          "sha256": "faf1ab50f7ffe913e80161281989a3b65fa857e780548e4b00f6d4dfd55368d9"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/ur/pyropup/t2-pyrohound.webp",
+          "bytes": 4498,
+          "sha256": "b7e7edaac01462be70ede6a68672b279eb6c4700e83cca82e95532307418cb8e"
+        }
+      }
+    },
+    {
+      "speciesId": "pyropup",
+      "form": 3,
+      "source": "docs/assets/linh-thu/reference/ur/pyropup/t3-hellhound.webp",
+      "sourceSha256": "38cc9c6860866ffa4351024e2eabd77ede842ca1184a87112150669c484e655a",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/ur/pyropup/t3-hellhound.webp",
+          "bytes": 41188,
+          "sha256": "49617c41b050a59a5411ca368d5f4c8a801b3922a24ee9a838750bf32f220828"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/ur/pyropup/t3-hellhound.webp",
+          "bytes": 6440,
+          "sha256": "01330a1be9eafd336e666dccb36d7ee80d76b7bbb5361b6f3603c51008cca979"
+        }
+      }
+    },
+    {
+      "speciesId": "pyropup",
+      "form": 4,
+      "source": "docs/assets/linh-thu/reference/ur/pyropup/t4-pyrodaemon.webp",
+      "sourceSha256": "e0e0ccff8c02ab67a09434d2180283ef5d3790119f1688a95c48cc995f3d876c",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/ur/pyropup/t4-pyrodaemon.webp",
+          "bytes": 41154,
+          "sha256": "7cf2c51b19c8040f3ec66f6be375fc49ce684fd11c7df788856e8f024ec61e7c"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/ur/pyropup/t4-pyrodaemon.webp",
+          "bytes": 5534,
+          "sha256": "8148ae4214e8f41ca551307260b16c1bd717bd27cea6dd15d3a6b1ab08ce21e6"
+        }
+      }
+    },
+    {
+      "speciesId": "rubblet",
+      "form": 1,
+      "source": "docs/assets/linh-thu/reference/ur/rubblet/t1-rubblet.webp",
+      "sourceSha256": "ff29b4a3b33ac750212731b244864c2a6c3d146f958c0f5082600fb9d060f84e",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/ur/rubblet/t1-rubblet.webp",
+          "bytes": 18460,
+          "sha256": "b003672df961b67bf8cf50ff0669f997d35d8b5c006cba45f982505724a48e75"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/ur/rubblet/t1-rubblet.webp",
+          "bytes": 3210,
+          "sha256": "e40512d488c8b520bd847ff96a525c3f2118dc4eafe578627238c92288198a54"
+        }
+      }
+    },
+    {
+      "speciesId": "rubblet",
+      "form": 2,
+      "source": "docs/assets/linh-thu/reference/ur/rubblet/t2-cobbledon.webp",
+      "sourceSha256": "a0a8343e621c78bb7074144e7a4db03cc0dcd023b4d2adb62206d254a9ea302e",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/ur/rubblet/t2-cobbledon.webp",
+          "bytes": 22434,
+          "sha256": "6913557fdf7d4408369387751d9fae2136ca5bc5b7e147161a2d24b97237b7d4"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/ur/rubblet/t2-cobbledon.webp",
+          "bytes": 3624,
+          "sha256": "2777a52bde36c0f6f47da3285aeb7ef5d7241e02ac94f318b4788f6dfc8a4028"
+        }
+      }
+    },
+    {
+      "speciesId": "rubblet",
+      "form": 3,
+      "source": "docs/assets/linh-thu/reference/ur/rubblet/t3-rockzilla.webp",
+      "sourceSha256": "14a683f89dc09e4bb8b08c5e52c098e02c1ebf236ac52c776442673f83b9889c",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/ur/rubblet/t3-rockzilla.webp",
+          "bytes": 32924,
+          "sha256": "e2cc5121808d7ab909819dd6bb9e340d8cdd8d8e14aeec7a8359f664d797037a"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/ur/rubblet/t3-rockzilla.webp",
+          "bytes": 5542,
+          "sha256": "70597de13ceef6efb00f6b42b28c0a69be2d774eb390bdfd120cbf6d768be22c"
+        }
+      }
+    },
+    {
+      "speciesId": "rubblet",
+      "form": 4,
+      "source": "docs/assets/linh-thu/reference/ur/rubblet/t4-meteorax.webp",
+      "sourceSha256": "a2e8972cc6d93f7a0475cceacb2ea358e597a24bdcd09f4cae7d5680e1607be0",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/ur/rubblet/t4-meteorax.webp",
+          "bytes": 40270,
+          "sha256": "03a42617cee02069cc6d95a9e5a1046b1dd73a6f6d01783190fe332faaf625d5"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/ur/rubblet/t4-meteorax.webp",
+          "bytes": 5692,
+          "sha256": "4f5283c6ad02422cb81e48171070724e0081e1b5e4e51606efca257c37c3031b"
+        }
+      }
+    },
+    {
+      "speciesId": "frostnip",
+      "form": 1,
+      "source": "docs/assets/linh-thu/reference/ssr/frostnip/t1-frostnip.webp",
+      "sourceSha256": "535c82e4518e27ae0c89ca6fde03e92d1edee334dee769cebd95e9a025a4045d",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/ssr/frostnip/t1-frostnip.webp",
+          "bytes": 21512,
+          "sha256": "c975d6e3b0a48270adcbb3b23e5fcc5e7266e693ecb5854bea6a7cfb127d6658"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/ssr/frostnip/t1-frostnip.webp",
+          "bytes": 3662,
+          "sha256": "5bea5c6de528cd875075f2b0079550fd795c79837b9a2243b6f2f215bdb9d712"
+        }
+      }
+    },
+    {
+      "speciesId": "frostnip",
+      "form": 2,
+      "source": "docs/assets/linh-thu/reference/ssr/frostnip/t2-frostpaw.webp",
+      "sourceSha256": "226242ef58f45f384186be30d483b12b4ffa098ad7bf0658b03e0fca57032389",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/ssr/frostnip/t2-frostpaw.webp",
+          "bytes": 25750,
+          "sha256": "562e1e13712319428b4f9ba2783f0fc30f0af8c8bf2bd0644cacb1523cd84073"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/ssr/frostnip/t2-frostpaw.webp",
+          "bytes": 4304,
+          "sha256": "37f290fb75d24ded8fd31d44d2c476a6ee45671ee90acf89d51017b5d8eed08f"
+        }
+      }
+    },
+    {
+      "speciesId": "frostnip",
+      "form": 3,
+      "source": "docs/assets/linh-thu/reference/ssr/frostnip/t3-frostique.webp",
+      "sourceSha256": "4413ec0b4305c42c23bbe041c204ce53ea9e8c158b2407e301c41d9806f85220",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/ssr/frostnip/t3-frostique.webp",
+          "bytes": 36402,
+          "sha256": "445b80ac17c957c7de4528b62261644c1faed0cce044087a592d97fcad9668c8"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/ssr/frostnip/t3-frostique.webp",
+          "bytes": 6246,
+          "sha256": "69422dd7274fb3545ac752faa72521f98717466f65a0a959bb029840c4e01cf1"
+        }
+      }
+    },
+    {
+      "speciesId": "frostnip",
+      "form": 4,
+      "source": "docs/assets/linh-thu/reference/ssr/frostnip/t4-frostluna.webp",
+      "sourceSha256": "677a072cc81e7f6e07e826b83084b6a67769eda9e17e52177a52fe4fcb34c63d",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/ssr/frostnip/t4-frostluna.webp",
+          "bytes": 44300,
+          "sha256": "5edd6815121cd0fdba8465c1fc2c566518637441f60297226281853bf437da20"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/ssr/frostnip/t4-frostluna.webp",
+          "bytes": 7016,
+          "sha256": "8764d6adb6dbc9c488e7d25d4effc8b8029c372c2b859bec40aa0a5ca1265d37"
+        }
+      }
+    },
+    {
+      "speciesId": "zappur",
+      "form": 1,
+      "source": "docs/assets/linh-thu/reference/ssr/zappur/t1-zappur.webp",
+      "sourceSha256": "5e98fa8d3554f01c62f5ea2e2d7274c052fbf4405259be4b866f0eb91203d1d0",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/ssr/zappur/t1-zappur.webp",
+          "bytes": 22866,
+          "sha256": "69ba12283ab6510a91e29e10ab6f53e9937c4e9d3cb68eaac9853079c034010c"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/ssr/zappur/t1-zappur.webp",
+          "bytes": 4324,
+          "sha256": "8f451da88c30c37613a43c8a95788685cc9436c56eed21611b88254c6a73ad27"
+        }
+      }
+    },
+    {
+      "speciesId": "zappur",
+      "form": 2,
+      "source": "docs/assets/linh-thu/reference/ssr/zappur/t2-electroar.webp",
+      "sourceSha256": "178fb509ce539c5b38cdb85d5b28f9c1c236357b47d9e1a3af3b37c6ad6ae195",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/ssr/zappur/t2-electroar.webp",
+          "bytes": 27144,
+          "sha256": "815b658491b1055e0822fc360b94fe88fd54f0d323d3a00688b21dff6f192a4a"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/ssr/zappur/t2-electroar.webp",
+          "bytes": 4394,
+          "sha256": "7b2d93d694e50f73ed1118ae3fd849f59a81cfa87f0e6ad70f62761a955579a0"
+        }
+      }
+    },
+    {
+      "speciesId": "zappur",
+      "form": 3,
+      "source": "docs/assets/linh-thu/reference/ssr/zappur/t3-blitzmane.webp",
+      "sourceSha256": "05a4c40daf1fc26e3046fdf2ef9dc6e7dc73e4435f7053ab95dc04ab5c581a25",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/ssr/zappur/t3-blitzmane.webp",
+          "bytes": 46098,
+          "sha256": "cae42c73774044fb969cf04ed1b5ab506595a1d834ae6c8c1a900411c5737680"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/ssr/zappur/t3-blitzmane.webp",
+          "bytes": 6830,
+          "sha256": "72fe410d64e8ebbe06079119d4d1a113782c80ef805b8093130723dd89b6c017"
+        }
+      }
+    },
+    {
+      "speciesId": "zappur",
+      "form": 4,
+      "source": "docs/assets/linh-thu/reference/ssr/zappur/t4-stormlion.webp",
+      "sourceSha256": "b88d0a2c5cb42c67f6c461b8a4c8384b68d3ab7d20bf7d55c7f688c5e5b3a454",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/ssr/zappur/t4-stormlion.webp",
+          "bytes": 50718,
+          "sha256": "1f2ce8dca6f48346fb0eee7cc7ebc8f5cfc5fd2df5a596da9d35ad657e64bbf2"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/ssr/zappur/t4-stormlion.webp",
+          "bytes": 7146,
+          "sha256": "7468b89616aa16eb42390b082489567669ec1854887ef93e45fec1f3638e4dcc"
+        }
+      }
+    },
+    {
+      "speciesId": "skinklet",
+      "form": 1,
+      "source": "docs/assets/linh-thu/reference/ssr/skinklet/t1-skinklet.webp",
+      "sourceSha256": "74c6b44c3f98e666a9c17afae097dffafce5dfb28a9bc5035bad73bbc81c9690",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/ssr/skinklet/t1-skinklet.webp",
+          "bytes": 19718,
+          "sha256": "641fa04a1cd113d9e7d70fd4281278d30ff0b3d16db1099eed56bb4e40557b82"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/ssr/skinklet/t1-skinklet.webp",
+          "bytes": 3476,
+          "sha256": "8fe6ce9e6292060afa6ed6466f78d9bee02b4e6837429c9f0c414b9a40c1bfd6"
+        }
+      }
+    },
+    {
+      "speciesId": "skinklet",
+      "form": 2,
+      "source": "docs/assets/linh-thu/reference/ssr/skinklet/t2-skinkoon.webp",
+      "sourceSha256": "c067e8e26dc52595d0b511af45d5932c34657683314b51972ecf042e3b4c2b8c",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/ssr/skinklet/t2-skinkoon.webp",
+          "bytes": 26778,
+          "sha256": "13dd9d4c13bff6cf66472930e5db6f699fcc40e52e58d95b0056acd5b989a70c"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/ssr/skinklet/t2-skinkoon.webp",
+          "bytes": 4424,
+          "sha256": "d573a6e871dce1348cc12054e36d7e3c74e4f3a013e94bbdaaeec1022cf3fa6f"
+        }
+      }
+    },
+    {
+      "speciesId": "skinklet",
+      "form": 3,
+      "source": "docs/assets/linh-thu/reference/ssr/skinklet/t3-ninjaguana.webp",
+      "sourceSha256": "5178847e2fe6b51c0416c0586176d479f8eaeff95085b41de26c5d28f5ef523c",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/ssr/skinklet/t3-ninjaguana.webp",
+          "bytes": 43126,
+          "sha256": "7ea4d8d6a447ec490531cbffe7888f2c72c53afa9fdb2298546a5b2340578e43"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/ssr/skinklet/t3-ninjaguana.webp",
+          "bytes": 5932,
+          "sha256": "7dab8f333d5fe37776d0f3a1d8f1f6cc1ade7cf6532a059c35ab5179d14d7125"
+        }
+      }
+    },
+    {
+      "speciesId": "skinklet",
+      "form": 4,
+      "source": "docs/assets/linh-thu/reference/ssr/skinklet/t4-hychroma.webp",
+      "sourceSha256": "a0496b8f5dba0cb18794bb4f1ea161dd4bdcd91f7722a980bf2fdeeb72a0a20e",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/ssr/skinklet/t4-hychroma.webp",
+          "bytes": 47964,
+          "sha256": "57bf1a0386664913f92c8a5c88ce5db652e15bcd5dc9fe6ada2812fc2970ace5"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/ssr/skinklet/t4-hychroma.webp",
+          "bytes": 7054,
+          "sha256": "d5ec4f1bb957b2b7978c251f48a6281c5a1eeef790d43741e9ff0087e6da7cf1"
+        }
+      }
+    },
+    {
+      "speciesId": "punchimp",
+      "form": 1,
+      "source": "docs/assets/linh-thu/reference/ssr/punchimp/t1-punchimp.webp",
+      "sourceSha256": "64c0fba97c782b0ecfd2d5d1cfec67c916fac919833094c79b7ce2b91ed5d95e",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/ssr/punchimp/t1-punchimp.webp",
+          "bytes": 17534,
+          "sha256": "1bbe863ca1fa63f5a2d1648b69565b9c03f49023500e1cd84ed19e5d8e49da92"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/ssr/punchimp/t1-punchimp.webp",
+          "bytes": 3288,
+          "sha256": "a0ae7b6f707b56d063cbc94c3d53a5be6da2f9ee252e5109907661702721db5c"
+        }
+      }
+    },
+    {
+      "speciesId": "punchimp",
+      "form": 2,
+      "source": "docs/assets/linh-thu/reference/ssr/punchimp/t2-rockfu.webp",
+      "sourceSha256": "6394e4a809059ae850887c951db912e25b444dfd2aab5fec92c60604a028f18c",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/ssr/punchimp/t2-rockfu.webp",
+          "bytes": 24412,
+          "sha256": "8f8f000aec4ae730d1d8dadc63ea5e3d6c784cce4d8dcec97a14996dc7db622c"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/ssr/punchimp/t2-rockfu.webp",
+          "bytes": 4222,
+          "sha256": "f9549f07857947f456aaa8de9a292c7bab1f8f7de4834868bdf91005dcfa4a11"
+        }
+      }
+    },
+    {
+      "speciesId": "punchimp",
+      "form": 3,
+      "source": "docs/assets/linh-thu/reference/ssr/punchimp/t3-rockwu.webp",
+      "sourceSha256": "df46f799f16a03d3c96fecf357e44d62f60f7914365cd3ef3a17098c54894381",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/ssr/punchimp/t3-rockwu.webp",
+          "bytes": 39632,
+          "sha256": "18ddbcf5b8426c917007906a48cdd4bc50157dca578b5beabe5bd848e5b9e7da"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/ssr/punchimp/t3-rockwu.webp",
+          "bytes": 6032,
+          "sha256": "e1fca89d05d8b91cf270b76c78d904f5c40440bb4a8e9e66f1261c192778ff70"
+        }
+      }
+    },
+    {
+      "speciesId": "punchimp",
+      "form": 4,
+      "source": "docs/assets/linh-thu/reference/ssr/punchimp/t4-rockong.webp",
+      "sourceSha256": "5e4f5b03b7bf44b3d8639f62fa643cff4989a60f929d5f68f3a71d89932f2748",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/ssr/punchimp/t4-rockong.webp",
+          "bytes": 50876,
+          "sha256": "6c9110fdaaf21af0a1dc73de633968478f3274ab6685610b9726ccba6326ca93"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/ssr/punchimp/t4-rockong.webp",
+          "bytes": 6688,
+          "sha256": "d5b44c04048c93d87e4325d7e1f25222cb9898819c77c9608a05e061e0d99083"
+        }
+      }
+    },
+    {
+      "speciesId": "shardsnail",
+      "form": 1,
+      "source": "docs/assets/linh-thu/reference/sr/shardsnail/t1-shardsnail.webp",
+      "sourceSha256": "611420d403219a2e8e73d78ea0a7e6d0bc29dbc3f00fb310d8274f617192db3d",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/sr/shardsnail/t1-shardsnail.webp",
+          "bytes": 20284,
+          "sha256": "2d1ae1dffb7c605f6890675788c59e7828b3a4090f5d53c30b85b94b927da0bf"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/sr/shardsnail/t1-shardsnail.webp",
+          "bytes": 3814,
+          "sha256": "371e3e31ff46ced1f72758a647cbd305b95d410e256b4a3765687032358f823d"
+        }
+      }
+    },
+    {
+      "speciesId": "shardsnail",
+      "form": 2,
+      "source": "docs/assets/linh-thu/reference/sr/shardsnail/t2-gemsnail.webp",
+      "sourceSha256": "1cf9e93cfed0f78c415554ff0581a7dd37ea8059d9dcf50110266020da5d73d8",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/sr/shardsnail/t2-gemsnail.webp",
+          "bytes": 22904,
+          "sha256": "c2d734bdd5cf7bf28c3851602f64e25df1e7ea380e2320ec825cb662cecf2884"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/sr/shardsnail/t2-gemsnail.webp",
+          "bytes": 3994,
+          "sha256": "e3f7adbbe0fb1ab82d9ff525158574d20bfa9c109046ad42e72d671e594897e0"
+        }
+      }
+    },
+    {
+      "speciesId": "shardsnail",
+      "form": 3,
+      "source": "docs/assets/linh-thu/reference/sr/shardsnail/t3-jewelsnail.webp",
+      "sourceSha256": "23b20ac9eeebc7abeac0702209eb17b8091d7dd2867ad61dd9261f345a0e3ea2",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/sr/shardsnail/t3-jewelsnail.webp",
+          "bytes": 36582,
+          "sha256": "3a1ad98dadb071b13926af3eed08a0383252148d10851da2c60e77744b080b8b"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/sr/shardsnail/t3-jewelsnail.webp",
+          "bytes": 6086,
+          "sha256": "05aaaec01c9f00925917b50faccaa8c22482d9c477d35fe52511aa933884054b"
+        }
+      }
+    },
+    {
+      "speciesId": "shardsnail",
+      "form": 4,
+      "source": "docs/assets/linh-thu/reference/sr/shardsnail/t4-crystalsnail.webp",
+      "sourceSha256": "e59a0554e54fee0c190097496eea7f4db6ec4d03f18639487b438550a1cd5f1f",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/sr/shardsnail/t4-crystalsnail.webp",
+          "bytes": 44350,
+          "sha256": "3c7df5105181dc247df7e6d5bc9351add2bf11211176164af465740c30ca4eb5"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/sr/shardsnail/t4-crystalsnail.webp",
+          "bytes": 6772,
+          "sha256": "aecb36715337f5f54c229b0ec3887320eb21f062e946d77f19d1d9127cbc9573"
+        }
+      }
+    },
+    {
+      "speciesId": "flameow",
+      "form": 1,
+      "source": "docs/assets/linh-thu/reference/sr/flameow/t1-flameow.webp",
+      "sourceSha256": "f32081a7efda0405f57c97255f9dec0fa4c6531e05f9867355f0aed95367aeae",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/sr/flameow/t1-flameow.webp",
+          "bytes": 26734,
+          "sha256": "44cd54de8ab4329d31c34468558a8d837bf9b3f9977be23bbd18e5bdf795cbe5"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/sr/flameow/t1-flameow.webp",
+          "bytes": 4396,
+          "sha256": "e6ea424f3b683681a83af4c76059192dffbd1f06db3d0a0cd52fb46bb03a39c9"
+        }
+      }
+    },
+    {
+      "speciesId": "flameow",
+      "form": 2,
+      "source": "docs/assets/linh-thu/reference/sr/flameow/t2-nekoflare.webp",
+      "sourceSha256": "1fb3b9c01644a3f3b6d15cb342734f2a21c2f7e94f35dcf15666e2f283c19a60",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/sr/flameow/t2-nekoflare.webp",
+          "bytes": 32242,
+          "sha256": "e7b180fe0c1362de57649d4e5a5c1461237e7c6dfc107572df560f084892c08b"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/sr/flameow/t2-nekoflare.webp",
+          "bytes": 4838,
+          "sha256": "5861a2b8f8b78eeacb6e113be55f574e4f58ae3ac254bf12faebea9177dd0eea"
+        }
+      }
+    },
+    {
+      "speciesId": "flameow",
+      "form": 3,
+      "source": "docs/assets/linh-thu/reference/sr/flameow/t3-silversear.webp",
+      "sourceSha256": "66648405fc0dee119aaeaac5aeb935de7612c744b774af938f3f48f026eecfc3",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/sr/flameow/t3-silversear.webp",
+          "bytes": 39204,
+          "sha256": "db04d67ce4d01264b58f41b349db7cb347f7470943dd97f9eae87c67ad6bd7a6"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/sr/flameow/t3-silversear.webp",
+          "bytes": 5696,
+          "sha256": "4b8793e290a2f349d27bf4cbe1752fc116fd96a69a21b2100a96eb5c358eff0e"
+        }
+      }
+    },
+    {
+      "speciesId": "flameow",
+      "form": 4,
+      "source": "docs/assets/linh-thu/reference/sr/flameow/t4-cinderclaw.webp",
+      "sourceSha256": "55f2e4cf1fd0322697a2c60a5f3eab9e304595bb36dea395e09c667c1262d5fd",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/sr/flameow/t4-cinderclaw.webp",
+          "bytes": 54124,
+          "sha256": "eddc77584c33a1b9347037ba9a3d372b94a3d256a20553858c36383d48d5d313"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/sr/flameow/t4-cinderclaw.webp",
+          "bytes": 7298,
+          "sha256": "34ca8d46d0ead8beffa7eba21359a491392edc750fb80ac649cca96abb124e28"
+        }
+      }
+    },
+    {
+      "speciesId": "manteeny",
+      "form": 1,
+      "source": "docs/assets/linh-thu/reference/sr/manteeny/t1-manteeny.webp",
+      "sourceSha256": "462e0e34075f2341743aa2adf8e2d999219403ed9a73980ea0e1287394849827",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/sr/manteeny/t1-manteeny.webp",
+          "bytes": 23712,
+          "sha256": "2039f81c9da348dd2bd64f77177e24d19e8d1829f52788be8665d7ba868f71c3"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/sr/manteeny/t1-manteeny.webp",
+          "bytes": 4366,
+          "sha256": "dc819de127e0c9af2fc12e24acc4479c06e8bf0bf242f589bb01bcf83f79fd18"
+        }
+      }
+    },
+    {
+      "speciesId": "manteeny",
+      "form": 2,
+      "source": "docs/assets/linh-thu/reference/sr/manteeny/t2-stalkerix.webp",
+      "sourceSha256": "693899db98d39912035513f7d2a046ca4f7a69906934177199dd3c18aaf7becf",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/sr/manteeny/t2-stalkerix.webp",
+          "bytes": 29120,
+          "sha256": "c79e4c134ac129b078a4cda1905d6ffdcb94ac459fe8a4a508268f985daee243"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/sr/manteeny/t2-stalkerix.webp",
+          "bytes": 4640,
+          "sha256": "6959a1921d036edfc08626e530af9ad84283f5dabb6c319c94ab62af122eb466"
+        }
+      }
+    },
+    {
+      "speciesId": "manteeny",
+      "form": 3,
+      "source": "docs/assets/linh-thu/reference/sr/manteeny/t3-serrabloom.webp",
+      "sourceSha256": "71ab22aa855c51ef29baabf729291ecd29619cc5a849651803cc8827faaaf769",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/sr/manteeny/t3-serrabloom.webp",
+          "bytes": 48886,
+          "sha256": "17835f1ad5e6c3167cb9cf0b49c6370b4678fab3ceb74d2a1bab5aa5f6bc9304"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/sr/manteeny/t3-serrabloom.webp",
+          "bytes": 7218,
+          "sha256": "0e94c5a295642f2822a20e7a43a821756090a1947ff8444b2b6ec312ddaddad8"
+        }
+      }
+    },
+    {
+      "speciesId": "manteeny",
+      "form": 4,
+      "source": "docs/assets/linh-thu/reference/sr/manteeny/t4-orchitoria.webp",
+      "sourceSha256": "a78ac2b25ee5088cac43ee26e1d552862db4734b706a51ec0225ff9f669851c3",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/sr/manteeny/t4-orchitoria.webp",
+          "bytes": 59084,
+          "sha256": "cf48a50c8d4c397c6f58ddb0f090c7f290524455082749fd365d532444c5d304"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/sr/manteeny/t4-orchitoria.webp",
+          "bytes": 7976,
+          "sha256": "558aa2fc3fc22157299d12d704bb23ce14aef3c590cc9c0bef96e09e2b45af11"
+        }
+      }
+    },
+    {
+      "speciesId": "fluffle",
+      "form": 1,
+      "source": "docs/assets/linh-thu/reference/sr/fluffle/t1-fluffle.webp",
+      "sourceSha256": "a242bbdbeb9b725a546a20de713761ba2242a21c2dbe917160fe2862247569e1",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/sr/fluffle/t1-fluffle.webp",
+          "bytes": 23562,
+          "sha256": "d574ef81376475cb8f9acc192d0ee91893fa3ddfa28e402304b8a69472d9705f"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/sr/fluffle/t1-fluffle.webp",
+          "bytes": 4240,
+          "sha256": "c58650124200a263d2f257e88e9b85e93a7d592aa42a62e2b7f17ea0b02791a1"
+        }
+      }
+    },
+    {
+      "speciesId": "fluffle",
+      "form": 2,
+      "source": "docs/assets/linh-thu/reference/sr/fluffle/t2-nimbuzzy.webp",
+      "sourceSha256": "034459664052674f3b93089b8f92b4dfcd3f185d40c78cc112b4e0efdb749378",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/sr/fluffle/t2-nimbuzzy.webp",
+          "bytes": 28280,
+          "sha256": "2bec2671a339e40047904d003d6bd0dd07824d15856822f594c9a967e9006690"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/sr/fluffle/t2-nimbuzzy.webp",
+          "bytes": 4514,
+          "sha256": "139ceded399ad4b1cba89a1bc098b46e599f8314f3b38eafe7f6ad8c96cd2d26"
+        }
+      }
+    },
+    {
+      "speciesId": "fluffle",
+      "form": 3,
+      "source": "docs/assets/linh-thu/reference/sr/fluffle/t3-galewether.webp",
+      "sourceSha256": "023cb04ad42a230a68fad51a4763a783e3ad7a1c278d80706f6427c72bb36afc",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/sr/fluffle/t3-galewether.webp",
+          "bytes": 47514,
+          "sha256": "3c2fca79d2d37c150ee6e0c72bef3a3dabbc0fcca02a41e724a9489df13effd1"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/sr/fluffle/t3-galewether.webp",
+          "bytes": 6918,
+          "sha256": "e271ee67c19f9bb162e6c44d8939e949842e08d2bdb076874cd7efa6f7e9ec68"
+        }
+      }
+    },
+    {
+      "speciesId": "fluffle",
+      "form": 4,
+      "source": "docs/assets/linh-thu/reference/sr/fluffle/t4-cosmoram.webp",
+      "sourceSha256": "7764d8cab72b04fb7c874877b87bf9c38d62447101eedd3668beecbd518c156c",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/sr/fluffle/t4-cosmoram.webp",
+          "bytes": 48496,
+          "sha256": "d967af22b9cca7d9d94df1699c4fd95503d6a0b28b5fa41b0889062957e528c5"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/sr/fluffle/t4-cosmoram.webp",
+          "bytes": 6862,
+          "sha256": "ae60cfa0e1037b837148eb353af71a45e2b913f07b654c760674883ef615836d"
+        }
+      }
+    },
+    {
+      "speciesId": "maskfry",
+      "form": 1,
+      "source": "docs/assets/linh-thu/reference/sr/maskfry/t1-maskfry.webp",
+      "sourceSha256": "885dd6c0a9a6e29abed79cbe70345ee962722b544b62b7c29cffef6b084cdb6e",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/sr/maskfry/t1-maskfry.webp",
+          "bytes": 23684,
+          "sha256": "82098f85451efd7269f04b09e32b412da93cd6eb051d1579bd9c921a1a757360"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/sr/maskfry/t1-maskfry.webp",
+          "bytes": 4048,
+          "sha256": "8aa48f100bf4e4f1f7c9eaac10a2812a97cf40e99d0c2712e81918edee893713"
+        }
+      }
+    },
+    {
+      "speciesId": "maskfry",
+      "form": 2,
+      "source": "docs/assets/linh-thu/reference/sr/maskfry/t2-ospisces.webp",
+      "sourceSha256": "409bc4be4252589ac51630792f081fb52c4c243254b5cc35dfe394bd7a66f0ca",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/sr/maskfry/t2-ospisces.webp",
+          "bytes": 29354,
+          "sha256": "0f723606cacc3fb35d06b8cd79671a7dc6afe331d4fc39837b10c7b7832d295b"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/sr/maskfry/t2-ospisces.webp",
+          "bytes": 4540,
+          "sha256": "06551cf12b1ffb18a2cc41b0c19c9879e8c25f239702ad73fa08623826be06d4"
+        }
+      }
+    },
+    {
+      "speciesId": "maskfry",
+      "form": 3,
+      "source": "docs/assets/linh-thu/reference/sr/maskfry/t3-armorjaw.webp",
+      "sourceSha256": "94a6cd36e8c7a225da83fb90957e5c04fff3cc91569f80bc0942ff8ca35cfd37",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/sr/maskfry/t3-armorjaw.webp",
+          "bytes": 45302,
+          "sha256": "cd6c9e1ebcf90557fbd93089a82360a981b8252379885cbe79f8c514782166ee"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/sr/maskfry/t3-armorjaw.webp",
+          "bytes": 6654,
+          "sha256": "d16deace2a26be273eda23ce56359741ddc1e38ddb6f1aa5f53d2122634815db"
+        }
+      }
+    },
+    {
+      "speciesId": "maskfry",
+      "form": 4,
+      "source": "docs/assets/linh-thu/reference/sr/maskfry/t4-dagondeep.webp",
+      "sourceSha256": "0142d75ba78db4738843c58693ea248a45bc03864027ae250d94ab3e9f52d391",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/sr/maskfry/t4-dagondeep.webp",
+          "bytes": 46900,
+          "sha256": "177de05f441f131ce41445b62cdc86617244bd2bf290781d5524cef62c63c9d8"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/sr/maskfry/t4-dagondeep.webp",
+          "bytes": 6378,
+          "sha256": "5a0508ab6e1c15b3f6a9621cb6a9af4440646b82e628818a761f9cc5c9980844"
+        }
+      }
+    },
+    {
+      "speciesId": "goonbug",
+      "form": 1,
+      "source": "docs/assets/linh-thu/reference/sr/goonbug/t1-goonbug.webp",
+      "sourceSha256": "213413fd544e852f26d939945c2e8f1860868977959a9606035029046657d38c",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/sr/goonbug/t1-goonbug.webp",
+          "bytes": 20334,
+          "sha256": "24207a34aaed91898c9f18b1d58933bf433ff3e83ab8402d4c3ac27f6e6b3e95"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/sr/goonbug/t1-goonbug.webp",
+          "bytes": 3880,
+          "sha256": "908aa32459581a5cd63e528212108c37dbe56dedebcaed24b8046ba735dbcb2a"
+        }
+      }
+    },
+    {
+      "speciesId": "goonbug",
+      "form": 2,
+      "source": "docs/assets/linh-thu/reference/sr/goonbug/t2-capobeetle.webp",
+      "sourceSha256": "7262632f31c0b8593f82d4e8f78482da6b76cad62b9da7927a41e6dc1226945a",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/sr/goonbug/t2-capobeetle.webp",
+          "bytes": 26632,
+          "sha256": "5241318dc5216b74af28d1bfd7db7ea76d649680bb9780d01de41a112bbe71db"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/sr/goonbug/t2-capobeetle.webp",
+          "bytes": 4536,
+          "sha256": "2f992e4c1b6c3f36289f2bf01de6c87ca0369febde48e467a6f3437446b5da7f"
+        }
+      }
+    },
+    {
+      "speciesId": "goonbug",
+      "form": 3,
+      "source": "docs/assets/linh-thu/reference/sr/goonbug/t3-donscarab.webp",
+      "sourceSha256": "925deb4e292c001d0b5c510c503bd245c3a73c24f3a92a233d0c756b028e66d8",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/sr/goonbug/t3-donscarab.webp",
+          "bytes": 40832,
+          "sha256": "fd7854b2ab74bc6753144355c762ca6fb7b3b07ddd035b279706d08664425ec9"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/sr/goonbug/t3-donscarab.webp",
+          "bytes": 6622,
+          "sha256": "f1439e8b3b865f021705877915c8545a56b24c9f173c9261977e66692098b6e0"
+        }
+      }
+    },
+    {
+      "speciesId": "goonbug",
+      "form": 4,
+      "source": "docs/assets/linh-thu/reference/sr/goonbug/t4-beetleknight.webp",
+      "sourceSha256": "c73a4d6b60a045674e78ba7e106b09856ffe433797b8d7e01817f7f8f2ace6ee",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/sr/goonbug/t4-beetleknight.webp",
+          "bytes": 49206,
+          "sha256": "e48edcbd0f305c3666ed7cc554080dc8ba472ed56b03c87d6073e43f0d157c60"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/sr/goonbug/t4-beetleknight.webp",
+          "bytes": 7214,
+          "sha256": "dc95be8934ace750db1de106d5b541c6a492a12446f935970f3286dd242387b3"
+        }
+      }
+    },
+    {
+      "speciesId": "humbug",
+      "form": 1,
+      "source": "docs/assets/linh-thu/reference/r/humbug/t1-humbug.webp",
+      "sourceSha256": "06b22c0b9a2127723ac44d7c0564356a9985f13e9e4a32d2ea8de327e03a3660",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/r/humbug/t1-humbug.webp",
+          "bytes": 19660,
+          "sha256": "6b28f7276fc5d579bbb3b9c9575797b66176ef16d993bcb5558c9f269d919860"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/r/humbug/t1-humbug.webp",
+          "bytes": 3442,
+          "sha256": "da0bbb4cd2052b781f38cd84efeb48a3ecc4d7b88a0e0496453fcde335e2e28f"
+        }
+      }
+    },
+    {
+      "speciesId": "humbug",
+      "form": 2,
+      "source": "docs/assets/linh-thu/reference/r/humbug/t2-humbleetle.webp",
+      "sourceSha256": "5536f242664230cef861c7b374fdf5350f5846c7a4105d4f00643781f79858b2",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/r/humbug/t2-humbleetle.webp",
+          "bytes": 26962,
+          "sha256": "34a24d455516bfff860f6b342658571f2adf5eff58a824764c4237001d802bf8"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/r/humbug/t2-humbleetle.webp",
+          "bytes": 4916,
+          "sha256": "cf49acf1fe1e0768c1658e388cf4cfa9e499bc7a458377108af34c878544e074"
+        }
+      }
+    },
+    {
+      "speciesId": "humbug",
+      "form": 3,
+      "source": "docs/assets/linh-thu/reference/r/humbug/t3-zenscarab.webp",
+      "sourceSha256": "9a350a4f42832991589e67cc0116bc2cbe9dfbb778770eb5259d9c0b5a59e410",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/r/humbug/t3-zenscarab.webp",
+          "bytes": 41928,
+          "sha256": "abc1f6a675b815ebc5bdabfabcaae9a50b04c9fc996b3fada6abe71470bea4fe"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/r/humbug/t3-zenscarab.webp",
+          "bytes": 6314,
+          "sha256": "98eeb5b3b92642f52fde6d824850c8789bf42351d3492ba7536a0c053997e843"
+        }
+      }
+    },
+    {
+      "speciesId": "humbug",
+      "form": 4,
+      "source": "docs/assets/linh-thu/reference/r/humbug/t4-hierotyrus.webp",
+      "sourceSha256": "adfec4a51ca8e55dff7c234af57a750c21ee464e7792fa3c257619b94bfd6151",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/r/humbug/t4-hierotyrus.webp",
+          "bytes": 49180,
+          "sha256": "3ccee2c52d45dc4d7839548198c904d6fc64f8b7d96e1a046fc6a8a418087141"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/r/humbug/t4-hierotyrus.webp",
+          "bytes": 6580,
+          "sha256": "7c11c9a46d5ef14ce3d359f64d63ab24f4ce9dc5ba8452d43ed28e088fb3fb8d"
+        }
+      }
+    },
+    {
+      "speciesId": "hootlet",
+      "form": 1,
+      "source": "docs/assets/linh-thu/reference/r/hootlet/t1-hootlet.webp",
+      "sourceSha256": "304af4b91bbd4f4d9a3bb53e40d8b226acd27b9e3878ec8b02664402b789ecf2",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/r/hootlet/t1-hootlet.webp",
+          "bytes": 22106,
+          "sha256": "aa04d181e4d823ff0e4f6323e9f08e2be17c4f6f59617b6ffb2907004625ad9d"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/r/hootlet/t1-hootlet.webp",
+          "bytes": 3916,
+          "sha256": "4293367845dc95be3e7a6b92f95b135b4f6856912d6bdc79be521ffaf601c0a0"
+        }
+      }
+    },
+    {
+      "speciesId": "hootlet",
+      "form": 2,
+      "source": "docs/assets/linh-thu/reference/r/hootlet/t2-tikowl.webp",
+      "sourceSha256": "49295f08518ec23f98550eb8cb0a7f514394fed8368905dcc4ceaffd759c7398",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/r/hootlet/t2-tikowl.webp",
+          "bytes": 26246,
+          "sha256": "3a85e52726f8a82b2f6167c9a9a842433bcbdbb82e506ef4bdc5580a5f05c0eb"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/r/hootlet/t2-tikowl.webp",
+          "bytes": 3900,
+          "sha256": "23662edaea53ef91d20683a21ad074b7d911bcc3e53f188e5d83385a5c6d8069"
+        }
+      }
+    },
+    {
+      "speciesId": "hootlet",
+      "form": 3,
+      "source": "docs/assets/linh-thu/reference/r/hootlet/t3-chronerva.webp",
+      "sourceSha256": "2efbae683762f75a8b887229541cd46a025c9a9c85c478b8d7a37e1398e3a655",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/r/hootlet/t3-chronerva.webp",
+          "bytes": 42324,
+          "sha256": "5c774be867eb85a9241ef61926e939e1c10e0ed74ee8f2a3e92d78c82a0faca7"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/r/hootlet/t3-chronerva.webp",
+          "bytes": 5958,
+          "sha256": "b8790c55c600fd4d2d307495c6fc5555da4bba06aca4be6d8c97fce9578db17f"
+        }
+      }
+    },
+    {
+      "speciesId": "hootlet",
+      "form": 4,
+      "source": "docs/assets/linh-thu/reference/r/hootlet/t4-hypnostrix.webp",
+      "sourceSha256": "e68240f7f8dec6f6dfd818fdadc75cf664f09ad8f00a3a9af9ae7ed69918250f",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/r/hootlet/t4-hypnostrix.webp",
+          "bytes": 57130,
+          "sha256": "7316c9bb8d061740915fae4158f8d9a0e4d7c1ecd54515fe4de34d8a0ed966f9"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/r/hootlet/t4-hypnostrix.webp",
+          "bytes": 7766,
+          "sha256": "3b65455826722012d400da14599fa3e61eb5e60486ed998bd866f7e56afde5c8"
+        }
+      }
+    },
+    {
+      "speciesId": "gibber",
+      "form": 1,
+      "source": "docs/assets/linh-thu/reference/r/gibber/t1-gibber.webp",
+      "sourceSha256": "2afe9f514260e6da303e4d92611eb6f57ef43076e98724b0e2678d917bf6b335",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/r/gibber/t1-gibber.webp",
+          "bytes": 19538,
+          "sha256": "40ca0a80bef4918f31f90b65df74e90aeb08ca9ed8195d857c8aae2045718895"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/r/gibber/t1-gibber.webp",
+          "bytes": 3792,
+          "sha256": "f369365b59755c77f6f833c3637b6cdba4233a5240a66e5180cd23245d81307e"
+        }
+      }
+    },
+    {
+      "speciesId": "gibber",
+      "form": 2,
+      "source": "docs/assets/linh-thu/reference/r/gibber/t2-turtuff.webp",
+      "sourceSha256": "8af497213151095c16421f92cbb77686cbce7b493527cdeb3e53931fb43b605c",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/r/gibber/t2-turtuff.webp",
+          "bytes": 21648,
+          "sha256": "45faccd99072196da0ef6f8a04923df62cda3623a80978d8f7e8fd6f043980dd"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/r/gibber/t2-turtuff.webp",
+          "bytes": 3684,
+          "sha256": "8bbcd26399815256c56b9295b026e4bc9769316eba78318d3c39cc30d0557e83"
+        }
+      }
+    },
+    {
+      "speciesId": "gibber",
+      "form": 3,
+      "source": "docs/assets/linh-thu/reference/r/gibber/t3-rockshell.webp",
+      "sourceSha256": "da9bad4aae789b9c6095aedbc4c9a27db1d304bbf436f8ad806ed6ec9a74d2a3",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/r/gibber/t3-rockshell.webp",
+          "bytes": 27932,
+          "sha256": "d0064b39d6dd30a3960d358660544f25852f8aec2442e7795077a84bb858a4c3"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/r/gibber/t3-rockshell.webp",
+          "bytes": 5250,
+          "sha256": "3201b0f54cc4f468e4b64860646454e5d361d467e7edfd7c2ebb6b4c8c948197"
+        }
+      }
+    },
+    {
+      "speciesId": "gibber",
+      "form": 4,
+      "source": "docs/assets/linh-thu/reference/r/gibber/t4-terraton.webp",
+      "sourceSha256": "9ede468db7911ce62abd587c7769eaeb2b9bb3c319cbde46acea50b4602a6ee2",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/r/gibber/t4-terraton.webp",
+          "bytes": 39578,
+          "sha256": "5014420441f738766e5da60ae785af12dd4fc851e9ef8fc5175d3134bd0682aa"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/r/gibber/t4-terraton.webp",
+          "bytes": 5642,
+          "sha256": "f7c385f5eb343fa9f9919ea77858b28afe12ea85979b937de5678124d9166e39"
+        }
+      }
+    },
+    {
+      "speciesId": "voltfawn",
+      "form": 1,
+      "source": "docs/assets/linh-thu/reference/r/voltfawn/t1-voltfawn.webp",
+      "sourceSha256": "4350ea028aa30df6f525ad352d95800e4a59b3f010aadf16c70f1c955b790b82",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/r/voltfawn/t1-voltfawn.webp",
+          "bytes": 20854,
+          "sha256": "ed115e24364cc40311f94f35d97c9957e0784d5394a21b2f12daeaec9641d08e"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/r/voltfawn/t1-voltfawn.webp",
+          "bytes": 3876,
+          "sha256": "f433a74436965c74d07105552b6b5d5ff58e9902e60899934aa1f6757f456648"
+        }
+      }
+    },
+    {
+      "speciesId": "voltfawn",
+      "form": 2,
+      "source": "docs/assets/linh-thu/reference/r/voltfawn/t2-sparkdoe.webp",
+      "sourceSha256": "cc39f046fb5ba2987bdabf615dd0bfb57f072b0f1d63fae67dd470bacb1b022e",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/r/voltfawn/t2-sparkdoe.webp",
+          "bytes": 27764,
+          "sha256": "c5cf3540806ddb865c9343be40e4f1896fd0a2fa2c970b0413f8aa576792181d"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/r/voltfawn/t2-sparkdoe.webp",
+          "bytes": 4698,
+          "sha256": "dd299eb3a623d874fbfb1f966fecc8df46eaaee01bda732943caa994ec5484fd"
+        }
+      }
+    },
+    {
+      "speciesId": "voltfawn",
+      "form": 3,
+      "source": "docs/assets/linh-thu/reference/r/voltfawn/t3-zapantler.webp",
+      "sourceSha256": "6858250f41b9894b2d9b1a2dd544c098901a884c4a3adb227b9ce9d4e9ad5588",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/r/voltfawn/t3-zapantler.webp",
+          "bytes": 41356,
+          "sha256": "4f8e1e2d693f5e2bd902d6597b744a794468e4d2f2da9b24d1e9b8332e94cc9c"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/r/voltfawn/t3-zapantler.webp",
+          "bytes": 6006,
+          "sha256": "cd50456893e1a47014a9053cd45407462cedba2a956ab88a564523a4aef3cc04"
+        }
+      }
+    },
+    {
+      "speciesId": "voltfawn",
+      "form": 4,
+      "source": "docs/assets/linh-thu/reference/r/voltfawn/t4-magnedart.webp",
+      "sourceSha256": "123666ffd1cb802b25284bc6a47b3bbb7b9da11a44aceb03556d77d43a1ba5e3",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/r/voltfawn/t4-magnedart.webp",
+          "bytes": 48810,
+          "sha256": "9a944c57e6d32ccded55482de1fbb9a8c50b2edd821ec0b6b190138e35daeb49"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/r/voltfawn/t4-magnedart.webp",
+          "bytes": 6714,
+          "sha256": "9a6d0acf786100a7ded2354a07a440f29a688091fbd8304212140dfe51188e2f"
+        }
+      }
+    },
+    {
+      "speciesId": "cheerling",
+      "form": 1,
+      "source": "docs/assets/linh-thu/reference/r/cheerling/t1-cheerling.webp",
+      "sourceSha256": "770cbaf1767b996654b037a0698a45515c23c798014f96c17aba870237704d31",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/r/cheerling/t1-cheerling.webp",
+          "bytes": 28332,
+          "sha256": "aeb8b5f089c465a05a88d16c7bbd3e61b58ef79d09e118ed6bfb70ea143802ea"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/r/cheerling/t1-cheerling.webp",
+          "bytes": 4344,
+          "sha256": "220bf64ff0ae91a2a9368e15c5b669832821d12953705352089445390d5b33a2"
+        }
+      }
+    },
+    {
+      "speciesId": "cheerling",
+      "form": 2,
+      "source": "docs/assets/linh-thu/reference/r/cheerling/t2-cheerlet.webp",
+      "sourceSha256": "42ef186c004b9247f62bbee8dc3501903b20e55fd9da686522e3c3eba0c6a451",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/r/cheerling/t2-cheerlet.webp",
+          "bytes": 26724,
+          "sha256": "2dd7a9db2d3e02e32bff503f80010f1282f0eb626ed14645f1ba5502698068d9"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/r/cheerling/t2-cheerlet.webp",
+          "bytes": 4130,
+          "sha256": "0c91e81c9c36e916c5c10d86c95165d6b32964da784a34c0bd2df927d387562b"
+        }
+      }
+    },
+    {
+      "speciesId": "cheerling",
+      "form": 3,
+      "source": "docs/assets/linh-thu/reference/r/cheerling/t3-cheerspring.webp",
+      "sourceSha256": "2e0d1aeaa5bcaed12de5a1dd30a135d62bc204fbf21c794e5cd3e9c3577397a7",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/r/cheerling/t3-cheerspring.webp",
+          "bytes": 42054,
+          "sha256": "2908d1a55e53d3a8b0612544c1208ff1b1c4b9052f7c6fe740c2d735e2903659"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/r/cheerling/t3-cheerspring.webp",
+          "bytes": 6192,
+          "sha256": "3b30efdabf635c4fa12cded23d9ce4ad14fbe973bf6c61ff7f10f4a632440cc4"
+        }
+      }
+    },
+    {
+      "speciesId": "cheerling",
+      "form": 4,
+      "source": "docs/assets/linh-thu/reference/r/cheerling/t4-cheerstella.webp",
+      "sourceSha256": "8420ab3eee1bf3856cfcbb613fd167671238036d9ac2c76bce7bf0343efdfb9f",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/r/cheerling/t4-cheerstella.webp",
+          "bytes": 47800,
+          "sha256": "083f44f18a30fca63abbd64195b87a6f4bd504e35fffccc06cbdef9d5e6c17b9"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/r/cheerling/t4-cheerstella.webp",
+          "bytes": 6632,
+          "sha256": "be4723184fe3b0e9e643a57a7b30eb68f417699c68dae793868c77a7a84f6cba"
+        }
+      }
+    },
+    {
+      "speciesId": "funglet",
+      "form": 1,
+      "source": "docs/assets/linh-thu/reference/r/funglet/t1-funglet.webp",
+      "sourceSha256": "db743eea50dc9d4cba96104454761a85d1e37710b8b54744be17aa5ceb379153",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/r/funglet/t1-funglet.webp",
+          "bytes": 25158,
+          "sha256": "f974f3147ae1d5b29039e916c0bd2019818a2437231911735b77b32f5ac03a9a"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/r/funglet/t1-funglet.webp",
+          "bytes": 4448,
+          "sha256": "0716d9cf574cdba0447163650b402fb4364bf77f8b4f15f303d91d15910253cb"
+        }
+      }
+    },
+    {
+      "speciesId": "funglet",
+      "form": 2,
+      "source": "docs/assets/linh-thu/reference/r/funglet/t2-trippet.webp",
+      "sourceSha256": "8016f7cef801a53da0c72df0b9d8b2a3cd91773960b8e705ac33a070735fc3c5",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/r/funglet/t2-trippet.webp",
+          "bytes": 25032,
+          "sha256": "4f312ad4019b659b8b701b7f81bf48a0b240bb19ac324f1268b039b6f6d09430"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/r/funglet/t2-trippet.webp",
+          "bytes": 4144,
+          "sha256": "b2f7ace2022c4356116c78abff5acda2df44f5d052a2623797f8094ca8fbf1da"
+        }
+      }
+    },
+    {
+      "speciesId": "funglet",
+      "form": 3,
+      "source": "docs/assets/linh-thu/reference/r/funglet/t3-hyphoria.webp",
+      "sourceSha256": "5f13faa1364748f5756af0963cccb6ef69c3bcf7eb26c4b6ff8279c8f0439ba2",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/r/funglet/t3-hyphoria.webp",
+          "bytes": 40580,
+          "sha256": "4f2221709d93a49a8faf072b69309a4fb07c7208c7f380da528c1edac76f5893"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/r/funglet/t3-hyphoria.webp",
+          "bytes": 6198,
+          "sha256": "ac3df80040ce668e2d28facb344f844b1445b1cd4fd756e30e25a1ebbc988ace"
+        }
+      }
+    },
+    {
+      "speciesId": "funglet",
+      "form": 4,
+      "source": "docs/assets/linh-thu/reference/r/funglet/t4-ecstamira.webp",
+      "sourceSha256": "426419f24b8525dc01578263e4a41047dba1c0fed5371a7538483521039d91e6",
+      "outputs": {
+        "full": {
+          "path": "web/assets/linh-thu/reference/r/funglet/t4-ecstamira.webp",
+          "bytes": 52906,
+          "sha256": "2ef27170b63065f8ec7e49b23515fbac93e64cf304f91d7a7e564746e0e6e139"
+        },
+        "thumb": {
+          "path": "web/assets/linh-thu/reference/thumbs/r/funglet/t4-ecstamira.webp",
+          "bytes": 7498,
+          "sha256": "dc79696a1b5ac7a5252dbad283ad07d82d607563597bbd317dab109ddac57d22"
+        }
+      }
+    }
+  ]
+}

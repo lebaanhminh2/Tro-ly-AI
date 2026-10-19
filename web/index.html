@@ -1,30 +1,77 @@
 <!doctype html>
 <html lang="vi">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="color-scheme" content="light dark">
-  <title>Minh Anh · Trợ lý của cậu</title>
-  <link rel="stylesheet" href="./styles.css">
-</head>
-<body>
-  <div class="shell">
-    <aside class="demo-strip">BẢN MẪU · Dữ liệu minh họa, không lưu lên bot</aside>
-    <header class="app-header">
-      <div class="identity"><div class="avatar" aria-hidden="true">m<span>✦</span></div><div><p class="eyebrow">MINH ANH</p><p class="brand-caption">Trợ lý của cậu</p></div></div>
-      <div class="header-actions"><button class="text-button" id="logout" hidden>Đăng xuất</button><button class="icon-button" id="settings" aria-label="Cài đặt">⚙</button></div>
-    </header>
-    <main id="content" tabindex="-1"></main>
-    <nav class="bottom-nav" aria-label="Điều hướng chính">
-      <button data-tab="today" aria-current="page"><span aria-hidden="true">◷</span>Hôm nay</button>
-      <button data-tab="habits"><span aria-hidden="true" class="nav-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="5"/><path d="m8 12 3 3 5-6"/></svg></span>Thói quen</button>
-      <button data-tab="reminders"><span aria-hidden="true">♧</span>Lời nhắc</button>
-      <button data-tab="achievements"><span aria-hidden="true">✦</span>Thành tích</button>
-    </nav>
-  </div>
-  <dialog id="sheet" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div id="sheet-content"></div></dialog>
-  <div id="toast" role="status" aria-live="polite"></div>
-  <noscript>Cần bật JavaScript để xem bản mẫu.</noscript>
-  <script type="module" src="./app.js"></script>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Minh Anh · Trợ lý của cậu</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./linh-thu.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="demo-strip">BẢN MẪU · Dữ liệu minh họa, không lưu lên bot</aside>
+      <header class="app-header">
+        <div class="identity">
+          <div class="avatar" aria-hidden="true">m<span>✦</span></div>
+          <div>
+            <p class="eyebrow">MINH ANH</p>
+            <p class="brand-caption">Trợ lý của cậu</p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button class="text-button" id="logout" hidden>Đăng xuất</button
+          ><button class="icon-button" id="settings" aria-label="Cài đặt">⚙</button>
+        </div>
+      </header>
+      <main id="content" tabindex="-1"></main>
+      <nav class="bottom-nav" aria-label="Điều hướng chính">
+        <button data-tab="today" aria-current="page">
+          <span aria-hidden="true">◷</span>Hôm nay
+        </button>
+        <button data-tab="habits">
+          <span aria-hidden="true" class="nav-svg"
+            ><svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="4" y="4" width="16" height="16" rx="5" />
+              <path d="m8 12 3 3 5-6" /></svg></span
+          >Thói quen
+        </button>
+        <button data-tab="reminders"><span aria-hidden="true">♧</span>Lời nhắc</button>
+        <button data-tab="beasts">
+          <span aria-hidden="true" class="nav-svg"
+            ><svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <ellipse cx="5" cy="9" rx="2" ry="2.5" transform="rotate(-25 5 9)" />
+              <ellipse cx="9.5" cy="5" rx="2" ry="2.5" />
+              <ellipse cx="14.5" cy="5" rx="2" ry="2.5" />
+              <ellipse cx="19" cy="9" rx="2" ry="2.5" transform="rotate(25 19 9)" />
+              <path
+                d="M12 11c-2.5 0-3 2.5-5 4.5-2 2-.5 5 2 5 1.5 0 2-1 3-1s1.5 1 3 1c2.5 0 4-3 2-5-2-2-2.5-4.5-5-4.5Z"
+              /></svg></span
+          >Linh thú
+        </button>
+        <button data-tab="achievements"><span aria-hidden="true">✦</span>Thành tích</button>
+      </nav>
+    </div>
+    <dialog id="sheet" aria-labelledby="sheet-title">
+      <div class="sheet-handle"></div>
+      <div id="sheet-content"></div>
+    </dialog>
+    <div id="toast" role="status" aria-live="polite"></div>
+    <noscript>Cần bật JavaScript để xem bản mẫu.</noscript>
+    <script type="module" src="./app.js"></script>
+  </body>
 </html>

@@ -1,0 +1,725 @@
+{
+  "imageCount": 72,
+  "images": [
+    {
+      "rank": "UR",
+      "family": "pyropup",
+      "tier": 1,
+      "name": "Pyropup",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "UR",
+      "family": "pyropup",
+      "tier": 2,
+      "name": "Pyrohound",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "UR",
+      "family": "pyropup",
+      "tier": 3,
+      "name": "Hellhound",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "UR",
+      "family": "pyropup",
+      "tier": 4,
+      "name": "Pyrodaemon",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "UR",
+      "family": "rubblet",
+      "tier": 1,
+      "name": "Rubblet",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "UR",
+      "family": "rubblet",
+      "tier": 2,
+      "name": "Cobbledon",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "UR",
+      "family": "rubblet",
+      "tier": 3,
+      "name": "Rockzilla",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "UR",
+      "family": "rubblet",
+      "tier": 4,
+      "name": "Meteorax",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SSR",
+      "family": "frostnip",
+      "tier": 1,
+      "name": "Frostnip",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SSR",
+      "family": "frostnip",
+      "tier": 2,
+      "name": "Frostpaw",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SSR",
+      "family": "frostnip",
+      "tier": 3,
+      "name": "Frostique",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SSR",
+      "family": "frostnip",
+      "tier": 4,
+      "name": "Frostluna",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SSR",
+      "family": "zappur",
+      "tier": 1,
+      "name": "Zappur",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SSR",
+      "family": "zappur",
+      "tier": 2,
+      "name": "Electroar",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SSR",
+      "family": "zappur",
+      "tier": 3,
+      "name": "Blitzmane",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SSR",
+      "family": "zappur",
+      "tier": 4,
+      "name": "Stormlion",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SSR",
+      "family": "skinklet",
+      "tier": 1,
+      "name": "Skinklet",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SSR",
+      "family": "skinklet",
+      "tier": 2,
+      "name": "Skinkoon",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SSR",
+      "family": "skinklet",
+      "tier": 3,
+      "name": "Ninjaguana",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SSR",
+      "family": "skinklet",
+      "tier": 4,
+      "name": "Hychroma",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SSR",
+      "family": "punchimp",
+      "tier": 1,
+      "name": "Punchimp",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SSR",
+      "family": "punchimp",
+      "tier": 2,
+      "name": "Rockfu",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SSR",
+      "family": "punchimp",
+      "tier": 3,
+      "name": "Rockwu",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SSR",
+      "family": "punchimp",
+      "tier": 4,
+      "name": "Rockong",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SR",
+      "family": "shardsnail",
+      "tier": 1,
+      "name": "Shardsnail",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SR",
+      "family": "shardsnail",
+      "tier": 2,
+      "name": "Gemsnail",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SR",
+      "family": "shardsnail",
+      "tier": 3,
+      "name": "Jewelsnail",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SR",
+      "family": "shardsnail",
+      "tier": 4,
+      "name": "Crystalsnail",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SR",
+      "family": "flameow",
+      "tier": 1,
+      "name": "Flameow",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SR",
+      "family": "flameow",
+      "tier": 2,
+      "name": "Nekoflare",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SR",
+      "family": "flameow",
+      "tier": 3,
+      "name": "Silversear",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SR",
+      "family": "flameow",
+      "tier": 4,
+      "name": "Cinderclaw",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SR",
+      "family": "manteeny",
+      "tier": 1,
+      "name": "Manteeny",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SR",
+      "family": "manteeny",
+      "tier": 2,
+      "name": "Stalkerix",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SR",
+      "family": "manteeny",
+      "tier": 3,
+      "name": "Serrabloom",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SR",
+      "family": "manteeny",
+      "tier": 4,
+      "name": "Orchitoria",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SR",
+      "family": "fluffle",
+      "tier": 1,
+      "name": "Fluffle",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SR",
+      "family": "fluffle",
+      "tier": 2,
+      "name": "Nimbuzzy",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SR",
+      "family": "fluffle",
+      "tier": 3,
+      "name": "Galewether",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SR",
+      "family": "fluffle",
+      "tier": 4,
+      "name": "Cosmoram",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SR",
+      "family": "maskfry",
+      "tier": 1,
+      "name": "Maskfry",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SR",
+      "family": "maskfry",
+      "tier": 2,
+      "name": "Ospisces",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SR",
+      "family": "maskfry",
+      "tier": 3,
+      "name": "Armorjaw",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SR",
+      "family": "maskfry",
+      "tier": 4,
+      "name": "Dagondeep",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SR",
+      "family": "goonbug",
+      "tier": 1,
+      "name": "Goonbug",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SR",
+      "family": "goonbug",
+      "tier": 2,
+      "name": "Capobeetle",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SR",
+      "family": "goonbug",
+      "tier": 3,
+      "name": "Donscarab",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "SR",
+      "family": "goonbug",
+      "tier": 4,
+      "name": "Beetleknight",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "R",
+      "family": "humbug",
+      "tier": 1,
+      "name": "Humbug",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "R",
+      "family": "humbug",
+      "tier": 2,
+      "name": "Humbleetle",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "R",
+      "family": "humbug",
+      "tier": 3,
+      "name": "Zenscarab",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "R",
+      "family": "humbug",
+      "tier": 4,
+      "name": "Hierotyrus",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "R",
+      "family": "hootlet",
+      "tier": 1,
+      "name": "Hootlet",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "R",
+      "family": "hootlet",
+      "tier": 2,
+      "name": "Tikowl",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "R",
+      "family": "hootlet",
+      "tier": 3,
+      "name": "Chronerva",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "R",
+      "family": "hootlet",
+      "tier": 4,
+      "name": "Hypnostrix",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "R",
+      "family": "gibber",
+      "tier": 1,
+      "name": "Gibber",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "R",
+      "family": "gibber",
+      "tier": 2,
+      "name": "Turtuff",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "R",
+      "family": "gibber",
+      "tier": 3,
+      "name": "Rockshell",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "R",
+      "family": "gibber",
+      "tier": 4,
+      "name": "Terraton",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "R",
+      "family": "voltfawn",
+      "tier": 1,
+      "name": "Voltfawn",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "R",
+      "family": "voltfawn",
+      "tier": 2,
+      "name": "Sparkdoe",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "R",
+      "family": "voltfawn",
+      "tier": 3,
+      "name": "Zapantler",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "R",
+      "family": "voltfawn",
+      "tier": 4,
+      "name": "Magnedart",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "R",
+      "family": "cheerling",
+      "tier": 1,
+      "name": "Cheerling",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "R",
+      "family": "cheerling",
+      "tier": 2,
+      "name": "Cheerlet",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "R",
+      "family": "cheerling",
+      "tier": 3,
+      "name": "Cheerspring",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "R",
+      "family": "cheerling",
+      "tier": 4,
+      "name": "Cheerstella",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "R",
+      "family": "funglet",
+      "tier": 1,
+      "name": "Funglet",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "R",
+      "family": "funglet",
+      "tier": 2,
+      "name": "Trippet",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "R",
+      "family": "funglet",
+      "tier": 3,
+      "name": "Hyphoria",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    },
+    {
+      "rank": "R",
+      "family": "funglet",
+      "tier": 4,
+      "name": "Ecstamira",
+      "width": 512,
+      "height": 512,
+      "alpha": true,
+      "pages": 1
+    }
+  ]
+}

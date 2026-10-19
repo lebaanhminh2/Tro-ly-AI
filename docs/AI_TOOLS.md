@@ -1,5 +1,7 @@
 # AI, context và quyền thao tác
 
+> 19/10/2026: Linh thú mới không mở tool ghi tự do cho LLM. API/UI và các hook task/habit/ngủ dùng owner, ngày, version, receipts ở backend như hiện có; AI không tự đặt thưởng, roll thú hoặc điều khiển tháp. `habitCompanion` vẫn là context habit, không phải linh thú đồng hành. Xem [vận hành](LINH_THU_OPERATIONS.md).
+
 Cập nhật 18/10/2026. Declarations ở `src/ai/contracts.ts`, validation ở `src/ai/policy.ts`, execution ở application, context từ DB. Markdown không là prompt runtime hoặc nguồn cấp quyền.
 
 ## Ranh giới

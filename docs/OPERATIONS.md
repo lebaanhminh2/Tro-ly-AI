@@ -1,5 +1,7 @@
 # Vận hành và phục hồi
 
+> Cập nhật19/10/2026: người dùng đã duyệt bản hiện tại và phát hành staging. Migration 0041 đã áp vào `assistant-staging`; Worker `personal-assistant-staging` chạy version `ff342cb0-4a7c-4b6b-b43c-bc3297a7a559` với100% lưu lượng. Đã backup, restore rehearsal và kiểm sau deploy; [hồ sơ phát hành](LINH_THU_RELEASE.md), [vận hành Linh thú](LINH_THU_OPERATIONS.md), [kiểm tra](LINH_THU_ACCEPTANCE.md). Các mốc môi trường bên dưới là lịch sử bản nền18/10;0040 và0041 hiện đã áp remote. Phải đối chiếu lại trước lần phát hành tiếp theo.
+
 Cập nhật 18/10/2026. Stack: TypeScript strict, Cloudflare Workers/D1/Cron, Telegram, web ES modules và adapter Gemini. Domain/application/ports giữ ranh giới; adapters triển khai SQL/provider. Có 40 migrations local: 0001–0039 giữ nguyên, 0040 bổ sung sổ nhận vé habit và chỉ mục tuần. Lần đối chiếu staging gần nhất đã đủ 39 migration của bản hardening; 0040 chưa áp remote. Trạng thái môi trường đích phải kiểm tra riêng trước phát hành.
 
 ## Kiểm tra local

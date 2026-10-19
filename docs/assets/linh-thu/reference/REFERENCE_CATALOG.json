@@ -1,0 +1,584 @@
+{
+  "retrieved_on": "2026-10-19",
+  "repository": "https://github.com/kenzkunz/tatari-companion",
+  "source_commit": "771b7c760d7cf47e19c355aa865ed6a1d2beaebf",
+  "source_version": "0.49.1",
+  "selection": [
+    {
+      "project_rank": "UR",
+      "chosen_by": "user",
+      "id": 12,
+      "internal_name": "Cerberus",
+      "forms": [
+        {
+          "tier": 1,
+          "name": "Pyropup",
+          "portrait": "portraits/Tatari__Cerberus__unit-12__evolution-1__appearance-default.webp",
+          "lore": "The brightness of the small flame on the tail is an indicator of Pyropup's mood. When Pyropup is excited, the flame can even set grass alight."
+        },
+        {
+          "tier": 2,
+          "name": "Pyrohound",
+          "portrait": "portraits/Tatari__Cerberus__unit-12__evolution-2__appearance-default.webp",
+          "lore": "While the more aggressive head handles combat, the intelligent one gives commands. Always competing with Ignisnap over the size of their flames."
+        },
+        {
+          "tier": 3,
+          "name": "Hellhound",
+          "portrait": "portraits/Tatari__Cerberus__unit-12__evolution-3__appearance-default.webp",
+          "lore": "Hellhound's third head is responsible for following instructions and sneaking in bites when no one's watching. Each of the three heads has a distinct role, and their combined flames can even melt steel."
+        },
+        {
+          "tier": 4,
+          "name": "Pyrodaemon",
+          "portrait": "portraits/Tatari__Cerberus__unit-12__evolution-4__appearance-default.webp",
+          "lore": "People imagine Pyrodaemon's long howl as a call from the underworld. What they don't know is that underneath the fiery exterior is just an excited puppy (or puppies) all the same."
+        }
+      ]
+    },
+    {
+      "project_rank": "UR",
+      "chosen_by": "user",
+      "id": 14,
+      "internal_name": "Godzilla",
+      "forms": [
+        {
+          "tier": 1,
+          "name": "Rubblet",
+          "portrait": "portraits/Tatari__Godzilla__unit-14__evolution-1__appearance-default.webp",
+          "lore": "Rubblet does everything in slow mode, whether it's blinking or walking. But firing off an Azure Flare? That's a different story entirely."
+        },
+        {
+          "tier": 2,
+          "name": "Cobbledon",
+          "portrait": "portraits/Tatari__Godzilla__unit-14__evolution-2__appearance-default.webp",
+          "lore": "Under Firecoil's guidance, Cobbledon learned to retract those claws as a gesture of friendliness. Paired with that ice-cold stare, though, the results have been modest at best."
+        },
+        {
+          "tier": 3,
+          "name": "Rockzilla",
+          "portrait": "portraits/Tatari__Godzilla__unit-14__evolution-3__appearance-default.webp",
+          "lore": "Just because Rockzilla's head looks like a tiny hill doesn't mean you should rest there... unless you're Charflutter. That one's fine."
+        },
+        {
+          "tier": 4,
+          "name": "Meteorax",
+          "portrait": "portraits/Tatari__Godzilla__unit-14__evolution-4__appearance-default.webp",
+          "lore": "A Tatari once dared to challenge Meteorax. But before the duel even began, Meteorax wanted a back scratch to get rid of an itch. One smudge against the cliff — just like that, it was over."
+        }
+      ]
+    },
+    {
+      "project_rank": "SSR",
+      "chosen_by": "user",
+      "id": 11,
+      "internal_name": "CatIce",
+      "forms": [
+        {
+          "tier": 1,
+          "name": "Frostnip",
+          "portrait": "portraits/Tatari__CatIce__unit-11__evolution-1__appearance-default.webp",
+          "lore": "Frostnip may look cool and aloof, but the truth is, opening that mouth lets all the cold air out."
+        },
+        {
+          "tier": 2,
+          "name": "Frostpaw",
+          "portrait": "portraits/Tatari__CatIce__unit-11__evolution-2__appearance-default.webp",
+          "lore": "Frostpaw is used to a quiet life... Except for that one time Pyrohound's flames got a little too close, and a yelp escaped before Frostpaw could stop it."
+        },
+        {
+          "tier": 3,
+          "name": "Frostique",
+          "portrait": "portraits/Tatari__CatIce__unit-11__evolution-3__appearance-default.webp",
+          "lore": "The cool thing about ice is that it comes in all sorts of shapes and sizes. When they collide, you can even get a surprisingly sweet tune."
+        },
+        {
+          "tier": 4,
+          "name": "Frostluna",
+          "portrait": "portraits/Tatari__CatIce__unit-11__evolution-4__appearance-default.webp",
+          "lore": "Draped in silvery blue fur that mirrors moonlight, Frostluna releases icy breaths under moonlit nights. Legend says the air freezes up in Frostluna's presence."
+        }
+      ]
+    },
+    {
+      "project_rank": "SSR",
+      "chosen_by": "user",
+      "id": 15,
+      "internal_name": "Lion",
+      "forms": [
+        {
+          "tier": 1,
+          "name": "Zappur",
+          "portrait": "portraits/Tatari__Lion__unit-15__evolution-1__appearance-default.webp",
+          "lore": "Zappur always tries to look tough. Once spent an entire afternoon practicing the most ferocious roar possible, only to get handed a piece of candy with a passing \"Awwww.\""
+        },
+        {
+          "tier": 2,
+          "name": "Electroar",
+          "portrait": "portraits/Tatari__Lion__unit-15__evolution-2__appearance-default.webp",
+          "lore": "Electroar simply cannot understand why Zapooch struggles to control electricity. One roar, a casual flick of the mane, and those pesky Zobos are sent flying. Easy."
+        },
+        {
+          "tier": 3,
+          "name": "Blitzmane",
+          "portrait": "portraits/Tatari__Lion__unit-15__evolution-3__appearance-default.webp",
+          "lore": "No need to put on a tough act anymore. Up high, every wingbeat radiates the presence of a true ruler. Those ears do still perk up when someone's talking behind Blitzmane's back, though."
+        },
+        {
+          "tier": 4,
+          "name": "Stormlion",
+          "portrait": "portraits/Tatari__Lion__unit-15__evolution-4__appearance-default.webp",
+          "lore": "Those giant thunder wings are the mark of a true king. Stormlion is no lion cub, but an undisputed Tatari powerhouse. Any Zobo that dares come near is easily turned to dust."
+        }
+      ]
+    },
+    {
+      "project_rank": "SSR",
+      "chosen_by": "user",
+      "id": 36,
+      "internal_name": "Chameleon",
+      "forms": [
+        {
+          "tier": 1,
+          "name": "Skinklet",
+          "portrait": "portraits/Tatari__Chameleon__unit-36__evolution-1__appearance-default.webp",
+          "lore": "Skinklet tries so hard to avoid everyone, Tatari and Zobos alike. Still, hiding doesn't always work... especially when blending into a seat cushion and getting sat on."
+        },
+        {
+          "tier": 2,
+          "name": "Skinkoon",
+          "portrait": "portraits/Tatari__Chameleon__unit-36__evolution-2__appearance-default.webp",
+          "lore": "Looks like nothing's happening, but Skinkoon has already finished a full combo. That's the trick. Time to rest... Hey! Who spilled water here?"
+        },
+        {
+          "tier": 3,
+          "name": "Ninjaguana",
+          "portrait": "portraits/Tatari__Chameleon__unit-36__evolution-3__appearance-default.webp",
+          "lore": "Stealth. Silence. Patience. Not everyone can master these arts. It takes extraordinary discipline and years of dedicated training. Hold on, are those two talking behind Ninjaguana's back — er, Ninjaguana's right here. Wait..."
+        },
+        {
+          "tier": 4,
+          "name": "Hychroma",
+          "portrait": "portraits/Tatari__Chameleon__unit-36__evolution-4__appearance-default.webp",
+          "lore": "Has shattered the boundaries of existence and can summon millions of water blades at will to break any defense. Hychroma still shuns attention but no longer fears being ignored. After all, the truly powerful need no spotlight."
+        }
+      ]
+    },
+    {
+      "project_rank": "SSR",
+      "chosen_by": "user",
+      "id": 24,
+      "internal_name": "Monkey",
+      "forms": [
+        {
+          "tier": 1,
+          "name": "Punchimp",
+          "portrait": "portraits/Tatari__Monkey__unit-24__evolution-1__appearance-default.webp",
+          "lore": "Grabs and throws whatever can be picked off the ground before fleeing from the subsequent mess. Punchimp's daily goal is to make at least one Tatari cry."
+        },
+        {
+          "tier": 2,
+          "name": "Rockfu",
+          "portrait": "portraits/Tatari__Monkey__unit-24__evolution-2__appearance-default.webp",
+          "lore": "Rockfu snapped a branch off some tree and learned to bring a decoy clone along when poking hornet nests. If the hornets give chase, that clone is not coming home."
+        },
+        {
+          "tier": 3,
+          "name": "Rockwu",
+          "portrait": "portraits/Tatari__Monkey__unit-24__evolution-3__appearance-default.webp",
+          "lore": "With newly learned staff techniques, Rockwu has the perfect answer to those pesky Zobos. The Tatari around here are Rockwu's to mess with and Rockwu's alone. Who do those Zobos think they are?"
+        },
+        {
+          "tier": 4,
+          "name": "Rockong",
+          "portrait": "portraits/Tatari__Monkey__unit-24__evolution-4__appearance-default.webp",
+          "lore": "Crowned in gold, Rockong has every Tatari's back. One strike of that majestic staff is all it takes to remind everyone who runs these parts."
+        }
+      ]
+    },
+    {
+      "project_rank": "SR",
+      "chosen_by": "user",
+      "id": 39,
+      "internal_name": "Snail",
+      "forms": [
+        {
+          "tier": 1,
+          "name": "Shardsnail",
+          "portrait": "portraits/Tatari__Snail__unit-39__evolution-1__appearance-default.webp",
+          "lore": "The crystals on Shardsnail are the result of an infectious ore disease, but it's not contagious. Aside from making the shell a bit heavier, there seems to be no harm. Just think of it as a glittery makeover, Shardsnail."
+        },
+        {
+          "tier": 2,
+          "name": "Gemsnail",
+          "portrait": "portraits/Tatari__Snail__unit-39__evolution-2__appearance-default.webp",
+          "lore": "After hearing about a flower near the mudflats out east, Gemsnail set out at dawn to see it and finally arrived by nightfall. Turns out, the flower only blooms at night. Slow and steady is the way to go."
+        },
+        {
+          "tier": 3,
+          "name": "Jewelsnail",
+          "portrait": "portraits/Tatari__Snail__unit-39__evolution-3__appearance-default.webp",
+          "lore": "The wind is unusually loud today... Oh! That's a Zobo charging at us! Still a bit far off though, all's good. Jewelsnail might be slow, but those crystal shards sure aren't."
+        },
+        {
+          "tier": 4,
+          "name": "Crystalsnail",
+          "portrait": "portraits/Tatari__Snail__unit-39__evolution-4__appearance-default.webp",
+          "lore": "The spreading crystals have turned Crystalsnail's back into a shiny amethyst mine. No Tatari is alike, but Crystalsnail can't help but feel a surge of pride whenever catching a reflection by the water."
+        }
+      ]
+    },
+    {
+      "project_rank": "SR",
+      "chosen_by": "user",
+      "id": 52,
+      "internal_name": "NekoF",
+      "forms": [
+        {
+          "tier": 1,
+          "name": "Flameow",
+          "portrait": "portraits/Tatari__NekoF__unit-52__evolution-1__appearance-default.webp",
+          "lore": "Flameow regards everyone with cool indifference and a touch of disdain. Everyone except Kittazap, who's earned a modicum of respect."
+        },
+        {
+          "tier": 2,
+          "name": "Nekoflare",
+          "portrait": "portraits/Tatari__NekoF__unit-52__evolution-2__appearance-default.webp",
+          "lore": "Rarely approaches Tatari other than Nekowatt, though there are records of Nekoflare using flames to warm a fallen Tatari in the snow. Nekoflare would never admit it, though."
+        },
+        {
+          "tier": 3,
+          "name": "Silversear",
+          "portrait": "portraits/Tatari__NekoF__unit-52__evolution-3__appearance-default.webp",
+          "lore": "In Silversear's eyes, the Tatari at camp are little more than noisy troublemakers. Without Silversear standing guard, these fools who can't even tell jewels from pinballs might not live to see the next sunrise."
+        },
+        {
+          "tier": 4,
+          "name": "Cinderclaw",
+          "portrait": "portraits/Tatari__NekoF__unit-52__evolution-4__appearance-default.webp",
+          "lore": "People say that if you gaze into those eyes for too long, the dark thoughts hidden in the depths of your mind will ignite. Other Tatari keep their distance—which suits Cinderclaw just fine. Whenever the camp is in danger, however, the same terrifying flames are the first to engulf enemies."
+        }
+      ]
+    },
+    {
+      "project_rank": "SR",
+      "chosen_by": "user",
+      "id": 18,
+      "internal_name": "Mantis",
+      "forms": [
+        {
+          "tier": 1,
+          "name": "Manteeny",
+          "portrait": "portraits/Tatari__Mantis__unit-18__evolution-1__appearance-default.webp",
+          "lore": "Manteeny seems convinced that waving those little pink scythes around is some kind of elegant etiquette, and there's been more than a few accidental nicks around camp."
+        },
+        {
+          "tier": 2,
+          "name": "Stalkerix",
+          "portrait": "portraits/Tatari__Mantis__unit-18__evolution-2__appearance-default.webp",
+          "lore": "Less a fighter, more an artist. Stalkerix aims to make every defeated opponent fall with grace."
+        },
+        {
+          "tier": 3,
+          "name": "Serrabloom",
+          "portrait": "portraits/Tatari__Mantis__unit-18__evolution-3__appearance-default.webp",
+          "lore": "Every slash lands like a pair of pruning shears trimming flower branches. By the time those blades pull back, the unruly twigs are already gone... Why has nobody filmed the famous Mantis Waltz yet?"
+        },
+        {
+          "tier": 4,
+          "name": "Orchitoria",
+          "portrait": "portraits/Tatari__Mantis__unit-18__evolution-4__appearance-default.webp",
+          "lore": "Orchitoria never waits. On the battlefield, there is only one role worth playing: the proud queen who strikes first. Anyone bold enough to covet the crown gets dealt with."
+        }
+      ]
+    },
+    {
+      "project_rank": "SR",
+      "chosen_by": "user",
+      "id": 45,
+      "internal_name": "BigHornSheep",
+      "forms": [
+        {
+          "tier": 1,
+          "name": "Fluffle",
+          "portrait": "portraits/Tatari__BigHornSheep__unit-45__evolution-1__appearance-default.webp",
+          "lore": "Fluffle is painfully shy and floats most of the time, landing only when the air thins. Anyone who tries to say hello might get a jolt, as those nerves tend to spark."
+        },
+        {
+          "tier": 2,
+          "name": "Nimbuzzy",
+          "portrait": "portraits/Tatari__BigHornSheep__unit-45__evolution-2__appearance-default.webp",
+          "lore": "To avoid looking like a weather forecast app icon, Nimbuzzy tries to act as imposing and serious as possible. Unfortunately, a loud thunderous rumble would come out of nowhere whenever Nimbuzzy gets flustered, and that's just even more embarrassing."
+        },
+        {
+          "tier": 3,
+          "name": "Galewether",
+          "portrait": "portraits/Tatari__BigHornSheep__unit-45__evolution-3__appearance-default.webp",
+          "lore": "Now when Galewether gets all heated up, it's a much bigger problem. Well, at least the scorched surroundings mean no one would come close to make small chat anymore."
+        },
+        {
+          "tier": 4,
+          "name": "Cosmoram",
+          "portrait": "portraits/Tatari__BigHornSheep__unit-45__evolution-4__appearance-default.webp",
+          "lore": "No longer driving others away with furious lightning, Cosmoram can now hang silently in the sky as a glowing celestial body. No small talk needed to keep everyone company. Might as well be a warm night light."
+        }
+      ]
+    },
+    {
+      "project_rank": "SR",
+      "chosen_by": "user",
+      "id": 56,
+      "internal_name": "CthulhuFish",
+      "forms": [
+        {
+          "tier": 1,
+          "name": "Maskfry",
+          "portrait": "portraits/Tatari__CthulhuFish__unit-56__evolution-1__appearance-default.webp",
+          "lore": "Those bulging, unblinking eyes give off an eerie sense of knowing, as if resigned to fateful gloom from the shadows. But don't be deceived, for Maskfry is always checking if your scent is worthy of the Dagon."
+        },
+        {
+          "tier": 2,
+          "name": "Ospisces",
+          "portrait": "portraits/Tatari__CthulhuFish__unit-56__evolution-2__appearance-default.webp",
+          "lore": "Bones of blasphemy now bulge from Ospisces's back, who's developed an aversion to freshwater. At night, wet, guttural murmurs fill the air, as if repeated from an ancient chant. You might find strange, sprawling doodles in the bathtub, along with what looks like a ritual sacrifice of your slippers to a mysterious being."
+        },
+        {
+          "tier": 3,
+          "name": "Armorjaw",
+          "portrait": "portraits/Tatari__CthulhuFish__unit-56__evolution-3__appearance-default.webp",
+          "lore": "There's no turning back now. Armorjaw has outgrown the basin, quietly charting a course toward Devil's Reef. When an attempt to reach out is given, only a cold, distant stare is returned, as if quietly questioning your allegiance to humanity."
+        },
+        {
+          "tier": 4,
+          "name": "Dagondeep",
+          "portrait": "portraits/Tatari__CthulhuFish__unit-56__evolution-4__appearance-default.webp",
+          "lore": "Dagondeep is the living tide, a presence that haunts dreams with quiet terror. An ancient body encased in layered scales of armor, each movement echoes the tremors of R'lyeh. Now, the webbed hand beckons: Come, master. There is no need to breathe beneath the sea... and the rent is far cheaper."
+        }
+      ]
+    },
+    {
+      "project_rank": "SR",
+      "chosen_by": "user",
+      "id": 23,
+      "internal_name": "Dichotomus",
+      "forms": [
+        {
+          "tier": 1,
+          "name": "Goonbug",
+          "portrait": "portraits/Tatari__Dichotomus__unit-23__evolution-1__appearance-default.webp",
+          "lore": "Goonbug trains by doing five hundred sprints every day, and knows how to pretend to be a leaf to avoid danger. The perfect embodiment of brains and brawn combined. Well. The brain part is coming along nicely, at least."
+        },
+        {
+          "tier": 2,
+          "name": "Capobeetle",
+          "portrait": "portraits/Tatari__Dichotomus__unit-23__evolution-2__appearance-default.webp",
+          "lore": "Shades on, world gone. Capobeetle is convinced the sunglasses bumped the rizz straight off the charts. Obviously, that calls for 100 selfies at the gym."
+        },
+        {
+          "tier": 3,
+          "name": "Donscarab",
+          "portrait": "portraits/Tatari__Dichotomus__unit-23__evolution-3__appearance-default.webp",
+          "lore": "Donscarab's signature move is flicking opponents away with those reinforced front shells. Can't have Zobos blocking the light for the perfect pec flex."
+        },
+        {
+          "tier": 4,
+          "name": "Beetleknight",
+          "portrait": "portraits/Tatari__Dichotomus__unit-23__evolution-4__appearance-default.webp",
+          "lore": "Beetleknight, the diamond-armored hero, descends from the sky to take out evil with one punch. Saving lives? Absolutely. Showing off cool moves? That's a priority too."
+        }
+      ]
+    },
+    {
+      "project_rank": "R",
+      "chosen_by": "user",
+      "id": 44,
+      "internal_name": "DungBeetle",
+      "forms": [
+        {
+          "tier": 1,
+          "name": "Humbug",
+          "portrait": "portraits/Tatari__DungBeetle__unit-44__evolution-1__appearance-default.webp",
+          "lore": "To the confusion of other Tatari, Humbug favors a strange dark substance, supposedly carrying the sweetness of sunshine, grass, and time itself."
+        },
+        {
+          "tier": 2,
+          "name": "Humbleetle",
+          "portrait": "portraits/Tatari__DungBeetle__unit-44__evolution-2__appearance-default.webp",
+          "lore": "Ask Humbleetle why that dark, gooey stuff is worth eating, and get ready for an earnest breakdown of age, origin, and fermentation process. Most Tatari last for a couple of minutes before their stomachs start to hurl."
+        },
+        {
+          "tier": 3,
+          "name": "Zenscarab",
+          "portrait": "portraits/Tatari__DungBeetle__unit-44__evolution-3__appearance-default.webp",
+          "lore": "The halo atop Zenscarab's head beguiles approaching Tatari into becoming followers. To Zenscarab, there are only two kinds of Tatari: those who love the signature dish, and those who have not tasted it yet."
+        },
+        {
+          "tier": 4,
+          "name": "Hierotyrus",
+          "portrait": "portraits/Tatari__DungBeetle__unit-44__evolution-4__appearance-default.webp",
+          "lore": "Hierotyrus's tastes have transcended the bounds of the ordinary world. The signature favorite has now crystallized into a triangular talisman embedded with a mysterious eye; when held high, not only does it expose the weakness of all within view, but also delivers the swiftest judgement of annihilation."
+        }
+      ]
+    },
+    {
+      "project_rank": "R",
+      "chosen_by": "user",
+      "id": 58,
+      "internal_name": "Owl",
+      "forms": [
+        {
+          "tier": 1,
+          "name": "Hootlet",
+          "portrait": "portraits/Tatari__Owl__unit-58__evolution-1__appearance-default.webp",
+          "lore": "Hootlet believes in time magic and the tail pendulum is a most cherished treasure. Now watch and listen closely... er, was that time magic or sleep magic?"
+        },
+        {
+          "tier": 2,
+          "name": "Tikowl",
+          "portrait": "portraits/Tatari__Owl__unit-58__evolution-2__appearance-default.webp",
+          "lore": "Tikowl loves answering all kinds of questions, including \"Why do humans hunt and return empty-handed?\" and \"Who should settle Tatari disputes, trainers or Tatari?\" Er, beats me anyhow."
+        },
+        {
+          "tier": 3,
+          "name": "Chronerva",
+          "portrait": "portraits/Tatari__Owl__unit-58__evolution-3__appearance-default.webp",
+          "lore": "Chronerva claims to be able to freeze time. Just look at Souverelle who falls still as soon as the chanting starts. Now that's a powerful, intelligent Tatari if you ask me!"
+        },
+        {
+          "tier": 4,
+          "name": "Hypnostrix",
+          "portrait": "portraits/Tatari__Owl__unit-58__evolution-4__appearance-default.webp",
+          "lore": "Time is a cycle that nudges the hands of fate. When the pendulum swings back, we'll be reunited with those we've lost."
+        }
+      ]
+    },
+    {
+      "project_rank": "R",
+      "chosen_by": "assistant_proposal",
+      "id": 19,
+      "internal_name": "Tortoise",
+      "forms": [
+        {
+          "tier": 1,
+          "name": "Gibber",
+          "portrait": "portraits/Tatari__Tortoise__unit-19__evolution-1__appearance-default.webp",
+          "lore": "Lacking the ability to live in the sea, Gibber enjoys flailing on land, mimicking the way sea turtles swim."
+        },
+        {
+          "tier": 2,
+          "name": "Turtuff",
+          "portrait": "portraits/Tatari__Tortoise__unit-19__evolution-2__appearance-default.webp",
+          "lore": "Rarely speaks up and has a habit of fading into the background. But you can always count on Turtuff to step up when help is needed."
+        },
+        {
+          "tier": 3,
+          "name": "Rockshell",
+          "portrait": "portraits/Tatari__Tortoise__unit-19__evolution-3__appearance-default.webp",
+          "lore": "That thick rocky shell of Rockshell is a reliable source of comfort. When Zobos come attacking, there's no need to panic. Just standing there is enough to tank whatever comes."
+        },
+        {
+          "tier": 4,
+          "name": "Terraton",
+          "portrait": "portraits/Tatari__Tortoise__unit-19__evolution-4__appearance-default.webp",
+          "lore": "The rock on Terraton's back resembles a small hill, offering a resting place for small Tatari. Ask for a quick ride, and you won't be turned down."
+        }
+      ]
+    },
+    {
+      "project_rank": "R",
+      "chosen_by": "assistant_proposal",
+      "id": 20,
+      "internal_name": "Deer",
+      "forms": [
+        {
+          "tier": 1,
+          "name": "Voltfawn",
+          "portrait": "portraits/Tatari__Deer__unit-20__evolution-1__appearance-default.webp",
+          "lore": "No matter how powerful the foes may be, Voltfawn never yields, serving diligently under the revered Zapantler."
+        },
+        {
+          "tier": 2,
+          "name": "Sparkdoe",
+          "portrait": "portraits/Tatari__Deer__unit-20__evolution-2__appearance-default.webp",
+          "lore": "Assigned to sentry duty, Sparkdoe's magnetized antlers can sense distant disturbances. This hardworking Tatari's biggest hope is to finish work and clock out on time."
+        },
+        {
+          "tier": 3,
+          "name": "Zapantler",
+          "portrait": "portraits/Tatari__Deer__unit-20__evolution-3__appearance-default.webp",
+          "lore": "Those long magnetic antlers have finally grown in, and with great power comes great responsibility. Instead of majestically summoning thunder, though, Zapantler longs to summon a vacation instead."
+        },
+        {
+          "tier": 4,
+          "name": "Magnedart",
+          "portrait": "portraits/Tatari__Deer__unit-20__evolution-4__appearance-default.webp",
+          "lore": "Commanding entire electromagnetic fields in the area, Magnedart is the mightiest of the clan, though leadership leaves little rest. Those dark circles are never going away, huh."
+        }
+      ]
+    },
+    {
+      "project_rank": "R",
+      "chosen_by": "assistant_proposal",
+      "id": 40,
+      "internal_name": "Rabbit",
+      "forms": [
+        {
+          "tier": 1,
+          "name": "Cheerling",
+          "portrait": "portraits/Tatari__Rabbit__unit-40__evolution-1__appearance-default.webp",
+          "lore": "Even before hatching, Cheerling had a knack for dancing. Whenever there's music, those long ears would sway to the beat like trailing stars. Eggcellent start, Cheerling!"
+        },
+        {
+          "tier": 2,
+          "name": "Cheerlet",
+          "portrait": "portraits/Tatari__Rabbit__unit-40__evolution-2__appearance-default.webp",
+          "lore": "To become a true idol, hard work is a must. Cheerlet practices dancing every day to reach perfection!"
+        },
+        {
+          "tier": 3,
+          "name": "Cheerspring",
+          "portrait": "portraits/Tatari__Rabbit__unit-40__evolution-3__appearance-default.webp",
+          "lore": "Cheerspring uses gorgeous, star-shaped ears to dance, inspiring Tatari to unleash their full potential. They would never admit it, but even some Zobos are fans."
+        },
+        {
+          "tier": 4,
+          "name": "Cheerstella",
+          "portrait": "portraits/Tatari__Rabbit__unit-40__evolution-4__appearance-default.webp",
+          "lore": "With each move, Cheerstella transforms the battlefield into a starlit stage. All you need to save the world is music and a smile, after all, and as long as the dance goes on, there's nothing our fellow Tatari can't do!"
+        }
+      ]
+    },
+    {
+      "project_rank": "R",
+      "chosen_by": "assistant_proposal",
+      "id": 48,
+      "internal_name": "Mushroom",
+      "forms": [
+        {
+          "tier": 1,
+          "name": "Funglet",
+          "portrait": "portraits/Tatari__Mushroom__unit-48__evolution-1__appearance-default.webp",
+          "lore": "Funglet dreams of curling up in a dark, damp corner and sleeping until the end of the world. It'll also be the end of the world for anyone who dares to disturb that sleep."
+        },
+        {
+          "tier": 2,
+          "name": "Trippet",
+          "portrait": "portraits/Tatari__Mushroom__unit-48__evolution-2__appearance-default.webp",
+          "lore": "Trippet fights alongside the trainer because Zobos are just too loud and annoying. Yet for some reason, those spores seem to make things worse and have Zobos all wired up. Sometimes they even start dancing."
+        },
+        {
+          "tier": 3,
+          "name": "Hyphoria",
+          "portrait": "portraits/Tatari__Mushroom__unit-48__evolution-3__appearance-default.webp",
+          "lore": "The illusions woven by Hyphoria are neither dark nor frightening. On the contrary, they form a radiant world of happiness. If reality is too painful, why not drift into a beautiful dream for eternity?"
+        },
+        {
+          "tier": 4,
+          "name": "Ecstamira",
+          "portrait": "portraits/Tatari__Mushroom__unit-48__evolution-4__appearance-default.webp",
+          "lore": "No longer content with weaving fleeting illusions, Ecstamira wants to shape even the living world into a place for sleeping. With spores that can lull the noisiest of Zobos into dazzling dreams, who knows when they'll wake up? Not until the entire world grows quiet, at least."
+        }
+      ]
+    }
+  ]
+}

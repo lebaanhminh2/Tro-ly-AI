@@ -170,7 +170,7 @@ test(
   },
 );
 test(
-  'all four mobile navigation icons and labels share rows across screen sizes',
+  'all five mobile navigation icons and labels share rows across screen sizes',
   { skip: !browserBin, timeout: 60000 },
   async () => {
     const server = await serve(fixture());
@@ -188,7 +188,7 @@ test(
                     return {iconY:icon.y,labelY:label.y,width:icon.width,height:icon.height,display:getComputedStyle(button).display};
                 });return {rows,overflow:document.documentElement.scrollWidth>innerWidth+1};
             })()`);
-        assert.equal(view.rows.length, 4);
+        assert.equal(view.rows.length, 5);
         assert.equal(view.overflow, false);
         for (const row of view.rows) {
           assert.equal(row.width, 24);
@@ -382,7 +382,7 @@ test(
       await browser.wait(
         "document.querySelectorAll('.habit-card').length===8 && !document.querySelector('.feature-updating')",
       );
-      assert.deepEqual(control.calls.slice(start), ['GET habits']);
+      assert.deepEqual(control.calls.slice(start), ['GET linh-thu/tower', 'GET habits']);
       const transitionCalls = control.calls.slice(start);
       await browser.evaluate('window.scrollTo(0,300)');
       const scroll = await browser.evaluate('scrollY');
@@ -455,7 +455,8 @@ test(
           await browser.wait("document.querySelectorAll('.habit-card').length===8");
           const beforeCalls = original.calls.slice(baselineStart);
           assert.ok(
-            beforeCalls.filter((call) => call === 'GET habits').length > transitionCalls.length,
+            beforeCalls.filter((call) => call === 'GET habits').length >
+              transitionCalls.filter((call) => call === 'GET habits').length,
           );
           assert.ok(beforeCalls.includes('GET bootstrap'));
           if (process.env.UI_SCREENSHOT_DIR)
@@ -2149,7 +2150,7 @@ test(
         await browser.evaluate(
           "[...document.querySelectorAll('[data-tab]')].map(button=>button.dataset.tab)",
         ),
-        ['today', 'habits', 'reminders', 'achievements'],
+        ['today', 'habits', 'beasts', 'reminders', 'achievements'],
       );
       await browser.evaluate(
         "document.querySelector('#settings').click();document.querySelector('#sheet input[type=time]').value='06:00';document.querySelector('#sheet input[type=time]').dispatchEvent(new Event('input'));const select=document.querySelector('.settings-experience select');select.value='reduce';select.dispatchEvent(new Event('change'))",

@@ -1,5 +1,7 @@
 # Thói quen — hợp đồng hiện hành
 
+> Bổ sung 19/10/2026: hệ thống Linh thú mới nhận kết quả `achieved/missed/neutral` đã chốt từ domain habit; không tự suy lại quota hoặc dùng task để luyện. Tab Habit có một tháp lật bài bốn tầng theo [đặc tả Linh thú](LINH_THU_SPEC.md). Task hoàn chỉnh chỉ là điều kiện mở tháp; phần lịch/ghi nhận habit bên dưới giữ nguyên. Bản mới đang local, chưa phát hành.
+
 Cập nhật 18/10/2026. Nguồn: `src/domain/habits.ts`, `src/application/habit-service.ts`, `src/adapters/d1/habit-store.ts` và các modules habit ở web. Tài liệu này mô tả hành vi đã có; không còn phần đóng góp sang game.
 
 ## Ghi nhận và ngày sinh hoạt
