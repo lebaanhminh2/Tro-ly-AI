@@ -1,0 +1,263 @@
+{
+  "status": "generated preview, not approved production art",
+  "generationRoute": "imagegen skill CLI through existing local Cockpit gateway",
+  "mainModel": "gpt-6.1-sol",
+  "imageModel": "gpt-image-2.5",
+  "normalForms": 8,
+  "perfectVariants": 2,
+  "runtimeAssetsChanged": false,
+  "sourceReferencesChanged": false,
+  "technicalChecks": "10/10 square 1024px alpha cutouts with at least 80px safe margin; not visual approval",
+  "images": [
+    {
+      "species": "frostnip",
+      "file": "frostnip/t1-frostnip-cutout.png",
+      "sourceFile": "frostnip/t1-frostnip-key.png",
+      "promptFile": "frostnip/t1-frostnip.prompt.txt",
+      "size": [
+        1024,
+        1024
+      ],
+      "alphaRange": [
+        0,
+        255
+      ],
+      "visibleBounds": [
+        82,
+        177,
+        942,
+        847
+      ],
+      "transparentPixels": 643783,
+      "opaquePixels": 393741,
+      "sha256": "c005957da6759a5d2637897ec251face80322bbf49aca58d2b2943bf6544c753",
+      "sourceSha256": "825c80edc4cb27c330f5acfb95d956dc6d3171929926e188df45eec32ae5de73",
+      "alphaMethod": "returned alpha normalized"
+    },
+    {
+      "species": "frostnip",
+      "file": "frostnip/t2-frostpaw-cutout.png",
+      "sourceFile": "frostnip/t2-frostpaw-key.png",
+      "promptFile": "frostnip/t2-frostpaw.prompt.txt",
+      "size": [
+        1024,
+        1024
+      ],
+      "alphaRange": [
+        0,
+        255
+      ],
+      "visibleBounds": [
+        101,
+        82,
+        923,
+        942
+      ],
+      "transparentPixels": 596470,
+      "opaquePixels": 438294,
+      "sha256": "f9c5eafca62464cec8ab37a90d5b25771c2098581566b7623072dab01aefb1d6",
+      "sourceSha256": "8db026fa138b332b38df9e861c8c387e7882a0d2d49330cac6ea0c126d1a3e88",
+      "alphaMethod": "returned alpha normalized"
+    },
+    {
+      "species": "frostnip",
+      "file": "frostnip/t3-frostique-cutout.png",
+      "sourceFile": "frostnip/t3-frostique-key.png",
+      "promptFile": "frostnip/t3-frostique.prompt.txt",
+      "size": [
+        1024,
+        1024
+      ],
+      "alphaRange": [
+        0,
+        255
+      ],
+      "visibleBounds": [
+        82,
+        102,
+        942,
+        921
+      ],
+      "transparentPixels": 562689,
+      "opaquePixels": 470902,
+      "sha256": "7568459cdc2b970716b41b34f15ec9f4baab13dd97eebb7dcd60062a4a9a2f0a",
+      "sourceSha256": "9910b5d44b7467499e5c75a3279ed80279c7db9d44ac7d79a1963c808f3a5676",
+      "alphaMethod": "returned alpha normalized"
+    },
+    {
+      "species": "frostnip",
+      "file": "frostnip/t4-frostluna-cutout.png",
+      "sourceFile": "frostnip/t4-frostluna-key.png",
+      "promptFile": "frostnip/t4-frostluna.prompt.txt",
+      "size": [
+        1024,
+        1024
+      ],
+      "alphaRange": [
+        0,
+        255
+      ],
+      "visibleBounds": [
+        82,
+        97,
+        942,
+        926
+      ],
+      "transparentPixels": 504615,
+      "opaquePixels": 529198,
+      "sha256": "9539d26b8cc3b77e5c572722a4f2a174ffcef9fe1dadb7c5f66b2ff3e38466e4",
+      "sourceSha256": "57c83305901c0d57a82f3df1e0f7ad46d996ad2d48755621e6001cef0712c18a",
+      "alphaMethod": "returned alpha normalized"
+    },
+    {
+      "species": "frostnip",
+      "file": "frostnip/t4-perfect-cutout.png",
+      "sourceFile": "frostnip/t4-perfect-key.png",
+      "promptFile": "frostnip/t4-perfect.prompt.txt",
+      "size": [
+        1024,
+        1024
+      ],
+      "alphaRange": [
+        0,
+        255
+      ],
+      "visibleBounds": [
+        112,
+        82,
+        912,
+        942
+      ],
+      "transparentPixels": 558789,
+      "opaquePixels": 465721,
+      "sha256": "81612419dfa1470950af0c3ac30294ac226733cf8aa0147b6c5271969f138173",
+      "sourceSha256": "4bd48b2cd3ff34bb4843b3bea55541358d52157e0fa58235c0f4b919bb6035d5",
+      "alphaMethod": "chroma-key extraction then normalization"
+    },
+    {
+      "species": "zappur",
+      "file": "zappur/t1-zappur-cutout.png",
+      "sourceFile": "zappur/t1-zappur-key.png",
+      "promptFile": "zappur/t1-zappur.prompt.txt",
+      "size": [
+        1024,
+        1024
+      ],
+      "alphaRange": [
+        0,
+        255
+      ],
+      "visibleBounds": [
+        82,
+        118,
+        942,
+        905
+      ],
+      "transparentPixels": 595547,
+      "opaquePixels": 434020,
+      "sha256": "30358cf3a9ad17e850b84dc188fb4cbe9c620b289dcc31eae4f281124c11f52d",
+      "sourceSha256": "e850a1a47286998872cc2ca34ee413ada097131959fe3b4b551b29c71f893fe6",
+      "alphaMethod": "returned alpha normalized"
+    },
+    {
+      "species": "zappur",
+      "file": "zappur/t2-electroar-cutout.png",
+      "sourceFile": "zappur/t2-electroar-key.png",
+      "promptFile": "zappur/t2-electroar.prompt.txt",
+      "size": [
+        1024,
+        1024
+      ],
+      "alphaRange": [
+        0,
+        255
+      ],
+      "visibleBounds": [
+        97,
+        82,
+        927,
+        942
+      ],
+      "transparentPixels": 608248,
+      "opaquePixels": 418705,
+      "sha256": "4b18ad0b29949e8fef7b8350d09727bb30359a0339b3c11e39afcdda6b96c9da",
+      "sourceSha256": "6bc41d778677ed20cbe763c0d945539d9c547313cb0343f9ac7eccd20ae16747",
+      "alphaMethod": "returned alpha normalized"
+    },
+    {
+      "species": "zappur",
+      "file": "zappur/t3-blitzmane-cutout.png",
+      "sourceFile": "zappur/t3-blitzmane-key.png",
+      "promptFile": "zappur/t3-blitzmane.prompt.txt",
+      "size": [
+        1024,
+        1024
+      ],
+      "alphaRange": [
+        0,
+        255
+      ],
+      "visibleBounds": [
+        82,
+        107,
+        942,
+        917
+      ],
+      "transparentPixels": 644024,
+      "opaquePixels": 377002,
+      "sha256": "513781a9c8b9e804e22cf81263dc2c4688b68b43cd24bf13543e9c186d4cfcf9",
+      "sourceSha256": "84e7c4dcb6ec0e362d3e104ad4808dfe341af00f6dc78055735611b5c88b7bf3",
+      "alphaMethod": "returned alpha normalized"
+    },
+    {
+      "species": "zappur",
+      "file": "zappur/t4-perfect-cutout.png",
+      "sourceFile": "zappur/t4-perfect-key.png",
+      "promptFile": "zappur/t4-perfect.prompt.txt",
+      "size": [
+        1024,
+        1024
+      ],
+      "alphaRange": [
+        0,
+        255
+      ],
+      "visibleBounds": [
+        100,
+        82,
+        923,
+        942
+      ],
+      "transparentPixels": 608513,
+      "opaquePixels": 404172,
+      "sha256": "27c920a27a65f42417c05f04dcaf02d2aa56e8cdefca5c20c6ec689432981de5",
+      "sourceSha256": "e6eab8dbf38fb4a2cf4c47cb6b781eb46efff112546b2bf0266bc07cf47ca14b",
+      "alphaMethod": "returned alpha normalized"
+    },
+    {
+      "species": "zappur",
+      "file": "zappur/t4-stormlion-cutout.png",
+      "sourceFile": "zappur/t4-stormlion-key.png",
+      "promptFile": "zappur/t4-stormlion.prompt.txt",
+      "size": [
+        1024,
+        1024
+      ],
+      "alphaRange": [
+        0,
+        255
+      ],
+      "visibleBounds": [
+        86,
+        82,
+        937,
+        942
+      ],
+      "transparentPixels": 603052,
+      "opaquePixels": 419251,
+      "sha256": "0ea8914727a2f300e9d230a162ad3ae3746172b01b2a5d34664b5d5f9e8433a4",
+      "sourceSha256": "f56abd45d0a8e5fb52a2f318c912e0722b0d6c6c427b014606d754a6c398ee90",
+      "alphaMethod": "returned alpha normalized"
+    }
+  ]
+}

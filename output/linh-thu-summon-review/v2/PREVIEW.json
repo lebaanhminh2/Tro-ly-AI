@@ -1,0 +1,62 @@
+{
+  "status": "Proposal only, pending review",
+  "method": "Current runtime and fixture data; preview DOM/CSS applied in browser memory only",
+  "art": "output/imagegen/summon-portal-v2/portal-raw.png",
+  "generator": "imagegen_cli_cockpit",
+  "model": "gpt-image-2.5",
+  "sourceCodeChanges": [],
+  "productWrites": 0,
+  "checks": [
+    {
+      "w": 390,
+      "h": 1080,
+      "overflow": false,
+      "decoded": 768,
+      "creatureImages": 0,
+      "banner": {
+        "x": 16,
+        "y": 350.890625,
+        "width": 358,
+        "height": 400,
+        "top": 350.890625,
+        "right": 374,
+        "bottom": 750.890625,
+        "left": 16
+      }
+    },
+    {
+      "w": 1440,
+      "h": 980,
+      "overflow": false,
+      "decoded": 768,
+      "creatureImages": 0,
+      "banner": {
+        "x": 331.5,
+        "y": 290.890625,
+        "width": 996,
+        "height": 360,
+        "top": 290.890625,
+        "right": 1327.5,
+        "bottom": 650.890625,
+        "left": 331.5
+      }
+    },
+    {
+      "w": 360,
+      "h": 1010,
+      "overflow": false,
+      "decoded": 768,
+      "creatureImages": 0,
+      "banner": {
+        "x": 16,
+        "y": 348.890625,
+        "width": 328,
+        "height": 384,
+        "top": 348.890625,
+        "right": 344,
+        "bottom": 732.890625,
+        "left": 16
+      }
+    }
+  ]
+}

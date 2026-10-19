@@ -1,0 +1,92 @@
+{
+  "status": "Light pearlescent UI proposal; not implemented",
+  "method": "Isolated browser-only UI prototype; native pearlescent card interface graphic, existing creature art and illustrative data",
+  "sourceFilesModified": [],
+  "serverWrites": 0,
+  "checks": [
+    {
+      "name": "mobile-ready",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "primaryBottom": 694,
+      "viewport": 844,
+      "navTop": 766,
+      "dialog": null
+    },
+    {
+      "name": "mobile-360-ready",
+      "w": 360,
+      "h": 780,
+      "overflow": false,
+      "primaryBottom": 649,
+      "viewport": 780,
+      "navTop": 702,
+      "dialog": null
+    },
+    {
+      "name": "desktop-ready",
+      "w": 1440,
+      "h": 960,
+      "overflow": false,
+      "primaryBottom": 540,
+      "viewport": 960,
+      "navTop": null,
+      "dialog": null
+    },
+    {
+      "name": "mobile-exchange",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "primaryBottom": 694,
+      "viewport": 844,
+      "navTop": 766,
+      "dialog": "sr-sheet"
+    },
+    {
+      "name": "mobile-result-ssr",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "primaryBottom": 694,
+      "viewport": 844,
+      "navTop": 766,
+      "dialog": "sr-result"
+    },
+    {
+      "name": "mobile-results-ten",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "primaryBottom": 694,
+      "viewport": 844,
+      "navTop": 766,
+      "dialog": "sr-result"
+    },
+    {
+      "name": "mobile-result-r",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "primaryBottom": 694,
+      "viewport": 844,
+      "navTop": 766,
+      "dialog": "sr-result"
+    },
+    {
+      "name": "desktop-results-ten",
+      "w": 1440,
+      "h": 960,
+      "overflow": false,
+      "primaryBottom": 540,
+      "viewport": 960,
+      "navTop": null,
+      "dialog": "sr-result"
+    }
+  ],
+  "limitations": [
+    "Static screenshots do not prove animation quality",
+    "Illustrative results and balances; no user account changed"
+  ]
+}

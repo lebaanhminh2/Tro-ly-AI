@@ -1,0 +1,79 @@
+{
+    "date":  "2026-10-19",
+    "generator":  "bundled_imagegen_cli_via_user_selected_local_cockpit_gateway",
+    "builtin_attempt":  "both_failed_502_upstream_no_image_output",
+    "input":  "normal T4 only; rejected purity versions not used",
+    "normalization":  "raw unchanged; alpha\u003c8 set to 0, \u003e=250 set to 255; retain intermediate alpha; crop; fit 860px; center in 1024px transparent canvas",
+    "runtime_integrated":  false,
+    "entries":  [
+                    {
+                        "variant":  "95",
+                        "status":  "proposal_not_approved",
+                        "raw_size":  [
+                                         1254,
+                                         1254
+                                     ],
+                        "raw_alpha_extrema":  [
+                                                  0,
+                                                  255
+                                              ],
+                        "preview_size":  [
+                                             1024,
+                                             1024
+                                         ],
+                        "preview_alpha_bounds":  [
+                                                     82,
+                                                     155,
+                                                     942,
+                                                     869
+                                                 ],
+                        "transparent_margins":  [
+                                                    82,
+                                                    155,
+                                                    82,
+                                                    155
+                                                ],
+                        "hashes":  {
+                                       "output/imagegen/ur-preview-v2/pyropup/t4-pyrodaemon-preview.png":  "7b467ae740e15a4314c9e4c94d2c4e91aed4387df02f8bfa461098127ab5bc7e",
+                                       "output/imagegen/pyrodaemon-purity-v5/pyrodaemon-95-raw.png":  "10eb9ff177dd09ce3fbb1bbd7486f53f486f7020d173057b1e1084df89b7b1e3",
+                                       "output/imagegen/pyrodaemon-purity-v5/pyrodaemon-95-preview.png":  "a0063233061753705e025ecb62b95859e53ed90ca1c700d9bd152ed77b77ce01",
+                                       "output/imagegen/pyrodaemon-purity-v5/95.prompt.txt":  "dda3a5bafd12f8fc0a5fd23386ce7da000828bca689b87dece00b1b58816ad4a"
+                                   }
+                    },
+                    {
+                        "variant":  "100",
+                        "status":  "proposal_not_approved",
+                        "raw_size":  [
+                                         1254,
+                                         1254
+                                     ],
+                        "raw_alpha_extrema":  [
+                                                  0,
+                                                  255
+                                              ],
+                        "preview_size":  [
+                                             1024,
+                                             1024
+                                         ],
+                        "preview_alpha_bounds":  [
+                                                     82,
+                                                     132,
+                                                     942,
+                                                     892
+                                                 ],
+                        "transparent_margins":  [
+                                                    82,
+                                                    132,
+                                                    82,
+                                                    132
+                                                ],
+                        "hashes":  {
+                                       "output/imagegen/ur-preview-v2/pyropup/t4-pyrodaemon-preview.png":  "7b467ae740e15a4314c9e4c94d2c4e91aed4387df02f8bfa461098127ab5bc7e",
+                                       "output/imagegen/pyrodaemon-purity-v5/pyrodaemon-100-raw.png":  "b89d782327f796b0786e885de23d43fce6d74fbb1f8404c41c404e1d1ac31a1e",
+                                       "output/imagegen/pyrodaemon-purity-v5/pyrodaemon-100-preview.png":  "57f6adf74a724b0c1a12cd997255c09b4b5dbf092064590091c8282c8885d56a",
+                                       "output/imagegen/pyrodaemon-purity-v5/100.prompt.txt":  "37d140ce02e2b21201b388058f8c47c4f02b76cdd02986fa90df01d388f0d5d2"
+                                   }
+                    }
+                ],
+    "configured_model":  "gpt-image-2.5"
+}

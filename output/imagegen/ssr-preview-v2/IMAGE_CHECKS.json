@@ -1,0 +1,25 @@
+{
+  "status": "preview_only_awaiting_user_review",
+  "generator": "imagegen_cli_via_existing_local_cockpit_gateway",
+  "source": "docs/assets/linh-thu/reference/ssr/zappur/t4-stormlion.webp",
+  "raw_dimensions": [
+    1254,
+    1254
+  ],
+  "normalized_dimensions": [
+    1024,
+    1024
+  ],
+  "alpha_bounds": [
+    83,
+    82,
+    941,
+    942
+  ],
+  "sha256": {
+    "t4-stormlion.webp": "b88d0a2c5cb42c67f6c461b8a4c8384b68d3ab7d20bf7d55c7f688c5e5b3a454",
+    "stormlion-t4-raw.png": "23eb7002536069ac7a6c23ceafdca60a2c47843c8e0b026740b81989aeba2e1a",
+    "stormlion-t4-preview.png": "f854a294cf2372e416830e09f00c826a921a42bab5c84e21a747ed25e8420135",
+    "stormlion-t4.prompt.txt": "a4664411707749b86ebfda9940f8448700d70640192be801719bc4b079238059"
+  }
+}

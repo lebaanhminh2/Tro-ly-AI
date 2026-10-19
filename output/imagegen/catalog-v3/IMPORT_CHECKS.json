@@ -1,0 +1,2897 @@
+{
+  "generator": "imagegen_cli_cockpit",
+  "normalization": "raw unchanged; alpha<8 ->0, >=250 ->255, intermediate retained; alpha crop, fit860, horizontal center, bottom anchor y942 on1024 canvas",
+  "records": [
+    {
+      "speciesId": "pyropup",
+      "form": 1,
+      "variant": "normal",
+      "input": "output/imagegen/ur-preview-v2/pyropup/t1-pyropup-preview.png",
+      "promptPath": "output/imagegen/ur-preview-v2/pyropup/t1-pyropup.prompt.txt",
+      "rawSize": [
+        1024,
+        1024
+      ],
+      "rawAlphaBounds": [
+        82,
+        108,
+        942,
+        915
+      ],
+      "previewAlphaBounds": [
+        82,
+        135,
+        942,
+        942
+      ],
+      "rawSha256": "653afafe049b1ed6d2e2cd4f1da8ab5880021ef778a808eef3f1fb9c192b6ff1",
+      "sourceSha256": "dae0cf4abdd3e5f988bab473c2467f3fb7e794ae3445400e1db14ef1122376e9"
+    },
+    {
+      "speciesId": "pyropup",
+      "form": 2,
+      "variant": "normal",
+      "input": "output/imagegen/ur-preview-v2/pyropup/t2-pyrohound-preview.png",
+      "promptPath": "output/imagegen/ur-preview-v2/pyropup/t2-pyrohound.prompt.txt",
+      "rawSize": [
+        1024,
+        1024
+      ],
+      "rawAlphaBounds": [
+        82,
+        153,
+        942,
+        870
+      ],
+      "previewAlphaBounds": [
+        82,
+        225,
+        942,
+        942
+      ],
+      "rawSha256": "fd4c87d931f81dc0dc20af640fabd73cdd64d72a329b0692ec69abd5b855171b",
+      "sourceSha256": "4bccc6a964042cd491fd9de2f4ee78ce797b87b4f64594acddba529fe9eb751e"
+    },
+    {
+      "speciesId": "pyropup",
+      "form": 3,
+      "variant": "normal",
+      "input": "output/imagegen/ur-preview-v2/pyropup/t3-hellhound-preview.png",
+      "promptPath": "output/imagegen/ur-preview-v2/pyropup/t3-hellhound.prompt.txt",
+      "rawSize": [
+        1024,
+        1024
+      ],
+      "rawAlphaBounds": [
+        82,
+        93,
+        942,
+        929
+      ],
+      "previewAlphaBounds": [
+        82,
+        106,
+        942,
+        942
+      ],
+      "rawSha256": "15f67beab98930991d50aad8dccb0ce9d602a772d01c5e44f11cc08f5733fb48",
+      "sourceSha256": "583791fb2dbec62ad3d4f0d2b51d7e891f406ed29fbfe73b497b1bdd5b1b07cd"
+    },
+    {
+      "speciesId": "pyropup",
+      "form": 4,
+      "variant": "normal",
+      "input": "output/imagegen/ur-preview-v2/pyropup/t4-pyrodaemon-preview.png",
+      "promptPath": "output/imagegen/ur-preview-v2/pyropup/t4-pyrodaemon.prompt.txt",
+      "rawSize": [
+        1024,
+        1024
+      ],
+      "rawAlphaBounds": [
+        82,
+        155,
+        942,
+        869
+      ],
+      "previewAlphaBounds": [
+        82,
+        228,
+        942,
+        942
+      ],
+      "rawSha256": "7b467ae740e15a4314c9e4c94d2c4e91aed4387df02f8bfa461098127ab5bc7e",
+      "sourceSha256": "da2982e91bdc8caf7bbc201efa2c8955fc4cb46cf954d09557bdb9f52c20de05"
+    },
+    {
+      "speciesId": "rubblet",
+      "form": 1,
+      "variant": "normal",
+      "input": "output/imagegen/ur-preview-v2/rubblet/t1-rubblet-preview.png",
+      "promptPath": "output/imagegen/ur-preview-v2/rubblet/t1-rubblet.prompt.txt",
+      "rawSize": [
+        1024,
+        1024
+      ],
+      "rawAlphaBounds": [
+        82,
+        210,
+        942,
+        814
+      ],
+      "previewAlphaBounds": [
+        82,
+        338,
+        942,
+        942
+      ],
+      "rawSha256": "0fa356674913fae5170d2bd0090f4bff1a04c1f9aa34792b0f7f5b4f3e358aac",
+      "sourceSha256": "9866a66231eb6511f37561b293beeb6d83552b778c4da062926bba5dc2039c24"
+    },
+    {
+      "speciesId": "rubblet",
+      "form": 2,
+      "variant": "normal",
+      "input": "output/imagegen/ur-preview-v2/rubblet/t2-cobbledon-preview.png",
+      "promptPath": "output/imagegen/ur-preview-v2/rubblet/t2-cobbledon.prompt.txt",
+      "rawSize": [
+        1024,
+        1024
+      ],
+      "rawAlphaBounds": [
+        82,
+        169,
+        942,
+        855
+      ],
+      "previewAlphaBounds": [
+        82,
+        256,
+        942,
+        942
+      ],
+      "rawSha256": "a0b02a588c0b160ed3ee9c4c8ccc5d1aac7dad9e665895560dc7d843fb067c5f",
+      "sourceSha256": "26e6e8b781c095aae3cb603ac9da68ebbf48ed53c8b8c6cdd852fa78e2be1e08"
+    },
+    {
+      "speciesId": "rubblet",
+      "form": 3,
+      "variant": "normal",
+      "input": "output/imagegen/ur-preview-v2/rubblet/t3-rockzilla-preview.png",
+      "promptPath": "output/imagegen/ur-preview-v2/rubblet/t3-rockzilla.prompt.txt",
+      "rawSize": [
+        1024,
+        1024
+      ],
+      "rawAlphaBounds": [
+        82,
+        96,
+        941,
+        927
+      ],
+      "previewAlphaBounds": [
+        82,
+        111,
+        941,
+        942
+      ],
+      "rawSha256": "161926017c27129cb09f90fac9c1b768ea8c8a1a15d5d5b2404cb537480dee09",
+      "sourceSha256": "26733025fcfa75b3eef0f22e1634a1ce74314047c7ded1ec796155fa61226626"
+    },
+    {
+      "speciesId": "rubblet",
+      "form": 4,
+      "variant": "normal",
+      "input": "output/imagegen/ur-preview-v2/rubblet/t4-meteorax-preview.png",
+      "promptPath": "output/imagegen/ur-preview-v2/rubblet/t4-meteorax.prompt.txt",
+      "rawSize": [
+        1024,
+        1024
+      ],
+      "rawAlphaBounds": [
+        82,
+        144,
+        941,
+        880
+      ],
+      "previewAlphaBounds": [
+        82,
+        206,
+        941,
+        942
+      ],
+      "rawSha256": "8f9dbd6c6453b6a532bf918f306b09be511d52edf3e270f6659857af09c500e7",
+      "sourceSha256": "6fd5302294f599a0de7f2287a763927fb125c8a1d34efe069cb8940eaa06f6fe"
+    },
+    {
+      "speciesId": "zappur",
+      "form": 4,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/art/approved-v2/zappur/t4-normal.png",
+      "promptPath": "docs/assets/linh-thu/art/approved-v2/zappur/prompts/t4-normal.txt",
+      "rawSize": [
+        1024,
+        1024
+      ],
+      "rawAlphaBounds": [
+        84,
+        82,
+        941,
+        942
+      ],
+      "previewAlphaBounds": [
+        83,
+        82,
+        940,
+        942
+      ],
+      "rawSha256": "f854a294cf2372e416830e09f00c826a921a42bab5c84e21a747ed25e8420135",
+      "sourceSha256": "d2438c6f9e75f1035fc5bdaa5d1d71e394e28d77d9afd2f5d78f982d84715d8e"
+    },
+    {
+      "speciesId": "zappur",
+      "form": 4,
+      "variant": "awakened",
+      "input": "docs/assets/linh-thu/art/approved-v2/zappur/t4-awakened95.png",
+      "promptPath": "docs/assets/linh-thu/art/approved-v2/zappur/prompts/t4-awakened95.txt",
+      "rawSize": [
+        1024,
+        1024
+      ],
+      "rawAlphaBounds": [
+        84,
+        82,
+        940,
+        942
+      ],
+      "previewAlphaBounds": [
+        84,
+        82,
+        940,
+        942
+      ],
+      "rawSha256": "6916a7c3b5e5df83517fcd7c62b7bca909a2453279e1ef798c53ce7cf3008d09",
+      "sourceSha256": "e8964cbffd5c48a37f92a200f25d08d216e6e920512e0c58c5f097a4eb2c161f"
+    },
+    {
+      "speciesId": "zappur",
+      "form": 4,
+      "variant": "perfect",
+      "input": "docs/assets/linh-thu/art/approved-v2/zappur/t4-perfect.png",
+      "promptPath": "docs/assets/linh-thu/art/approved-v2/zappur/prompts/t4-perfect.txt",
+      "rawSize": [
+        1024,
+        1024
+      ],
+      "rawAlphaBounds": [
+        85,
+        82,
+        940,
+        942
+      ],
+      "previewAlphaBounds": [
+        84,
+        82,
+        939,
+        942
+      ],
+      "rawSha256": "4f29536fff85764d3a78e45c91c0ddd7b750a301f65696e39dd97095465b1ee9",
+      "sourceSha256": "6d31a269c0aaad2df9dba2388737f1b2a61f5ceca8a6826e55dc312ef4db0075"
+    },
+    {
+      "speciesId": "pyropup",
+      "form": 4,
+      "variant": "awakened",
+      "input": "output/imagegen/pyrodaemon-purity-v5/pyrodaemon-95-preview.png",
+      "promptPath": "output/imagegen/pyrodaemon-purity-v5/95.prompt.txt",
+      "rawSize": [
+        1024,
+        1024
+      ],
+      "rawAlphaBounds": [
+        82,
+        155,
+        941,
+        869
+      ],
+      "previewAlphaBounds": [
+        82,
+        228,
+        941,
+        942
+      ],
+      "rawSha256": "a0063233061753705e025ecb62b95859e53ed90ca1c700d9bd152ed77b77ce01",
+      "sourceSha256": "5edc2d01fff9aceeb3d669eca9bcbd4c614d54027e66ee922068e90fc4ccfece"
+    },
+    {
+      "speciesId": "pyropup",
+      "form": 4,
+      "variant": "perfect",
+      "input": "output/imagegen/pyrodaemon-purity-v5/pyrodaemon-100-preview.png",
+      "promptPath": "output/imagegen/pyrodaemon-purity-v5/100.prompt.txt",
+      "rawSize": [
+        1024,
+        1024
+      ],
+      "rawAlphaBounds": [
+        82,
+        132,
+        942,
+        892
+      ],
+      "previewAlphaBounds": [
+        82,
+        182,
+        942,
+        942
+      ],
+      "rawSha256": "57f6adf74a724b0c1a12cd997255c09b4b5dbf092064590091c8282c8885d56a",
+      "sourceSha256": "e4667ed0054c9122f37cbf251ee3daed0ea6ccc53c51c8ae6c640f15c9f1fc46"
+    },
+    {
+      "speciesId": "frostnip",
+      "form": 4,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/ssr/frostnip/t4-frostluna.webp",
+      "promptPath": "output/imagegen/catalog-v3/ssr/frostnip/t4-normal.prompt.txt",
+      "inputSha256": "677a072cc81e7f6e07e826b83084b6a67769eda9e17e52177a52fe4fcb34c63d",
+      "promptSha256": "900f98e66f9ff14af5cd2f1f740088794e95ec90e74d20f7e2258abdad26860d",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        22,
+        28,
+        1230,
+        1216
+      ],
+      "previewAlphaBounds": [
+        82,
+        96,
+        942,
+        942
+      ],
+      "rawSha256": "2d6dd703d43b479a4abc66d75ab949a712a63715d16b5e745306649c4eed7984",
+      "sourceSha256": "7109953ffb83c023830411ea09906b94397afebdc297ff28eaf0078208ce6454"
+    },
+    {
+      "speciesId": "frostnip",
+      "form": 1,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/ssr/frostnip/t1-frostnip.webp",
+      "promptPath": "output/imagegen/catalog-v3/ssr/frostnip/t1-normal.prompt.txt",
+      "inputSha256": "535c82e4518e27ae0c89ca6fde03e92d1edee334dee769cebd95e9a025a4045d",
+      "promptSha256": "76345eef0fca08b970893488db3bf973abfb84a6ad93fd2e4c94c1fbc3546a29",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        106,
+        210,
+        1169,
+        1092
+      ],
+      "previewAlphaBounds": [
+        82,
+        228,
+        942,
+        942
+      ],
+      "rawSha256": "ad3f81d1fd198aeedd76b498de492236c5aa9d6eb91ef5c0a1fb30bc2ba0d553",
+      "sourceSha256": "2232d94d2ecc6ff87ee48209e53c4d677a35591c9bf8d5e14b81462f9b30ee94"
+    },
+    {
+      "speciesId": "frostnip",
+      "form": 2,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/ssr/frostnip/t2-frostpaw.webp",
+      "promptPath": "output/imagegen/catalog-v3/ssr/frostnip/t2-normal.prompt.txt",
+      "inputSha256": "226242ef58f45f384186be30d483b12b4ffa098ad7bf0658b03e0fca57032389",
+      "promptSha256": "76211b075e2a187c56326181f8053f154c463c848d296ad091b35cd5c993d1ff",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        126,
+        115,
+        1130,
+        1172
+      ],
+      "previewAlphaBounds": [
+        103,
+        82,
+        920,
+        942
+      ],
+      "rawSha256": "212dd23f57a8d74d8f642f99ceeaa5876ef28d4376b17565e8ef8a5301dc106f",
+      "sourceSha256": "2e244fe686bd809cbd37aca7b418a21ba2dee62c5b09f3619d31dda8efac59cd"
+    },
+    {
+      "speciesId": "frostnip",
+      "form": 3,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/ssr/frostnip/t3-frostique.webp",
+      "promptPath": "output/imagegen/catalog-v3/ssr/frostnip/t3-normal.prompt.txt",
+      "inputSha256": "4413ec0b4305c42c23bbe041c204ce53ea9e8c158b2407e301c41d9806f85220",
+      "promptSha256": "30d99cf6ffe80ba5bbb7b7312dcb106aca8913512a5639f77303f021a298b9f3",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        43,
+        66,
+        1217,
+        1206
+      ],
+      "previewAlphaBounds": [
+        82,
+        107,
+        942,
+        942
+      ],
+      "rawSha256": "cae3e35ad6d45d931169b3353c71afe095ad59054dcdf81d39e8ae4c9e681951",
+      "sourceSha256": "8a36c8148281016c3c11253f6fcd6a423fb3f30ad07f815247a908584cdbd3ae"
+    },
+    {
+      "speciesId": "zappur",
+      "form": 1,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/ssr/zappur/t1-zappur.webp",
+      "promptPath": "output/imagegen/catalog-v3/ssr/zappur/t1-normal.prompt.txt",
+      "inputSha256": "5e98fa8d3554f01c62f5ea2e2d7274c052fbf4405259be4b866f0eb91203d1d0",
+      "promptSha256": "5dc7a87299243b76a5ab033311eccc161d720658aec036e67ae97dca0f8f1750",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        117,
+        184,
+        1097,
+        1045
+      ],
+      "previewAlphaBounds": [
+        82,
+        186,
+        942,
+        942
+      ],
+      "rawSha256": "094fb66ae08b36e0692a3df7bb27e66125e0461ed67c138d98ebc380fb4710ce",
+      "sourceSha256": "3b6a44f818f159d645685820dd797c76334860c60e9a93cbc5f3c0c26cf387db"
+    },
+    {
+      "speciesId": "zappur",
+      "form": 2,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/ssr/zappur/t2-electroar.webp",
+      "promptPath": "output/imagegen/catalog-v3/ssr/zappur/t2-normal.prompt.txt",
+      "inputSha256": "178fb509ce539c5b38cdb85d5b28f9c1c236357b47d9e1a3af3b37c6ad6ae195",
+      "promptSha256": "e88adaeaf1dc795f6f706d028df915e75fdc0f57fd9b8096a66152eb054c1e46",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        152,
+        74,
+        1136,
+        1158
+      ],
+      "previewAlphaBounds": [
+        121,
+        82,
+        902,
+        942
+      ],
+      "rawSha256": "7a285100c99d58ae4591532a827fb54f02abf853d6045c7a47a5e17c78b1c7f6",
+      "sourceSha256": "08fedd01ce3cb6b6b7b2c8f0aeb4765a71f5e9f4012c25e0b4fc31fec006aade"
+    },
+    {
+      "speciesId": "zappur",
+      "form": 3,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/ssr/zappur/t3-blitzmane.webp",
+      "promptPath": "output/imagegen/catalog-v3/ssr/zappur/t3-normal.prompt.txt",
+      "inputSha256": "05a4c40daf1fc26e3046fdf2ef9dc6e7dc73e4435f7053ab95dc04ab5c581a25",
+      "promptSha256": "8a378bc1bb85632b4b40f573c77478db667aae2e334eb2dbe25c2759c83179cf",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        54,
+        56,
+        1214,
+        1174
+      ],
+      "previewAlphaBounds": [
+        82,
+        113,
+        942,
+        942
+      ],
+      "rawSha256": "829e3873aff1f8c91ba9c4b2d0d52a5d930415469509b7ff97c766309ca17048",
+      "sourceSha256": "faa2ec5b5dc4f22e4e220d3e753a822d31f4ac38db30a2af97822a1a280f9cfb"
+    },
+    {
+      "speciesId": "skinklet",
+      "form": 4,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/ssr/skinklet/t4-hychroma.webp",
+      "promptPath": "output/imagegen/catalog-v3/ssr/skinklet/t4-normal.prompt.txt",
+      "inputSha256": "a0496b8f5dba0cb18794bb4f1ea161dd4bdcd91f7722a980bf2fdeeb72a0a20e",
+      "promptSha256": "f1f160707ab1692e7b57b3aafc9421489a9925363a13e5cce26d55e5350c1a15",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        26,
+        71,
+        1231,
+        1183
+      ],
+      "previewAlphaBounds": [
+        82,
+        148,
+        942,
+        942
+      ],
+      "rawSha256": "8294605dd8de37f406cb485bc8953dc90905ac1797eac916fcddfa5a28ce7557",
+      "sourceSha256": "05310525d4ca4a7d54ff86e47d4f3e6bdec5a412b104bbce5ba9a206dcec1b87"
+    },
+    {
+      "speciesId": "skinklet",
+      "form": 1,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/ssr/skinklet/t1-skinklet.webp",
+      "promptPath": "output/imagegen/catalog-v3/ssr/skinklet/t1-normal.prompt.txt",
+      "inputSha256": "74c6b44c3f98e666a9c17afae097dffafce5dfb28a9bc5035bad73bbc81c9690",
+      "promptSha256": "5ab2a2ae0cd5b43147a13a2e4f256cc4c238a454709e8ca2d1c288350a610fbe",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        101,
+        230,
+        1157,
+        1047
+      ],
+      "previewAlphaBounds": [
+        82,
+        277,
+        942,
+        942
+      ],
+      "rawSha256": "5163f7acf84d7f949a4e4b51f3a299cb551ecffb57ebaafc998a3002ad1bf74a",
+      "sourceSha256": "24868fa823353ac51c94f4c5816ef106617732908bd96e7602ec514a5f4cf998"
+    },
+    {
+      "speciesId": "skinklet",
+      "form": 2,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/ssr/skinklet/t2-skinkoon.webp",
+      "promptPath": "output/imagegen/catalog-v3/ssr/skinklet/t2-normal.prompt.txt",
+      "inputSha256": "c067e8e26dc52595d0b511af45d5932c34657683314b51972ecf042e3b4c2b8c",
+      "promptSha256": "033d5072079ba893ca7dd195a873988912a434f457f4fb1eb47c7eecff0b3494",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        106,
+        112,
+        1149,
+        1160
+      ],
+      "previewAlphaBounds": [
+        84,
+        82,
+        940,
+        942
+      ],
+      "rawSha256": "36e33cd90ae6f3fb20084eab1fde0e2e3fa33ffbbb8238e5ccb340bb7504b2b8",
+      "sourceSha256": "0bc0d5c7841a019ca69528248d5e3e8c7861b5fd37930af8910bc19c4c3d1b3b"
+    },
+    {
+      "speciesId": "skinklet",
+      "form": 3,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/ssr/skinklet/t3-ninjaguana.webp",
+      "promptPath": "output/imagegen/catalog-v3/ssr/skinklet/t3-normal.prompt.txt",
+      "inputSha256": "5178847e2fe6b51c0416c0586176d479f8eaeff95085b41de26c5d28f5ef523c",
+      "promptSha256": "1b71766c7c71e2472f361ddaa5612561f618762a8d8e6d1c0e3a3c0c24ab4113",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        34,
+        192,
+        1229,
+        1084
+      ],
+      "previewAlphaBounds": [
+        82,
+        300,
+        942,
+        942
+      ],
+      "rawSha256": "5000a0616d1ecbbdae6dbd7acec45e544136d1f5f9a1adf480d2f31d8f669205",
+      "sourceSha256": "609a3e2e601f73fdd3d013d92be0fa8c6238e2ae4e364497d8c96b322bd14dc6"
+    },
+    {
+      "speciesId": "punchimp",
+      "form": 4,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/ssr/punchimp/t4-rockong.webp",
+      "promptPath": "output/imagegen/catalog-v3/ssr/punchimp/t4-normal.prompt.txt",
+      "inputSha256": "5e4f5b03b7bf44b3d8639f62fa643cff4989a60f929d5f68f3a71d89932f2748",
+      "promptSha256": "e18d5728160b9325658efbfbc2bab91ed617451831c5c237b9e230aeb122cc05",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        35,
+        127,
+        1220,
+        1123
+      ],
+      "previewAlphaBounds": [
+        82,
+        219,
+        942,
+        942
+      ],
+      "rawSha256": "1ed9f7760b9c841d8163280dd15c57fab6d1837c40590a229f3208b17bb5cfee",
+      "sourceSha256": "40e95cd738e3c7f1694b8146e8a163b8a3a6b3c77c4f8af3c0d1d4aeb37468ce"
+    },
+    {
+      "speciesId": "punchimp",
+      "form": 1,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/ssr/punchimp/t1-punchimp.webp",
+      "promptPath": "output/imagegen/catalog-v3/ssr/punchimp/t1-normal.prompt.txt",
+      "inputSha256": "64c0fba97c782b0ecfd2d5d1cfec67c916fac919833094c79b7ce2b91ed5d95e",
+      "promptSha256": "666593b947df19334479f0e27a6414f4283ba0b40597b2932b6ccd7917fc7bb9",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        116,
+        211,
+        1136,
+        1005
+      ],
+      "previewAlphaBounds": [
+        82,
+        273,
+        942,
+        942
+      ],
+      "rawSha256": "6a724191110fb0745eda58b64b07a90b321a5af499694382ae08f51efb0889f1",
+      "sourceSha256": "a2530be74c174a268c172a9558e19e7a9bc3f7855b521adab51e017713fcfdec"
+    },
+    {
+      "speciesId": "punchimp",
+      "form": 2,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/ssr/punchimp/t2-rockfu.webp",
+      "promptPath": "output/imagegen/catalog-v3/ssr/punchimp/t2-normal.prompt.txt",
+      "inputSha256": "6394e4a809059ae850887c951db912e25b444dfd2aab5fec92c60604a028f18c",
+      "promptSha256": "deaa66ab3ff555b4b565cb0e6e8bcaecbc613d5a0355f27490e1449a975b24ba",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        129,
+        138,
+        1121,
+        1107
+      ],
+      "previewAlphaBounds": [
+        82,
+        102,
+        942,
+        942
+      ],
+      "rawSha256": "60093eccb62ee2a147d172585c8ef03649625ededcf2a2db9865ee86e6fccaa9",
+      "sourceSha256": "ebcad5aee25eb03303aea154b40edf2b2225657f1d16fabdbfcb78a786d8cc8d"
+    },
+    {
+      "speciesId": "punchimp",
+      "form": 3,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/ssr/punchimp/t3-rockwu.webp",
+      "promptPath": "output/imagegen/catalog-v3/ssr/punchimp/t3-normal.prompt.txt",
+      "inputSha256": "df46f799f16a03d3c96fecf357e44d62f60f7914365cd3ef3a17098c54894381",
+      "promptSha256": "6a043eaeed5a10e5468ceb98e3ad8eda0261ce15e67ed5a31de49c72efc5f668",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        47,
+        37,
+        1207,
+        1215
+      ],
+      "previewAlphaBounds": [
+        88,
+        82,
+        935,
+        942
+      ],
+      "rawSha256": "7ca97485967bb1090c899b4137df71276718acba20a9d76a4f4d145091f13386",
+      "sourceSha256": "5643224c95c2b07519ee20ef31d03b3c74f2980d3462da3b3b9247baafbed8b5"
+    },
+    {
+      "speciesId": "shardsnail",
+      "form": 4,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/sr/shardsnail/t4-crystalsnail.webp",
+      "promptPath": "output/imagegen/catalog-v3/sr/shardsnail/t4-normal.prompt.txt",
+      "inputSha256": "e59a0554e54fee0c190097496eea7f4db6ec4d03f18639487b438550a1cd5f1f",
+      "promptSha256": "7f48d6c994c00b043b959199a757412793d5ca74524096a625174eb44c9006ee",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        48,
+        47,
+        1217,
+        1195
+      ],
+      "previewAlphaBounds": [
+        82,
+        97,
+        942,
+        942
+      ],
+      "rawSha256": "f4dd3bd604c5d414efffed920e9941cdba33bd0de880a4ae04c0f8cd23fd29ed",
+      "sourceSha256": "a581f7852e7a14e0e3bb6c6f698b5a229a8be98cd78eff7a12a6eb498f29d014"
+    },
+    {
+      "speciesId": "shardsnail",
+      "form": 1,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/sr/shardsnail/t1-shardsnail.webp",
+      "promptPath": "output/imagegen/catalog-v3/sr/shardsnail/t1-normal.prompt.txt",
+      "inputSha256": "611420d403219a2e8e73d78ea0a7e6d0bc29dbc3f00fb310d8274f617192db3d",
+      "promptSha256": "63996ac575060310af3d38e31959bcfec91b64bbc79e085d483851ab772b1e61",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        81,
+        186,
+        1160,
+        1072
+      ],
+      "previewAlphaBounds": [
+        82,
+        236,
+        942,
+        942
+      ],
+      "rawSha256": "cb959df8fbe64b487a4f779704d172037bbf16177f0e19e7abb519ca40084d62",
+      "sourceSha256": "b7d48b8620bb5e06d3d3320230a16a632af1f4c2b7a423d107e8c1d6aaa6211e"
+    },
+    {
+      "speciesId": "shardsnail",
+      "form": 2,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/sr/shardsnail/t2-gemsnail.webp",
+      "promptPath": "output/imagegen/catalog-v3/sr/shardsnail/t2-normal.prompt.txt",
+      "inputSha256": "1cf9e93cfed0f78c415554ff0581a7dd37ea8059d9dcf50110266020da5d73d8",
+      "promptSha256": "f33debff6e1d28462e57f4aef65fdc65ff163d45f031e2ae781130e4a7837b45",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        49,
+        231,
+        1202,
+        1066
+      ],
+      "previewAlphaBounds": [
+        82,
+        319,
+        942,
+        942
+      ],
+      "rawSha256": "ec6cca24d105b323768786ef345a67a136d6be051a8f32168c66138b7c5bbf0b",
+      "sourceSha256": "a5ac82166a7c04b9d851b828a751aa11e27e0f355de1b588b08d0841b098f71d"
+    },
+    {
+      "speciesId": "shardsnail",
+      "form": 3,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/sr/shardsnail/t3-jewelsnail.webp",
+      "promptPath": "output/imagegen/catalog-v3/sr/shardsnail/t3-normal.prompt.txt",
+      "inputSha256": "23b20ac9eeebc7abeac0702209eb17b8091d7dd2867ad61dd9261f345a0e3ea2",
+      "promptSha256": "5f41dc5bdc0db8b78b0ffb019af1e57485c45bb06b8eafc9448e1d193430552b",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        26,
+        91,
+        1228,
+        1126
+      ],
+      "previewAlphaBounds": [
+        82,
+        201,
+        942,
+        942
+      ],
+      "rawSha256": "f42f826cf735d162847089dacb329140a38c52f56058e7801fde114435d22722",
+      "sourceSha256": "31dbde02e1511643905079abc1aa75cf17cf2071136bf02edf28c66661df3efe"
+    },
+    {
+      "speciesId": "flameow",
+      "form": 4,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/sr/flameow/t4-cinderclaw.webp",
+      "promptPath": "output/imagegen/catalog-v3/sr/flameow/t4-normal.prompt.txt",
+      "inputSha256": "55f2e4cf1fd0322697a2c60a5f3eab9e304595bb36dea395e09c667c1262d5fd",
+      "promptSha256": "2fb6e56db8ab18123438850006e21fafe082906a94439d8dcfbb9f6fb1a7e503",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        45,
+        89,
+        1227,
+        1130
+      ],
+      "previewAlphaBounds": [
+        82,
+        185,
+        942,
+        942
+      ],
+      "rawSha256": "76352c463afe7a0173d0902e00da7b9d4c6078cf5d2b59b7c9695cb85ae7e9c4",
+      "sourceSha256": "36d6b9b104b5ed14f733c1c092406ebe2e952a59e7e01f28a54156b312930f1c"
+    },
+    {
+      "speciesId": "flameow",
+      "form": 1,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/sr/flameow/t1-flameow.webp",
+      "promptPath": "output/imagegen/catalog-v3/sr/flameow/t1-normal.prompt.txt",
+      "inputSha256": "f32081a7efda0405f57c97255f9dec0fa4c6531e05f9867355f0aed95367aeae",
+      "promptSha256": "eacd9feb86e5ce3aa867ce4a2db2964e01b5ebfcc67d730d529b066c948b2c05",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        132,
+        115,
+        1133,
+        1152
+      ],
+      "previewAlphaBounds": [
+        97,
+        82,
+        927,
+        942
+      ],
+      "rawSha256": "104a2cf6d996179421e7f13052e2bac612a86c89b34b68554a26013fb64ca12a",
+      "sourceSha256": "2ec677345f000a6a12b2330fa4c96d872680be7904e453edc356c710be87e8b6"
+    },
+    {
+      "speciesId": "flameow",
+      "form": 2,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/sr/flameow/t2-nekoflare.webp",
+      "promptPath": "output/imagegen/catalog-v3/sr/flameow/t2-normal.prompt.txt",
+      "inputSha256": "1fb3b9c01644a3f3b6d15cb342734f2a21c2f7e94f35dcf15666e2f283c19a60",
+      "promptSha256": "950ae6fb5c08405d3e2bb1af26f4bf9b95b04367bb31e60e9023a30aabd67f09",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        112,
+        83,
+        1142,
+        1167
+      ],
+      "previewAlphaBounds": [
+        103,
+        82,
+        920,
+        942
+      ],
+      "rawSha256": "d00c4e0768137df4405baa9b323f9b21a634bdd650be90e9d6f419f0cfabc584",
+      "sourceSha256": "e2b398d1ac0ac0d5f3f6b2b621186dc1e14f675744d7ef64c5b443b13391f22b"
+    },
+    {
+      "speciesId": "flameow",
+      "form": 3,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/sr/flameow/t3-silversear.webp",
+      "promptPath": "output/imagegen/catalog-v3/sr/flameow/t3-normal.prompt.txt",
+      "inputSha256": "66648405fc0dee119aaeaac5aeb935de7612c744b774af938f3f48f026eecfc3",
+      "promptSha256": "6f3c0a1d4b56a07b2d57dcf7cf845d1c6dda113c0fe1c6566f7da26b57e23c3f",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        41,
+        93,
+        1219,
+        1133
+      ],
+      "previewAlphaBounds": [
+        82,
+        183,
+        942,
+        942
+      ],
+      "rawSha256": "5ec6f6eef976ccaf46d566a94a6fe6f8e4d9929f2bcb2a147582c3fa4772e379",
+      "sourceSha256": "a82803fa525238f106acf923c304b439a802d8a76d106556b112d1c9ec48835e"
+    },
+    {
+      "speciesId": "manteeny",
+      "form": 4,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/sr/manteeny/t4-orchitoria.webp",
+      "promptPath": "output/imagegen/catalog-v3/sr/manteeny/t4-normal.prompt.txt",
+      "inputSha256": "a78ac2b25ee5088cac43ee26e1d552862db4734b706a51ec0225ff9f669851c3",
+      "promptSha256": "78f11f14fcb2e6dacc2f120ad601e8ccecdbdd3dfadc0cb145689f6346eed299",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        38,
+        42,
+        1216,
+        1180
+      ],
+      "previewAlphaBounds": [
+        82,
+        111,
+        942,
+        942
+      ],
+      "rawSha256": "eb0f62e773af3779b0e1681262576e46003f2bb2719d1b3b5428d74a9ab4cdce",
+      "sourceSha256": "c152a142b926f496ba822ff3d684f6a999bb84f53e486026a3036b53ad6e6f4d"
+    },
+    {
+      "speciesId": "manteeny",
+      "form": 1,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/sr/manteeny/t1-manteeny.webp",
+      "promptPath": "output/imagegen/catalog-v3/sr/manteeny/t1-normal.prompt.txt",
+      "inputSha256": "462e0e34075f2341743aa2adf8e2d999219403ed9a73980ea0e1287394849827",
+      "promptSha256": "0e0b5d185d6036d6cf0f73e908caa56ce9922dfaada8eb9af6a668778c82696d",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        204,
+        92,
+        1059,
+        1161
+      ],
+      "previewAlphaBounds": [
+        168,
+        82,
+        856,
+        942
+      ],
+      "rawSha256": "5f2f11722870a27e710ed70ca809a3e924c0a1122e50fbe40c77f38a2e839597",
+      "sourceSha256": "1c980257e5210ddeccd2ba02f7968e0486626700c5ba69072a2d566deca547dc"
+    },
+    {
+      "speciesId": "manteeny",
+      "form": 2,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/sr/manteeny/t2-stalkerix.webp",
+      "promptPath": "output/imagegen/catalog-v3/sr/manteeny/t2-normal.prompt.txt",
+      "inputSha256": "693899db98d39912035513f7d2a046ca4f7a69906934177199dd3c18aaf7becf",
+      "promptSha256": "7981a094f6b85708dc597072e1850b69cf28ff914d925c3431182bbc8806070e",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        161,
+        103,
+        1106,
+        1164
+      ],
+      "previewAlphaBounds": [
+        129,
+        82,
+        895,
+        942
+      ],
+      "rawSha256": "fde6e6c4da9cd5aaa647ab69534c67d63859241319a53f2f006792c9849017e1",
+      "sourceSha256": "ce7f71db64d6c65d119950349b74240bc341b97c6b08ba829cc1df0a1df1576e"
+    },
+    {
+      "speciesId": "manteeny",
+      "form": 3,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/sr/manteeny/t3-serrabloom.webp",
+      "promptPath": "output/imagegen/catalog-v3/sr/manteeny/t3-normal.prompt.txt",
+      "inputSha256": "71ab22aa855c51ef29baabf729291ecd29619cc5a849651803cc8827faaaf769",
+      "promptSha256": "7fc811c870c6f18bfba9be038c5e1b30f7ceee4a261b990ea6a0cd3d2cdb4351",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        30,
+        55,
+        1226,
+        1186
+      ],
+      "previewAlphaBounds": [
+        82,
+        129,
+        942,
+        942
+      ],
+      "rawSha256": "988335bbdbc462aa7d0b6688646e3565193efbbd0e5cef84e44885d31f5d5cfa",
+      "sourceSha256": "c8a46eeec1e7938e42872ca2fdb6868e3e2632749a97c4ceedfb30bb1ba39ed6"
+    },
+    {
+      "speciesId": "fluffle",
+      "form": 4,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/sr/fluffle/t4-cosmoram.webp",
+      "promptPath": "output/imagegen/catalog-v3/sr/fluffle/t4-normal.prompt.txt",
+      "inputSha256": "7764d8cab72b04fb7c874877b87bf9c38d62447101eedd3668beecbd518c156c",
+      "promptSha256": "6e3d46633056a5534781f528f82fa4425841da68f3cb9858bcee56b13afbf672",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        30,
+        62,
+        1229,
+        1154
+      ],
+      "previewAlphaBounds": [
+        82,
+        159,
+        942,
+        942
+      ],
+      "rawSha256": "ca6bc12c7b0e8907a87b9d370bb7b647754f61483e31145a32886139352c2537",
+      "sourceSha256": "432410326415a9d2a27a7a9cdf91081576b9ff4644b28d602a46fe71af2494f4"
+    },
+    {
+      "speciesId": "fluffle",
+      "form": 1,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/sr/fluffle/t1-fluffle.webp",
+      "promptPath": "output/imagegen/catalog-v3/sr/fluffle/t1-normal.prompt.txt",
+      "inputSha256": "a242bbdbeb9b725a546a20de713761ba2242a21c2dbe917160fe2862247569e1",
+      "promptSha256": "376724c38675ce9e2dbdacdc9dcfd7f2a591dcf4830bf17078ed0815b44365d1",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        135,
+        135,
+        1139,
+        1124
+      ],
+      "previewAlphaBounds": [
+        82,
+        95,
+        942,
+        942
+      ],
+      "rawSha256": "448df1dc982845b99f9408d162e20d09119b9297049526527888bb4e4dd29f3f",
+      "sourceSha256": "fd8c408af031332f23d41f0c124f34c4351534b6063943abe4236db6af000cf6"
+    },
+    {
+      "speciesId": "fluffle",
+      "form": 2,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/sr/fluffle/t2-nimbuzzy.webp",
+      "promptPath": "output/imagegen/catalog-v3/sr/fluffle/t2-normal.prompt.txt",
+      "inputSha256": "034459664052674f3b93089b8f92b4dfcd3f185d40c78cc112b4e0efdb749378",
+      "promptSha256": "270fb7614a69bf7f65133cbccfc22a7c87c24cd98cdbd9f30a4c89e06928dab7",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        136,
+        125,
+        1121,
+        1129
+      ],
+      "previewAlphaBounds": [
+        90,
+        82,
+        934,
+        942
+      ],
+      "rawSha256": "2d62fb2b390e97dbd286e5b0c8f9db119594cdfc680ff24e75254e45a4e4cc30",
+      "sourceSha256": "43baffb57d5de46b380623b788c5d61fa908f04d2607f589fdf6ca0ebabe6c89"
+    },
+    {
+      "speciesId": "fluffle",
+      "form": 3,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/sr/fluffle/t3-galewether.webp",
+      "promptPath": "output/imagegen/catalog-v3/sr/fluffle/t3-normal.prompt.txt",
+      "inputSha256": "023cb04ad42a230a68fad51a4763a783e3ad7a1c278d80706f6427c72bb36afc",
+      "promptSha256": "573f24e149822b4ea250bbda6c1aa0120fd3caa37aa497c281e26fe8657287ff",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        49,
+        89,
+        1230,
+        1202
+      ],
+      "previewAlphaBounds": [
+        82,
+        132,
+        942,
+        942
+      ],
+      "rawSha256": "ef9109d982c02497ba600b6656c239c7cf2eb5d620d565e2cc43c116f40a3849",
+      "sourceSha256": "36683b58e611b128b17f2cda84063d86ca219d23418b672ea2fd9124f5663049"
+    },
+    {
+      "speciesId": "maskfry",
+      "form": 4,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/sr/maskfry/t4-dagondeep.webp",
+      "promptPath": "output/imagegen/catalog-v3/sr/maskfry/t4-normal.prompt.txt",
+      "inputSha256": "0142d75ba78db4738843c58693ea248a45bc03864027ae250d94ab3e9f52d391",
+      "promptSha256": "50cd0aa38f10b543d3605d3f24fecab315dbca52ff5baa3e58fa3d15476ad5ee",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        31,
+        106,
+        1228,
+        1137
+      ],
+      "previewAlphaBounds": [
+        82,
+        201,
+        942,
+        942
+      ],
+      "rawSha256": "5638c9e3e38ebe29328ffa52995d7c0c76d7af14be9eca1cabf9c34f5a4291a5",
+      "sourceSha256": "a7a44c92839fd21a273b06c03e4987dcf24bc6345f3245e1865febeb91f6f688"
+    },
+    {
+      "speciesId": "maskfry",
+      "form": 1,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/sr/maskfry/t1-maskfry.webp",
+      "promptPath": "output/imagegen/catalog-v3/sr/maskfry/t1-normal.prompt.txt",
+      "inputSha256": "885dd6c0a9a6e29abed79cbe70345ee962722b544b62b7c29cffef6b084cdb6e",
+      "promptSha256": "9eb3624e31b5929e7f16a29842af6cdd386faa18e6476973b560314977d02ce0",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        115,
+        147,
+        1141,
+        1106
+      ],
+      "previewAlphaBounds": [
+        82,
+        138,
+        942,
+        942
+      ],
+      "rawSha256": "38e3ab96adcb3d2e7a65f450166ec799402a23e3d26018d9d2cf8544e1eaef45",
+      "sourceSha256": "4b7c435c0b8c714819345bd40dcb9c8a8edd6b64d848c3026f689d008149166b"
+    },
+    {
+      "speciesId": "maskfry",
+      "form": 2,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/sr/maskfry/t2-ospisces.webp",
+      "promptPath": "output/imagegen/catalog-v3/sr/maskfry/t2-normal.prompt.txt",
+      "inputSha256": "409bc4be4252589ac51630792f081fb52c4c243254b5cc35dfe394bd7a66f0ca",
+      "promptSha256": "7a5efb5ad67599f6b7bcb941a33fceaa41d04a7141944faec42d636901029be4",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        64,
+        153,
+        1207,
+        1133
+      ],
+      "previewAlphaBounds": [
+        82,
+        205,
+        942,
+        942
+      ],
+      "rawSha256": "dc9c29ed178071cb5b9386da128e9485cef442987343cdf9ff23713fc85be1ec",
+      "sourceSha256": "e6c8a5f5f5a6bbc2d5384da38f99e9bcca2e053d5213baa496649a31003e53da"
+    },
+    {
+      "speciesId": "maskfry",
+      "form": 3,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/sr/maskfry/t3-armorjaw.webp",
+      "promptPath": "output/imagegen/catalog-v3/sr/maskfry/t3-normal.prompt.txt",
+      "inputSha256": "94a6cd36e8c7a225da83fb90957e5c04fff3cc91569f80bc0942ff8ca35cfd37",
+      "promptSha256": "3bd727a5b1c77d8b0a4a246406e665d5256ecf7ec2d13966f85ce458045bc631",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        44,
+        84,
+        1225,
+        1190
+      ],
+      "previewAlphaBounds": [
+        82,
+        137,
+        942,
+        942
+      ],
+      "rawSha256": "4b807436e7c3e6efc7165f1214c7f80166b5b0b05d9406f756b3b89a1469e398",
+      "sourceSha256": "3eaa68956da641dfa63b216cb770b0e71bbce6955620f9122a43b71a9544dfc8"
+    },
+    {
+      "speciesId": "goonbug",
+      "form": 4,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/sr/goonbug/t4-beetleknight.webp",
+      "promptPath": "output/imagegen/catalog-v3/sr/goonbug/t4-normal.prompt.txt",
+      "inputSha256": "c73a4d6b60a045674e78ba7e106b09856ffe433797b8d7e01817f7f8f2ace6ee",
+      "promptSha256": "cd8a4b888f1b49e98d29b0245b016d9919f135de41d7ecc7f3a7308684469654",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        22,
+        47,
+        1237,
+        1174
+      ],
+      "previewAlphaBounds": [
+        82,
+        144,
+        942,
+        942
+      ],
+      "rawSha256": "b9ef1f181d7eab7f2e36d27dd03d6278234bb3639b03bade4a64e588120a64d6",
+      "sourceSha256": "bb7cdb7cee169b28b828344fc6d136082dc1ea55dc80114e63cee41f5be940a4"
+    },
+    {
+      "speciesId": "goonbug",
+      "form": 1,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/sr/goonbug/t1-goonbug.webp",
+      "promptPath": "output/imagegen/catalog-v3/sr/goonbug/t1-normal.prompt.txt",
+      "inputSha256": "213413fd544e852f26d939945c2e8f1860868977959a9606035029046657d38c",
+      "promptSha256": "4e6dffc0e7a51d42110975fda5547613b6a97a7bfcfdb925fe08323e99973922",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        153,
+        227,
+        1127,
+        1010
+      ],
+      "previewAlphaBounds": [
+        82,
+        251,
+        942,
+        942
+      ],
+      "rawSha256": "a3fe81f88a771c0a72a8de66201f860565ec4770be58a38a4525e7232224a4c4",
+      "sourceSha256": "c611771b88ebc0ebd33b41b2e5fdaaeda737cd38bd7b8845778eb650059c3d14"
+    },
+    {
+      "speciesId": "goonbug",
+      "form": 2,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/sr/goonbug/t2-capobeetle.webp",
+      "promptPath": "output/imagegen/catalog-v3/sr/goonbug/t2-normal.prompt.txt",
+      "inputSha256": "7262632f31c0b8593f82d4e8f78482da6b76cad62b9da7927a41e6dc1226945a",
+      "promptSha256": "6d31a25a6c2d8df4483a354a3f179d2defc6def9b1ee737050956d67cd44101e",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        158,
+        135,
+        1096,
+        1119
+      ],
+      "previewAlphaBounds": [
+        102,
+        82,
+        922,
+        942
+      ],
+      "rawSha256": "347410fe379b477d9d05af668a95834d337901e12092fa0cfba42fdd1be9df83",
+      "sourceSha256": "b552b68746d8bfb7fe447eeda3bcdb3db6ef774a0863512a51af37d5593d8ade"
+    },
+    {
+      "speciesId": "goonbug",
+      "form": 3,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/sr/goonbug/t3-donscarab.webp",
+      "promptPath": "output/imagegen/catalog-v3/sr/goonbug/t3-normal.prompt.txt",
+      "inputSha256": "925deb4e292c001d0b5c510c503bd245c3a73c24f3a92a233d0c756b028e66d8",
+      "promptSha256": "066ba22e64d0bddc79e23a410652d3743a67fb1f99d870e4c3c9713d7cec6a2b",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        42,
+        50,
+        1205,
+        1153
+      ],
+      "previewAlphaBounds": [
+        82,
+        126,
+        942,
+        942
+      ],
+      "rawSha256": "678f96ef6e2226595fa13ffd1323c78bb558f54b46c9eada9821235e54c0c6a5",
+      "sourceSha256": "b34d476a3f3becb9849f780bcc01fb02b704e2c2fe35f782a186a2f558010efb"
+    },
+    {
+      "speciesId": "humbug",
+      "form": 4,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/r/humbug/t4-hierotyrus.webp",
+      "promptPath": "output/imagegen/catalog-v3/r/humbug/t4-normal.prompt.txt",
+      "inputSha256": "adfec4a51ca8e55dff7c234af57a750c21ee464e7792fa3c257619b94bfd6151",
+      "promptSha256": "8321380a64a3e8c24a8df0b14efbb211563237ce13ada9d0efc1aad806d82ec6",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        3,
+        24,
+        1253,
+        1196
+      ],
+      "previewAlphaBounds": [
+        82,
+        136,
+        942,
+        942
+      ],
+      "rawSha256": "8f036034058171787b8de9bb19aa969c7f07e48766e876ab10ff67e3133ad3e5",
+      "sourceSha256": "f50c619c4c3fa0fe4a42b8323f661a6829f2de37204fe2c4daed0f13381c405a"
+    },
+    {
+      "speciesId": "humbug",
+      "form": 1,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/r/humbug/t1-humbug.webp",
+      "promptPath": "output/imagegen/catalog-v3/r/humbug/t1-normal.prompt.txt",
+      "inputSha256": "06b22c0b9a2127723ac44d7c0564356a9985f13e9e4a32d2ea8de327e03a3660",
+      "promptSha256": "dfa90ff2c81341992010f64eb06e6d048d2100af8e292a5c1f973ea9ec783ba3",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        183,
+        111,
+        1134,
+        1156
+      ],
+      "previewAlphaBounds": [
+        120,
+        82,
+        903,
+        942
+      ],
+      "rawSha256": "898da28a62046890eb52f630f1ca63849d6cf6e2134c9d9d8950c24e3a163835",
+      "sourceSha256": "ce1e7ed2659c88306477fd23ba96047225c870eac8362bbf7f7f8cadc0359c02"
+    },
+    {
+      "speciesId": "humbug",
+      "form": 2,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/r/humbug/t2-humbleetle.webp",
+      "promptPath": "output/imagegen/catalog-v3/r/humbug/t2-normal.prompt.txt",
+      "inputSha256": "5536f242664230cef861c7b374fdf5350f5846c7a4105d4f00643781f79858b2",
+      "promptSha256": "41f3f545be5c4ca4380b6d990b052d1de4b5791a44f1ae7722f98a854927a467",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        122,
+        133,
+        1131,
+        1079
+      ],
+      "previewAlphaBounds": [
+        82,
+        136,
+        942,
+        942
+      ],
+      "rawSha256": "5922d3ec5e3216390400dd644ba8aa02dccbabd5023af857b9f0249ddb1335ba",
+      "sourceSha256": "ee6344b76f9fca6bb702423dea0ed12451201a74c69348902f658c71197c3a54"
+    },
+    {
+      "speciesId": "humbug",
+      "form": 3,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/r/humbug/t3-zenscarab.webp",
+      "promptPath": "output/imagegen/catalog-v3/r/humbug/t3-normal.prompt.txt",
+      "inputSha256": "9a350a4f42832991589e67cc0116bc2cbe9dfbb778770eb5259d9c0b5a59e410",
+      "promptSha256": "06f7f1e3af67e31c673c134c6001130a6f0adca44a620b867e7f7983975871d3",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        30,
+        60,
+        1222,
+        1143
+      ],
+      "previewAlphaBounds": [
+        82,
+        161,
+        942,
+        942
+      ],
+      "rawSha256": "87a0491edd9f6f16d80319951c65cea21fddc3626a1e4f48c17e0a7728d71970",
+      "sourceSha256": "897e2c4f16d9a2022c3ebce5fb89dfa71eec58c993b2367bb11252803936abbe"
+    },
+    {
+      "speciesId": "hootlet",
+      "form": 4,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/r/hootlet/t4-hypnostrix.webp",
+      "promptPath": "output/imagegen/catalog-v3/r/hootlet/t4-normal.prompt.txt",
+      "inputSha256": "e68240f7f8dec6f6dfd818fdadc75cf664f09ad8f00a3a9af9ae7ed69918250f",
+      "promptSha256": "41a919f4d611ef83e04fd1fad338a9e92a113a8c57bc9b6cc90067afe087ae14",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        40,
+        93,
+        1212,
+        1158
+      ],
+      "previewAlphaBounds": [
+        82,
+        161,
+        942,
+        942
+      ],
+      "rawSha256": "5d85951be7ea906203437874860c470f499d690bc48ec810c355f05e74efe40d",
+      "sourceSha256": "934f21a8123679aa9baae65bc542b77c3da83e188bc9459cdc237767cd6ec3f3"
+    },
+    {
+      "speciesId": "hootlet",
+      "form": 1,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/r/hootlet/t1-hootlet.webp",
+      "promptPath": "output/imagegen/catalog-v3/r/hootlet/t1-normal.prompt.txt",
+      "inputSha256": "304af4b91bbd4f4d9a3bb53e40d8b226acd27b9e3878ec8b02664402b789ecf2",
+      "promptSha256": "06520fc318ef948c4ceaf674eeba261d991c21692ccc096ed12b9c79c1619a4a",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        56,
+        101,
+        1201,
+        1176
+      ],
+      "previewAlphaBounds": [
+        82,
+        135,
+        942,
+        942
+      ],
+      "rawSha256": "8d0fb535f202d8447152f6660c5ab4495f541de07470dbb979f6a92f0876ff73",
+      "sourceSha256": "98979c698746e461dc08019fd8aea3457f036344283cafce000cf27d32d61bda"
+    },
+    {
+      "speciesId": "hootlet",
+      "form": 2,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/r/hootlet/t2-tikowl.webp",
+      "promptPath": "output/imagegen/catalog-v3/r/hootlet/t2-normal.prompt.txt",
+      "inputSha256": "49295f08518ec23f98550eb8cb0a7f514394fed8368905dcc4ceaffd759c7398",
+      "promptSha256": "44f6299e2f9b13666cbe87b859b8decc2f1d1bd407b387c0909cd13b3828430e",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        197,
+        87,
+        1103,
+        1145
+      ],
+      "previewAlphaBounds": [
+        144,
+        82,
+        880,
+        942
+      ],
+      "rawSha256": "dd8e7e8f232ed5f30df8504255b9cfd371b0c7f465e3b5eef4006bd39e6126fd",
+      "sourceSha256": "4d3e9a1fada935cd24965911b60f7c826c80c5d9ac3659674bd197735ad444ba"
+    },
+    {
+      "speciesId": "hootlet",
+      "form": 3,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/r/hootlet/t3-chronerva.webp",
+      "promptPath": "output/imagegen/catalog-v3/r/hootlet/t3-normal.prompt.txt",
+      "inputSha256": "2efbae683762f75a8b887229541cd46a025c9a9c85c478b8d7a37e1398e3a655",
+      "promptSha256": "6599e1e0d9ba47e526ff5eff4a59b0eee9dcb13012514720e4955228a893fef1",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        46,
+        112,
+        1213,
+        1105
+      ],
+      "previewAlphaBounds": [
+        82,
+        210,
+        942,
+        942
+      ],
+      "rawSha256": "83d13f098e7ec26daff0cc71f6a646f7e3d7900ca8c7e4ccffc7e51c94c2a195",
+      "sourceSha256": "49217315194247ee4528dcdfd79c84aa5935ebb49eae98e5f630e1b1a1dc79ff"
+    },
+    {
+      "speciesId": "gibber",
+      "form": 4,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/r/gibber/t4-terraton.webp",
+      "promptPath": "output/imagegen/catalog-v3/r/gibber/t4-normal.prompt.txt",
+      "inputSha256": "9ede468db7911ce62abd587c7769eaeb2b9bb3c319cbde46acea50b4602a6ee2",
+      "promptSha256": "5aacc8c8c926e005c63c7d33df3a18fbcd147443d6db1f521e5a51a9df9d26b1",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        40,
+        133,
+        1223,
+        1112
+      ],
+      "previewAlphaBounds": [
+        82,
+        230,
+        942,
+        942
+      ],
+      "rawSha256": "9cee4a55bcb3e2a7bddbeedbd522376eaf1724f69a5da1c648ef8f005728cfbc",
+      "sourceSha256": "fccc0f895578340915fffdae6e547fbda6cc6846c7e3d184cf70fef8476e4790"
+    },
+    {
+      "speciesId": "gibber",
+      "form": 1,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/r/gibber/t1-gibber.webp",
+      "promptPath": "output/imagegen/catalog-v3/r/gibber/t1-normal.prompt.txt",
+      "inputSha256": "2afe9f514260e6da303e4d92611eb6f57ef43076e98724b0e2678d917bf6b335",
+      "promptSha256": "3d515a1955cdd3a2e252844a14fdbbef3dfa42b15834722c3b54224e7869e182",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        136,
+        202,
+        1128,
+        1019
+      ],
+      "previewAlphaBounds": [
+        82,
+        234,
+        942,
+        942
+      ],
+      "rawSha256": "8bf2b7cd62cbc84ebfb0012f2dace738e9609f3bb65853ec616d31cfe549eb5a",
+      "sourceSha256": "e46c5b1999b876db07cd3fb62ba80574abc214ff65cdadb1e9a3b33322c549d0"
+    },
+    {
+      "speciesId": "gibber",
+      "form": 2,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/r/gibber/t2-turtuff.webp",
+      "promptPath": "output/imagegen/catalog-v3/r/gibber/t2-normal.prompt.txt",
+      "inputSha256": "8af497213151095c16421f92cbb77686cbce7b493527cdeb3e53931fb43b605c",
+      "promptSha256": "1ddcdee67a34a4736454d5e9a390c00cdffebea914e17b3e525e0d013116f653",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        51,
+        91,
+        1206,
+        1154
+      ],
+      "previewAlphaBounds": [
+        82,
+        151,
+        942,
+        942
+      ],
+      "rawSha256": "077c36815503b3e9bdcc50bc7f0b656f01a0293a1c7e1cdca4f6113f8895d6c3",
+      "sourceSha256": "153de94c3748bece0837645859659e6c79e7701321d270a4339dd728f8754ee0"
+    },
+    {
+      "speciesId": "gibber",
+      "form": 3,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/r/gibber/t3-rockshell.webp",
+      "promptPath": "output/imagegen/catalog-v3/r/gibber/t3-normal.prompt.txt",
+      "inputSha256": "da9bad4aae789b9c6095aedbc4c9a27db1d304bbf436f8ad806ed6ec9a74d2a3",
+      "promptSha256": "a2ef80cef8cf13079270462da75edacc76480bc5800e6645a6a8cdf4754e1399",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        64,
+        41,
+        1192,
+        1157
+      ],
+      "previewAlphaBounds": [
+        82,
+        91,
+        942,
+        942
+      ],
+      "rawSha256": "e65363849f1a18fce22e2beaf81f99544c6736f7d6b654372f0c5f493eb4d9eb",
+      "sourceSha256": "c76a69fe7cc6cc44f9268bb77c6314375558f2d14c48fcab585125bdcacd58ec"
+    },
+    {
+      "speciesId": "voltfawn",
+      "form": 4,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/r/voltfawn/t4-magnedart.webp",
+      "promptPath": "output/imagegen/catalog-v3/r/voltfawn/t4-normal.prompt.txt",
+      "inputSha256": "123666ffd1cb802b25284bc6a47b3bbb7b9da11a44aceb03556d77d43a1ba5e3",
+      "promptSha256": "9cea4b062a469c85f6ab07a0bc41e30c50dd813b7729b19e68dc60d06f0e97de",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        152,
+        42,
+        1114,
+        1204
+      ],
+      "previewAlphaBounds": [
+        156,
+        82,
+        868,
+        942
+      ],
+      "rawSha256": "4c6d2420c9c7a47193d91171c54d39fac3c02f63269e6c9c2ae3db575452d0b1",
+      "sourceSha256": "da4558452a8bde3a14c999bc8c40f55f1b031b8c74a5867dc4e289cc4c8c1a50"
+    },
+    {
+      "speciesId": "voltfawn",
+      "form": 1,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/r/voltfawn/t1-voltfawn.webp",
+      "promptPath": "output/imagegen/catalog-v3/r/voltfawn/t1-normal.prompt.txt",
+      "inputSha256": "4350ea028aa30df6f525ad352d95800e4a59b3f010aadf16c70f1c955b790b82",
+      "promptSha256": "e11ef25eab93b8d5f589c9d076272c35879ccec996299ce0504f49ada542400c",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        190,
+        122,
+        1073,
+        1099
+      ],
+      "previewAlphaBounds": [
+        123,
+        82,
+        900,
+        942
+      ],
+      "rawSha256": "3ba310c1f98c8a19a93992c47d09f77efb58f35127bf0cd106bb12720899bb44",
+      "sourceSha256": "ecd4b5deffaed58e59e763dcdb5c060108b5e83a327b199ce6d9ccc49d0250c2"
+    },
+    {
+      "speciesId": "voltfawn",
+      "form": 2,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/r/voltfawn/t2-sparkdoe.webp",
+      "promptPath": "output/imagegen/catalog-v3/r/voltfawn/t2-normal.prompt.txt",
+      "inputSha256": "cc39f046fb5ba2987bdabf615dd0bfb57f072b0f1d63fae67dd470bacb1b022e",
+      "promptSha256": "1e3265142e64992a36e7b866ee433d9a1be53cf79be153dcff28ede0b37567e9",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        188,
+        120,
+        1119,
+        1100
+      ],
+      "previewAlphaBounds": [
+        103,
+        82,
+        920,
+        942
+      ],
+      "rawSha256": "ca3d28a79773db3c67bf460fd679c9d0f96dd026dc46eb3b25a46c9e7e22bc95",
+      "sourceSha256": "e513ea506500954ecd83078618dd1e972779c1e44c9230aa1aff30514f63f2ff"
+    },
+    {
+      "speciesId": "voltfawn",
+      "form": 3,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/r/voltfawn/t3-zapantler.webp",
+      "promptPath": "output/imagegen/catalog-v3/r/voltfawn/t3-normal.prompt.txt",
+      "inputSha256": "6858250f41b9894b2d9b1a2dd544c098901a884c4a3adb227b9ce9d4e9ad5588",
+      "promptSha256": "78df10f39d7e9d29703295284465bb60957bc452e2fe0bcdda0b1dd704d14e75",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        180,
+        39,
+        1077,
+        1184
+      ],
+      "previewAlphaBounds": [
+        175,
+        82,
+        849,
+        942
+      ],
+      "rawSha256": "54d3f5a8604b2d3b78d362987edab30c872eaef71b6a43954fd57ccf4b441f7c",
+      "sourceSha256": "c3f216f373f2439230b1f95c881bd7ce6111d62a29b35c45027d5cca61df896f"
+    },
+    {
+      "speciesId": "cheerling",
+      "form": 4,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/r/cheerling/t4-cheerstella.webp",
+      "promptPath": "output/imagegen/catalog-v3/r/cheerling/t4-normal.prompt.txt",
+      "inputSha256": "8420ab3eee1bf3856cfcbb613fd167671238036d9ac2c76bce7bf0343efdfb9f",
+      "promptSha256": "e9ba67b47ecfc6cef384324ba157f689543f7c83ecee977bb060a9d32356d0da",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        22,
+        114,
+        1239,
+        1140
+      ],
+      "previewAlphaBounds": [
+        82,
+        217,
+        942,
+        942
+      ],
+      "rawSha256": "053408eee4bd82e45e7e2ac85669442f854e0cd0d80b7766161e6dad899eeb15",
+      "sourceSha256": "43f913e2494bf035408c6c5881f924e9938f06c3ec708760cfd8ee32921b21b6"
+    },
+    {
+      "speciesId": "cheerling",
+      "form": 1,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/r/cheerling/t1-cheerling.webp",
+      "promptPath": "output/imagegen/catalog-v3/r/cheerling/t1-normal.prompt.txt",
+      "inputSha256": "770cbaf1767b996654b037a0698a45515c23c798014f96c17aba870237704d31",
+      "promptSha256": "40b6755a8fe363f45f3659a2c22e8d7852c459475601f82ab095e788242f9837",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        64,
+        104,
+        1208,
+        1129
+      ],
+      "previewAlphaBounds": [
+        82,
+        171,
+        942,
+        942
+      ],
+      "rawSha256": "3841c727fa647600518ce0a2575ae42bf4600291f05be37f40cc958ca1e320e1",
+      "sourceSha256": "6130598b574186b7e8a04c5e070f5b5dbedb8b3b66a76b4fedefe57e154741e6"
+    },
+    {
+      "speciesId": "cheerling",
+      "form": 2,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/r/cheerling/t2-cheerlet.webp",
+      "promptPath": "output/imagegen/catalog-v3/r/cheerling/t2-normal.prompt.txt",
+      "inputSha256": "42ef186c004b9247f62bbee8dc3501903b20e55fd9da686522e3c3eba0c6a451",
+      "promptSha256": "45dfe69158ff51222b972efc2221e33775973687e5d73b78965bddeb9ae26131",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        67,
+        214,
+        1201,
+        1109
+      ],
+      "previewAlphaBounds": [
+        82,
+        263,
+        942,
+        942
+      ],
+      "rawSha256": "559e437c7b0c18728d4561862aa91866d85d9420d8b0788aefbd2b39c5ff5e4d",
+      "sourceSha256": "4a4ea92c7b5434ed3276913cd87fdb45ec8d8573c12371a7756922384f7513ba"
+    },
+    {
+      "speciesId": "cheerling",
+      "form": 3,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/r/cheerling/t3-cheerspring.webp",
+      "promptPath": "output/imagegen/catalog-v3/r/cheerling/t3-normal.prompt.txt",
+      "inputSha256": "2e0d1aeaa5bcaed12de5a1dd30a135d62bc204fbf21c794e5cd3e9c3577397a7",
+      "promptSha256": "120dd3c30ff916fff9a15235762eabbbcee1562cc14a1f7b0541e7ac53cd4677",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        39,
+        116,
+        1222,
+        1140
+      ],
+      "previewAlphaBounds": [
+        82,
+        198,
+        942,
+        942
+      ],
+      "rawSha256": "0418145f212b227185227e446df3e8b8b5bdc6c78af010be6b6ae0db8fc91433",
+      "sourceSha256": "ba33dc29f96cd34719988d365e45e2b333d520a337e0ffbb1aabc18f6a3be2d6"
+    },
+    {
+      "speciesId": "funglet",
+      "form": 4,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/r/funglet/t4-ecstamira.webp",
+      "promptPath": "output/imagegen/catalog-v3/r/funglet/t4-normal.prompt.txt",
+      "inputSha256": "426419f24b8525dc01578263e4a41047dba1c0fed5371a7538483521039d91e6",
+      "promptSha256": "0b6bfde292540ca5f141038c863cbeeb630765e873a6cdfb78d0e7cf4b96e487",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        32,
+        88,
+        1218,
+        1157
+      ],
+      "previewAlphaBounds": [
+        82,
+        167,
+        942,
+        942
+      ],
+      "rawSha256": "d59f8b5c4747eaf39c31b913ed56d1331a22937a8c193e16d26919f508914b97",
+      "sourceSha256": "04298ccabef8726d436223f3a9aa4e2f0a8a6ef7dea370d8fe436b0dd4dfc4a9"
+    },
+    {
+      "speciesId": "funglet",
+      "form": 1,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/r/funglet/t1-funglet.webp",
+      "promptPath": "output/imagegen/catalog-v3/r/funglet/t1-normal.prompt.txt",
+      "inputSha256": "db743eea50dc9d4cba96104454761a85d1e37710b8b54744be17aa5ceb379153",
+      "promptSha256": "cb8076b26d2cb36fd7d1f548d9cbe747eb73bfbf99ba6e5095cc00fb551bbfd8",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        98,
+        121,
+        1154,
+        1111
+      ],
+      "previewAlphaBounds": [
+        82,
+        136,
+        942,
+        942
+      ],
+      "rawSha256": "9f6444105192ea9b1ffcc7c0568ccd8d54afa3d4cc610fd05c8778df249d37a1",
+      "sourceSha256": "e4bb5309989392becc34b9e1be73ad30069712e0393fd10ede89ac8028a16c9c"
+    },
+    {
+      "speciesId": "funglet",
+      "form": 2,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/r/funglet/t2-trippet.webp",
+      "promptPath": "output/imagegen/catalog-v3/r/funglet/t2-normal.prompt.txt",
+      "inputSha256": "8016f7cef801a53da0c72df0b9d8b2a3cd91773960b8e705ac33a070735fc3c5",
+      "promptSha256": "2e3db867ff40a93d3c47e11ca96178a6d47112a55bbde32699bd361fd622d66d",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        160,
+        107,
+        1101,
+        1150
+      ],
+      "previewAlphaBounds": [
+        124,
+        82,
+        900,
+        942
+      ],
+      "rawSha256": "f4310f503223554e86650b3f85aae386e5c58db4db603a21034dedb84d012d81",
+      "sourceSha256": "c4b2f40755d5e1b106611c4a4f54a34159e7a2f3db9e78e4e1d2ec7df48b6caf"
+    },
+    {
+      "speciesId": "funglet",
+      "form": 3,
+      "variant": "normal",
+      "input": "docs/assets/linh-thu/reference/r/funglet/t3-hyphoria.webp",
+      "promptPath": "output/imagegen/catalog-v3/r/funglet/t3-normal.prompt.txt",
+      "inputSha256": "5f13faa1364748f5756af0963cccb6ef69c3bcf7eb26c4b6ff8279c8f0439ba2",
+      "promptSha256": "a988a269dd2fa8f9084e474a341eac9b428ba77dd814d923ddefc7d44a136920",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        41,
+        41,
+        1209,
+        1216
+      ],
+      "previewAlphaBounds": [
+        84,
+        82,
+        939,
+        942
+      ],
+      "rawSha256": "c375a20ed102906c90b0e2cc328c4beb58a65007d3f9761ddfd5ac981387eaf4",
+      "sourceSha256": "1f8615227e45034510f1732af85a48d7b4dc4d749cd093d7242532cb42f33e34"
+    },
+    {
+      "speciesId": "rubblet",
+      "form": 4,
+      "variant": "awakened",
+      "input": "docs/assets/linh-thu/art/v3/rubblet/t4-normal.png",
+      "promptPath": "output/imagegen/catalog-v3/ur/rubblet/t4-awakened.prompt.txt",
+      "inputSha256": "6fd5302294f599a0de7f2287a763927fb125c8a1d34efe069cb8940eaa06f6fe",
+      "promptSha256": "12418fbfe0f166e7068a1363a06d1711380e54981618774042714e52792763e2",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        49,
+        166,
+        1204,
+        1167
+      ],
+      "previewAlphaBounds": [
+        82,
+        197,
+        942,
+        942
+      ],
+      "rawSha256": "7ad20e78cce30d7e1aa6f066e455dbf00a668f43c7be78d09c704a1a25be63c0",
+      "sourceSha256": "eb6af2d324a1ec81855114a667de6e957738634847985010252cab47ee13ff53"
+    },
+    {
+      "speciesId": "rubblet",
+      "form": 4,
+      "variant": "perfect",
+      "input": "docs/assets/linh-thu/art/v3/rubblet/t4-normal.png",
+      "promptPath": "output/imagegen/catalog-v3/ur/rubblet/t4-perfect.prompt.txt",
+      "inputSha256": "6fd5302294f599a0de7f2287a763927fb125c8a1d34efe069cb8940eaa06f6fe",
+      "promptSha256": "584ce1bfc95cd8dc68845cb4eaac66fd0d4978e9047594e601961a1f7c79a3a6",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        103,
+        128,
+        1157,
+        1157
+      ],
+      "previewAlphaBounds": [
+        82,
+        102,
+        942,
+        942
+      ],
+      "rawSha256": "28905596f78614437018f2da8c58b1425e0626f7f8195bc4fb7cf964f4582d7b",
+      "sourceSha256": "95050f517cd1413818a1d7383e3b3b9c1dbdab6100a258fa0d2329b0c9152766"
+    },
+    {
+      "speciesId": "frostnip",
+      "form": 4,
+      "variant": "awakened",
+      "input": "docs/assets/linh-thu/art/v3/frostnip/t4-normal.png",
+      "promptPath": "output/imagegen/catalog-v3/ssr/frostnip/t4-awakened.prompt.txt",
+      "inputSha256": "7109953ffb83c023830411ea09906b94397afebdc297ff28eaf0078208ce6454",
+      "promptSha256": "5af0a8c64dfdab1fa4a347b177dff05ce89e8fb93437442148c2da7fc2a0630d",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        101,
+        117,
+        1156,
+        1152
+      ],
+      "previewAlphaBounds": [
+        82,
+        98,
+        942,
+        942
+      ],
+      "rawSha256": "3a65365175069bdd838596bccf3df8999d2f2d44a1e3b1f6295e2b0b3f493fe7",
+      "sourceSha256": "8d0f203ede91ce38921c53be746a5f88295dc9d752620d56bc6ab7e62b599589"
+    },
+    {
+      "speciesId": "frostnip",
+      "form": 4,
+      "variant": "perfect",
+      "input": "docs/assets/linh-thu/art/v3/frostnip/t4-normal.png",
+      "promptPath": "output/imagegen/catalog-v3/ssr/frostnip/t4-perfect.prompt.txt",
+      "inputSha256": "7109953ffb83c023830411ea09906b94397afebdc297ff28eaf0078208ce6454",
+      "promptSha256": "23167d2234e2fec5f4e660f3970693b84b75f0f1b932ca466a5f5c670f5efeb2",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        79,
+        81,
+        1185,
+        1182
+      ],
+      "previewAlphaBounds": [
+        82,
+        86,
+        942,
+        942
+      ],
+      "rawSha256": "0c6d042da7381403424cf1a054185379d77107db250dc2545935f3b330dcde33",
+      "sourceSha256": "d5f0f522578f25fddd12101aceca17eeea74c8493befa6f09a22702f45af0ba2"
+    },
+    {
+      "speciesId": "skinklet",
+      "form": 4,
+      "variant": "awakened",
+      "input": "docs/assets/linh-thu/art/v3/skinklet/t4-normal.png",
+      "promptPath": "output/imagegen/catalog-v3/ssr/skinklet/t4-awakened.prompt.txt",
+      "inputSha256": "05310525d4ca4a7d54ff86e47d4f3e6bdec5a412b104bbce5ba9a206dcec1b87",
+      "promptSha256": "a43c85c0a2e3262a789183806012c4cd46b81c0b9d6c6e26b610bbf74bd99f69",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        41,
+        101,
+        1216,
+        1184
+      ],
+      "previewAlphaBounds": [
+        82,
+        149,
+        942,
+        942
+      ],
+      "rawSha256": "bb59f97f6d3a9e400d9787092a697dbbbbdcd37d7d127c7a27ad85705244b932",
+      "sourceSha256": "bcbf521583d3adc08e45afab61370eca4d94818e582dd1678c3cf653ee4bf070"
+    },
+    {
+      "speciesId": "skinklet",
+      "form": 4,
+      "variant": "perfect",
+      "input": "docs/assets/linh-thu/art/v3/skinklet/t4-normal.png",
+      "promptPath": "output/imagegen/catalog-v3/ssr/skinklet/t4-perfect.prompt.txt",
+      "inputSha256": "05310525d4ca4a7d54ff86e47d4f3e6bdec5a412b104bbce5ba9a206dcec1b87",
+      "promptSha256": "de3c0d7548766e50cd4437b4a02ac3842382b29d4dc7506a83bc562b32d728ef",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        57,
+        149,
+        1207,
+        1153
+      ],
+      "previewAlphaBounds": [
+        82,
+        191,
+        942,
+        942
+      ],
+      "rawSha256": "d9f8bdc83542f98427b5c118137d363609c308890ddcca826a5629d237a3ca46",
+      "sourceSha256": "c0d2e9a7a09a87652bb1471b951bb661175aba6caf94974c8fe1ed54212d21c4"
+    },
+    {
+      "speciesId": "punchimp",
+      "form": 4,
+      "variant": "awakened",
+      "input": "docs/assets/linh-thu/art/v3/punchimp/t4-normal.png",
+      "promptPath": "output/imagegen/catalog-v3/ssr/punchimp/t4-awakened.prompt.txt",
+      "inputSha256": "40e95cd738e3c7f1694b8146e8a163b8a3a6b3c77c4f8af3c0d1d4aeb37468ce",
+      "promptSha256": "7d6711540cfec7b4a985af93d933938aa9701448ef4048f5d53bb1c548b50bf2",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        41,
+        154,
+        1229,
+        1164
+      ],
+      "previewAlphaBounds": [
+        82,
+        211,
+        942,
+        942
+      ],
+      "rawSha256": "cd52ceedb28ef4c92407933ef7078b1b1284579288e128d29a5cf9fa6cac31c9",
+      "sourceSha256": "7a0dcf6c774ba6b303a7057d05397bc0ac0289fc06fa97fcb62b023764bd78a0"
+    },
+    {
+      "speciesId": "punchimp",
+      "form": 4,
+      "variant": "perfect",
+      "input": "docs/assets/linh-thu/art/v3/punchimp/t4-normal.png",
+      "promptPath": "output/imagegen/catalog-v3/ssr/punchimp/t4-perfect.prompt.txt",
+      "inputSha256": "40e95cd738e3c7f1694b8146e8a163b8a3a6b3c77c4f8af3c0d1d4aeb37468ce",
+      "promptSha256": "dcda8fe2d04e8389248f344e1bc056f90bf81e5dc46380ed5fab7358fa8e2944",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        86,
+        190,
+        1179,
+        1139
+      ],
+      "previewAlphaBounds": [
+        82,
+        195,
+        942,
+        942
+      ],
+      "rawSha256": "f96fd3a462b35d434b4be331b8020b440413a53b7ce53ff329f2d805252df9a5",
+      "sourceSha256": "ed71493c9b3e1b12c0b42cfd663918113425bf17e51ba1bd0665e9137438051b"
+    },
+    {
+      "speciesId": "shardsnail",
+      "form": 4,
+      "variant": "awakened",
+      "input": "docs/assets/linh-thu/art/v3/shardsnail/t4-normal.png",
+      "promptPath": "output/imagegen/catalog-v3/sr/shardsnail/t4-awakened.prompt.txt",
+      "inputSha256": "a581f7852e7a14e0e3bb6c6f698b5a229a8be98cd78eff7a12a6eb498f29d014",
+      "promptSha256": "7eb742d1e8ff6221b863304bd87a9cb8d62384255f357d7117e66097bb12ed2d",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        75,
+        80,
+        1183,
+        1174
+      ],
+      "previewAlphaBounds": [
+        82,
+        93,
+        942,
+        942
+      ],
+      "rawSha256": "df279fa334ca5a3916c1f98652354b38b2481c7f71a03c1b3ff24918b3fb7bda",
+      "sourceSha256": "ef6dfb19fd65ecdc39f57c803a5a1d32f0b28bffe389f2d804b719b75e6c9103"
+    },
+    {
+      "speciesId": "shardsnail",
+      "form": 4,
+      "variant": "perfect",
+      "input": "docs/assets/linh-thu/art/v3/shardsnail/t4-normal.png",
+      "promptPath": "output/imagegen/catalog-v3/sr/shardsnail/t4-perfect.prompt.txt",
+      "inputSha256": "a581f7852e7a14e0e3bb6c6f698b5a229a8be98cd78eff7a12a6eb498f29d014",
+      "promptSha256": "550d41ce6111646ea1eebf249a8a0c4424245aa1c3b29caace03e7332ff2809a",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        132,
+        92,
+        1147,
+        1149
+      ],
+      "previewAlphaBounds": [
+        99,
+        82,
+        925,
+        942
+      ],
+      "rawSha256": "18cd42fef73b691f29856e4e54a07b3e75da9d6facaf8e7e28a2c6f457570cff",
+      "sourceSha256": "e0d40bb9e61f2b1063b7c4dc783cb3bb5f4a1d00ecbe78fa65d0cfc188d8e6dd"
+    },
+    {
+      "speciesId": "flameow",
+      "form": 4,
+      "variant": "awakened",
+      "input": "docs/assets/linh-thu/art/v3/flameow/t4-normal.png",
+      "promptPath": "output/imagegen/catalog-v3/sr/flameow/t4-awakened.prompt.txt",
+      "inputSha256": "36d6b9b104b5ed14f733c1c092406ebe2e952a59e7e01f28a54156b312930f1c",
+      "promptSha256": "1eda3f408358ec0e9437cdc75fbaffb77f86bc106b3fcf1c5d46b3eaf3abd719",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        87,
+        170,
+        1169,
+        1126
+      ],
+      "previewAlphaBounds": [
+        82,
+        182,
+        942,
+        942
+      ],
+      "rawSha256": "fc49bd9e4bda03b41d685439870c8b498e8e8e703ccb8556837d3fd5e2bdde8a",
+      "sourceSha256": "b250b30c71fec89336638bd7c43f957e9ed23519c334f0fbf840f7a7f57459eb"
+    },
+    {
+      "speciesId": "flameow",
+      "form": 4,
+      "variant": "perfect",
+      "input": "docs/assets/linh-thu/art/v3/flameow/t4-normal.png",
+      "promptPath": "output/imagegen/catalog-v3/sr/flameow/t4-perfect.prompt.txt",
+      "inputSha256": "36d6b9b104b5ed14f733c1c092406ebe2e952a59e7e01f28a54156b312930f1c",
+      "promptSha256": "ef40e503b5e8af87fca7669c47246948db627511356fd872c978b8ffc25b9b12",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        121,
+        204,
+        1155,
+        1119
+      ],
+      "previewAlphaBounds": [
+        82,
+        181,
+        942,
+        942
+      ],
+      "rawSha256": "8c33657a25eb6a3f3a340594007a51f198f7b414fdfc134dc1e10ca857a1fc06",
+      "sourceSha256": "60c184394bfdf01b650943aabfb81d350665ca4c9165f20c14ba24190fe40c6c"
+    },
+    {
+      "speciesId": "manteeny",
+      "form": 4,
+      "variant": "awakened",
+      "input": "docs/assets/linh-thu/art/v3/manteeny/t4-normal.png",
+      "promptPath": "output/imagegen/catalog-v3/sr/manteeny/t4-awakened.prompt.txt",
+      "inputSha256": "c152a142b926f496ba822ff3d684f6a999bb84f53e486026a3036b53ad6e6f4d",
+      "promptSha256": "90006f69c808821fdfa803f7063b8c5c2762de2dbd4ca409be47b441d98f7e91",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        101,
+        113,
+        1158,
+        1134
+      ],
+      "previewAlphaBounds": [
+        82,
+        111,
+        942,
+        942
+      ],
+      "rawSha256": "b5c4728c821567f568b32b9c3e2abecc7ff3cb6fb13898beff60a267cc8d07b4",
+      "sourceSha256": "a7e334ebd4602fa54a9657d31e72331872ccaaabc256356021a77ceb2b7cef73"
+    },
+    {
+      "speciesId": "manteeny",
+      "form": 4,
+      "variant": "perfect",
+      "input": "docs/assets/linh-thu/art/v3/manteeny/t4-normal.png",
+      "promptPath": "output/imagegen/catalog-v3/sr/manteeny/t4-perfect.prompt.txt",
+      "inputSha256": "c152a142b926f496ba822ff3d684f6a999bb84f53e486026a3036b53ad6e6f4d",
+      "promptSha256": "ffa3bf94d030781b0b7fae8da6189d915093d74625b38c09fffd0bf283d95c9a",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        80,
+        85,
+        1187,
+        1172
+      ],
+      "previewAlphaBounds": [
+        82,
+        98,
+        942,
+        942
+      ],
+      "rawSha256": "6e35ac9677f4feac3148fa922d3a4f9c09bfdb892f3847b7fcc90b795b348832",
+      "sourceSha256": "da24d27585f304e0145b4a617f7c4329b359c1c8aa1faacfffa5d2f8865ded80"
+    },
+    {
+      "speciesId": "fluffle",
+      "form": 4,
+      "variant": "awakened",
+      "input": "docs/assets/linh-thu/art/v3/fluffle/t4-normal.png",
+      "promptPath": "output/imagegen/catalog-v3/sr/fluffle/t4-awakened.prompt.txt",
+      "inputSha256": "432410326415a9d2a27a7a9cdf91081576b9ff4644b28d602a46fe71af2494f4",
+      "promptSha256": "d0b430a47f850fff49596f27073dc19ea3329dd1c9124c560a90493d89592f55",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        46,
+        153,
+        1209,
+        1200
+      ],
+      "previewAlphaBounds": [
+        82,
+        168,
+        942,
+        942
+      ],
+      "rawSha256": "c2024e018af58e74d9148860450b42caef624548e9af713d36fe9e42a8f908f4",
+      "sourceSha256": "53de3309078a46b7556342d3d41eb01f1f36f48d36416662a9091f0df0ba57d5"
+    },
+    {
+      "speciesId": "fluffle",
+      "form": 4,
+      "variant": "perfect",
+      "input": "docs/assets/linh-thu/art/v3/fluffle/t4-normal.png",
+      "promptPath": "output/imagegen/catalog-v3/sr/fluffle/t4-perfect.prompt.txt",
+      "inputSha256": "432410326415a9d2a27a7a9cdf91081576b9ff4644b28d602a46fe71af2494f4",
+      "promptSha256": "e6e3b766ec4420fb030e6938e044b4a6765b4d61ae92b4d6a370cc93f7741cd1",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        69,
+        157,
+        1186,
+        1159
+      ],
+      "previewAlphaBounds": [
+        82,
+        171,
+        942,
+        942
+      ],
+      "rawSha256": "ec99c42917225f299f91590828f539c93ff3c3e4c044fa9d9fc56c68403e32dd",
+      "sourceSha256": "555cce632bd3c82b17ad21f6f72e7f9e99ffbd3101a3c6180d8c88d1cfe7c1d9"
+    },
+    {
+      "speciesId": "maskfry",
+      "form": 4,
+      "variant": "awakened",
+      "input": "docs/assets/linh-thu/art/v3/maskfry/t4-normal.png",
+      "promptPath": "output/imagegen/catalog-v3/sr/maskfry/t4-awakened.prompt.txt",
+      "inputSha256": "a7a44c92839fd21a273b06c03e4987dcf24bc6345f3245e1865febeb91f6f688",
+      "promptSha256": "74a45301e8ba05626b03acd6a51fbaf75606e83304a27c2a005e499ace25bdcf",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        32,
+        164,
+        1227,
+        1201
+      ],
+      "previewAlphaBounds": [
+        82,
+        196,
+        942,
+        942
+      ],
+      "rawSha256": "159874088fad125161aa87abfb822c17b33c2ff093608cad15deb3cf23633e77",
+      "sourceSha256": "2dd4ccecfa7955c84c7be94cbfd19ca13496aa98e36991712d6d04d8674955d6"
+    },
+    {
+      "speciesId": "maskfry",
+      "form": 4,
+      "variant": "perfect",
+      "input": "docs/assets/linh-thu/art/v3/maskfry/t4-normal.png",
+      "promptPath": "output/imagegen/catalog-v3/sr/maskfry/t4-perfect.prompt.txt",
+      "inputSha256": "a7a44c92839fd21a273b06c03e4987dcf24bc6345f3245e1865febeb91f6f688",
+      "promptSha256": "3f0a49d28b54cd07230ceeae709b59d77803a7866074bd9cc67d20c28139f4ba",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        65,
+        130,
+        1196,
+        1157
+      ],
+      "previewAlphaBounds": [
+        82,
+        161,
+        942,
+        942
+      ],
+      "rawSha256": "a32a9f73786a8ca415317a31eb01836ce21bd432e0fabddae5db6985a37d9e4c",
+      "sourceSha256": "bd5385d3d7deb22decf57f02543c3551eff339c3b17c451157831524fc82b5f3"
+    },
+    {
+      "speciesId": "goonbug",
+      "form": 4,
+      "variant": "awakened",
+      "input": "docs/assets/linh-thu/art/v3/goonbug/t4-normal.png",
+      "promptPath": "output/imagegen/catalog-v3/sr/goonbug/t4-awakened.prompt.txt",
+      "inputSha256": "bb7cdb7cee169b28b828344fc6d136082dc1ea55dc80114e63cee41f5be940a4",
+      "promptSha256": "76b0ae02a068125d6ec6571c35abe9614d17e638ed0319a1779e539f07f013fe",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        60,
+        102,
+        1195,
+        1153
+      ],
+      "previewAlphaBounds": [
+        82,
+        146,
+        942,
+        942
+      ],
+      "rawSha256": "f323b2cb4589c433c4c9a0d41dd073dcb781950fc70fd25794dc2aaeae32704e",
+      "sourceSha256": "60126470416de3a3d54ceb44ba07ee21676d17ad32e7bb530a88d88938093537"
+    },
+    {
+      "speciesId": "goonbug",
+      "form": 4,
+      "variant": "perfect",
+      "input": "docs/assets/linh-thu/art/v3/goonbug/t4-normal.png",
+      "promptPath": "output/imagegen/catalog-v3/sr/goonbug/t4-perfect.prompt.txt",
+      "inputSha256": "bb7cdb7cee169b28b828344fc6d136082dc1ea55dc80114e63cee41f5be940a4",
+      "promptSha256": "04e978ce636e4b2ec59795193b37e2bef5d3d9c9c62c2e37c8b1ff7f014cc197",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        77,
+        136,
+        1177,
+        1154
+      ],
+      "previewAlphaBounds": [
+        82,
+        146,
+        942,
+        942
+      ],
+      "rawSha256": "fca1ec6784b585d182e4689dd5a3c26bbedd2070334e657d51fb8790c44ee17a",
+      "sourceSha256": "6c95c0338fc45b72489228887258fa231cb4467897d5c62c89e2606b1f4936f3"
+    },
+    {
+      "speciesId": "humbug",
+      "form": 4,
+      "variant": "awakened",
+      "input": "docs/assets/linh-thu/art/v3/humbug/t4-normal.png",
+      "promptPath": "output/imagegen/catalog-v3/r/humbug/t4-awakened.prompt.txt",
+      "inputSha256": "f50c619c4c3fa0fe4a42b8323f661a6829f2de37204fe2c4daed0f13381c405a",
+      "promptSha256": "cbb95cc637e371f5ed3074b777b4e0a4f9698ad5a9a7aa8c37ea7fee0d8ca02b",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        58,
+        86,
+        1197,
+        1150
+      ],
+      "previewAlphaBounds": [
+        82,
+        139,
+        942,
+        942
+      ],
+      "rawSha256": "455c2f927743e995567d4c0f63673bea0a176fe7e65ac3cda9136a3038bf1f58",
+      "sourceSha256": "778601b1c723bb40a7916d139d9055d8e3a047412da23ee20fea60868dafa951"
+    },
+    {
+      "speciesId": "humbug",
+      "form": 4,
+      "variant": "perfect",
+      "input": "docs/assets/linh-thu/art/v3/humbug/t4-normal.png",
+      "promptPath": "output/imagegen/catalog-v3/r/humbug/t4-perfect.prompt.txt",
+      "inputSha256": "f50c619c4c3fa0fe4a42b8323f661a6829f2de37204fe2c4daed0f13381c405a",
+      "promptSha256": "20db677accca78c890a6d1ad76eee63344db91944b294e049256e910e3b11847",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        78,
+        121,
+        1177,
+        1140
+      ],
+      "previewAlphaBounds": [
+        82,
+        145,
+        942,
+        942
+      ],
+      "rawSha256": "982a37b1be4fd2a13355b44ecc22ec4ede090f3266f190afd6cfcd3f94c441d1",
+      "sourceSha256": "6179bb0b266dfeb2a8e7cfcb81160db7772297e44a4aa8a634b7c728eb4ba2df"
+    },
+    {
+      "speciesId": "hootlet",
+      "form": 4,
+      "variant": "awakened",
+      "input": "docs/assets/linh-thu/art/v3/hootlet/t4-normal.png",
+      "promptPath": "output/imagegen/catalog-v3/r/hootlet/t4-awakened.prompt.txt",
+      "inputSha256": "934f21a8123679aa9baae65bc542b77c3da83e188bc9459cdc237767cd6ec3f3",
+      "promptSha256": "04710859eb6ccdcfe0c80438fc298a3e0c3817b39bfd7184e90c572366e251ec",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        89,
+        174,
+        1164,
+        1155
+      ],
+      "previewAlphaBounds": [
+        82,
+        157,
+        942,
+        942
+      ],
+      "rawSha256": "a98f7569126e8dd14a502adbff204c9721ab010bca654f7eb5bfc547a14ead0a",
+      "sourceSha256": "9b7e17de130269d6433717e5e21be51c3bf76ef1227e928d1c73216d5a58a312"
+    },
+    {
+      "speciesId": "hootlet",
+      "form": 4,
+      "variant": "perfect",
+      "input": "docs/assets/linh-thu/art/v3/hootlet/t4-normal.png",
+      "promptPath": "output/imagegen/catalog-v3/r/hootlet/t4-perfect.prompt.txt",
+      "inputSha256": "934f21a8123679aa9baae65bc542b77c3da83e188bc9459cdc237767cd6ec3f3",
+      "promptSha256": "f9890137a928ae89271ecbf1c10552c8ed292490af27c0bb576271672945aa65",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        58,
+        109,
+        1194,
+        1161
+      ],
+      "previewAlphaBounds": [
+        82,
+        146,
+        942,
+        942
+      ],
+      "rawSha256": "30767c6bd78de86f0c0d5ffc4b3da7d82aa52d399dc2bd202084f165bb3047d6",
+      "sourceSha256": "5ecb4ed50b3c04fc765154412f0312e39002d1fb1208eaf9ae93e335e08bb0cb"
+    },
+    {
+      "speciesId": "gibber",
+      "form": 4,
+      "variant": "awakened",
+      "input": "docs/assets/linh-thu/art/v3/gibber/t4-normal.png",
+      "promptPath": "output/imagegen/catalog-v3/r/gibber/t4-awakened.prompt.txt",
+      "inputSha256": "fccc0f895578340915fffdae6e547fbda6cc6846c7e3d184cf70fef8476e4790",
+      "promptSha256": "525de23f4f626481e2e3774c52c3f0454e2b97ed8b01fc378339ba878f37a937",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        107,
+        260,
+        1157,
+        1134
+      ],
+      "previewAlphaBounds": [
+        82,
+        226,
+        942,
+        942
+      ],
+      "rawSha256": "9de17ea2e4f9c8342ef9dae45ce7696e966e85ebca623750705da02308d9e107",
+      "sourceSha256": "692ab0cc24192f060661e0427a02d8ab45ad9071fb4f67e1b7064709fbfe13ea"
+    },
+    {
+      "speciesId": "gibber",
+      "form": 4,
+      "variant": "perfect",
+      "input": "docs/assets/linh-thu/art/v3/gibber/t4-normal.png",
+      "promptPath": "output/imagegen/catalog-v3/r/gibber/t4-perfect.prompt.txt",
+      "inputSha256": "fccc0f895578340915fffdae6e547fbda6cc6846c7e3d184cf70fef8476e4790",
+      "promptSha256": "3d91d70b430e80fac946c2a34517bdd6156738b26492b8c5836ebb28648e85d8",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        81,
+        213,
+        1200,
+        1147
+      ],
+      "previewAlphaBounds": [
+        82,
+        224,
+        942,
+        942
+      ],
+      "rawSha256": "b64380fed4fd2d059c6af00dc78b09e753bae3f72dd3ccafd4485a802505e45c",
+      "sourceSha256": "fe9ce82ac79aba01870d18fcce0b0e6335ab9b376ed583d50d6b62bd5ecfe8e0"
+    },
+    {
+      "speciesId": "voltfawn",
+      "form": 4,
+      "variant": "awakened",
+      "input": "docs/assets/linh-thu/art/v3/voltfawn/t4-normal.png",
+      "promptPath": "output/imagegen/catalog-v3/r/voltfawn/t4-awakened.prompt.txt",
+      "inputSha256": "da4558452a8bde3a14c999bc8c40f55f1b031b8c74a5867dc4e289cc4c8c1a50",
+      "promptSha256": "7931b979ccdac903ea36a6b73937f73484a6e1d0bf9bba86d90c938ec476bcb9",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        191,
+        97,
+        1065,
+        1156
+      ],
+      "previewAlphaBounds": [
+        157,
+        82,
+        867,
+        942
+      ],
+      "rawSha256": "8b483a698f4bf0ed46260467572fd6cdf0a76e611c230038e2759d6622b4210f",
+      "sourceSha256": "07f7483a15d294079494dc104e3d9b7e119cac2679d208bd8ce578a7f4191b26"
+    },
+    {
+      "speciesId": "voltfawn",
+      "form": 4,
+      "variant": "perfect",
+      "input": "docs/assets/linh-thu/art/v3/voltfawn/t4-normal.png",
+      "promptPath": "output/imagegen/catalog-v3/r/voltfawn/t4-perfect.prompt.txt",
+      "inputSha256": "da4558452a8bde3a14c999bc8c40f55f1b031b8c74a5867dc4e289cc4c8c1a50",
+      "promptSha256": "8ef0e657510fd7da2619307f6c0fac2d840b3dec2f9cc94003beed4d38df6225",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        166,
+        62,
+        1115,
+        1189
+      ],
+      "previewAlphaBounds": [
+        150,
+        82,
+        874,
+        942
+      ],
+      "rawSha256": "8d11596489f770e10f4bc4d5d9fbe593de73f1e9fda6b81fbec2897187ce209f",
+      "sourceSha256": "73d2a5fc4b46c290b35361ff4a6d79cfe7da74df0a952290cb81ab32b3ce6785"
+    },
+    {
+      "speciesId": "cheerling",
+      "form": 4,
+      "variant": "awakened",
+      "input": "docs/assets/linh-thu/art/v3/cheerling/t4-normal.png",
+      "promptPath": "output/imagegen/catalog-v3/r/cheerling/t4-awakened.prompt.txt",
+      "inputSha256": "43f913e2494bf035408c6c5881f924e9938f06c3ec708760cfd8ee32921b21b6",
+      "promptSha256": "087e146f770ae2432c433e9ac1b4d9cee6dbd5ef0c735056c8b807eb550b5068",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        65,
+        167,
+        1211,
+        1146
+      ],
+      "previewAlphaBounds": [
+        82,
+        207,
+        942,
+        942
+      ],
+      "rawSha256": "023acd1e8f7c18bd65fdde4cdd57df83b5c20c1bd27e7203a40ec2728aad9f22",
+      "sourceSha256": "f6e544c95f6e16222f70326ec73113b009734007975e4ef97cc2d0e5da6271db"
+    },
+    {
+      "speciesId": "cheerling",
+      "form": 4,
+      "variant": "perfect",
+      "input": "docs/assets/linh-thu/art/v3/cheerling/t4-normal.png",
+      "promptPath": "output/imagegen/catalog-v3/r/cheerling/t4-perfect.prompt.txt",
+      "inputSha256": "43f913e2494bf035408c6c5881f924e9938f06c3ec708760cfd8ee32921b21b6",
+      "promptSha256": "f64c0a7fa22d3b3e491d758fbfb3c67ed82c87653c799e90665660e6fa9fa39e",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        69,
+        176,
+        1219,
+        1153
+      ],
+      "previewAlphaBounds": [
+        82,
+        211,
+        942,
+        942
+      ],
+      "rawSha256": "d1b74727805a4387f292a65ceb59616600f4e7c49885aa55dd626158dddd9cb7",
+      "sourceSha256": "d4b1380274c74645986cd452e8da46e4635e1421ab292eb4d12541cc4bde3a4b"
+    },
+    {
+      "speciesId": "funglet",
+      "form": 4,
+      "variant": "awakened",
+      "input": "docs/assets/linh-thu/art/v3/funglet/t4-normal.png",
+      "promptPath": "output/imagegen/catalog-v3/r/funglet/t4-awakened.prompt.txt",
+      "inputSha256": "04298ccabef8726d436223f3a9aa4e2f0a8a6ef7dea370d8fe436b0dd4dfc4a9",
+      "promptSha256": "e280a4e2bd8e6e31e5d02df1e62e76f9358a59678f0ecd3eaf0ecf44e697fb21",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        42,
+        129,
+        1212,
+        1187
+      ],
+      "previewAlphaBounds": [
+        82,
+        164,
+        942,
+        942
+      ],
+      "rawSha256": "2e93d2558e85d860fc3000c93d74fe5e84514242adee89d6b62fe8daf1620040",
+      "sourceSha256": "f4b4736734a8288c8cbad21011d1c46875014d43bf7d10270db3fc295bf9d2cc"
+    },
+    {
+      "speciesId": "funglet",
+      "form": 4,
+      "variant": "perfect",
+      "input": "docs/assets/linh-thu/art/v3/funglet/t4-normal.png",
+      "promptPath": "output/imagegen/catalog-v3/r/funglet/t4-perfect.prompt.txt",
+      "inputSha256": "04298ccabef8726d436223f3a9aa4e2f0a8a6ef7dea370d8fe436b0dd4dfc4a9",
+      "promptSha256": "78b2664ce6ce557aab1b0ea55565c8d8dc2f21d9e93b8b07aab8b75ff621ffbf",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawAlphaBounds": [
+        101,
+        201,
+        1155,
+        1156
+      ],
+      "previewAlphaBounds": [
+        82,
+        163,
+        942,
+        942
+      ],
+      "rawSha256": "f8cfbe979d3b8ba64263d0d18872be270d88bb144016db51d11cfb850191bb21",
+      "sourceSha256": "8fee3d033fb01b5f247a341c5da196fc9983653d42b636754192c9a91654af23"
+    }
+  ],
+  "issues": []
+}

@@ -1,0 +1,54 @@
+{
+  "status": "purity_visual_proposals_only",
+  "generator": "imagegen_cli_via_existing_local_cockpit_gateway",
+  "normal_direction": "approved_by_user",
+  "purity_variants": "awaiting_feedback",
+  "variants": [
+    {
+      "purity": "95",
+      "raw_dimensions": [
+        1254,
+        1254
+      ],
+      "preview_dimensions": [
+        1024,
+        1024
+      ],
+      "alpha_bounds": [
+        84,
+        82,
+        940,
+        942
+      ],
+      "source": "stormlion-t4-preview.png",
+      "sha256": {
+        "stormlion-t4-95-raw.png": "35a20fe5fe573c39f586c46e4baa7355330397cb6c4bf1b63c57f86cbf26106f",
+        "stormlion-t4-95-preview.png": "6916a7c3b5e5df83517fcd7c62b7bca909a2453279e1ef798c53ce7cf3008d09",
+        "stormlion-t4-95.prompt.txt": "c39163f5a84738193a29424eb894bcd41757b5d34b4f27427db3398112626dfd"
+      }
+    },
+    {
+      "purity": "100",
+      "raw_dimensions": [
+        1254,
+        1254
+      ],
+      "preview_dimensions": [
+        1024,
+        1024
+      ],
+      "alpha_bounds": [
+        84,
+        82,
+        940,
+        942
+      ],
+      "source": "stormlion-t4-preview.png",
+      "sha256": {
+        "stormlion-t4-100-raw.png": "fdf3a9819e3d99e49413966622bd0d9a77f914b7891d2a4c0da8ce4ac9059e83",
+        "stormlion-t4-100-preview.png": "4f29536fff85764d3a78e45c91c0ddd7b750a301f65696e39dd97095465b1ee9",
+        "stormlion-t4-100.prompt.txt": "c4527997b2a0fee0de8f74c4b2b7395c6c721898f7f3bb72b285a8492804b392"
+      }
+    }
+  ]
+}

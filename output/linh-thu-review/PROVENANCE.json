@@ -1,0 +1,60 @@
+{
+  "capturedAt": "2026-10-19T09:58:18.066Z",
+  "kind": "Real UI screenshots with synthetic state; not a production account or user acceptance",
+  "records": [
+    {
+      "file": "screenshots/training-390.png",
+      "source": "trial-results/linh-thu/review-v3/training-390.png",
+      "sha256": "0bfd12e448770cf9281a8d4c405785478196e23fef744bbf798a2bad0810f3e4",
+      "bytes": 182712
+    },
+    {
+      "file": "screenshots/companion-390.png",
+      "source": "trial-results/linh-thu/review-v3/companion-390.png",
+      "sha256": "0b6dcefbeface03148a71a706553d94fc5340f3d9439b4330f2d82cd6ac68c71",
+      "bytes": 183693
+    },
+    {
+      "file": "screenshots/collection-390.png",
+      "source": "trial-results/linh-thu/review-v3/collection-390.png",
+      "sha256": "c32bfe8c1af7dcd01b5550f53f66138bae9f375b2ad43585fd141f665d489e49",
+      "bytes": 124447
+    },
+    {
+      "file": "screenshots/summon-390.png",
+      "source": "trial-results/linh-thu/review-v3/summon-390.png",
+      "sha256": "daf1aa4b616d84e6bd778e37e36c0b12251c874b5e96554c9033e6f2e27ff839",
+      "bytes": 199195
+    },
+    {
+      "file": "screenshots/alchemy-390.png",
+      "source": "trial-results/linh-thu/review-v3/alchemy-390.png",
+      "sha256": "ae78e04e319f4885c7ce2963ea377c4243fff5e5cf3fe8dfb37ec8a72b93302b",
+      "bytes": 59416
+    },
+    {
+      "file": "screenshots/live-summon-390.png",
+      "source": "trial-results/linh-thu/live-summon-390.png",
+      "sha256": "b6721cb9d59f66474e1fbe918f8d1f68ba40a92161b7b99fcb247aab9caba69d",
+      "bytes": 196304
+    },
+    {
+      "file": "screenshots/live-tower-390.png",
+      "source": "trial-results/linh-thu/live-tower-390.png",
+      "sha256": "de9f64d013379a0bb2aa4950bb89e7c91b7c8324a855aa6f47d38cd9d29afa57",
+      "bytes": 45061
+    },
+    {
+      "file": "screenshots/live-ultimate-390.png",
+      "source": "trial-results/linh-thu/live-ultimate-390.png",
+      "sha256": "2e9edcf5ac39f2ab5177aff6879585460f5b0668880354fc64c734c5a45c99e8",
+      "bytes": 53277
+    },
+    {
+      "file": "screenshots/tower-choosing-390.png",
+      "source": "Direct Chrome capture using beastFixture/app-harness, real tower UI; fixture tower_start only, no real account",
+      "sha256": "d4af0b34b0749bc4303b996f647147d71f25d92adb57f54c2bc680912cef7698",
+      "bytes": 52769
+    }
+  ]
+}

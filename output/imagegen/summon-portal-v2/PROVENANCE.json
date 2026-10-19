@@ -1,0 +1,15 @@
+{
+  "purpose": "Unapproved replacement summon banner proposal",
+  "generator": "imagegen_cli_cockpit",
+  "model": "gpt-image-2.5",
+  "input": "Text only, generated illustration",
+  "prompt": "portal.prompt.txt",
+  "raw": "portal-raw.png",
+  "rawSha256": "97a70d01506b77f8706671c1efe5528ad7d12ab9b9452c01c31bcaa91384d850",
+  "rawSize": [
+    1254,
+    1254
+  ],
+  "preview": "portal-demo.webp",
+  "productionFilesModified": []
+}

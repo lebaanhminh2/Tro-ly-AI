@@ -1,0 +1,78 @@
+{
+  "date": "2026-10-19",
+  "timezone": "Asia/Saigon",
+  "generator": "bundled_imagegen_cli_via_user_selected_cockpit_gateway",
+  "configured_model": "gpt-image-2.5",
+  "runtime_integrated": false,
+  "normalization": "Raw preserved; alpha<8 ->0, >=250 ->255; other values retained; alpha bbox cropped, fit<=860px, centered on transparent 1024px canvas.",
+  "entries": [
+    {
+      "species": "pyropup",
+      "name": "pyrodaemon",
+      "variant": "perfect",
+      "revision": 3,
+      "approval": "awaiting_feedback",
+      "source": "output/imagegen/ur-preview-v2/pyropup/t4-pyrodaemon-preview.png",
+      "raw_dimensions": [
+        1254,
+        1254
+      ],
+      "preview_dimensions": [
+        1024,
+        1024
+      ],
+      "alpha_bounds": [
+        82,
+        131,
+        942,
+        893
+      ],
+      "transparent_margins": [
+        82,
+        131,
+        82,
+        131
+      ],
+      "hashes": {
+        "output/imagegen/ur-perfect-v3/pyrodaemon-perfect-raw.png": "852fac5f5f8d6fcdd980803c9e519b3a36c1d052e25347b7b0ee1c677b840805",
+        "output/imagegen/ur-perfect-v3/pyrodaemon-perfect-preview.png": "9ff7e6999280c74bce5476f53f501bd1f674392d3fcb2a27cd2f8f8f12c2edc3",
+        "output/imagegen/ur-perfect-v3/pyrodaemon.prompt.txt": "6175fe66bc7255d117f54b935c40f4aecaec5c11e2bca3aff760067a63c66323",
+        "output/imagegen/ur-preview-v2/pyropup/t4-pyrodaemon-preview.png": "7b467ae740e15a4314c9e4c94d2c4e91aed4387df02f8bfa461098127ab5bc7e"
+      }
+    },
+    {
+      "species": "rubblet",
+      "name": "meteorax",
+      "variant": "perfect",
+      "revision": 3,
+      "approval": "awaiting_feedback",
+      "source": "output/imagegen/ur-preview-v2/rubblet/t4-meteorax-preview.png",
+      "raw_dimensions": [
+        1254,
+        1254
+      ],
+      "preview_dimensions": [
+        1024,
+        1024
+      ],
+      "alpha_bounds": [
+        82,
+        145,
+        942,
+        878
+      ],
+      "transparent_margins": [
+        82,
+        145,
+        82,
+        146
+      ],
+      "hashes": {
+        "output/imagegen/ur-perfect-v3/meteorax-perfect-raw.png": "03fb64d16b7def7716fcfca9499a12bb46cfe9de9268f2349dc808516ec1b42f",
+        "output/imagegen/ur-perfect-v3/meteorax-perfect-preview.png": "01225a766618a1360d7fca7af8b4d3c4a3a54ff28b9e02829951d27db0b92872",
+        "output/imagegen/ur-perfect-v3/meteorax.prompt.txt": "83b4ec894e2a357debac3e7d315cdd5a14eec3b65d712387ba080e9a3ad90c4d",
+        "output/imagegen/ur-preview-v2/rubblet/t4-meteorax-preview.png": "8f9dbd6c6453b6a532bf918f306b09be511d52edf3e270f6659857af09c500e7"
+      }
+    }
+  ]
+}

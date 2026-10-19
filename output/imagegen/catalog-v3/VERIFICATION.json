@@ -1,0 +1,145 @@
+{
+  "date": "2026-10-19",
+  "timezone": "Asia/Saigon",
+  "status": "staging_released",
+  "userAcceptance": "Current version explicitly approved for staging release on 2026-10-19; purity artwork remains provisional",
+  "deployed": true,
+  "remoteMigrationsApplied": true,
+  "typecheck": "passed",
+  "typecheckWeb": "passed",
+  "lint": "passed",
+  "syntaxModules": 37,
+  "formatFiles": 109,
+  "artTests": 7,
+  "testAll": {
+    "main": 330,
+    "experiments": 25,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "log": "trial-results/linh-thu/test-all-art-v3.log",
+    "logEncoding": "UTF-16LE"
+  },
+  "fullBrowserAfterArt": {
+    "passed": 41,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "log": "trial-results/linh-thu/browser-art-v3.log",
+    "logEncoding": "UTF-16LE",
+    "includes": [
+      "108 real production images through paginated collection and form details",
+      "production UI/API with temporary D1 and receipts",
+      "summon, tower, training, role switch, reset, elixir and weekly ultimate",
+      "offline/reload, lost response, late reads and multiple clients"
+    ],
+    "initialRun": "40/41; test awaited dialog close before mutation reached server",
+    "correction": "wait for mutation success toast before checking submitted targets; full suite rerun passed"
+  },
+  "artComplete": {
+    "status": "passed",
+    "command": "node scripts/build-linh-thu-assets.ts --require-complete",
+    "normal": 72,
+    "awakened": 18,
+    "perfect": 18,
+    "newGenerationJobs": 95,
+    "reusedWithProvenance": 13,
+    "referenceImagesUnchanged": 72,
+    "importIssues": [],
+    "manifest": "docs/assets/linh-thu/art/MANIFEST.json",
+    "importChecks": "output/imagegen/catalog-v3/IMPORT_CHECKS.json",
+    "runtimeReport": "web/assets/linh-thu/ART.json",
+    "fullBytes": 3871966,
+    "thumbBytes": 651000,
+    "fullSize": 512,
+    "thumbSize": 128,
+    "generator": "imagegen_cli_cockpit",
+    "model": "gpt-image-2.5"
+  },
+  "buildAfterArt": {
+    "localDryRun": "passed",
+    "stagingDryRun": "passed",
+    "workerKiB": 607.7,
+    "workerGzipKiB": 136.37,
+    "webFiles": 505,
+    "logs": ["trial-results/linh-thu/build-art-v3.log", "trial-results/linh-thu/staging-art-v3.log"]
+  },
+  "visualReview": {
+    "gallery": "output/imagegen/catalog-v3/index.html",
+    "rankSheets": "UR/SSR/SR/R normal T1-T4, purity comparison and 64/128px light/dark",
+    "runtimeScreenshots": "trial-results/linh-thu/art-v3/",
+    "galleryScreenshots": [
+      "trial-results/linh-thu/art-gallery-390-dark.png",
+      "trial-results/linh-thu/art-gallery-390-light.png"
+    ],
+    "liveScreenshots": [
+      "trial-results/linh-thu/live-summon-390.png",
+      "trial-results/linh-thu/live-tower-390.png",
+      "trial-results/linh-thu/live-ultimate-390.png"
+    ],
+    "caveats": [
+      "95% is intentionally subtle and requires a text label at thumbnail size",
+      "some 100% variants such as Rockong remain visually close to T4; authorized for provisional use",
+      "automated and agent visual checks do not replace user art acceptance",
+      "local dry-runs and SQLite benchmarks do not establish remote D1 latency or Worker CPU under peak load"
+    ]
+  },
+  "goalAudit": "docs/LINH_THU_GOAL_AUDIT.md",
+  "reviewPage": "output/linh-thu-review/index.html",
+  "webPerformance": {
+    "local": "trial-results/linh-thu/web-performance.json",
+    "throttled": "trial-results/linh-thu/web-performance-throttled.json",
+    "samplesPerVariant": 3,
+    "ownedIndividuals": 2400,
+    "renderedPage": 24,
+    "todayImageRequests": 0,
+    "scope": "Same current runtime with fixture API; reference-art registry versus production v3. Not a remote app baseline or D1/CDN benchmark."
+  },
+  "stagingMetadata": {
+    "checkedAt": "2026-10-19T10:07:34.987Z",
+    "kind": "Postrelease metadata and unauthenticated GET verification",
+    "worker": "personal-assistant-staging",
+    "database": "assistant-staging",
+    "pendingMigrations": [],
+    "latestDeployment": {
+      "id": "7cd04fc1-52bd-439b-99cb-f35add86e93e",
+      "created_on": "2026-10-19T10:06:17.429139Z",
+      "versions": [
+        {
+          "version_id": "ff342cb0-4a7c-4b6b-b43c-bc3297a7a559",
+          "percentage": 100
+        }
+      ]
+    },
+    "url": "https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev/app/"
+  },
+  "remoteSchemaModified": true,
+  "userRecordsIntentionallyModified": false,
+  "preReleaseStagingMetadata": {
+    "checkedAt": "2026-10-19T09:52:32.039Z",
+    "kind": "Read-only remote metadata; no migration apply or deploy",
+    "worker": "personal-assistant-staging",
+    "database": "assistant-staging",
+    "pendingMigrations": ["0041_linh_thu.sql"],
+    "latestDeployment": {
+      "id": "293b189f-57d0-4a68-b3fa-bf7ab6c4b5d7",
+      "createdOn": "2026-10-18T18:29:11.191237Z",
+      "versions": [
+        {
+          "id": "99b8a7b7-b7ab-4b44-9cec-c104c2906527",
+          "percentage": 100
+        }
+      ]
+    }
+  },
+  "releaseProof": "output/linh-thu-review/STAGING_RELEASE.json",
+  "postdeploy": {
+    "checkedAt": "2026-10-19T10:07:34.987Z",
+    "assetsMatched": 402,
+    "assetFailures": 0,
+    "unauthenticatedApiChecks": 8,
+    "browserWidths": [390, 1440],
+    "browserErrors": 0,
+    "pendingMigrations": []
+  }
+}

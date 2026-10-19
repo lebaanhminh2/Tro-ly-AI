@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Linh thú · Đã phát hành staging</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #252137;
+        --muted: #6f6a81;
+        --accent: #745cda;
+        --line: #e8e3f2;
+        --surface: #fff;
+        --background: #f7f5fb;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--background);
+        color: var(--ink);
+        font:
+          16px/1.65 system-ui,
+          -apple-system,
+          'Segoe UI',
+          sans-serif;
+      }
+      a {
+        color: var(--accent);
+        text-underline-offset: 4px;
+      }
+      button {
+        font: inherit;
+      }
+      button:focus-visible,
+      a:focus-visible {
+        outline: 3px solid #a394e7;
+        outline-offset: 4px;
+      }
+      header {
+        max-width: 1120px;
+        margin: auto;
+        padding: 30px 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        border-bottom: 1px solid var(--line);
+      }
+      .brand {
+        font-size: 14px;
+        font-weight: 750;
+        letter-spacing: 0.12em;
+      }
+      .status {
+        color: var(--muted);
+        font-size: 13px;
+      }
+      main {
+        max-width: 1120px;
+        margin: auto;
+        padding: 54px 24px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(280px, 390px);
+        gap: 72px;
+        align-items: start;
+      }
+      .eyebrow {
+        color: var(--accent);
+        font-size: 12px;
+        letter-spacing: 0.14em;
+        font-weight: 750;
+      }
+      h1 {
+        font-size: clamp(32px, 5vw, 50px);
+        line-height: 1.14;
+        letter-spacing: -0.04em;
+        margin: 18px 0 22px;
+      }
+      .intro {
+        color: var(--muted);
+        max-width: 510px;
+      }
+      .links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px 24px;
+        margin: 26px 0 34px;
+      }
+      .links a {
+        font-size: 14px;
+        font-weight: 650;
+      }
+      nav {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin: 22px 0;
+      }
+      nav button {
+        min-height: 48px;
+        text-align: left;
+        padding: 12px 15px;
+        border: 1px solid var(--line);
+        border-radius: 13px;
+        background: var(--surface);
+        color: var(--muted);
+        cursor: pointer;
+      }
+      nav button[aria-pressed='true'] {
+        color: var(--accent);
+        border-color: #c2b5ef;
+        background: #efebfc;
+        font-weight: 700;
+      }
+      nav button:hover {
+        border-color: #bfb1e9;
+      }
+      .description {
+        min-height: 90px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .facts {
+        border-top: 1px solid var(--line);
+        margin-top: 28px;
+        padding-top: 22px;
+        font-size: 14px;
+      }
+      .facts p {
+        margin: 8px 0;
+      }
+      .note {
+        color: var(--muted);
+        font-size: 13px;
+      }
+      figure {
+        margin: 0;
+        position: sticky;
+        top: 24px;
+      }
+      .phone {
+        overflow: hidden;
+        border: 7px solid #252137;
+        border-radius: 33px;
+        background: #fff;
+        box-shadow: 0 22px 65px #30214b15;
+      }
+      .phone img {
+        display: block;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 390/844;
+        object-fit: contain;
+      }
+      figcaption {
+        margin-top: 16px;
+        text-align: center;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .open {
+        display: block;
+        text-align: center;
+        margin-top: 9px;
+        font-size: 13px;
+      }
+      code {
+        font-size: 12px;
+        overflow-wrap: anywhere;
+      }
+      footer {
+        max-width: 1120px;
+        margin: auto;
+        padding: 0 24px 32px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      @media (max-width: 760px) {
+        header {
+          padding: 20px;
+        }
+        .status {
+          max-width: 150px;
+          text-align: right;
+        }
+        main {
+          padding: 30px 20px;
+          grid-template-columns: 1fr;
+          gap: 24px;
+        }
+        h1 {
+          max-width: 340px;
+        }
+        .intro {
+          font-size: 15px;
+        }
+        .links {
+          margin: 20px 0;
+        }
+        figure {
+          position: static;
+          max-width: 350px;
+          width: 100%;
+          justify-self: center;
+        }
+        .description {
+          min-height: 0;
+        }
+        .facts {
+          margin-top: 20px;
+        }
+        footer {
+          padding: 0 20px 24px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <span class="brand">LINH THÚ</span><span class="status">Đã duyệt · Staging 19/10/2026</span>
+    </header>
+    <main>
+      <section aria-labelledby="title">
+        <div class="eyebrow">18 LOÀI · 108 ẢNH · 4 TẦNG THÁP</div>
+        <h1>Một hành trình.<br />Một giao ước dài lâu.</h1>
+        <p class="intro">
+          Bản tổng hợp để xem giao diện đã chạy trong trình duyệt thật. Chọn từng màn bên dưới hoặc
+          mở gallery để đối chiếu đủ T1–T4, Thức tỉnh và Hoàn mỹ.
+        </p>
+        <div class="links">
+          <a href="https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev/app/"
+            >Mở ứng dụng staging ↗</a
+          >
+          <a href="../imagegen/catalog-v3/index.html">Xem 108 ảnh linh thú ↗</a
+          ><a href="../../docs/LINH_THU_ACCEPTANCE.md">Hướng dẫn thử và kiểm chứng ↗</a>
+        </div>
+        <nav aria-label="Chọn ảnh giao diện"></nav>
+        <p class="description" id="description" aria-live="polite"></p>
+        <div class="facts">
+          <p>
+            <strong>Đã nối đầy đủ:</strong> luyện bằng habit, đồng hành, 18 bộ kỹ năng, triệu hồi,
+            Tịnh Linh Đan và tháp trong Habit.
+          </p>
+          <p>
+            <strong>Kiểm thử:</strong> 330 bài hệ thống, 25 experiments và 41 bài trình duyệt đạt.
+            Hai bản build dry-run đạt.
+          </p>
+          <p class="note">
+            Ảnh 95%/100% dùng tạm theo quyết định đã chốt, có thể sửa riêng sau. Đây là ảnh chụp với
+            dữ liệu kiểm thử; trang này không cấp thú/vé hoặc thao tác tài khoản thật.
+          </p>
+          <p class="note">
+            Chạy ứng dụng local: áp migrations đến 0041 trên DB local/tạm, rồi
+            <code>npm.cmd run dev</code>. Đăng nhập theo luồng hiện có; tài khoản mới bắt đầu với bộ
+            sưu tập trống.
+          </p>
+        </div>
+      </section>
+      <figure>
+        <div class="phone">
+          <img
+            id="screen"
+            src="screenshots/training-390.png"
+            width="390"
+            height="844"
+            alt="Linh thú đang luyện"
+          />
+        </div>
+        <figcaption id="caption">Đang luyện · 390px · Ảnh chụp UI thật</figcaption>
+        <a
+          class="open"
+          id="full-image"
+          href="screenshots/training-390.png"
+          target="_blank"
+          rel="noopener"
+          >Mở ảnh gốc ↗</a
+        >
+      </figure>
+    </main>
+    <footer>
+      19/10/2026 · Bản hiện tại đã được duyệt và phát hành staging, migration 0041 đã áp. Ảnh
+      95%/100% dùng tạm. <a href="../../docs/LINH_THU_RELEASE.md">Hồ sơ phát hành ↗</a>
+    </footer>
+    <script>
+      const screens = [
+        [
+          'Đang luyện',
+          'training-390.png',
+          'Nhân vật, dạng hiện tại và trạng thái luyện là trọng tâm. Thanh thực/xám nằm phía dưới; điểm chỉ được quyết toán từ habit cuối ngày.',
+        ],
+        [
+          'Đồng hành',
+          'companion-390.png',
+          'Màn đồng hành có nhân vật riêng và hiệu ứng đang nhận. Chọn đồng hành độc lập với chọn luyện, có hiệu lực từ ngày tiếp theo.',
+        ],
+        [
+          'Bộ sưu tập',
+          'collection-390.png',
+          'Kho 2.400 cá thể kiểm thử chỉ dựng 24 con mỗi trang. Ảnh nhỏ được tải lười; từng cá thể giữ ID và lượt luyện riêng.',
+        ],
+        [
+          'Triệu hồi',
+          'summon-390.png',
+          'Ví vé, đổi vé, quay ×1/×10, tỷ lệ và hai bộ đếm bảo hiểm. Banner ghi rõ dạng IV là xem trước; kết quả triệu hồi nhận T1.',
+        ],
+        [
+          'Mở thẻ',
+          'live-summon-390.png',
+          'Ảnh từ luồng UI → production API → D1 tạm. Kết quả đã lưu trước khi mở thẻ; mất phản hồi có thể khôi phục receipt, không tiêu vé hai lần.',
+        ],
+        [
+          'Tháp trong Habit',
+          'tower-choosing-390.png',
+          'Một tháp bốn tầng 4 → 4 → 3 → 2. Quà chưa nhận vẫn có thể mất khi gặp bẫy; dừng nhận tổng thưởng của tầng vừa qua.',
+        ],
+        [
+          'Lò đan',
+          'alchemy-390.png',
+          'Nút Lò đan ở tiêu đề, không thêm tab thứ năm. Có chuỗi 30 ngày, bảo hiểm và danh sách cá thể có thể luyện lại bằng Tịnh Linh Đan.',
+        ],
+        [
+          'Tuyệt kỹ hoàn mỹ',
+          'live-ultimate-390.png',
+          'Ảnh từ luồng production API và D1 tạm: Frostluna hoàn mỹ với ba lượt tuyệt kỹ tuần trước khi báo ngủ. Bài kiểm tra xác nhận sau báo ngủ còn hai lượt.',
+        ],
+      ];
+      const nav = document.querySelector('nav'),
+        image = document.querySelector('#screen'),
+        caption = document.querySelector('#caption'),
+        full = document.querySelector('#full-image'),
+        description = document.querySelector('#description');
+      function select(index) {
+        const [label, file, copy] = screens[index];
+        image.src = 'screenshots/' + file;
+        image.alt = label + ' · Ảnh chụp giao diện thật';
+        full.href = image.src;
+        caption.textContent = label + ' · 390px · Dữ liệu kiểm thử';
+        description.textContent = copy;
+        [...nav.children].forEach((button, i) =>
+          button.setAttribute('aria-pressed', String(i === index)),
+        );
+      }
+      screens.forEach(([label], index) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = label;
+        button.addEventListener('click', () => select(index));
+        nav.append(button);
+      });
+      select(0);
+    </script>
+  </body>
+</html>

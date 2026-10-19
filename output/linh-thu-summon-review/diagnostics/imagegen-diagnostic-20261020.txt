@@ -1,0 +1,39 @@
+{
+  "checkedAt": "2026-10-19T19:25:12.933615+00:00",
+  "projectCodeModified": false,
+  "endpoint": "http://localhost:50066/v1/images/generations",
+  "provenFailure": "Local Cockpit image relay reports no image output after an upstream HTTP 200 response.",
+  "hypothesis": "Image request model mapping or image output handling; exact cause is not yet verified.",
+  "latestRequest": {
+    "request_id": "0f854088",
+    "requested_model": "gpt-image-2",
+    "upstream_model": "gpt-6.1-sol",
+    "success": 0,
+    "http_status": 502,
+    "error_message": "Error #01: upstream did not return image output",
+    "latency_ms": 9090,
+    "attempts": [
+      {
+        "sequence": 1,
+        "modelId": "gpt-6.1-sol",
+        "transport": "sse",
+        "latencyMs": 8587,
+        "status": 200,
+        "success": true
+      }
+    ]
+  },
+  "configurationRestored": {
+    "codex_local_access.json": {
+      "imageGenerationModel": "gpt-image-2.5",
+      "imageGenerationMainModel": "gpt-6.1-sol"
+    },
+    "codex_local_access_sidecar/manifest.json": {
+      "imageGenerationModel": "gpt-image-2.5",
+      "imageGenerationMainModel": "gpt-6.1-sol"
+    }
+  },
+  "restartAttempt": "Automatic execution review rejected the process restart with blocked by policy; no process was restarted.",
+  "imageGenerated": false,
+  "paidApiUsed": false
+}

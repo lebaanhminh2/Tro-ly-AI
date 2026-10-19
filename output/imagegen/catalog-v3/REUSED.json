@@ -1,0 +1,227 @@
+{
+  "entries": [
+    {
+      "speciesId": "pyropup",
+      "form": 1,
+      "variant": "normal",
+      "source": "v3/pyropup/t1-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "﻿Use case: precise-object-edit. Asset: Pyropup UR T1. Keep exactly ONE head, a pudgy seated dark blue-black puppy with huge round curious eyes, cream cheeks and fluffy cream chest, short legs and small cream toe tips, red-orange ears and a small orange-red tail tip. Keep its playful little open mouth and pink tongue. It has no collar, no adult flame mantle, no extra heads and no adult fangs. Keep the same small rounded friendly puppy, with confident clean original linework.\n\nImage 1 is the EXACT evolution-stage identity and pose reference. Image 2 is the same species' refined T4 sprite and is ONLY a guide to crisp thick outlines, simple shading and clean large color blocks. Preserve Image 1's anatomy, head count, proportions, silhouette, expression, palette, existing markings and accessories. Do not transfer adult anatomy, extra heads, accessories or a later-stage crystal or flame mane from Image 2 onto this younger stage.\nStyle: expressive flat 2D cartoon game sprite, original bold dark colored outlines, a few large intentional flat shadow shapes. Clean the existing contours and clarify overlaps at higher resolution. Keep the source's compact chibi shape language and roughly the same visual complexity. Avoid realistic fur, detailed texture, many facets, fine cracks, extra spikes, painterly gradients, glossy 3D lighting, rim lights, particles, rings and scenery. No realistic wolf or realistic dinosaur anatomy.\nOne complete creature, matching source three-quarter right-facing pose, full ears, tail, paws and any existing flames or crystals visible. Transparent background, no source ground shadow, no text, watermark or UI, at least 8 percent clear margin.\r\n",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "pyropup",
+      "form": 2,
+      "variant": "normal",
+      "source": "v3/pyropup/t2-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "﻿Use case: precise-object-edit. Asset: Pyrohound UR T2. Keep exactly TWO heads on one stocky short-legged body, with two clearly separated faces and necks. Preserve the original different expressions: the foremost head slightly proud, the side head reacting outward. Keep dark pointed ears, cream muzzles and chests, red-orange flame scarf and flame-tipped tail, dark blue-black body, cream toe tips. No third head, no T4 collar or studded armor. Preserve the original compact stance and the stage-specific small fire mantle.\n\nImage 1 is the EXACT evolution-stage identity and pose reference. Image 2 is the same species' refined T4 sprite and is ONLY a guide to crisp thick outlines, simple shading and clean large color blocks. Preserve Image 1's anatomy, head count, proportions, silhouette, expression, palette, existing markings and accessories. Do not transfer adult anatomy, extra heads, accessories or a later-stage crystal or flame mane from Image 2 onto this younger stage.\nStyle: expressive flat 2D cartoon game sprite, original bold dark colored outlines, a few large intentional flat shadow shapes. Clean the existing contours and clarify overlaps at higher resolution. Keep the source's compact chibi shape language and roughly the same visual complexity. Avoid realistic fur, detailed texture, many facets, fine cracks, extra spikes, painterly gradients, glossy 3D lighting, rim lights, particles, rings and scenery. No realistic wolf or realistic dinosaur anatomy.\nOne complete creature, matching source three-quarter right-facing pose, full ears, tail, paws and any existing flames or crystals visible. Transparent background, no source ground shadow, no text, watermark or UI, at least 8 percent clear margin.\r\n",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "pyropup",
+      "form": 3,
+      "variant": "normal",
+      "source": "v3/pyropup/t3-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "﻿Use case: precise-object-edit. Asset: Hellhound UR T3. Keep exactly THREE heads with the original central proud face, left panting tongue and right barking jaw. One compact dark puppy-like body, short legs and cream toe tips, cream muzzles and chest, larger red-orange-yellow flame mantle. Keep the original stage-specific head layout and flames; it does not yet have the T4 large purple studded collar or fiery leg cuffs. Clarify separation of the three heads without spreading the body or adding anatomy.\n\nImage 1 is the EXACT evolution-stage identity and pose reference. Image 2 is the same species' refined T4 sprite and is ONLY a guide to crisp thick outlines, simple shading and clean large color blocks. Preserve Image 1's anatomy, head count, proportions, silhouette, expression, palette, existing markings and accessories. Do not transfer adult anatomy, extra heads, accessories or a later-stage crystal or flame mane from Image 2 onto this younger stage.\nStyle: expressive flat 2D cartoon game sprite, original bold dark colored outlines, a few large intentional flat shadow shapes. Clean the existing contours and clarify overlaps at higher resolution. Keep the source's compact chibi shape language and roughly the same visual complexity. Avoid realistic fur, detailed texture, many facets, fine cracks, extra spikes, painterly gradients, glossy 3D lighting, rim lights, particles, rings and scenery. No realistic wolf or realistic dinosaur anatomy.\nOne complete creature, matching source three-quarter right-facing pose, full ears, tail, paws and any existing flames or crystals visible. Transparent background, no source ground shadow, no text, watermark or UI, at least 8 percent clear margin.\r\n",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "pyropup",
+      "form": 4,
+      "variant": "normal",
+      "source": "v3/pyropup/t4-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "﻿Use case: precise-object-edit\nAsset: Pyrodaemon UR T4 game creature sprite, conservative refinement.\nImage 1 is the exact identity, anatomy, pose, palette and drawing-style edit target. Preserve its compact chibi three-headed fire hound: one large central head looking slightly upward with assured expression, smaller left head with tongue showing, smaller right head barking with open jaw. Keep exactly THREE heads on one stocky short-legged four-legged body. Keep head placement and characterful different expressions; each face must remain readable and distinct. Preserve pointed dark ears, cream muzzles and chests, dark blue-black body, the one broad dark purple collar with a few large pale studs, short stout paws with fire-red cuffs, curved fire-tipped tail, and red/orange/yellow flame mantle sweeping behind the heads.\nRetain the original's bold dark colored cartoon outline, expressive simple face shapes, big deliberate flat color blocks and only a few cel-shaded shadow shapes. Clean up soft source edges at higher resolution and clarify overlaps between the three heads, necks and front paws. Keep the same squat proportions and pose; make existing planted paws and confident central gaze read clearly. Its UR authority comes from a strong unified silhouette, THREE contrasting expressions and broad clean flames, not extra detail.\nDo not turn it into a realistic Cerberus or an adult wolf. No long legs, enlarged realistic muscles, new horns, extra heads, additional collars, intricate armor, realistic fur, strands, textures, metallic shine, gradient shading, glossy 3D lighting, particles, scattered flame fragments, floating rings or scenery. Keep approximately the same visual complexity as the original.\nFull creature, entire three heads, paws, flames and tail visible. Centered, three-quarter right-facing view matching source, generous 8 percent clear margin. Transparent background, remove the source ground shadow, no text or watermark. One sprite only.\r\n",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "rubblet",
+      "form": 1,
+      "variant": "normal",
+      "source": "v3/rubblet/t1-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "﻿Use case: precise-object-edit. Asset: Rubblet UR T1. Keep the tiny squat brown baby stone dinosaur with a very large rounded head, enormous blue-violet curious eye with cyan iris, rounded snout, ivory belly, stubby legs and a thick upward-curving tail. A few small purple/cyan crystal blocks run along the back and tail; small violet toe tips. Keep the original adorable baby proportions and clean simple spots. No adult face armor, crown of crystal, claws, added back plates or energy seams.\n\nImage 1 is the EXACT evolution-stage identity and pose reference. Image 2 is the same species' refined T4 sprite and is ONLY a guide to crisp thick outlines, simple shading and clean large color blocks. Preserve Image 1's anatomy, head count, proportions, silhouette, expression, palette, existing markings and accessories. Do not transfer adult anatomy, extra heads, accessories or a later-stage crystal or flame mane from Image 2 onto this younger stage.\nStyle: expressive flat 2D cartoon game sprite, original bold dark colored outlines, a few large intentional flat shadow shapes. Clean the existing contours and clarify overlaps at higher resolution. Keep the source's compact chibi shape language and roughly the same visual complexity. Avoid realistic fur, detailed texture, many facets, fine cracks, extra spikes, painterly gradients, glossy 3D lighting, rim lights, particles, rings and scenery. No realistic wolf or realistic dinosaur anatomy.\nOne complete creature, matching source three-quarter right-facing pose, full ears, tail, paws and any existing flames or crystals visible. Transparent background, no source ground shadow, no text, watermark or UI, at least 8 percent clear margin.\r\n",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "rubblet",
+      "form": 2,
+      "variant": "normal",
+      "source": "v3/rubblet/t2-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "﻿Use case: precise-object-edit. Asset: Cobbledon UR T2. Preserve the stocky squat brown young stone dinosaur with a broader boxy snout, confident cyan eye, cream belly and chin, thick curved tail, short forelimbs and broad planted hind feet. Keep the original stage-specific few purple/cyan crystal plates along the back and crystal toe tips. Keep the raised posture of the source, not the huge adult T4 crystal fan or head armor. Clarify the smile and foot silhouettes with the same bold simple cartoon shapes.\n\nImage 1 is the EXACT evolution-stage identity and pose reference. Image 2 is the same species' refined T4 sprite and is ONLY a guide to crisp thick outlines, simple shading and clean large color blocks. Preserve Image 1's anatomy, head count, proportions, silhouette, expression, palette, existing markings and accessories. Do not transfer adult anatomy, extra heads, accessories or a later-stage crystal or flame mane from Image 2 onto this younger stage.\nStyle: expressive flat 2D cartoon game sprite, original bold dark colored outlines, a few large intentional flat shadow shapes. Clean the existing contours and clarify overlaps at higher resolution. Keep the source's compact chibi shape language and roughly the same visual complexity. Avoid realistic fur, detailed texture, many facets, fine cracks, extra spikes, painterly gradients, glossy 3D lighting, rim lights, particles, rings and scenery. No realistic wolf or realistic dinosaur anatomy.\nOne complete creature, matching source three-quarter right-facing pose, full ears, tail, paws and any existing flames or crystals visible. Transparent background, no source ground shadow, no text, watermark or UI, at least 8 percent clear margin.\r\n",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "rubblet",
+      "form": 3,
+      "variant": "normal",
+      "source": "v3/rubblet/t3-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "﻿Use case: precise-object-edit. Asset: Rockzilla UR T3. Preserve the compact upright stocky brown stone dinosaur, stern violet eye, angular low brow, strong snout, short forearms, ivory belly bands, planted hind feet and thick tail. The back bears the original zigzag fan of broad violet/cyan crystal plates, smaller and simpler than T4. Preserve the T3 head and shoulder armor, simple big brown stone plates and a few large crystal facets. Do not replace it with the T4 helmet, huge adult claw caps or more back crystals.\n\nImage 1 is the EXACT evolution-stage identity and pose reference. Image 2 is the same species' refined T4 sprite and is ONLY a guide to crisp thick outlines, simple shading and clean large color blocks. Preserve Image 1's anatomy, head count, proportions, silhouette, expression, palette, existing markings and accessories. Do not transfer adult anatomy, extra heads, accessories or a later-stage crystal or flame mane from Image 2 onto this younger stage.\nStyle: expressive flat 2D cartoon game sprite, original bold dark colored outlines, a few large intentional flat shadow shapes. Clean the existing contours and clarify overlaps at higher resolution. Keep the source's compact chibi shape language and roughly the same visual complexity. Avoid realistic fur, detailed texture, many facets, fine cracks, extra spikes, painterly gradients, glossy 3D lighting, rim lights, particles, rings and scenery. No realistic wolf or realistic dinosaur anatomy.\nOne complete creature, matching source three-quarter right-facing pose, full ears, tail, paws and any existing flames or crystals visible. Transparent background, no source ground shadow, no text, watermark or UI, at least 8 percent clear margin.\r\n",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "rubblet",
+      "form": 4,
+      "variant": "normal",
+      "source": "v3/rubblet/t4-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "﻿Use case: precise-object-edit\nAsset: Meteorax UR T4 game creature sprite, conservative refinement.\nImage 1 is the exact identity, anatomy, pose, palette and drawing-style edit target. Preserve this compact stocky upright chibi stone dinosaur: huge low broad hind feet planted apart, small raised forearms, thick brown armored body, ivory belly with broad zigzag bands, heavy brow and upward right-facing snout, one visible angular violet/cyan eye, one curved tail with lightning-like cyan/violet pattern, and the dominant large lilac/cyan crystalline plates fanning upward along its back behind the head. Preserve the source's footprint, proportions and three-quarter right-facing stance.\nFaithfully reproduce its bold dark brown/violet outline, simple hand-drawn cartoon shapes, large brown stone color blocks, pale ivory belly, and few flat shadow colors. Clean up contours, the boundary of brow and eye, the separation of small forearms from shoulder plates, and the silhouettes of the already-large hind feet. Give the existing stance a clear sense of weight without changing its compact proportions. Crystal plates keep the SAME count and broad readable outlines with only two or three large lilac/cyan flat facets each, not many tiny reflective fragments. Retain the source's clean cyan seam accents sparingly.\nIt should feel like the original game's artist has made a slightly cleaner, more assured version of the SAME sprite. No realistic dragon or kaiju, new horns, wings, gold jewelry, added armor rows, additional floating crystals, rocks, particles or orbit rings. No realistic rock textures, tiny cracks, extra facets, gradients, bloom, glossy 3D material, painterly lighting or fur. Do not replace its shape language with a detailed fantasy illustration.\nFull creature, all crystal tips, forearms, hind feet and tail visible. Centered, matching source angle, at least 8 percent clear margin. Transparent background, no ground shadow, no text or watermark. One sprite only.\r\n",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "zappur",
+      "form": 4,
+      "variant": "normal",
+      "source": "v3/zappur/t4-normal.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "﻿Use case: precise-object-edit\nAsset: Stormlion SSR T4 game sprite, restrained art correction study.\nInput image 1 is the edit target AND the sole style reference. Preserve its exact character design, compact chibi proportions, oversized head, small short body and legs, airborne charging pose, three-quarter right-facing angle, lightning mane silhouette, round dark ears, cream muzzle, curled tail, original orange/yellow/cream palette, and thick warm dark outlines. This original has intentional graphic shape design: reproduce its flat 2D cartoon drawing language faithfully.\nMake only a subtle confidence adjustment to the brow and gaze, and clarify the overlap of the visible front paws. Keep the playful personality. Carefully clean the existing contours and large color boundaries at higher resolution while retaining their original expressive character. Keep approximately the same number of shapes and the same very limited flat shadow colors as the original. Preserve the large cream lightning shapes and simple orange markings, without extra subdivisions. The result should feel like the same artist making a small deliberate refinement of the same sprite.\nDo not lengthen the legs or body, enlarge the chest, change into a realistic adult lion, add fur strands, narrow the outline, add complex facets, gradients, rim lighting, glow, sparkle, rings, armor, props, extra spikes, or new decorations. No painterly rendering, glossy 3D volumes, or polished fantasy illustration treatment. Do not invent details in the original's flat color areas. Keep the total visual complexity extremely close to the input.\nOne complete creature, entire mane and tail visible, centered, 8 percent clear margin. Transparent background, no ground shadow, no scenery, no text or watermark.\r\n",
+      "status": "user_approved"
+    },
+    {
+      "speciesId": "zappur",
+      "form": 4,
+      "variant": "awakened",
+      "source": "v3/zappur/t4-awakened.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "﻿Use case: precise-object-edit\nAsset: Stormlion SSR T4, awakened 95 percent purity preview.\nInput image 1 is the approved normal T4 edit target and sole style reference. Preserve the exact drawing: compact chibi proportions, enormous head, small body and short legs, charging pose, right-facing angle, lightning mane shapes, ears, tail, paws, bold dark brown contour, flat orange/yellow/cream color areas. Keep the same simple two-dimensional cartoon technique and minimal cel shading.\nMake just ONE tiny change: give the visible eye a warm amber iris with one crisp small white glint, creating a subtly alert awakened gaze. Preserve the eyelid and brow shapes and their personality. Everything else remains visually the same. This is a subtle awakening of normal T4, not an alternate skin or another evolution. Do not add decorations, change mane size, change anatomy, add fur strands, fine textures, gradients, glow, realistic lighting, rings, or painterly rendering.\nOne complete creature, transparent background, no shadow, no text or watermark, leave at least 8 percent clear margin.\r\n",
+      "status": "user_approved"
+    },
+    {
+      "speciesId": "zappur",
+      "form": 4,
+      "variant": "perfect",
+      "source": "v3/zappur/t4-perfect.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "﻿Use case: precise-object-edit\nAsset: Stormlion SSR T4, perfect 100 percent purity alternate appearance study, named Platinum Thunder King.\nInput image 1 is the approved normal T4 edit target AND the sole drawing-style reference. Preserve its exact compact chibi proportions, oversized head, short legs, charging pose, three-quarter right-facing angle, cheek and muzzle shapes, round ears, tail shape, paws and bold warm dark contour. Same species and same T4 anatomy, not an extra evolution. Match the simple flat 2D cartoon linework with large intentional color blocks and just one shadow color per material.\nCreate a distinctive but restrained perfect-form alternate skin with these coordinated changes only:\n1. Recolor the small orange body and paws to deep charcoal brown / dark plum-brown fur, with a small warm amber chest area. Keep the cream muzzle and the warm cream central face recognizable. Flat color blocks, no fur texture.\n2. Preserve the mane's existing large zigzag silhouette and the SAME number of major lightning blades. Change its orange-yellow fur areas to platinum ivory with a single pale gold shadow. The existing cream lightning blades become clear pale gold with warm amber outlines. A strong simple ivory-and-gold mane against dark short body gives an immediately distinct, legible royal appearance.\n3. Replace only the existing single forehead lightning crest with one compact integrated three-pronged thunder crest, ivory edges and a flat amber core. Keep it about the same size as the original crest. The three broad branches form a clean species-specific symbol, not a crown accessory. Use an amber eye with a single crisp white glint; retain the original gaze and expression.\nKeep the mane less visually busy than the source, not more. No new small spikes, no floating halo, ring, ornaments, armor, sparkles, particle background, fur strands, gradients, reflective metal, glossy material, dramatic rim lighting, painterly rendering or realistic adult lion anatomy. This is a simple expressive cartoon sprite in the exact same artist's hand as input 1.\nOne complete creature, transparent background, no ground shadow, no text or watermark, at least 8 percent clear margin. No additional characters or before-and-after layout.\r\n",
+      "status": "user_approved"
+    },
+    {
+      "speciesId": "pyropup",
+      "form": 4,
+      "variant": "awakened",
+      "source": "v3/pyropup/t4-awakened.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Edit target: the attached normal T4 Pyrodaemon asset. Create one transparent-background full-body mobile-game sprite of exactly this same three-headed chibi fire dog. Preserve exact anatomy, body proportions, pose, size, number of heads, number of legs, original expressions (playful left, proud middle, fierce right), facial shapes, orange noses, dark navy fur and cream muzzle/chest. Match bold dark colored outlines, flat large clean color blocks, two shadow levels maximum. Preserve the original compact silhouette and dark gaps within the flame mane. This is a purity variant of T4, not a fifth evolution. No glossy rendering, gradients, armor, jewelry, floating rings, scene, text, UI, particles or watermark. Full paws, ears and tail visible, generous transparent padding.\nVariant: 95% purity, awakened. Make an extremely restrained edit: the middle head's iris becomes a clearer rich molten amber with its existing tiny white highlight; replace the central collar stud with a small flat amber-gold stud, preserving size and collar design; add just a small warm ivory highlight inside the existing golden flame behind the middle head, under 3% of total sprite area. Keep the existing crimson/orange/golden fire silhouette, all dark segmentation and palette unchanged everywhere else. At least 95% visually identical to edit target. Do not inflate the fire mane, do not recolor all flames.",
+      "status": "provisional_user_authorized"
+    },
+    {
+      "speciesId": "pyropup",
+      "form": 4,
+      "variant": "perfect",
+      "source": "v3/pyropup/t4-perfect.png",
+      "generator": "imagegen_cli_cockpit",
+      "model": "gpt-image-2.5",
+      "prompt": "Use case: precise-object-edit. Edit target: the attached normal T4 Pyrodaemon asset. Create one transparent-background full-body mobile-game sprite of exactly this same three-headed chibi fire dog. Preserve exact anatomy, body proportions, pose, size, number of heads, number of legs, original expressions (playful left, proud middle, fierce right), facial shapes, orange noses, dark navy fur and cream muzzle/chest. Match bold dark colored outlines, flat large clean color blocks, two shadow levels maximum. Preserve the original compact silhouette and dark gaps within the flame mane. This is a purity variant of T4, not a fifth evolution. No glossy rendering, gradients, armor, jewelry, floating rings, scene, text, UI, particles or watermark. Full paws, ears and tail visible, generous transparent padding.\nVariant: 100% purity, perfected, art direction 'sovereign triple flame'. This must feel intentionally designed and more distinguished than normal T4, while keeping the same charming compact three-headed dog. Change only the flame mane, flame accents and collar studs. Reshape the mane into THREE clear dominant, swept-back flame tongues corresponding to the three heads; the middle flame sits highest. Together they suggest a natural flame crown, not a physical crown or a huge circular fireball. Preserve substantial dark-navy clefts between tongues and limit mane area to approximately the original. Make this silhouette noticeable even at 96px. Retain saturated deep crimson on flame edges, use rich molten amber/gold inside, and introduce small sharply bounded warm ivory inner cores in the THREE main tongues (ivory under 10% of total sprite area). Keep the dark segmentation and a few dark outer flame tips to frame faces. Match paw and tail flames to this restrained crimson-gold-ivory treatment. Faces and fur stay identical to original. Eyes amber, no glow. The collar remains dark purple with a neat flat gold central three-point flame-shaped stud and two small round gold studs; no new ornament outside collar. The three sculpted flame tongues and warm ivory cores supply the distinction, never an enlarged mane or neon color swap. No blue flames.",
+      "status": "provisional_user_authorized"
+    }
+  ],
+  "reusable": [
+    {
+      "speciesId": "pyropup",
+      "form": 1,
+      "variant": "normal",
+      "image": "output/imagegen/ur-preview-v2/pyropup/t1-pyropup-preview.png",
+      "prompt": "output/imagegen/ur-preview-v2/pyropup/t1-pyropup.prompt.txt"
+    },
+    {
+      "speciesId": "pyropup",
+      "form": 2,
+      "variant": "normal",
+      "image": "output/imagegen/ur-preview-v2/pyropup/t2-pyrohound-preview.png",
+      "prompt": "output/imagegen/ur-preview-v2/pyropup/t2-pyrohound.prompt.txt"
+    },
+    {
+      "speciesId": "pyropup",
+      "form": 3,
+      "variant": "normal",
+      "image": "output/imagegen/ur-preview-v2/pyropup/t3-hellhound-preview.png",
+      "prompt": "output/imagegen/ur-preview-v2/pyropup/t3-hellhound.prompt.txt"
+    },
+    {
+      "speciesId": "pyropup",
+      "form": 4,
+      "variant": "normal",
+      "image": "output/imagegen/ur-preview-v2/pyropup/t4-pyrodaemon-preview.png",
+      "prompt": "output/imagegen/ur-preview-v2/pyropup/t4-pyrodaemon.prompt.txt"
+    },
+    {
+      "speciesId": "rubblet",
+      "form": 1,
+      "variant": "normal",
+      "image": "output/imagegen/ur-preview-v2/rubblet/t1-rubblet-preview.png",
+      "prompt": "output/imagegen/ur-preview-v2/rubblet/t1-rubblet.prompt.txt"
+    },
+    {
+      "speciesId": "rubblet",
+      "form": 2,
+      "variant": "normal",
+      "image": "output/imagegen/ur-preview-v2/rubblet/t2-cobbledon-preview.png",
+      "prompt": "output/imagegen/ur-preview-v2/rubblet/t2-cobbledon.prompt.txt"
+    },
+    {
+      "speciesId": "rubblet",
+      "form": 3,
+      "variant": "normal",
+      "image": "output/imagegen/ur-preview-v2/rubblet/t3-rockzilla-preview.png",
+      "prompt": "output/imagegen/ur-preview-v2/rubblet/t3-rockzilla.prompt.txt"
+    },
+    {
+      "speciesId": "rubblet",
+      "form": 4,
+      "variant": "normal",
+      "image": "output/imagegen/ur-preview-v2/rubblet/t4-meteorax-preview.png",
+      "prompt": "output/imagegen/ur-preview-v2/rubblet/t4-meteorax.prompt.txt"
+    },
+    {
+      "speciesId": "zappur",
+      "form": 4,
+      "variant": "normal",
+      "image": "docs/assets/linh-thu/art/approved-v2/zappur/t4-normal.png",
+      "prompt": "docs/assets/linh-thu/art/approved-v2/zappur/prompts/t4-normal.txt"
+    },
+    {
+      "speciesId": "zappur",
+      "form": 4,
+      "variant": "awakened",
+      "image": "docs/assets/linh-thu/art/approved-v2/zappur/t4-awakened95.png",
+      "prompt": "docs/assets/linh-thu/art/approved-v2/zappur/prompts/t4-awakened95.txt"
+    },
+    {
+      "speciesId": "zappur",
+      "form": 4,
+      "variant": "perfect",
+      "image": "docs/assets/linh-thu/art/approved-v2/zappur/t4-perfect.png",
+      "prompt": "docs/assets/linh-thu/art/approved-v2/zappur/prompts/t4-perfect.txt"
+    },
+    {
+      "speciesId": "pyropup",
+      "form": 4,
+      "variant": "awakened",
+      "image": "output/imagegen/pyrodaemon-purity-v5/pyrodaemon-95-preview.png",
+      "prompt": "output/imagegen/pyrodaemon-purity-v5/95.prompt.txt"
+    },
+    {
+      "speciesId": "pyropup",
+      "form": 4,
+      "variant": "perfect",
+      "image": "output/imagegen/pyrodaemon-purity-v5/pyrodaemon-100-preview.png",
+      "prompt": "output/imagegen/pyrodaemon-purity-v5/100.prompt.txt"
+    }
+  ]
+}

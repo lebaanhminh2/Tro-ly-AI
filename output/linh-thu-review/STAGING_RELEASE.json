@@ -1,0 +1,83 @@
+{
+  "date": "2026-10-19",
+  "timezone": "Asia/Saigon",
+  "status": "staging_released",
+  "authorization": "User explicitly approved current version and staging release, including backup, restore rehearsal and remote migration",
+  "worker": "personal-assistant-staging",
+  "database": "assistant-staging",
+  "url": "https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev/app/",
+  "deployment": {
+    "id": "7cd04fc1-52bd-439b-99cb-f35add86e93e",
+    "created_on": "2026-10-19T10:06:17.429139Z",
+    "versions": [
+      {
+        "version_id": "ff342cb0-4a7c-4b6b-b43c-bc3297a7a559",
+        "percentage": 100
+      }
+    ]
+  },
+  "previousDeployment": {
+    "id": "293b189f-57d0-4a68-b3fa-bf7ab6c4b5d7",
+    "createdOn": "2026-10-18T18:29:11.191237Z",
+    "versions": [
+      {
+        "id": "99b8a7b7-b7ab-4b44-9cec-c104c2906527",
+        "percentage": 100
+      }
+    ]
+  },
+  "backup": {
+    "bytes": 1228842,
+    "sha256": "3ce8fa16045169f6bc54d560fc034c5ada5397358adf9f5898e6fb70c082d8c6",
+    "storage": "Private ignored .wrangler release folder; SQL is not included in this report"
+  },
+  "rehearsal": {
+    "passed": true,
+    "legacyTables": 102,
+    "newTables": 9,
+    "legacyDataUnchanged": true,
+    "foreignKeyViolations": 0
+  },
+  "migration": {
+    "name": "0041_linh_thu.sql",
+    "applied": true,
+    "newTablesVerified": 9,
+    "verifiedAt": "2026-10-19T10:06:00.669Z"
+  },
+  "pendingMigrations": [],
+  "postdeploy": {
+    "checkedAt": "2026-10-19T10:07:34.987Z",
+    "assetsMatched": 402,
+    "assetFailures": 0,
+    "unauthenticatedApiChecks": 8,
+    "browserWidths": [390, 1440],
+    "browserErrors": 0,
+    "pendingMigrations": []
+  },
+  "browserSmoke": {
+    "scope": "Fresh unauthenticated Chrome profiles; login rendering only; no user actions",
+    "results": [
+      {
+        "width": 390,
+        "login": true,
+        "overflow": false,
+        "ready": "complete",
+        "styles": 2,
+        "errors": []
+      },
+      {
+        "width": 1440,
+        "login": true,
+        "overflow": false,
+        "ready": "complete",
+        "styles": 2,
+        "errors": []
+      }
+    ]
+  },
+  "remoteSchemaModified": true,
+  "userRecordsIntentionallyModified": false,
+  "telegramTestMessagesSent": false,
+  "validationScope": "Authenticated write flows verified locally through production API and temporary D1. Staging checks used unauthenticated GETs, deployment metadata and schema metadata only. Remote D1 latency and peak-load CPU were not benchmarked.",
+  "artPolicy": "95% and 100% artwork remains provisional as explicitly authorized; current version accepted as a whole, not individual final art approval."
+}

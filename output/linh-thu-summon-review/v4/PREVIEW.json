@@ -1,0 +1,109 @@
+{
+  "status": "UX redesign proposal; pending review before code changes",
+  "method": "Cloned app shell and production styles; isolated in-memory prototype interactions, existing art and synthetic fixture data",
+  "sourceFilesModified": [],
+  "serverWrites": 0,
+  "checks": [
+    {
+      "name": "mobile-ready",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "primaryBottom": 632,
+      "viewport": 844,
+      "dialog": null,
+      "images": 0
+    },
+    {
+      "name": "mobile-360-ready",
+      "w": 360,
+      "h": 780,
+      "overflow": false,
+      "primaryBottom": 603,
+      "viewport": 780,
+      "dialog": null,
+      "images": 0
+    },
+    {
+      "name": "desktop-ready",
+      "w": 1440,
+      "h": 960,
+      "overflow": false,
+      "primaryBottom": 488,
+      "viewport": 960,
+      "dialog": null,
+      "images": 0
+    },
+    {
+      "name": "mobile-ten-mode",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "primaryBottom": 632,
+      "viewport": 844,
+      "dialog": null,
+      "images": 0
+    },
+    {
+      "name": "mobile-exchange",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "primaryBottom": 632,
+      "viewport": 844,
+      "dialog": "sr-sheet",
+      "images": 0
+    },
+    {
+      "name": "mobile-rates",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "primaryBottom": 632,
+      "viewport": 844,
+      "dialog": "sr-sheet",
+      "images": 0
+    },
+    {
+      "name": "mobile-result-ssr",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "primaryBottom": 632,
+      "viewport": 844,
+      "dialog": "sr-result",
+      "images": 1
+    },
+    {
+      "name": "mobile-results-ten",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "primaryBottom": 632,
+      "viewport": 844,
+      "dialog": "sr-result",
+      "images": 10
+    },
+    {
+      "name": "desktop-results-ten",
+      "w": 1440,
+      "h": 960,
+      "overflow": false,
+      "primaryBottom": 488,
+      "viewport": 960,
+      "dialog": "sr-result",
+      "images": 10
+    }
+  ],
+  "interactions": {
+    "modeCostUpdates": true,
+    "exchangeCostUpdates": true,
+    "escapeClosesSheets": true,
+    "tenResultsInspectable": true
+  },
+  "limitations": [
+    "Static screenshots do not demonstrate animation quality",
+    "Draws are predetermined illustrative results, not product draws",
+    "Balances are fixture values; no real user data is read or changed"
+  ]
+}

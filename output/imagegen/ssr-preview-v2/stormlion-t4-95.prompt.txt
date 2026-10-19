@@ -1,0 +1,5 @@
+﻿Use case: precise-object-edit
+Asset: Stormlion SSR T4, awakened 95 percent purity preview.
+Input image 1 is the approved normal T4 edit target and sole style reference. Preserve the exact drawing: compact chibi proportions, enormous head, small body and short legs, charging pose, right-facing angle, lightning mane shapes, ears, tail, paws, bold dark brown contour, flat orange/yellow/cream color areas. Keep the same simple two-dimensional cartoon technique and minimal cel shading.
+Make just ONE tiny change: give the visible eye a warm amber iris with one crisp small white glint, creating a subtly alert awakened gaze. Preserve the eyelid and brow shapes and their personality. Everything else remains visually the same. This is a subtle awakening of normal T4, not an alternate skin or another evolution. Do not add decorations, change mane size, change anatomy, add fur strands, fine textures, gradients, glow, realistic lighting, rings, or painterly rendering.
+One complete creature, transparent background, no shadow, no text or watermark, leave at least 8 percent clear margin.

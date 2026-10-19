@@ -1,0 +1,85 @@
+{
+  "date": "2026-10-19",
+  "timezone": "Asia/Saigon",
+  "generator": "bundled_imagegen_cli_via_user_selected_local_cockpit_gateway",
+  "configured_model": "gpt-image-2.5",
+  "builtin_attempt": "failed_502_upstream_no_image_output_returned",
+  "runtime_integrated": false,
+  "normalization": "raw unchanged; alpha<8 ->0, >=250 ->255, intermediate retained; alpha crop; fit<=860px; center on transparent 1024px RGBA",
+  "entries": [
+    {
+      "species": "pyropup",
+      "name": "pyrodaemon",
+      "variant": "perfect",
+      "revision": 4,
+      "user_requested_palette": "blue_fire",
+      "status": "awaiting_visual_feedback",
+      "raw_dimensions": [
+        1254,
+        1254
+      ],
+      "preview_dimensions": [
+        1024,
+        1024
+      ],
+      "alpha_bounds": [
+        82,
+        130,
+        942,
+        893
+      ],
+      "transparent_margins": [
+        82,
+        130,
+        82,
+        131
+      ],
+      "input_images": [
+        "output/imagegen/ur-perfect-v3/pyrodaemon-perfect-preview.png"
+      ],
+      "hashes": {
+        "output/imagegen/ur-perfect-v4/pyrodaemon-perfect-raw.png": "42313a327e0b79d4c1c3c9d6d388e2852feddbf2132c4638390dbccbc52348e8",
+        "output/imagegen/ur-perfect-v4/pyrodaemon-perfect-preview.png": "ca6c922d85c1e92a7478c7c5829d5b1498007fd5ff5eb0b8de1029790f994f80",
+        "output/imagegen/ur-perfect-v4/pyrodaemon.prompt.txt": "1e090dfc5bafce0f8e1736e416de89631f44ac0a1b5438ce12a559ed2a15451f",
+        "output/imagegen/ur-perfect-v3/pyrodaemon-perfect-preview.png": "9ff7e6999280c74bce5476f53f501bd1f674392d3fcb2a27cd2f8f8f12c2edc3"
+      }
+    },
+    {
+      "species": "rubblet",
+      "name": "meteorax",
+      "variant": "perfect",
+      "revision": 4,
+      "user_requested_palette": "black_obsidian_crystal_fan",
+      "status": "awaiting_visual_feedback",
+      "raw_dimensions": [
+        1254,
+        1254
+      ],
+      "preview_dimensions": [
+        1024,
+        1024
+      ],
+      "alpha_bounds": [
+        82,
+        143,
+        942,
+        880
+      ],
+      "transparent_margins": [
+        82,
+        143,
+        82,
+        144
+      ],
+      "input_images": [
+        "output/imagegen/ur-perfect-v3/meteorax-perfect-preview.png"
+      ],
+      "hashes": {
+        "output/imagegen/ur-perfect-v4/meteorax-perfect-raw.png": "e77c7e6a1297acf7d5523a65fb67fa96660f2bab1f497f912db10533d6142ed9",
+        "output/imagegen/ur-perfect-v4/meteorax-perfect-preview.png": "c394b46aadabb6bdccf83298a678e609a20889ded9df5f1298fc267ca2c70c16",
+        "output/imagegen/ur-perfect-v4/meteorax.prompt.txt": "67cac305b684e59ff576388fc23a24a43b5199a7b1a700cdffff8dd27f5d3a80",
+        "output/imagegen/ur-perfect-v3/meteorax-perfect-preview.png": "01225a766618a1360d7fca7af8b4d3c4a3a54ff28b9e02829951d27db0b92872"
+      }
+    }
+  ]
+}

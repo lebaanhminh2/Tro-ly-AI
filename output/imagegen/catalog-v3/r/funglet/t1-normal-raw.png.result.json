@@ -1,0 +1,7 @@
+{
+    "output":  "output/imagegen/catalog-v3/r/funglet/t1-normal-raw.png",
+    "attempts":  1,
+    "generator":  "imagegen_cli_cockpit",
+    "model":  "gpt-image-2.5",
+    "success":  true
+}

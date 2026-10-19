@@ -1,0 +1,161 @@
+{
+  "status": "2D card with 3D half-turn reveal; illustrative SSR and UR outcomes",
+  "sourceFilesModified": [],
+  "serverWrites": 0,
+  "art": "Original 2D card from v19 preserved per latest user feedback",
+  "durationMs": 4200,
+  "colors": {
+    "R": "blue",
+    "SR": "purple",
+    "SSR": "orange",
+    "UR": "red"
+  },
+  "checks": [
+    {
+      "name": "mobile-ready",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "primaryBottom": 654,
+      "navTop": 766,
+      "viewport": 844,
+      "dialog": null
+    },
+    {
+      "name": "mobile-360-ready",
+      "w": 360,
+      "h": 780,
+      "overflow": false,
+      "primaryBottom": 583,
+      "navTop": 702,
+      "viewport": 780,
+      "dialog": null
+    },
+    {
+      "name": "mobile-compact-ready",
+      "w": 375,
+      "h": 667,
+      "overflow": false,
+      "primaryBottom": 497,
+      "navTop": 589,
+      "viewport": 667,
+      "dialog": null
+    },
+    {
+      "name": "desktop-ready",
+      "w": 1440,
+      "h": 960,
+      "overflow": false,
+      "primaryBottom": 482,
+      "navTop": 178,
+      "viewport": 960,
+      "dialog": null
+    },
+    {
+      "name": "effect-01-charge",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "primaryBottom": 654,
+      "navTop": 766,
+      "viewport": 844,
+      "dialog": "a20"
+    },
+    {
+      "name": "effect-02-edge",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "primaryBottom": 654,
+      "navTop": 766,
+      "viewport": 844,
+      "dialog": "a20"
+    },
+    {
+      "name": "effect-03-reveal",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "primaryBottom": 654,
+      "navTop": 766,
+      "viewport": 844,
+      "dialog": "a20 is-revealed"
+    },
+    {
+      "name": "effect-ur-reveal",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "primaryBottom": 654,
+      "navTop": 766,
+      "viewport": 844,
+      "dialog": "a20 is-revealed"
+    },
+    {
+      "name": "effect-ur-compact",
+      "w": 375,
+      "h": 667,
+      "overflow": false,
+      "primaryBottom": 497,
+      "navTop": 589,
+      "viewport": 667,
+      "dialog": "a20 is-revealed"
+    },
+    {
+      "name": "effect-ur-desktop",
+      "w": 1440,
+      "h": 960,
+      "overflow": false,
+      "primaryBottom": 482,
+      "navTop": 178,
+      "viewport": 960,
+      "dialog": "a20 is-revealed"
+    },
+    {
+      "name": "mobile-results-ten",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "primaryBottom": 654,
+      "navTop": 766,
+      "viewport": 844,
+      "dialog": "sr-result"
+    },
+    {
+      "name": "mobile-pool",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "primaryBottom": 654,
+      "navTop": 766,
+      "viewport": 844,
+      "dialog": "c10-pool"
+    },
+    {
+      "name": "mobile-exchange",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "primaryBottom": 654,
+      "navTop": 766,
+      "viewport": 844,
+      "dialog": "sr-sheet"
+    },
+    {
+      "name": "mobile-rates",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "primaryBottom": 654,
+      "navTop": 766,
+      "viewport": 844,
+      "dialog": "sr-sheet"
+    }
+  ],
+  "limitations": [
+    "Synthetic balances and predetermined results",
+    "WebM export captures canvas animation; live demo also includes interactive controls",
+    "No audio",
+    "Summon controls are interactive; other app navigation is shown for context"
+  ]
+}

@@ -1,0 +1,85 @@
+{
+  "status": "Fantasy direction prototype; awaiting design approval",
+  "method": "Isolated in-memory UI, native engraved card graphic; no newly generated raster art available after two imagegen 502 errors",
+  "sourceFilesModified": [],
+  "serverWrites": 0,
+  "checks": [
+    {
+      "name": "mobile-ready",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "primaryBottom": 686,
+      "viewport": 844,
+      "dialog": null
+    },
+    {
+      "name": "mobile-360-ready",
+      "w": 360,
+      "h": 780,
+      "overflow": false,
+      "primaryBottom": 650,
+      "viewport": 780,
+      "dialog": null
+    },
+    {
+      "name": "desktop-ready",
+      "w": 1440,
+      "h": 960,
+      "overflow": false,
+      "primaryBottom": 547,
+      "viewport": 960,
+      "dialog": null
+    },
+    {
+      "name": "mobile-exchange",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "primaryBottom": 686,
+      "viewport": 844,
+      "dialog": "sr-sheet"
+    },
+    {
+      "name": "mobile-result-ssr",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "primaryBottom": 686,
+      "viewport": 844,
+      "dialog": "sr-result"
+    },
+    {
+      "name": "mobile-results-ten",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "primaryBottom": 686,
+      "viewport": 844,
+      "dialog": "sr-result"
+    },
+    {
+      "name": "mobile-result-r",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "primaryBottom": 686,
+      "viewport": 844,
+      "dialog": "sr-result"
+    },
+    {
+      "name": "desktop-results-ten",
+      "w": 1440,
+      "h": 960,
+      "overflow": false,
+      "primaryBottom": 547,
+      "viewport": 960,
+      "dialog": "sr-result"
+    }
+  ],
+  "limitations": [
+    "Illustrative fixture results and balances",
+    "No new generated illustration; native interface card only",
+    "Screenshots do not validate animation"
+  ]
+}

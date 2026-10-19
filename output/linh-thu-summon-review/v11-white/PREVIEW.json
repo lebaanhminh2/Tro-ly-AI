@@ -1,0 +1,326 @@
+{
+  "status": "White silver card material alternative; pending review",
+  "method": "App shell and production navigation preserved; isolated in-memory UI, Native metal card illustration, existing creature art, synthetic fixture account",
+  "sourceFilesModified": [],
+  "serverWrites": 0,
+  "reference": {
+    "title": "War Robots Black Market",
+    "url": "https://warrobots.com/ru/posts/276"
+  },
+  "checks": [
+    {
+      "name": "mobile-ready",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "primaryBottom": 658,
+      "navTop": 766,
+      "viewport": 844,
+      "dialog": null,
+      "tabsVisible": [
+        {
+          "label": "Đang luyện",
+          "current": "false"
+        },
+        {
+          "label": "Đồng hành",
+          "current": "false"
+        },
+        {
+          "label": "Bộ sưu tập",
+          "current": "false"
+        },
+        {
+          "label": "Triệu hồi",
+          "current": "page"
+        }
+      ]
+    },
+    {
+      "name": "mobile-360-ready",
+      "w": 360,
+      "h": 780,
+      "overflow": false,
+      "primaryBottom": 581,
+      "navTop": 702,
+      "viewport": 780,
+      "dialog": null,
+      "tabsVisible": [
+        {
+          "label": "Đang luyện",
+          "current": "false"
+        },
+        {
+          "label": "Đồng hành",
+          "current": "false"
+        },
+        {
+          "label": "Bộ sưu tập",
+          "current": "false"
+        },
+        {
+          "label": "Triệu hồi",
+          "current": "page"
+        }
+      ]
+    },
+    {
+      "name": "mobile-compact-ready",
+      "w": 375,
+      "h": 667,
+      "overflow": false,
+      "primaryBottom": 533,
+      "navTop": 589,
+      "viewport": 667,
+      "dialog": null,
+      "tabsVisible": [
+        {
+          "label": "Đang luyện",
+          "current": "false"
+        },
+        {
+          "label": "Đồng hành",
+          "current": "false"
+        },
+        {
+          "label": "Bộ sưu tập",
+          "current": "false"
+        },
+        {
+          "label": "Triệu hồi",
+          "current": "page"
+        }
+      ]
+    },
+    {
+      "name": "desktop-ready",
+      "w": 1440,
+      "h": 960,
+      "overflow": false,
+      "primaryBottom": 442,
+      "navTop": 178,
+      "viewport": 960,
+      "dialog": null,
+      "tabsVisible": [
+        {
+          "label": "Đang luyện",
+          "current": "false"
+        },
+        {
+          "label": "Đồng hành",
+          "current": "false"
+        },
+        {
+          "label": "Bộ sưu tập",
+          "current": "false"
+        },
+        {
+          "label": "Triệu hồi",
+          "current": "page"
+        }
+      ]
+    },
+    {
+      "name": "mobile-pool",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "primaryBottom": 584,
+      "navTop": 766,
+      "viewport": 844,
+      "dialog": "c10-pool",
+      "tabsVisible": [
+        {
+          "label": "Đang luyện",
+          "current": "false"
+        },
+        {
+          "label": "Đồng hành",
+          "current": "false"
+        },
+        {
+          "label": "Bộ sưu tập",
+          "current": "false"
+        },
+        {
+          "label": "Triệu hồi",
+          "current": "page"
+        }
+      ]
+    },
+    {
+      "name": "mobile-exchange",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "primaryBottom": 584,
+      "navTop": 766,
+      "viewport": 844,
+      "dialog": "sr-sheet",
+      "tabsVisible": [
+        {
+          "label": "Đang luyện",
+          "current": "false"
+        },
+        {
+          "label": "Đồng hành",
+          "current": "false"
+        },
+        {
+          "label": "Bộ sưu tập",
+          "current": "false"
+        },
+        {
+          "label": "Triệu hồi",
+          "current": "page"
+        }
+      ]
+    },
+    {
+      "name": "mobile-rates",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "primaryBottom": 584,
+      "navTop": 766,
+      "viewport": 844,
+      "dialog": "sr-sheet",
+      "tabsVisible": [
+        {
+          "label": "Đang luyện",
+          "current": "false"
+        },
+        {
+          "label": "Đồng hành",
+          "current": "false"
+        },
+        {
+          "label": "Bộ sưu tập",
+          "current": "false"
+        },
+        {
+          "label": "Triệu hồi",
+          "current": "page"
+        }
+      ]
+    },
+    {
+      "name": "mobile-opening",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "primaryBottom": 584,
+      "navTop": 766,
+      "viewport": 844,
+      "dialog": "c10-opening c10-opening-demo",
+      "tabsVisible": [
+        {
+          "label": "Đang luyện",
+          "current": "false"
+        },
+        {
+          "label": "Đồng hành",
+          "current": "false"
+        },
+        {
+          "label": "Bộ sưu tập",
+          "current": "false"
+        },
+        {
+          "label": "Triệu hồi",
+          "current": "page"
+        }
+      ]
+    },
+    {
+      "name": "mobile-result-ssr",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "primaryBottom": 584,
+      "navTop": 766,
+      "viewport": 844,
+      "dialog": "sr-result",
+      "tabsVisible": [
+        {
+          "label": "Đang luyện",
+          "current": "false"
+        },
+        {
+          "label": "Đồng hành",
+          "current": "false"
+        },
+        {
+          "label": "Bộ sưu tập",
+          "current": "false"
+        },
+        {
+          "label": "Triệu hồi",
+          "current": "page"
+        }
+      ]
+    },
+    {
+      "name": "mobile-results-ten",
+      "w": 390,
+      "h": 844,
+      "overflow": false,
+      "primaryBottom": 584,
+      "navTop": 766,
+      "viewport": 844,
+      "dialog": "sr-result",
+      "tabsVisible": [
+        {
+          "label": "Đang luyện",
+          "current": "false"
+        },
+        {
+          "label": "Đồng hành",
+          "current": "false"
+        },
+        {
+          "label": "Bộ sưu tập",
+          "current": "false"
+        },
+        {
+          "label": "Triệu hồi",
+          "current": "page"
+        }
+      ]
+    },
+    {
+      "name": "desktop-results-ten",
+      "w": 1440,
+      "h": 960,
+      "overflow": false,
+      "primaryBottom": 442,
+      "navTop": 178,
+      "viewport": 960,
+      "dialog": "sr-result",
+      "tabsVisible": [
+        {
+          "label": "Đang luyện",
+          "current": "false"
+        },
+        {
+          "label": "Đồng hành",
+          "current": "false"
+        },
+        {
+          "label": "Bộ sưu tập",
+          "current": "false"
+        },
+        {
+          "label": "Triệu hồi",
+          "current": "page"
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Synthetic fixture balances and predetermined outcomes",
+    "Screenshots do not establish final animation quality",
+    "No featured creature or rate-up pool is implied",
+    "No source files created or modified; imagegen returned 502 twice, no CLI/API fallback used"
+  ]
+}

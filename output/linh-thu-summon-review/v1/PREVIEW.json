@@ -1,0 +1,57 @@
+{
+  "purpose": "Visual proposal only, approved production code untouched",
+  "method": "Current runtime with fixture API; DOM and CSS applied in browser memory only",
+  "repositoryCodeFilesModified": [],
+  "screenshots": [
+    {
+      "width": 390,
+      "height": 1020,
+      "overflow": false,
+      "creaturesInBanner": 0,
+      "banner": {
+        "x": 16,
+        "y": 350.890625,
+        "width": 358,
+        "height": 374,
+        "top": 350.890625,
+        "right": 374,
+        "bottom": 724.890625,
+        "left": 16
+      }
+    },
+    {
+      "width": 1440,
+      "height": 1050,
+      "overflow": false,
+      "creaturesInBanner": 0,
+      "banner": {
+        "x": 331.5,
+        "y": 290.890625,
+        "width": 996,
+        "height": 344,
+        "top": 290.890625,
+        "right": 1327.5,
+        "bottom": 634.890625,
+        "left": 331.5
+      }
+    },
+    {
+      "width": 360,
+      "height": 960,
+      "overflow": false,
+      "creaturesInBanner": 0,
+      "banner": {
+        "x": 16,
+        "y": 348.890625,
+        "width": 328,
+        "height": 360,
+        "top": 348.890625,
+        "right": 344,
+        "bottom": 708.890625,
+        "left": 16
+      }
+    }
+  ],
+  "errors": [],
+  "productWrites": 0
+}
