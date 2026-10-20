@@ -6723,6 +6723,16 @@ dialog.draw-sheet-open .sheet-title-row {
   line-height: 1.8;
 }
 .beast-hero {
+  --hero-bg: #e5e5e2;
+  --hero-line: #cdceca;
+  --hero-text: #2e3031;
+  --hero-muted: #555856;
+  --hero-control-bg: #ffffff60;
+  --hero-control-line: #babcba;
+  --hero-hover: #ffffff85;
+  --hero-quality: #76531b;
+  --hero-quality-line: #ac884a65;
+  --hero-pending: #76531b;
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -6733,10 +6743,38 @@ dialog.draw-sheet-open .sheet-title-row {
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  border: 1px solid #353a4c;
+  border: 1px solid var(--hero-line);
   border-radius: 22px;
-  background: #1c1f2b;
-  color: #f5f6fa;
+  background: var(--hero-bg);
+  color: var(--hero-text);
+}
+.beast-hero[data-rank='UR'] {
+  --hero-rank: #a82c40;
+}
+.beast-hero[data-rank='SSR'] {
+  --hero-rank: #805012;
+}
+.beast-hero[data-rank='SR'] {
+  --hero-rank: #734698;
+}
+.beast-hero[data-rank='R'] {
+  --hero-rank: #326092;
+}
+:root[data-theme='dark'] .beast-hero {
+  --hero-bg: #3b3d3f;
+  --hero-line: #555759;
+  --hero-text: #f5f5f2;
+  --hero-muted: #d1d2cf;
+  --hero-control-bg: #ffffff0c;
+  --hero-control-line: #ffffff32;
+  --hero-hover: #ffffff1a;
+  --hero-quality: #f0d9ac;
+  --hero-quality-line: #e8ca8c55;
+  --hero-pending: #f0d9ac;
+  --hero-rank: color-mix(in srgb, var(--rank-color) 70%, white);
+}
+.beast-hero .beast-rank {
+  color: var(--hero-rank);
 }
 .beast-hero::after {
   content: '';
@@ -6748,7 +6786,7 @@ dialog.draw-sheet-open .sheet-title-row {
   left: 50%;
   transform: translateX(-50%);
   border-radius: 50%;
-  background: radial-gradient(ellipse, #00000045, transparent 70%);
+  background: radial-gradient(ellipse, #0000001f, transparent 70%);
 }
 .beast-hero-copy {
   position: relative;
@@ -6780,14 +6818,14 @@ dialog.draw-sheet-open .sheet-title-row {
 .beast-quality-label {
   margin-top: 7px;
   padding: 3px 9px;
-  border: 1px solid #e8ca8c38;
+  border: 1px solid var(--hero-quality-line);
   border-radius: 7px;
-  color: #f0d9ac;
+  color: var(--hero-quality);
   font-size: 11px;
   line-height: 1.5;
 }
 .beast-hero-copy p {
-  color: #b9c0d0;
+  color: var(--hero-muted);
   font-size: 12px;
   margin: 0;
 }
@@ -6799,15 +6837,15 @@ dialog.draw-sheet-open .sheet-title-row {
 .beast-role-label {
   display: inline-block;
   padding-left: 9px;
-  border-left: 1px solid #ffffff30;
+  border-left: 1px solid var(--hero-control-line);
   font-size: 11px;
-  color: #bdc4d4;
+  color: var(--hero-muted);
   line-height: 1.5;
   max-width: 100%;
   overflow-wrap: anywhere;
 }
 .beast-hero[data-pending] .beast-role-label {
-  color: #f3d6a5;
+  color: var(--hero-pending);
 }
 .beast-role-today {
   margin: 12px 4px 18px;
@@ -6837,16 +6875,16 @@ dialog.draw-sheet-open .sheet-title-row {
   aspect-ratio: 1;
   justify-self: center;
   object-fit: contain;
-  filter: drop-shadow(0 10px 14px #00000035);
+  filter: drop-shadow(0 8px 12px #00000024);
   z-index: 1;
 }
 .beast-hero-view {
   position: relative;
   margin: 0;
   z-index: 3;
-  color: #fff;
-  background: #ffffff14;
-  border: 1px solid #ffffff2d;
+  color: var(--hero-text);
+  background: var(--hero-control-bg);
+  border: 1px solid var(--hero-control-line);
   border-radius: 11px;
   min-height: 44px;
   padding: 8px 13px;
@@ -6871,7 +6909,7 @@ dialog.draw-sheet-open .sheet-title-row {
   border-radius: 10px;
   border: 1px solid transparent;
   background: transparent;
-  color: #bdc4d4;
+  color: var(--hero-muted);
   font-size: 12px;
   line-height: 1.5;
   box-shadow: none;
@@ -6879,16 +6917,16 @@ dialog.draw-sheet-open .sheet-title-row {
   overflow-wrap: anywhere;
 }
 .beast-role-actions button:hover {
-  background: #ffffff12;
-  color: #fff;
+  background: var(--hero-hover);
+  color: var(--hero-text);
 }
 .beast-role-actions .beast-hero-view {
-  border-color: #ffffff25;
-  background: #ffffff08;
-  color: #f5f6fa;
+  border-color: var(--hero-control-line);
+  background: var(--hero-control-bg);
+  color: var(--hero-text);
 }
 .beast-role-actions button:focus-visible {
-  outline: 2px solid #f5f6fa;
+  outline: 2px solid var(--hero-text);
   outline-offset: 3px;
 }
 .beast-hero + :is(.beast-progress, .beast-support) {

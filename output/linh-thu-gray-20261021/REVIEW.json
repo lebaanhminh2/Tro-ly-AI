@@ -1,0 +1,530 @@
+[
+  {
+    "speciesId": "frostnip",
+    "theme": "light",
+    "panel": "training",
+    "background": "rgb(229, 229, 226)",
+    "contrast": [
+      {
+        "text": "Frostique",
+        "ratio": 10.508134155026065
+      },
+      {
+        "text": "SSR · T3",
+        "ratio": 5.412270903661634
+      },
+      {
+        "text": "Đang nuôi dưỡng",
+        "ratio": 5.704570241846009
+      },
+      {
+        "text": "Chi tiết linh thú",
+        "ratio": 11.499096285859341
+      },
+      {
+        "text": "Đổi linh thú luyện",
+        "ratio": 5.704570241846009
+      }
+    ],
+    "centerError": 0,
+    "overflow": false,
+    "overlap": false
+  },
+  {
+    "speciesId": "frostnip",
+    "theme": "light",
+    "panel": "companion",
+    "background": "rgb(229, 229, 226)",
+    "contrast": [
+      {
+        "text": "Frostique",
+        "ratio": 10.508134155026065
+      },
+      {
+        "text": "SSR · T3",
+        "ratio": 5.412270903661634
+      },
+      {
+        "text": "Đang đồng hành",
+        "ratio": 5.704570241846009
+      },
+      {
+        "text": "Chi tiết linh thú",
+        "ratio": 11.499096285859341
+      },
+      {
+        "text": "Đổi đồng hành",
+        "ratio": 5.704570241846009
+      }
+    ],
+    "centerError": 0,
+    "overflow": false,
+    "overlap": false
+  },
+  {
+    "speciesId": "frostnip",
+    "theme": "dark",
+    "panel": "training",
+    "background": "rgb(59, 61, 63)",
+    "contrast": [
+      {
+        "text": "Frostique",
+        "ratio": 9.986115647566265
+      },
+      {
+        "text": "SSR · T3",
+        "ratio": 6.421440094974354
+      },
+      {
+        "text": "Đang nuôi dưỡng",
+        "ratio": 7.183901153054487
+      },
+      {
+        "text": "Chi tiết linh thú",
+        "ratio": 8.658735358893717
+      },
+      {
+        "text": "Đổi linh thú luyện",
+        "ratio": 7.183901153054487
+      }
+    ],
+    "centerError": 0,
+    "overflow": false,
+    "overlap": false
+  },
+  {
+    "speciesId": "frostnip",
+    "theme": "dark",
+    "panel": "companion",
+    "background": "rgb(59, 61, 63)",
+    "contrast": [
+      {
+        "text": "Frostique",
+        "ratio": 9.986115647566265
+      },
+      {
+        "text": "SSR · T3",
+        "ratio": 6.421440094974354
+      },
+      {
+        "text": "Đang đồng hành",
+        "ratio": 7.183901153054487
+      },
+      {
+        "text": "Chi tiết linh thú",
+        "ratio": 8.658735358893717
+      },
+      {
+        "text": "Đổi đồng hành",
+        "ratio": 7.183901153054487
+      }
+    ],
+    "centerError": 0,
+    "overflow": false,
+    "overlap": false
+  },
+  {
+    "speciesId": "goonbug",
+    "theme": "light",
+    "panel": "training",
+    "background": "rgb(229, 229, 226)",
+    "contrast": [
+      {
+        "text": "Beetleknight",
+        "ratio": 10.508134155026065
+      },
+      {
+        "text": "SR · T4",
+        "ratio": 5.439889149614123
+      },
+      {
+        "text": "Luyện hoàn tất",
+        "ratio": 5.704570241846009
+      },
+      {
+        "text": "100% · Hoàn mỹ",
+        "ratio": 5.5028471589289065
+      },
+      {
+        "text": "Chi tiết linh thú",
+        "ratio": 11.499096285859341
+      },
+      {
+        "text": "Đổi linh thú luyện",
+        "ratio": 5.704570241846009
+      }
+    ],
+    "centerError": 0,
+    "overflow": false,
+    "overlap": false
+  },
+  {
+    "speciesId": "goonbug",
+    "theme": "light",
+    "panel": "companion",
+    "background": "rgb(229, 229, 226)",
+    "contrast": [
+      {
+        "text": "Beetleknight",
+        "ratio": 10.508134155026065
+      },
+      {
+        "text": "SR · T4",
+        "ratio": 5.439889149614123
+      },
+      {
+        "text": "Đang đồng hành",
+        "ratio": 5.704570241846009
+      },
+      {
+        "text": "100% · Hoàn mỹ",
+        "ratio": 5.5028471589289065
+      },
+      {
+        "text": "Chi tiết linh thú",
+        "ratio": 11.499096285859341
+      },
+      {
+        "text": "Đổi đồng hành",
+        "ratio": 5.704570241846009
+      }
+    ],
+    "centerError": 0,
+    "overflow": false,
+    "overlap": false
+  },
+  {
+    "speciesId": "goonbug",
+    "theme": "dark",
+    "panel": "training",
+    "background": "rgb(59, 61, 63)",
+    "contrast": [
+      {
+        "text": "Beetleknight",
+        "ratio": 9.986115647566265
+      },
+      {
+        "text": "SR · T4",
+        "ratio": 5.406767222432763
+      },
+      {
+        "text": "Luyện hoàn tất",
+        "ratio": 7.183901153054487
+      },
+      {
+        "text": "100% · Hoàn mỹ",
+        "ratio": 7.908596111620628
+      },
+      {
+        "text": "Chi tiết linh thú",
+        "ratio": 8.658735358893717
+      },
+      {
+        "text": "Đổi linh thú luyện",
+        "ratio": 7.183901153054487
+      }
+    ],
+    "centerError": 0,
+    "overflow": false,
+    "overlap": false
+  },
+  {
+    "speciesId": "goonbug",
+    "theme": "dark",
+    "panel": "companion",
+    "background": "rgb(59, 61, 63)",
+    "contrast": [
+      {
+        "text": "Beetleknight",
+        "ratio": 9.986115647566265
+      },
+      {
+        "text": "SR · T4",
+        "ratio": 5.406767222432763
+      },
+      {
+        "text": "Đang đồng hành",
+        "ratio": 7.183901153054487
+      },
+      {
+        "text": "100% · Hoàn mỹ",
+        "ratio": 7.908596111620628
+      },
+      {
+        "text": "Chi tiết linh thú",
+        "ratio": 8.658735358893717
+      },
+      {
+        "text": "Đổi đồng hành",
+        "ratio": 7.183901153054487
+      }
+    ],
+    "centerError": 0,
+    "overflow": false,
+    "overlap": false
+  },
+  {
+    "speciesId": "pyropup",
+    "theme": "light",
+    "panel": "training",
+    "background": "rgb(229, 229, 226)",
+    "contrast": [
+      {
+        "text": "Pyrodaemon",
+        "ratio": 10.508134155026065
+      },
+      {
+        "text": "UR · T4",
+        "ratio": 5.368203899364285
+      },
+      {
+        "text": "Luyện hoàn tất",
+        "ratio": 5.704570241846009
+      },
+      {
+        "text": "100% · Hoàn mỹ",
+        "ratio": 5.5028471589289065
+      },
+      {
+        "text": "Chi tiết linh thú",
+        "ratio": 11.499096285859341
+      },
+      {
+        "text": "Đổi linh thú luyện",
+        "ratio": 5.704570241846009
+      }
+    ],
+    "centerError": 0,
+    "overflow": false,
+    "overlap": false
+  },
+  {
+    "speciesId": "pyropup",
+    "theme": "light",
+    "panel": "companion",
+    "background": "rgb(229, 229, 226)",
+    "contrast": [
+      {
+        "text": "Pyrodaemon",
+        "ratio": 10.508134155026065
+      },
+      {
+        "text": "UR · T4",
+        "ratio": 5.368203899364285
+      },
+      {
+        "text": "Đang đồng hành",
+        "ratio": 5.704570241846009
+      },
+      {
+        "text": "100% · Hoàn mỹ",
+        "ratio": 5.5028471589289065
+      },
+      {
+        "text": "Chi tiết linh thú",
+        "ratio": 11.499096285859341
+      },
+      {
+        "text": "Đổi đồng hành",
+        "ratio": 5.704570241846009
+      }
+    ],
+    "centerError": 0,
+    "overflow": false,
+    "overlap": false
+  },
+  {
+    "speciesId": "pyropup",
+    "theme": "dark",
+    "panel": "training",
+    "background": "rgb(59, 61, 63)",
+    "contrast": [
+      {
+        "text": "Pyrodaemon",
+        "ratio": 9.986115647566265
+      },
+      {
+        "text": "UR · T4",
+        "ratio": 4.984961754926142
+      },
+      {
+        "text": "Luyện hoàn tất",
+        "ratio": 7.183901153054487
+      },
+      {
+        "text": "100% · Hoàn mỹ",
+        "ratio": 7.908596111620628
+      },
+      {
+        "text": "Chi tiết linh thú",
+        "ratio": 8.658735358893717
+      },
+      {
+        "text": "Đổi linh thú luyện",
+        "ratio": 7.183901153054487
+      }
+    ],
+    "centerError": 0,
+    "overflow": false,
+    "overlap": false
+  },
+  {
+    "speciesId": "pyropup",
+    "theme": "dark",
+    "panel": "companion",
+    "background": "rgb(59, 61, 63)",
+    "contrast": [
+      {
+        "text": "Pyrodaemon",
+        "ratio": 9.986115647566265
+      },
+      {
+        "text": "UR · T4",
+        "ratio": 4.984961754926142
+      },
+      {
+        "text": "Đang đồng hành",
+        "ratio": 7.183901153054487
+      },
+      {
+        "text": "100% · Hoàn mỹ",
+        "ratio": 7.908596111620628
+      },
+      {
+        "text": "Chi tiết linh thú",
+        "ratio": 8.658735358893717
+      },
+      {
+        "text": "Đổi đồng hành",
+        "ratio": 7.183901153054487
+      }
+    ],
+    "centerError": 0,
+    "overflow": false,
+    "overlap": false
+  },
+  {
+    "speciesId": "gibber",
+    "theme": "light",
+    "panel": "training",
+    "background": "rgb(229, 229, 226)",
+    "contrast": [
+      {
+        "text": "Gibber",
+        "ratio": 10.508134155026065
+      },
+      {
+        "text": "R · T1",
+        "ratio": 5.160786760279728
+      },
+      {
+        "text": "Đang nuôi dưỡng",
+        "ratio": 5.704570241846009
+      },
+      {
+        "text": "Chi tiết linh thú",
+        "ratio": 11.499096285859341
+      },
+      {
+        "text": "Đổi linh thú luyện",
+        "ratio": 5.704570241846009
+      }
+    ],
+    "centerError": 0,
+    "overflow": false,
+    "overlap": false
+  },
+  {
+    "speciesId": "gibber",
+    "theme": "light",
+    "panel": "companion",
+    "background": "rgb(229, 229, 226)",
+    "contrast": [
+      {
+        "text": "Gibber",
+        "ratio": 10.508134155026065
+      },
+      {
+        "text": "R · T1",
+        "ratio": 5.160786760279728
+      },
+      {
+        "text": "Đang đồng hành",
+        "ratio": 5.704570241846009
+      },
+      {
+        "text": "Chi tiết linh thú",
+        "ratio": 11.499096285859341
+      },
+      {
+        "text": "Đổi đồng hành",
+        "ratio": 5.704570241846009
+      }
+    ],
+    "centerError": 0,
+    "overflow": false,
+    "overlap": false
+  },
+  {
+    "speciesId": "gibber",
+    "theme": "dark",
+    "panel": "training",
+    "background": "rgb(59, 61, 63)",
+    "contrast": [
+      {
+        "text": "Gibber",
+        "ratio": 9.986115647566265
+      },
+      {
+        "text": "R · T1",
+        "ratio": 5.516444482771144
+      },
+      {
+        "text": "Đang nuôi dưỡng",
+        "ratio": 7.183901153054487
+      },
+      {
+        "text": "Chi tiết linh thú",
+        "ratio": 8.658735358893717
+      },
+      {
+        "text": "Đổi linh thú luyện",
+        "ratio": 7.183901153054487
+      }
+    ],
+    "centerError": 0,
+    "overflow": false,
+    "overlap": false
+  },
+  {
+    "speciesId": "gibber",
+    "theme": "dark",
+    "panel": "companion",
+    "background": "rgb(59, 61, 63)",
+    "contrast": [
+      {
+        "text": "Gibber",
+        "ratio": 9.986115647566265
+      },
+      {
+        "text": "R · T1",
+        "ratio": 5.516444482771144
+      },
+      {
+        "text": "Đang đồng hành",
+        "ratio": 7.183901153054487
+      },
+      {
+        "text": "Chi tiết linh thú",
+        "ratio": 8.658735358893717
+      },
+      {
+        "text": "Đổi đồng hành",
+        "ratio": 7.183901153054487
+      }
+    ],
+    "centerError": 0,
+    "overflow": false,
+    "overlap": false
+  }
+]

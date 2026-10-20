@@ -1,5 +1,13 @@
 # Bàn giao đợt dọn dự án
 
+## Nền xám trung tính theo giao diện sáng/tối — 21/10/2026
+
+Người dùng thấy nền than vẫn chưa hợp và cho phép tự chọn màu xám phù hợp. Đã so sánh bốn sắc nền trên Beetleknight, Frostluna và Pyrodaemon, chọn xám sáng `#e5e5e2` cho giao diện sáng, xám đậm trung tính `#3b3d3f` cho giao diện tối. Chữ, nút, viền, nhãn ngày mai và nhãn Thức tỉnh/Hoàn mỹ đổi theo nền; màu hạng được điều chỉnh để dễ đọc. Giảm bóng dưới chân, giữ bố cục và vị trí thao tác của lượt trước.
+
+Kiểm 16 trường hợp thực tế trên bốn hạng, hai tab và hai theme bằng Chrome: không lỗi JS, tràn ngang hoặc chồng ảnh/chữ; độ tương phản thấp nhất của chữ trong hero là 4,98:1. Bài browser test về màn vai trò đang chờ và bộ chọn linh thú ở màn hẹp, chữ lớn, hai theme đạt. CSS đạt Prettier; playground đã đồng bộ, mở được với ảnh thật và nút tiến hóa. Hồ sơ tại `output/linh-thu-gray-20261021/`; chưa thử trên điện thoại thật.
+
+Đã phát hành staging version `67ae2ef9-81f4-4229-980a-abec9e98e023`, chỉ upload tài nguyên CSS thay đổi. CSS trên server khớp SHA256 với bản local, app trả 200. [Kiểm tra sau deploy](../output/linh-thu-gray-20261021/POST_DEPLOY.json).
+
 ## Tinh gọn hai tab linh thú và đổi nền than đậm — 21/10/2026
 
 Theo phản hồi mới, đổi nền hero của Đang luyện/Đồng hành sang `#1c1f2b`, viền `#353a4c` theo ảnh người dùng gửi; bỏ gradient và các vòng sáng tím. Giữ ảnh ở giữa, thu khu vực hero từ khoảng 397 xuống 287 px trên viewport 390 px. Tên ở trên, hạng/T và trạng thái cùng hàng bên dưới; Chi tiết là nút viền nhẹ, Đổi là thao tác phụ. Hiện nhãn Hoàn mỹ 100% hoặc độ thuần thực tế kèm Thức tỉnh khi đã đạt.
