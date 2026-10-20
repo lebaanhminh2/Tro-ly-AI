@@ -6728,31 +6728,27 @@ dialog.draw-sheet-open .sheet-title-row {
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto auto auto;
   justify-items: center;
-  gap: 10px;
-  padding: 22px 18px 16px;
+  gap: 4px;
+  padding: 14px 18px 8px;
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  border-radius: 27px;
-  background:
-    radial-gradient(ellipse at 50% 55%, #8e75cc45, transparent 62%),
-    linear-gradient(140deg, #242333, #302a46);
-  color: #fff;
+  border: 1px solid #353a4c;
+  border-radius: 22px;
+  background: #1c1f2b;
+  color: #f5f6fa;
 }
 .beast-hero::after {
   content: '';
   position: absolute;
   z-index: -1;
-  width: min(58%, 210px);
-  height: 32px;
-  bottom: 82px;
+  width: min(52%, 180px);
+  height: 24px;
+  bottom: 58px;
   left: 50%;
   transform: translateX(-50%);
-  border: 1px solid #b7a1e331;
   border-radius: 50%;
-  box-shadow:
-    0 0 0 15px #a899d30b,
-    0 0 0 38px #a899d306;
+  background: radial-gradient(ellipse, #00000045, transparent 70%);
 }
 .beast-hero-copy {
   position: relative;
@@ -6766,40 +6762,52 @@ dialog.draw-sheet-open .sheet-title-row {
   pointer-events: none;
 }
 .beast-hero-copy h2 {
-  margin: 6px 0 0;
-  font-size: 27px;
+  margin: 0;
+  font-size: 23px;
   line-height: 1.2;
   font-weight: 650;
-  letter-spacing: -1px;
+  letter-spacing: -0.5px;
   overflow-wrap: anywhere;
 }
+.beast-hero-meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 5px 9px;
+  margin-top: 7px;
+}
+.beast-quality-label {
+  margin-top: 7px;
+  padding: 3px 9px;
+  border: 1px solid #e8ca8c38;
+  border-radius: 7px;
+  color: #f0d9ac;
+  font-size: 11px;
+  line-height: 1.5;
+}
 .beast-hero-copy p {
-  color: #d6cee6;
+  color: #b9c0d0;
   font-size: 12px;
   margin: 0;
 }
 .beast-rank {
-  font-size: 10px;
-  letter-spacing: 2px;
+  font-size: 11px;
+  letter-spacing: 0.5px;
   color: var(--rank-color);
 }
 .beast-role-label {
   display: inline-block;
-  margin-top: 8px;
-  padding: 5px 9px;
-  border: 1px solid #ffffff24;
-  border-radius: 8px;
-  font-size: 10px;
-  background: #ffffff09;
-  color: #e6def5;
+  padding-left: 9px;
+  border-left: 1px solid #ffffff30;
+  font-size: 11px;
+  color: #bdc4d4;
   line-height: 1.5;
   max-width: 100%;
   overflow-wrap: anywhere;
 }
 .beast-hero[data-pending] .beast-role-label {
-  border-color: #c8b4f352;
-  background: #bca0f51a;
-  color: #efe6ff;
+  color: #f3d6a5;
 }
 .beast-role-today {
   margin: 12px 4px 18px;
@@ -6824,12 +6832,12 @@ dialog.draw-sheet-open .sheet-title-row {
 }
 .beast-hero > img {
   position: relative;
-  width: min(72%, 208px);
+  width: min(68%, 160px);
   height: auto;
   aspect-ratio: 1;
   justify-self: center;
   object-fit: contain;
-  filter: drop-shadow(0 16px 24px #13101f77);
+  filter: drop-shadow(0 10px 14px #00000035);
   z-index: 1;
 }
 .beast-hero-view {
@@ -6848,7 +6856,7 @@ dialog.draw-sheet-open .sheet-title-row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   width: min(100%, 380px);
   margin: 0;
   position: relative;
@@ -6858,12 +6866,12 @@ dialog.draw-sheet-open .sheet-title-row {
   width: 100%;
   min-width: 0;
   min-height: 44px;
-  padding: 10px 8px;
+  padding: 9px 6px;
   margin: 0;
-  border-radius: 11px;
-  border: 1px solid #ffffff2d;
-  background: #ffffff0c;
-  color: #f3eefb;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #bdc4d4;
   font-size: 12px;
   line-height: 1.5;
   box-shadow: none;
@@ -6871,14 +6879,20 @@ dialog.draw-sheet-open .sheet-title-row {
   overflow-wrap: anywhere;
 }
 .beast-role-actions button:hover {
-  background: #ffffff1c;
+  background: #ffffff12;
+  color: #fff;
+}
+.beast-role-actions .beast-hero-view {
+  border-color: #ffffff25;
+  background: #ffffff08;
+  color: #f5f6fa;
 }
 .beast-role-actions button:focus-visible {
-  outline: 2px solid #eadfff;
+  outline: 2px solid #f5f6fa;
   outline-offset: 3px;
 }
-.beast-hero[data-panel='companion'] + .beast-support {
-  margin-top: 18px;
+.beast-hero + :is(.beast-progress, .beast-support) {
+  margin-top: 14px;
 }
 .beast-progress {
   padding: 23px 22px;
@@ -9504,7 +9518,7 @@ html[data-motion='reduce'] .tower-card .tower-crack {
   font-size: 12px;
 }
 .beast-progress .beast-progress-track {
-  margin: 16px 0 12px;
+  margin: 12px 0;
   height: 12px;
 }
 .beast-stage-message {
@@ -9569,7 +9583,7 @@ html[data-motion='reduce'] .tower-card .tower-crack {
 .beast-progress .beast-evolve-button {
   width: 100%;
   min-height: 50px;
-  margin-top: 20px;
+  margin-top: 12px;
   border-radius: 13px;
   font-size: 14px;
 }
@@ -10051,9 +10065,32 @@ html[data-motion='reduce'] .beast-progress-track * {
   transition: none !important;
 }
 
-/* Daily use: a centered portrait, followed by progress or the companion's abilities. */
+/* Daily use: identity, centered portrait, then the role's useful information. */
+.beast-page:has(> .beast-hero) {
+  max-width: 760px;
+  margin-inline: auto;
+}
 .beast-journey {
   margin: 14px 0 20px;
+}
+.beast-progress > .beast-journey {
+  margin: 0 0 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.beast-progress > .beast-journey .beast-evolution-card {
+  min-height: 48px;
+  background: transparent;
+  border-color: transparent;
+  padding: 5px 2px;
+}
+.beast-progress > .beast-journey .beast-evolution-card.is-current {
+  background: var(--soft);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
+  box-shadow: none;
+}
+.beast-progress > .beast-journey .beast-evolution-card.is-unknown {
+  border-color: var(--line);
 }
 .beast-journey .beast-evolution-cards {
   margin: 0;
@@ -10084,13 +10121,24 @@ html[data-motion='reduce'] .beast-progress-track * {
 }
 .beast-support {
   margin: 0 0 18px;
-  padding: 22px;
+  padding: 20px;
 }
 .beast-support > h2,
+.beast-support-heading h2,
 .beast-roadmap h2 {
   margin: 0;
   font-size: 16px;
   line-height: 1.5;
+}
+.beast-support-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.beast-support-heading + .beast-skill-entry {
+  margin-top: 16px;
 }
 .beast-skill-context {
   margin: 4px 0 18px;
@@ -10104,6 +10152,26 @@ html[data-motion='reduce'] .beast-progress-track * {
   line-height: 1.5;
   margin: 0 0 5px;
   color: var(--text);
+}
+.beast-support[data-panel] .beast-skill-entry {
+  position: relative;
+  padding-left: 14px;
+}
+.beast-support[data-panel] .beast-skill-entry::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 7px;
+  width: 4px;
+  height: 14px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--accent) 55%, var(--line));
+}
+.beast-support[data-panel] .beast-skill-entry + .beast-skill-entry::before {
+  top: 25px;
+}
+.beast-support[data-panel='training'] .beast-skill-context {
+  margin-bottom: 14px;
 }
 .beast-skill-description,
 .beast-upgrade-copy {
@@ -10155,14 +10223,17 @@ html[data-motion='reduce'] .beast-progress-track * {
   font-size: 13px;
 }
 .beast-upgrade {
-  margin-top: 18px;
-  padding-top: 16px;
+  margin-top: 16px;
+  padding: 14px;
+  border: 0;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--accent) 4%, var(--surface));
 }
 .beast-upgrade-heading {
   margin: 0 0 12px;
   font-size: 13px;
-  font-weight: 500;
-  color: var(--muted);
+  font-weight: 650;
+  color: var(--accent);
 }
 .beast-upgrade-row strong {
   font-size: 14px;
@@ -10172,10 +10243,10 @@ html[data-motion='reduce'] .beast-progress-track * {
   margin-top: 4px;
 }
 .beast-stage-numbers {
-  margin-top: 16px;
+  margin-top: 10px;
 }
 .beast-stage-numbers strong {
-  font-size: 28px;
+  font-size: 25px;
 }
 .beast-progress-heading {
   flex-wrap: wrap;
@@ -10326,16 +10397,16 @@ html[data-motion='reduce'] .beast-progress-track * {
   outline: 3px solid var(--accent);
   outline-offset: 3px;
 }
-@media (min-width: 768px) {
+@media (min-width: 900px) {
   .beast-hero {
-    padding: 26px 24px 20px;
-    gap: 14px;
+    padding: 20px 24px 12px;
+    gap: 8px;
   }
   .beast-hero > img {
-    width: 240px;
+    width: 200px;
   }
   .beast-hero-copy h2 {
-    font-size: 30px;
+    font-size: 25px;
   }
 }
 @media (max-width: 360px) {
@@ -10359,6 +10430,7 @@ html[data-motion='reduce'] .beast-progress-track * {
     padding: 20px 17px;
   }
 }
+
 </style><style id="tower-demo-style">
 /* Tower proposal: flat artwork, native app surfaces and an explicit reveal. */
 dialog:has(.tower-experience){width:min(100%,480px);max-width:480px;max-height:94dvh;padding:22px 22px 26px;background:var(--bg);color:var(--text);overflow:auto;scrollbar-width:thin;}
@@ -13226,7 +13298,7 @@ html[data-motion="reduce"] .tower-card .tower-crack{stroke-dashoffset:0;}
   function beastUpgrade(ui2, data, beast) {
     const p = beastProgress(data, beast);
     const box = ui2.el("div", void 0, "beast-upgrade");
-    box.append(ui2.el("h3", `L\xEAn T${p.form + 1}`, "beast-upgrade-heading"));
+    box.append(ui2.el("h3", `L\xEAn T${p.form + 1} s\u1EBD nh\u1EADn`, "beast-upgrade-heading"));
     data.config.skills[p.species.id].talents.forEach((skill, index) => {
       if (index > 0 && p.form + 1 < 3) return;
       const row = ui2.el("div", void 0, "beast-upgrade-row");
@@ -13244,7 +13316,7 @@ html[data-motion="reduce"] .tower-card .tower-crack{stroke-dashoffset:0;}
     if (progress) row.append(ui2.el("p", progress, "beast-skill-counter"));
     return row;
   }
-  function beastAbilities(ui2, data, beast, form = beastProgress(data, beast).form) {
+  function beastAbilities(ui2, data, beast, form = beastProgress(data, beast).form, panel) {
     const p = beastProgress(data, beast), skills = data.config.skills[beast.speciesId];
     const section = ui2.el("section", void 0, "card beast-support");
     const preview = form !== p.form;
@@ -13254,14 +13326,26 @@ html[data-motion="reduce"] .tower-card .tower-crack{stroke-dashoffset:0;}
     const pending = data.roles.pending.some(
       (role) => role.role === "companion" && role.beastId === beast.id && role.attemptId === beast.attemptId
     );
-    section.append(ui2.el("h2", `N\u0103ng l\u1EF1c T${form}`));
-    section.append(
+    const heading2 = ui2.el("div", void 0, "beast-support-heading");
+    heading2.append(
       ui2.el(
-        "p",
-        preview ? `\u0110ang xem T${form} \xB7 C\xE1 th\u1EC3 n\xE0y hi\u1EC7n \u1EDF T${p.form}` : current2 ? "\u0110ang h\u1ED7 tr\u1EE3 b\u1EA1n" : pending ? "C\xF3 hi\u1EC7u l\u1EF1c khi \u0111\u1ED3ng h\xE0nh t\u1EEB ng\xE0y mai" : "C\xF3 hi\u1EC7u l\u1EF1c khi \u0111\u1ED3ng h\xE0nh",
-        "beast-skill-context"
+        "h2",
+        panel === "companion" ? "N\u0103ng l\u1EF1c \u0111\u1ED3ng h\xE0nh" : panel === "training" ? "N\u0103ng l\u1EF1c hi\u1EC7n t\u1EA1i" : `N\u0103ng l\u1EF1c T${form}`
       )
     );
+    if (panel) {
+      section.dataset.panel = panel;
+      heading2.append(ui2.el("span", `T${form}`, "beast-stage-badge"));
+    }
+    section.append(heading2);
+    if (panel !== "companion" || !current2 || preview)
+      section.append(
+        ui2.el(
+          "p",
+          preview ? `\u0110ang xem T${form} \xB7 C\xE1 th\u1EC3 n\xE0y hi\u1EC7n \u1EDF T${p.form}` : current2 ? "\u0110ang h\u1ED7 tr\u1EE3 b\u1EA1n" : pending ? "C\xF3 hi\u1EC7u l\u1EF1c khi \u0111\u1ED3ng h\xE0nh t\u1EEB ng\xE0y mai" : "C\xF3 hi\u1EC7u l\u1EF1c khi \u0111\u1ED3ng h\xE0nh",
+          "beast-skill-context"
+        )
+      );
     skills.talents.forEach((skill, index) => {
       if (index > 0 && form < 3) return;
       section.append(skillEntry(ui2, skill, beastTalentLabel(skill, form, index)));
@@ -13465,7 +13549,7 @@ html[data-motion="reduce"] .tower-card .tower-crack{stroke-dashoffset:0;}
     track.append(earned, gray);
     let message = p.canEvolve ? "" : p.blocked ? `L\u01B0\u1EE3t n\xE0y kh\xF4ng th\u1EC3 l\xEAn T${p.form + 1}. \u0110i\u1EC3m th\u1EF1c t\u1ED1i \u0111a: ${beastPoints(p.capacity - beast.attempt.gray)}/${beastPoints(p.stageEnd)} do t\u1EA1p ch\u1EA5t.` : beast.attempt.status === "sealed" ? "L\u01B0\u1EE3t luy\u1EC7n \u0111\xE3 kh\xF3a t\u1EA1i ti\u1EBFn \u0111\u1ED9 n\xE0y." : p.completed ? p.form === 4 ? "\u0110\xE3 luy\u1EC7n \u0111\u1EA7y T4. Th\xE0nh qu\u1EA3 c\u1EE7a l\u01B0\u1EE3t luy\u1EC7n \u0111\xE3 \u0111\u01B0\u1EE3c ch\u1ED1t." : "\u0110\xE3 d\xF9ng h\u1EBFt dung l\u01B0\u1EE3ng l\u01B0\u1EE3t luy\u1EC7n." : p.form < 4 ? `C\xF2n ${beastPoints(p.needed)} \u0111i\u1EC3m \u0111\u1EC3 l\xEAn T${p.form + 1}.` : `C\xF2n ${beastPoints(p.capacity - p.occupied)} \u0111i\u1EC3m \u0111\u1EC3 luy\u1EC7n \u0111\u1EA7y T4.`;
     if (pending) message = "B\u1EAFt \u0111\u1EA7u t\xEDnh \u0111i\u1EC3m t\u1EEB ng\xE0y mai.";
-    section.append(heading2, numbers, track);
+    section.append(beastJourney(ui2, data, beast), heading2, numbers, track);
     if (p.completed && p.form === 4)
       section.append(el2("p", "\u0110\u1ED9 thu\u1EA7n cu\u1ED1i l\u01B0\u1EE3t \xB7 " + beastPurityLabel(p), "beast-training-result"));
     if (message) section.append(el2("p", message, "beast-stage-message"));
@@ -13478,7 +13562,6 @@ html[data-motion="reduce"] .tower-card .tower-crack{stroke-dashoffset:0;}
         )
       );
     if (p.form < 4 && !p.blocked && beast.attempt.status !== "sealed") {
-      section.append(beastUpgrade(ui2, data, beast));
       if (p.canEvolve && !pending) {
         const evolve = button2(
           data.busy ? "\u0110ang x\u1EED l\xFD\u2026" : p.canEvolve ? `Ti\u1EBFn h\xF3a l\xEAn T${p.form + 1}` : p.blocked ? "Kh\xF4ng th\u1EC3 ti\u1EBFn h\xF3a trong l\u01B0\u1EE3t n\xE0y" : `Ch\u01B0a \u0111\u1EE7 \u0111i\u1EC3m l\xEAn T${p.form + 1}`,
@@ -13488,6 +13571,7 @@ html[data-motion="reduce"] .tower-card .tower-crack{stroke-dashoffset:0;}
         evolve.disabled = !p.canEvolve || pending || data.busy || ui2.beastPending();
         section.append(evolve);
       }
+      section.append(beastUpgrade(ui2, data, beast));
     }
     const details = el2("details", void 0, "beast-training-details");
     details.append(
@@ -13700,16 +13784,24 @@ html[data-motion="reduce"] .tower-card .tower-crack{stroke-dashoffset:0;}
       beast.attempt.gray,
       beast.attempt.status
     ].join(":");
-    const copy = el2("div", void 0, "beast-hero-copy");
-    copy.append(
+    const copy = el2("div", void 0, "beast-hero-copy"), meta = el2("div", void 0, "beast-hero-meta");
+    meta.append(
       el2("span", `${p.species.rank} \xB7 T${p.form}`, "beast-rank"),
-      el2("h2", p.species.forms[p.form - 1]),
       el2(
         "span",
         pending ? panel === "training" ? "B\u1EAFt \u0111\u1EA7u luy\u1EC7n t\u1EEB ng\xE0y mai" : "H\u1ED7 tr\u1EE3 t\u1EEB ng\xE0y mai" : panel === "training" ? beast.attempt.status === "completed" ? "Luy\u1EC7n ho\xE0n t\u1EA5t" : "\u0110ang nu\xF4i d\u01B0\u1EE1ng" : "\u0110ang \u0111\u1ED3ng h\xE0nh",
         "beast-role-label"
       )
     );
+    copy.append(el2("h2", p.species.forms[p.form - 1]), meta);
+    if (p.awakened || p.perfect)
+      copy.append(
+        el2(
+          "span",
+          p.perfect ? "100% \xB7 Ho\xE0n m\u1EF9" : beastPurityLabel(p) + " \xB7 Th\u1EE9c t\u1EC9nh",
+          "beast-quality-label"
+        )
+      );
     const actions2 = el2("div", void 0, "beast-role-actions");
     actions2.append(
       button2("Chi ti\u1EBFt linh th\xFA", () => ui2.showBeast(beast), "beast-hero-view"),
@@ -13739,14 +13831,13 @@ html[data-motion="reduce"] .tower-card .tower-crack{stroke-dashoffset:0;}
     }
     if (panel === "training") {
       root.append(
-        beastJourney(ui2, data, beast),
         beastTrainingCard(ui2, { ...data, busy: state2.beastBusy }, beast, !!pending),
-        beastAbilities(ui2, data, beast)
+        beastAbilities(ui2, data, beast, p.form, panel)
       );
       if (p.form === 4 && !p.completed) root.append(beastMilestones(ui2, data, beast));
       return root;
     }
-    root.append(beastAbilities(ui2, data, beast));
+    root.append(beastAbilities(ui2, data, beast, p.form, panel));
     return root;
   }
   function collection(ui2, state2, root) {

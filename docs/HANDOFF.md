@@ -1,5 +1,15 @@
 # Bàn giao đợt dọn dự án
 
+## Tinh gọn hai tab linh thú và đổi nền than đậm — 21/10/2026
+
+Theo phản hồi mới, đổi nền hero của Đang luyện/Đồng hành sang `#1c1f2b`, viền `#353a4c` theo ảnh người dùng gửi; bỏ gradient và các vòng sáng tím. Giữ ảnh ở giữa, thu khu vực hero từ khoảng 397 xuống 287 px trên viewport 390 px. Tên ở trên, hạng/T và trạng thái cùng hàng bên dưới; Chi tiết là nút viền nhẹ, Đổi là thao tác phụ. Hiện nhãn Hoàn mỹ 100% hoặc độ thuần thực tế kèm Thức tỉnh khi đã đạt.
+
+Gộp bốn dạng vào thẻ tiến độ để hành trình và điểm chặng không bị rời nhau. Đặt nút tiến hóa ngay sau thanh điểm, trước phần mô tả nâng cấp; phần tiếp theo ghi rõ “Lên T… sẽ nhận”. Đổi tiêu đề năng lực theo vai trò, thêm nhãn T, chia từng năng lực thành hàng và bỏ dòng “Đang hỗ trợ bạn” lặp trong tab đồng hành hiện tại. Giữ thông báo ngày mai cho lựa chọn đang chờ và đầy đủ bảng năng lực từng T/95%/100% trong chi tiết.
+
+30 browser tests về linh thú, vai trò và tiến hóa đạt, không fail/skip; typecheck:web, lint, check:web và staging dry-run đạt. Kiểm ảnh và hình học tại 320/390/768/1440 px; thêm trường hợp sẵn sàng tiến hóa, kẹt T3, hoàn tất 95%/100% và lựa chọn ngày mai ở nền tối/chữ 200%. Ở viewport 390×844, thanh tiến độ, năng lực đầu và nút tiến hóa khi đủ điểm đều nằm phía trên thanh điều hướng. Playground đã đồng bộ và mở thử bằng Chrome với ảnh thật, không tràn ngang hoặc lỗi JS. Hồ sơ kiểm tra tại `output/linh-thu-ux-20261021/`; chưa thử trên điện thoại thật.
+
+Đã deploy staging version `ce51a6fe-b938-41d6-baf2-6945afab652c`. Hai tài nguyên thay đổi khớp SHA256 với bản local; `/app/` trả 200, API linh thú chưa đăng nhập trả 401. [Mở app](https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev/app/) · [Kiểm tra sau deploy](../output/linh-thu-ux-20261021/POST_DEPLOY.json).
+
 ## Linh thú ở trung tâm và phát hành staging — 21/10/2026
 
 Người dùng cho phép sửa các file cần thiết, deploy staging rồi đẩy toàn bộ mã nguồn hiện có lên GitHub; không cần hỏi lại theo từng file. Hai tab Đang luyện và Đồng hành dùng cùng bố cục: tên/hạng/trạng thái ở trên, ảnh chính giữa, Chi tiết và Đổi linh thú cùng hàng bên dưới. Tab luyện đặt hành trình và Dấu ấn nỗ lực/nút tiến hóa trước năng lực; tab đồng hành hiển thị năng lực ngay sau hero. Giữ thông báo lựa chọn có hiệu lực từ ngày mai và truy cập đúng cá thể đang hỗ trợ hôm nay. Playground đã cập nhật cùng mã ứng dụng.

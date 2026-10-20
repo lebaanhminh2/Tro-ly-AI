@@ -1,0 +1,39 @@
+{
+  "at": "2026-10-20T22:06:54.550Z",
+  "version": "ce51a6fe-b938-41d6-baf2-6945afab652c",
+  "url": "https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev/app/",
+  "checks": {
+    "assets": [
+      {
+        "path": "linh-thu.css",
+        "status": 200,
+        "matched": true,
+        "sha256": "ac0cb2c2b19922c66de66b07d040b8d97cb49c2ad1a4950ec27e779b5efa1213"
+      },
+      {
+        "path": "views/linh-thu.js",
+        "status": 200,
+        "matched": true,
+        "sha256": "964ec30c0957696468fb0e40d569bc6a10c820a24bb8df485672f19a9ec5d0fe"
+      }
+    ],
+    "appStatus": 200,
+    "unauthenticatedApiStatus": 401,
+    "browserTests": 30,
+    "typecheckWeb": true,
+    "lint": true,
+    "checkWeb": true,
+    "stagingDryRun": true,
+    "fixtureLayouts": [
+      320,
+      390,
+      768,
+      1440
+    ],
+    "pendingDarkText200": true,
+    "playground": true
+  },
+  "limitations": [
+    "Local fixtures were used for authenticated layouts; no physical phone test."
+  ]
+}

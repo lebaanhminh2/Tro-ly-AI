@@ -85,7 +85,7 @@ export function beastJourney(ui, data, beast, selectedForm) {
 export function beastUpgrade(ui, data, beast) {
   const p = beastProgress(data, beast);
   const box = ui.el('div', undefined, 'beast-upgrade');
-  box.append(ui.el('h3', `Lên T${p.form + 1}`, 'beast-upgrade-heading'));
+  box.append(ui.el('h3', `Lên T${p.form + 1} sẽ nhận`, 'beast-upgrade-heading'));
   data.config.skills[p.species.id].talents.forEach((skill, index) => {
     if (index > 0 && p.form + 1 < 3) return;
     const row = ui.el('div', undefined, 'beast-upgrade-row');
@@ -105,7 +105,7 @@ function skillEntry(ui, skill, description, progress) {
   return row;
 }
 
-export function beastAbilities(ui, data, beast, form = beastProgress(data, beast).form) {
+export function beastAbilities(ui, data, beast, form = beastProgress(data, beast).form, panel) {
   const p = beastProgress(data, beast),
     skills = data.config.skills[beast.speciesId];
   const section = ui.el('section', undefined, 'card beast-support');
@@ -118,20 +118,36 @@ export function beastAbilities(ui, data, beast, form = beastProgress(data, beast
     (role) =>
       role.role === 'companion' && role.beastId === beast.id && role.attemptId === beast.attemptId,
   );
-  section.append(ui.el('h2', `Năng lực T${form}`));
-  section.append(
+  const heading = ui.el('div', undefined, 'beast-support-heading');
+  heading.append(
     ui.el(
-      'p',
-      preview
-        ? `Đang xem T${form} · Cá thể này hiện ở T${p.form}`
-        : current
-          ? 'Đang hỗ trợ bạn'
-          : pending
-            ? 'Có hiệu lực khi đồng hành từ ngày mai'
-            : 'Có hiệu lực khi đồng hành',
-      'beast-skill-context',
+      'h2',
+      panel === 'companion'
+        ? 'Năng lực đồng hành'
+        : panel === 'training'
+          ? 'Năng lực hiện tại'
+          : `Năng lực T${form}`,
     ),
   );
+  if (panel) {
+    section.dataset.panel = panel;
+    heading.append(ui.el('span', `T${form}`, 'beast-stage-badge'));
+  }
+  section.append(heading);
+  if (panel !== 'companion' || !current || preview)
+    section.append(
+      ui.el(
+        'p',
+        preview
+          ? `Đang xem T${form} · Cá thể này hiện ở T${p.form}`
+          : current
+            ? 'Đang hỗ trợ bạn'
+            : pending
+              ? 'Có hiệu lực khi đồng hành từ ngày mai'
+              : 'Có hiệu lực khi đồng hành',
+        'beast-skill-context',
+      ),
+    );
   skills.talents.forEach((skill, index) => {
     if (index > 0 && form < 3) return;
     section.append(skillEntry(ui, skill, beastTalentLabel(skill, form, index)));
@@ -369,7 +385,7 @@ export function beastTrainingCard(ui, data, beast, pending = false) {
             ? `Còn ${beastPoints(p.needed)} điểm để lên T${p.form + 1}.`
             : `Còn ${beastPoints(p.capacity - p.occupied)} điểm để luyện đầy T4.`;
   if (pending) message = 'Bắt đầu tính điểm từ ngày mai.';
-  section.append(heading, numbers, track);
+  section.append(beastJourney(ui, data, beast), heading, numbers, track);
   if (p.completed && p.form === 4)
     section.append(el('p', 'Độ thuần cuối lượt · ' + beastPurityLabel(p), 'beast-training-result'));
   if (message) section.append(el('p', message, 'beast-stage-message'));
@@ -384,7 +400,6 @@ export function beastTrainingCard(ui, data, beast, pending = false) {
       ),
     );
   if (p.form < 4 && !p.blocked && beast.attempt.status !== 'sealed') {
-    section.append(beastUpgrade(ui, data, beast));
     if (p.canEvolve && !pending) {
       const evolve = button(
         data.busy
@@ -400,6 +415,7 @@ export function beastTrainingCard(ui, data, beast, pending = false) {
       evolve.disabled = !p.canEvolve || pending || data.busy || ui.beastPending();
       section.append(evolve);
     }
+    section.append(beastUpgrade(ui, data, beast));
   }
   const details = el('details', undefined, 'beast-training-details');
   details.append(
@@ -625,10 +641,10 @@ export function renderBeasts(ui, state) {
     beast.attempt.gray,
     beast.attempt.status,
   ].join(':');
-  const copy = el('div', undefined, 'beast-hero-copy');
-  copy.append(
+  const copy = el('div', undefined, 'beast-hero-copy'),
+    meta = el('div', undefined, 'beast-hero-meta');
+  meta.append(
     el('span', `${p.species.rank} · T${p.form}`, 'beast-rank'),
-    el('h2', p.species.forms[p.form - 1]),
     el(
       'span',
       pending
@@ -643,6 +659,15 @@ export function renderBeasts(ui, state) {
       'beast-role-label',
     ),
   );
+  copy.append(el('h2', p.species.forms[p.form - 1]), meta);
+  if (p.awakened || p.perfect)
+    copy.append(
+      el(
+        'span',
+        p.perfect ? '100% · Hoàn mỹ' : beastPurityLabel(p) + ' · Thức tỉnh',
+        'beast-quality-label',
+      ),
+    );
   const actions = el('div', undefined, 'beast-role-actions');
   actions.append(
     button('Chi tiết linh thú', () => ui.showBeast(beast), 'beast-hero-view'),
@@ -672,14 +697,13 @@ export function renderBeasts(ui, state) {
   }
   if (panel === 'training') {
     root.append(
-      beastJourney(ui, data, beast),
       beastTrainingCard(ui, { ...data, busy: state.beastBusy }, beast, !!pending),
-      beastAbilities(ui, data, beast),
+      beastAbilities(ui, data, beast, p.form, panel),
     );
     if (p.form === 4 && !p.completed) root.append(beastMilestones(ui, data, beast));
     return root;
   }
-  root.append(beastAbilities(ui, data, beast));
+  root.append(beastAbilities(ui, data, beast, p.form, panel));
   return root;
 }
 function collection(ui, state, root) {

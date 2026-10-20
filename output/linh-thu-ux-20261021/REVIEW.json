@@ -1,0 +1,252 @@
+[
+  {
+    "label": "normal",
+    "width": 320,
+    "panel": "training",
+    "overflow": false,
+    "centerError": 0,
+    "overlap": false,
+    "background": "rgb(28, 31, 43)",
+    "imageHeight": 160,
+    "importantBottom": 694.96875,
+    "navigationTop": 771,
+    "buttons": [
+      44,
+      44
+    ],
+    "text": "T1\nT2\nT3\nT4\nDấu ấn nỗ lực\nT3 → T4\n12\n/ 30 điểm thực\n\nCòn 18 điểm để lên T4.\n\nLên T4 sẽ nhận\nNguyệt Tức\n\nCơ hội nhận thưởng: 75% → 100%.\n\nTuyết Ấn\n\nCơ hội nhận thưởng: 5% → 10%.\n\nChi tiết lượt luyện"
+  },
+  {
+    "label": "normal",
+    "width": 320,
+    "panel": "companion",
+    "overflow": false,
+    "centerError": 0,
+    "overlap": false,
+    "background": "rgb(28, 31, 43)",
+    "imageHeight": 160,
+    "importantBottom": 650.96875,
+    "navigationTop": 771,
+    "buttons": [
+      44,
+      44
+    ]
+  },
+  {
+    "label": "normal",
+    "width": 390,
+    "panel": "training",
+    "overflow": false,
+    "centerError": 0,
+    "overlap": false,
+    "background": "rgb(28, 31, 43)",
+    "imageHeight": 160,
+    "importantBottom": 685.59375,
+    "navigationTop": 771,
+    "buttons": [
+      44,
+      44
+    ],
+    "text": "T1\nT2\nT3\nT4\nDấu ấn nỗ lực\nT3 → T4\n12\n/ 30 điểm thực\n\nCòn 18 điểm để lên T4.\n\nLên T4 sẽ nhận\nNguyệt Tức\n\nCơ hội nhận thưởng: 75% → 100%.\n\nTuyết Ấn\n\nCơ hội nhận thưởng: 5% → 10%.\n\nChi tiết lượt luyện"
+  },
+  {
+    "label": "normal",
+    "width": 390,
+    "panel": "companion",
+    "overflow": false,
+    "centerError": 0,
+    "overlap": false,
+    "background": "rgb(28, 31, 43)",
+    "imageHeight": 160,
+    "importantBottom": 638.59375,
+    "navigationTop": 771,
+    "buttons": [
+      44,
+      44
+    ]
+  },
+  {
+    "label": "normal",
+    "width": 768,
+    "panel": "training",
+    "overflow": false,
+    "centerError": 0,
+    "overlap": false,
+    "background": "rgb(28, 31, 43)",
+    "imageHeight": 160,
+    "importantBottom": 685.59375,
+    "navigationTop": 771,
+    "buttons": [
+      44,
+      44
+    ],
+    "text": "T1\nT2\nT3\nT4\nDấu ấn nỗ lực\nT3 → T4\n12\n/ 30 điểm thực\n\nCòn 18 điểm để lên T4.\n\nLên T4 sẽ nhận\nNguyệt Tức\n\nCơ hội nhận thưởng: 75% → 100%.\n\nTuyết Ấn\n\nCơ hội nhận thưởng: 5% → 10%.\n\nChi tiết lượt luyện"
+  },
+  {
+    "label": "normal",
+    "width": 768,
+    "panel": "companion",
+    "overflow": false,
+    "centerError": 0,
+    "overlap": false,
+    "background": "rgb(28, 31, 43)",
+    "imageHeight": 160,
+    "importantBottom": 613.84375,
+    "navigationTop": 771,
+    "buttons": [
+      44,
+      44
+    ]
+  },
+  {
+    "label": "normal",
+    "width": 1440,
+    "panel": "training",
+    "overflow": false,
+    "centerError": 0,
+    "overlap": false,
+    "background": "rgb(28, 31, 43)",
+    "imageHeight": 200,
+    "importantBottom": 703,
+    "navigationTop": 146,
+    "buttons": [
+      44,
+      44
+    ],
+    "text": "T1\nT2\nT3\nT4\nDấu ấn nỗ lực\nT3 → T4\n12\n/ 30 điểm thực\n\nCòn 18 điểm để lên T4.\n\nLên T4 sẽ nhận\nNguyệt Tức\n\nCơ hội nhận thưởng: 75% → 100%.\n\nTuyết Ấn\n\nCơ hội nhận thưởng: 5% → 10%.\n\nChi tiết lượt luyện"
+  },
+  {
+    "label": "normal",
+    "width": 1440,
+    "panel": "companion",
+    "overflow": false,
+    "centerError": 0,
+    "overlap": false,
+    "background": "rgb(28, 31, 43)",
+    "imageHeight": 200,
+    "importantBottom": 631.25,
+    "navigationTop": 146,
+    "buttons": [
+      44,
+      44
+    ]
+  },
+  {
+    "label": "ready",
+    "width": 390,
+    "panel": "training",
+    "overflow": false,
+    "centerError": 0,
+    "overlap": false,
+    "background": "rgb(28, 31, 43)",
+    "imageHeight": 160,
+    "importantBottom": 685.59375,
+    "navigationTop": 771,
+    "primaryBottom": 759.59375,
+    "buttons": [
+      44,
+      44
+    ],
+    "text": "T1\nT2\nT3\nT4\nDấu ấn nỗ lực\nT3 → T4\n30\n/ 30 điểm thực\nTiến hóa lên T4\nLên T4 sẽ nhận\nNguyệt Tức\n\nCơ hội nhận thưởng: 75% → 100%.\n\nTuyết Ấn\n\nCơ hội nhận thưởng: 5% → 10%.\n\nChi tiết lượt luyện"
+  },
+  {
+    "label": "blocked",
+    "width": 390,
+    "panel": "training",
+    "overflow": false,
+    "centerError": 0,
+    "overlap": false,
+    "background": "rgb(28, 31, 43)",
+    "imageHeight": 160,
+    "importantBottom": 685.59375,
+    "navigationTop": 771,
+    "buttons": [
+      44,
+      44
+    ],
+    "text": "T1\nT2\nT3\nT4\nDấu ấn nỗ lực\nT3 → T4\n15\n/ 30 điểm thực\n\nLượt này không thể lên T4. Điểm thực tối đa: 65/80 do tạp chất.\n\nChi tiết lượt luyện"
+  },
+  {
+    "label": "awakened",
+    "width": 390,
+    "panel": "training",
+    "overflow": false,
+    "centerError": 0,
+    "overlap": false,
+    "background": "rgb(28, 31, 43)",
+    "imageHeight": 160,
+    "importantBottom": 717.09375,
+    "navigationTop": 771,
+    "buttons": [
+      44,
+      44
+    ],
+    "text": "T1\nT2\nT3\nT4\nThành quả luyện tập\nT4 · Luyện đầy\n34\n/ 40 điểm thực\n\nĐộ thuần cuối lượt · 95%\n\nĐã luyện đầy T4. Thành quả của lượt luyện đã được chốt.\n\n6 điểm trong chặng này bị tạp chất chiếm.\n\nChi tiết lượt luyện"
+  },
+  {
+    "label": "perfect",
+    "width": 390,
+    "panel": "training",
+    "overflow": false,
+    "centerError": 0,
+    "overlap": false,
+    "background": "rgb(28, 31, 43)",
+    "imageHeight": 160,
+    "importantBottom": 717.09375,
+    "navigationTop": 771,
+    "buttons": [
+      44,
+      44
+    ],
+    "text": "T1\nT2\nT3\nT4\nThành quả luyện tập\nT4 · Luyện đầy\n40\n/ 40 điểm thực\n\nĐộ thuần cuối lượt · 100% · Hoàn mỹ\n\nĐã luyện đầy T4. Thành quả của lượt luyện đã được chốt.\n\nChi tiết lượt luyện"
+  },
+  {
+    "label": "perfect",
+    "width": 390,
+    "panel": "companion",
+    "overflow": false,
+    "centerError": 0,
+    "overlap": false,
+    "background": "rgb(28, 31, 43)",
+    "imageHeight": 160,
+    "importantBottom": 645.34375,
+    "navigationTop": 771,
+    "buttons": [
+      44,
+      44
+    ]
+  },
+  {
+    "label": "pending-dark-text200",
+    "width": 320,
+    "panel": "training",
+    "overflow": false,
+    "centerError": 0,
+    "overlap": false,
+    "background": "rgb(28, 31, 43)",
+    "imageHeight": 160,
+    "importantBottom": 1331.34375,
+    "navigationTop": 729.40625,
+    "buttons": [
+      92,
+      128
+    ],
+    "text": "T1\nT2\nT3\nT4\nDấu ấn nỗ lực\nT1 → T2\n0\n/ 30 điểm thực\n\nBắt đầu tính điểm từ ngày mai.\n\nLên T2 sẽ nhận\nLiệp Hỏa\n\nCơ hội nhận thưởng: 25% → 50%.\n\nChi tiết lượt luyện"
+  },
+  {
+    "label": "pending-dark-text200",
+    "width": 320,
+    "panel": "companion",
+    "overflow": false,
+    "centerError": 0,
+    "overlap": false,
+    "background": "rgb(28, 31, 43)",
+    "imageHeight": 160,
+    "importantBottom": 1531.125,
+    "navigationTop": 729.40625,
+    "buttons": [
+      92,
+      128
+    ]
+  }
+]

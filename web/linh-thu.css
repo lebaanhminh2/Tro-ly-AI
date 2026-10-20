@@ -114,31 +114,27 @@
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto auto auto;
   justify-items: center;
-  gap: 10px;
-  padding: 22px 18px 16px;
+  gap: 4px;
+  padding: 14px 18px 8px;
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  border-radius: 27px;
-  background:
-    radial-gradient(ellipse at 50% 55%, #8e75cc45, transparent 62%),
-    linear-gradient(140deg, #242333, #302a46);
-  color: #fff;
+  border: 1px solid #353a4c;
+  border-radius: 22px;
+  background: #1c1f2b;
+  color: #f5f6fa;
 }
 .beast-hero::after {
   content: '';
   position: absolute;
   z-index: -1;
-  width: min(58%, 210px);
-  height: 32px;
-  bottom: 82px;
+  width: min(52%, 180px);
+  height: 24px;
+  bottom: 58px;
   left: 50%;
   transform: translateX(-50%);
-  border: 1px solid #b7a1e331;
   border-radius: 50%;
-  box-shadow:
-    0 0 0 15px #a899d30b,
-    0 0 0 38px #a899d306;
+  background: radial-gradient(ellipse, #00000045, transparent 70%);
 }
 .beast-hero-copy {
   position: relative;
@@ -152,40 +148,52 @@
   pointer-events: none;
 }
 .beast-hero-copy h2 {
-  margin: 6px 0 0;
-  font-size: 27px;
+  margin: 0;
+  font-size: 23px;
   line-height: 1.2;
   font-weight: 650;
-  letter-spacing: -1px;
+  letter-spacing: -0.5px;
   overflow-wrap: anywhere;
 }
+.beast-hero-meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 5px 9px;
+  margin-top: 7px;
+}
+.beast-quality-label {
+  margin-top: 7px;
+  padding: 3px 9px;
+  border: 1px solid #e8ca8c38;
+  border-radius: 7px;
+  color: #f0d9ac;
+  font-size: 11px;
+  line-height: 1.5;
+}
 .beast-hero-copy p {
-  color: #d6cee6;
+  color: #b9c0d0;
   font-size: 12px;
   margin: 0;
 }
 .beast-rank {
-  font-size: 10px;
-  letter-spacing: 2px;
+  font-size: 11px;
+  letter-spacing: 0.5px;
   color: var(--rank-color);
 }
 .beast-role-label {
   display: inline-block;
-  margin-top: 8px;
-  padding: 5px 9px;
-  border: 1px solid #ffffff24;
-  border-radius: 8px;
-  font-size: 10px;
-  background: #ffffff09;
-  color: #e6def5;
+  padding-left: 9px;
+  border-left: 1px solid #ffffff30;
+  font-size: 11px;
+  color: #bdc4d4;
   line-height: 1.5;
   max-width: 100%;
   overflow-wrap: anywhere;
 }
 .beast-hero[data-pending] .beast-role-label {
-  border-color: #c8b4f352;
-  background: #bca0f51a;
-  color: #efe6ff;
+  color: #f3d6a5;
 }
 .beast-role-today {
   margin: 12px 4px 18px;
@@ -210,12 +218,12 @@
 }
 .beast-hero > img {
   position: relative;
-  width: min(72%, 208px);
+  width: min(68%, 160px);
   height: auto;
   aspect-ratio: 1;
   justify-self: center;
   object-fit: contain;
-  filter: drop-shadow(0 16px 24px #13101f77);
+  filter: drop-shadow(0 10px 14px #00000035);
   z-index: 1;
 }
 .beast-hero-view {
@@ -234,7 +242,7 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   width: min(100%, 380px);
   margin: 0;
   position: relative;
@@ -244,12 +252,12 @@
   width: 100%;
   min-width: 0;
   min-height: 44px;
-  padding: 10px 8px;
+  padding: 9px 6px;
   margin: 0;
-  border-radius: 11px;
-  border: 1px solid #ffffff2d;
-  background: #ffffff0c;
-  color: #f3eefb;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #bdc4d4;
   font-size: 12px;
   line-height: 1.5;
   box-shadow: none;
@@ -257,14 +265,20 @@
   overflow-wrap: anywhere;
 }
 .beast-role-actions button:hover {
-  background: #ffffff1c;
+  background: #ffffff12;
+  color: #fff;
+}
+.beast-role-actions .beast-hero-view {
+  border-color: #ffffff25;
+  background: #ffffff08;
+  color: #f5f6fa;
 }
 .beast-role-actions button:focus-visible {
-  outline: 2px solid #eadfff;
+  outline: 2px solid #f5f6fa;
   outline-offset: 3px;
 }
-.beast-hero[data-panel='companion'] + .beast-support {
-  margin-top: 18px;
+.beast-hero + :is(.beast-progress, .beast-support) {
+  margin-top: 14px;
 }
 .beast-progress {
   padding: 23px 22px;
@@ -2890,7 +2904,7 @@ html[data-motion='reduce'] .tower-card .tower-crack {
   font-size: 12px;
 }
 .beast-progress .beast-progress-track {
-  margin: 16px 0 12px;
+  margin: 12px 0;
   height: 12px;
 }
 .beast-stage-message {
@@ -2955,7 +2969,7 @@ html[data-motion='reduce'] .tower-card .tower-crack {
 .beast-progress .beast-evolve-button {
   width: 100%;
   min-height: 50px;
-  margin-top: 20px;
+  margin-top: 12px;
   border-radius: 13px;
   font-size: 14px;
 }
@@ -3437,9 +3451,32 @@ html[data-motion='reduce'] .beast-progress-track * {
   transition: none !important;
 }
 
-/* Daily use: a centered portrait, followed by progress or the companion's abilities. */
+/* Daily use: identity, centered portrait, then the role's useful information. */
+.beast-page:has(> .beast-hero) {
+  max-width: 760px;
+  margin-inline: auto;
+}
 .beast-journey {
   margin: 14px 0 20px;
+}
+.beast-progress > .beast-journey {
+  margin: 0 0 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.beast-progress > .beast-journey .beast-evolution-card {
+  min-height: 48px;
+  background: transparent;
+  border-color: transparent;
+  padding: 5px 2px;
+}
+.beast-progress > .beast-journey .beast-evolution-card.is-current {
+  background: var(--soft);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
+  box-shadow: none;
+}
+.beast-progress > .beast-journey .beast-evolution-card.is-unknown {
+  border-color: var(--line);
 }
 .beast-journey .beast-evolution-cards {
   margin: 0;
@@ -3470,13 +3507,24 @@ html[data-motion='reduce'] .beast-progress-track * {
 }
 .beast-support {
   margin: 0 0 18px;
-  padding: 22px;
+  padding: 20px;
 }
 .beast-support > h2,
+.beast-support-heading h2,
 .beast-roadmap h2 {
   margin: 0;
   font-size: 16px;
   line-height: 1.5;
+}
+.beast-support-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.beast-support-heading + .beast-skill-entry {
+  margin-top: 16px;
 }
 .beast-skill-context {
   margin: 4px 0 18px;
@@ -3490,6 +3538,26 @@ html[data-motion='reduce'] .beast-progress-track * {
   line-height: 1.5;
   margin: 0 0 5px;
   color: var(--text);
+}
+.beast-support[data-panel] .beast-skill-entry {
+  position: relative;
+  padding-left: 14px;
+}
+.beast-support[data-panel] .beast-skill-entry::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 7px;
+  width: 4px;
+  height: 14px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--accent) 55%, var(--line));
+}
+.beast-support[data-panel] .beast-skill-entry + .beast-skill-entry::before {
+  top: 25px;
+}
+.beast-support[data-panel='training'] .beast-skill-context {
+  margin-bottom: 14px;
 }
 .beast-skill-description,
 .beast-upgrade-copy {
@@ -3541,14 +3609,17 @@ html[data-motion='reduce'] .beast-progress-track * {
   font-size: 13px;
 }
 .beast-upgrade {
-  margin-top: 18px;
-  padding-top: 16px;
+  margin-top: 16px;
+  padding: 14px;
+  border: 0;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--accent) 4%, var(--surface));
 }
 .beast-upgrade-heading {
   margin: 0 0 12px;
   font-size: 13px;
-  font-weight: 500;
-  color: var(--muted);
+  font-weight: 650;
+  color: var(--accent);
 }
 .beast-upgrade-row strong {
   font-size: 14px;
@@ -3558,10 +3629,10 @@ html[data-motion='reduce'] .beast-progress-track * {
   margin-top: 4px;
 }
 .beast-stage-numbers {
-  margin-top: 16px;
+  margin-top: 10px;
 }
 .beast-stage-numbers strong {
-  font-size: 28px;
+  font-size: 25px;
 }
 .beast-progress-heading {
   flex-wrap: wrap;
@@ -3712,16 +3783,16 @@ html[data-motion='reduce'] .beast-progress-track * {
   outline: 3px solid var(--accent);
   outline-offset: 3px;
 }
-@media (min-width: 768px) {
+@media (min-width: 900px) {
   .beast-hero {
-    padding: 26px 24px 20px;
-    gap: 14px;
+    padding: 20px 24px 12px;
+    gap: 8px;
   }
   .beast-hero > img {
-    width: 240px;
+    width: 200px;
   }
   .beast-hero-copy h2 {
-    font-size: 30px;
+    font-size: 25px;
   }
 }
 @media (max-width: 360px) {
