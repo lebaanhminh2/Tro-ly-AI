@@ -110,12 +110,12 @@
 }
 .beast-hero {
   --hero-bg: #ffffff;
-  --hero-line: #d9d0ee;
-  --hero-text: #292a27;
-  --hero-muted: #62635d;
-  --hero-control-bg: #ffffff65;
-  --hero-control-line: #ddddd5;
-  --hero-hover: #efeee8;
+  --hero-line: #9b83d4;
+  --hero-text: #292929;
+  --hero-muted: #626262;
+  --hero-control-bg: #ffffff;
+  --hero-control-line: #dedede;
+  --hero-hover: #f3f3f3;
   --hero-quality: #78602d;
   --hero-quality-line: #aa95603d;
   --hero-pending: #78602d;
