@@ -8,16 +8,23 @@ import {
   beastPurityLabel,
   beastProgress,
   beastRewardLabel,
-  beastSkillLabel,
   beastSpecies,
   beastUltimateText,
   beastUltimateProgress,
+  displayedRole,
+  beastDiscovery,
+  beastUltimateRules,
 } from '../models/linh-thu.js';
+import { beastJourney, beastAbilities, beastAbilityRoadmap } from '../views/linh-thu.js';
 import { prefersReducedMotion } from '../core/experience.js';
+import { createBeastReveal } from '../ui/beast-reveal.js';
+import { createBeastEvolution } from '../ui/beast-evolution.js';
+import { openBeastTowerSheet } from '../ui/beast-tower.js';
 
 const pendingKey = 'minh-anh-beast-pending-v1';
 export function createBeastActions(context) {
   const { state, runtime, render, toast, openSheet, closeSheet, sheetContent, confirm } = context;
+  let activeReveal, activeEvolution;
   let generation = 0,
     loading,
     loadingRevision,
@@ -47,12 +54,61 @@ export function createBeastActions(context) {
     runtime.pendingBeast = null;
     persistPending(null);
   }
+  // Warm current and pending role portraits, not the entire collection.
+  async function prepareRoleImages(
+    data,
+    beasts = ['training', 'companion'].flatMap((role) => {
+      const { current, displayed } = displayedRole(data, role);
+      return [current, displayed];
+    }),
+  ) {
+    await Promise.all(
+      beasts.map(async (beast) => {
+        if (!beast) return;
+        const p = beastProgress(data, beast);
+        const img = new Image();
+        img.src = beastArtwork(p.species, p.form, false, p.perfect, undefined, p.awakened).src;
+        let timer;
+        try {
+          await Promise.race([
+            img.decode(),
+            new Promise((resolve) => (timer = setTimeout(resolve, 2500))),
+          ]);
+        } catch {
+          // Art failures must never prevent authoritative data from being shown.
+        } finally {
+          clearTimeout(timer);
+        }
+      }),
+    );
+  }
+  async function readCollection(cursor = null, isCurrent = () => true) {
+    const seen = new Set();
+    let result = { beasts: [], nextCursor: null };
+    do {
+      if (seen.has(cursor)) throw Error('Không thể tải tiếp bộ sưu tập. Cậu thử lại nhé.');
+      seen.add(cursor);
+      const page = await liveRequest(
+        'linh-thu/collection' + (cursor ? '?cursor=' + encodeURIComponent(cursor) : ''),
+      );
+      result = {
+        ...page,
+        beasts: [
+          ...new Map([...(result?.beasts ?? []), ...page.beasts].map((b) => [b.id, b])).values(),
+        ],
+      };
+      cursor = page.nextCursor;
+    } while (cursor && state.beastPanel === 'collection' && isCurrent());
+    return result;
+  }
   async function loadBeasts(more = false) {
     if (!state.live || !state.loaded) return;
     if (loading && loadingRevision === runtime.revision) return loading;
     loadingRevision = runtime.revision;
     const requestGeneration = ++generation,
       revision = runtime.revision;
+    const isCurrent = () =>
+      requestGeneration === generation && revision === runtime.revision && state.loaded;
     state.beastLoading = true;
     if (!more) state.beastError = null;
     render();
@@ -61,22 +117,27 @@ export function createBeastActions(context) {
         if (more) {
           const cursor = state.beastCollection?.nextCursor;
           if (!cursor) return;
-          const page = await liveRequest(
-            'linh-thu/collection?cursor=' + encodeURIComponent(cursor),
-          );
+          const page = await readCollection(cursor, isCurrent);
           if (requestGeneration !== generation || revision !== runtime.revision || !state.loaded)
             return;
           state.beastCollection = {
             ...page,
-            beasts: [...state.beastCollection.beasts, ...page.beasts],
+            beasts: [
+              ...new Map(
+                [...state.beastCollection.beasts, ...page.beasts].map((b) => [b.id, b]),
+              ).values(),
+            ],
           };
         } else {
           const [data, page] = await Promise.all([
             liveRequest('linh-thu'),
-            liveRequest('linh-thu/collection'),
+            readCollection(null, isCurrent),
           ]);
+          if (!isCurrent()) return;
+          await prepareRoleImages(data);
           if (requestGeneration !== generation || revision !== runtime.revision || !state.loaded)
             return;
+          if (state.beastData && data.account.version < state.beastData.account.version) return;
           state.beastData = data;
           state.beastCollection = page;
           state.cultivation = mapAccount(data.wallet, state.day?.day);
@@ -137,6 +198,12 @@ export function createBeastActions(context) {
       ? state.beastTower?.eligibility.day
       : data.day?.day;
     const input = runtime.pendingBeast?.input ?? { ...fields, day, version: data.account.version };
+    const roleCandidate =
+      input.operation === 'select'
+        ? [...(state.beastCollection?.beasts ?? []), ...(state.beastData?.selected ?? [])].find(
+            (beast) => beast.id === input.beastId,
+          )
+        : null;
     if (
       runtime.pendingBeast &&
       JSON.stringify(runtime.pendingBeast.input) !== JSON.stringify(fields)
@@ -150,6 +217,7 @@ export function createBeastActions(context) {
     runtime.saving = true;
     const revision = ++runtime.revision;
     state.beastBusy = true;
+    state.beastRoleSaving = ['select', 'cancel'].includes(input.operation);
     const sheetControls = [
       ...sheetContent.querySelectorAll('button:not([data-sheet-close]), input'),
     ].map((control) => ({ control, disabled: control.disabled }));
@@ -165,7 +233,38 @@ export function createBeastActions(context) {
         state.beastData.wallet = response.wallet;
       }
       state.cultivation = mapAccount(response.wallet, state.day?.day);
+      if (fields.operation.startsWith('tower_') && response.result?.tower) {
+        state.beastTower = {
+          ...state.beastTower,
+          account: response.account,
+          wallet: response.wallet,
+          run: { ...response.result.tower, version: response.result.runVersion },
+        };
+      }
       result = response.result;
+      if (input.operation === 'evolve' && result.attempt) applyEvolution(result);
+      if (
+        ['select', 'cancel'].includes(input.operation) &&
+        state.beastData?.day?.day === input.day
+      ) {
+        const view = state.beastData;
+        view.roles.pending = view.roles.pending.filter((role) => role.role !== input.role);
+        if (input.operation === 'select' && result.scheduled && roleCandidate) {
+          view.roles.pending.push({
+            role: result.role,
+            day: result.effectiveDay,
+            beastId: result.beastId,
+            attemptId: roleCandidate.attemptId,
+          });
+          view.selected = [
+            ...view.selected.filter(
+              (beast) =>
+                beast.id !== roleCandidate.id || beast.attemptId !== roleCandidate.attemptId,
+            ),
+            roleCandidate,
+          ];
+        }
+      }
       state.beastError = null;
     } catch (error) {
       if (revision !== runtime.revision) return null;
@@ -176,6 +275,7 @@ export function createBeastActions(context) {
       const unchanged = revision === runtime.revision;
       runtime.saving = false;
       state.beastBusy = false;
+      state.beastRoleSaving = false;
       for (const { control, disabled } of sheetControls)
         if (control.isConnected) control.disabled = disabled || !!runtime.pendingBeast;
       runtime.revision++;
@@ -190,6 +290,22 @@ export function createBeastActions(context) {
   async function recoverBeast() {
     const pending = runtime.pendingBeast;
     if (!pending || runtime.saving) return;
+    const recoverySheet = currentSheet();
+    const recoveryWasOpen = context.sheet.open;
+    const recoveryTitle = sheetContent.firstElementChild;
+    const presentRecovered = (result) => {
+      const unchangedPage =
+        state.loaded &&
+        state.live &&
+        !context.sheet.open &&
+        sheetContent.firstElementChild === recoveryTitle;
+      if (
+        (!pending.input.operation.startsWith('tower_') && pending.input.operation !== 'evolve') ||
+        (recoveryWasOpen ? recoverySheet() : unchangedPage)
+      )
+        presentResult(pending.input.operation, result);
+      else if (pending.input.operation === 'evolve') toast(`Đã tiến hóa lên T${result.form}.`);
+    };
     const revision = ++runtime.revision;
     runtime.saving = true;
     state.beastBusy = true;
@@ -205,7 +321,7 @@ export function createBeastActions(context) {
       clearPending();
       await loadBeasts();
       await loadTower();
-      presentResult(pending.input.operation, receipt.result);
+      presentRecovered(receipt.result);
     } catch (error) {
       if (revision !== runtime.revision || !state.loaded) return;
       if (error.code === 'NOT_FOUND') retry = true;
@@ -224,19 +340,33 @@ export function createBeastActions(context) {
       if (revision !== runtime.revision || !state.loaded || runtime.pendingBeast !== pending)
         return;
       const result = await mutateBeast(pending.input);
-      if (result) presentResult(pending.input.operation, result);
+      if (result) presentRecovered(result);
     }
   }
   function presentResult(operation, result) {
     if (operation === 'summon' || operation === 'choose_summon')
       result.choice ? openBeastSummonChoice(result.choice) : showBeastReveal(result);
-    else if (operation.startsWith('tower_')) openBeastTower();
+    else if (operation.startsWith('tower_')) openBeastTower(result);
     else if (operation === 'craft') showAlchemyResult(result);
+    else if (operation === 'evolve') showEvolutionResult(result);
     else toast('Đã lưu.');
   }
   function setBeastPanel(panel) {
+    if (state.beastPanel === panel) return;
     state.beastPanel = panel;
     render();
+    if (panel === 'collection') completeCollection();
+  }
+  async function completeCollection() {
+    if (loading) await loading;
+    if (state.beastPanel === 'collection' && state.beastCollection?.nextCursor)
+      await loadBeasts(true);
+  }
+  function openBeastSpecies(speciesId) {
+    if (speciesId && !(state.beastData?.speciesCounts?.[speciesId] > 0)) return;
+    state.beastCollectionSpecies = speciesId;
+    render();
+    completeCollection();
   }
   function currentSheet() {
     const title = sheetContent.firstElementChild;
@@ -246,30 +376,95 @@ export function createBeastActions(context) {
   function openBeastPicker(role) {
     openSheet(role === 'training' ? 'Chọn linh thú luyện' : 'Chọn linh thú đồng hành');
     const isCurrent = currentSheet();
+    const { current, pending } = displayedRole(state.beastData, role);
+    if (pending) {
+      const cancel = button(
+        'Hủy thay đổi',
+        async () => {
+          const result = await cancelBeastRole(role);
+          if (result && isCurrent()) closeSheet();
+        },
+        'text-button beast-picker-cancel',
+      );
+      cancel.disabled = state.beastBusy || !!runtime.pendingBeast;
+      sheetContent.append(cancel);
+    }
     const list = el('div', undefined, 'beast-picker');
-    for (const beast of state.beastCollection?.beasts ?? []) {
+    const candidates = [
+      ...new Map(
+        [...(state.beastCollection?.beasts ?? []), current, pending]
+          .filter(Boolean)
+          .map((beast) => [beast.id, beast]),
+      ).values(),
+    ];
+    for (const beast of candidates) {
       const progress = beastProgress(state.beastData, beast);
       const b = button(
         `${progress.species.forms[progress.form - 1]} · ${progress.species.rank}`,
         () => {
-          const description =
-            role === 'training'
-              ? 'Ngày hôm nay vẫn tính cho linh thú cũ. Sang ngày mới, lượt cũ sẽ khóa ở đúng tiến độ và tạp chất đã có. Muốn luyện lại cần Tịnh Linh Đan.'
-              : 'Linh thú này sẽ hỗ trợ cậu từ ngày sinh hoạt kế tiếp. Việc chọn đồng hành không đổi linh thú đang luyện.';
-          confirm(
+          const latest = displayedRole(state.beastData, role);
+          if (latest.pending?.id === beast.id && latest.pending.attemptId === beast.attemptId) {
+            closeSheet();
+            return;
+          }
+          const same =
+            latest.current?.id === beast.id && latest.current.attemptId === beast.attemptId;
+          if (!latest.pending && same) {
+            closeSheet();
+            return;
+          }
+          void prepareRoleImages(state.beastData, [beast]);
+          const previous = latest.current && beastProgress(state.beastData, latest.current);
+          const description = same
+            ? 'Hủy thay đổi đang chờ và giữ linh thú hiện tại.'
+            : role === 'training'
+              ? previous && latest.current.attempt.status === 'training'
+                ? `Sang ngày mới, lượt luyện của ${previous.species.forms[previous.form - 1]} sẽ khóa tại tiến độ hiện có, giữ nguyên tạp chất. Muốn luyện lại cần Tịnh Linh Đan.`
+                : 'Linh thú sẽ bắt đầu luyện từ ngày sinh hoạt kế tiếp.'
+              : 'Linh thú sẽ hỗ trợ bạn từ ngày sinh hoạt kế tiếp.';
+          openSheet(
             'Chọn ' +
               progress.species.forms[progress.form - 1] +
               ' · ' +
               beastIdentity(beast) +
               '?',
-            `${beastPoints(beast.attempt.earned)} điểm thực · ${beastPoints(beast.attempt.gray)} tạp chất · Độ thuần ${beastPurityLabel(progress)}. ${description}`,
-            async () => {
-              const result = await mutateBeast({ operation: 'select', role, beastId: beast.id });
-              if (result) toast('Đã hẹn lựa chọn cho ngày kế tiếp.');
-            },
+          );
+          const isConfirmation = currentSheet();
+          const actions = el('div', undefined, 'actions');
+          actions.append(
+            button(
+              'Xác nhận',
+              async () => {
+                const result = await mutateBeast({ operation: 'select', role, beastId: beast.id });
+                if (result) {
+                  if (isConfirmation()) closeSheet();
+                  toast(same ? 'Đã hủy thay đổi.' : 'Đã chọn linh thú. Có hiệu lực từ ngày mai.');
+                }
+              },
+              'primary',
+            ),
+            button('Quay lại', () => openBeastPicker(role), 'secondary'),
+          );
+          sheetContent.append(
+            el(
+              'p',
+              `${beastPoints(beast.attempt.earned)} điểm thực · ${beastPoints(beast.attempt.gray)} tạp chất · Độ thuần ${beastPurityLabel(progress)}.`,
+              'hint',
+            ),
+            el('p', description, 'hint'),
+            actions,
           );
         },
         'beast-picker-item',
+      );
+      b.dataset.beastId = beast.id;
+      b.dataset.attemptId = beast.attemptId;
+      const chosen = pending?.id === beast.id && pending.attemptId === beast.attemptId;
+      b.setAttribute(
+        'aria-pressed',
+        String(
+          chosen || (!pending && current?.id === beast.id && current.attemptId === beast.attemptId),
+        ),
       );
       const copy = el('span', undefined, 'beast-picker-copy');
       copy.append(
@@ -296,11 +491,16 @@ export function createBeastActions(context) {
             'beast-picker-role',
           ),
         );
+      if (chosen) copy.append(el('small', 'Đã chọn · Từ ngày mai', 'beast-picker-role'));
       b.replaceChildren(copy);
       b.prepend(
         portrait(progress.species, progress.form, true, progress.perfect, progress.awakened),
       );
-      if (role === 'training' && ['sealed', 'completed'].includes(beast.attempt.status))
+      if (
+        state.beastBusy ||
+        runtime.pendingBeast ||
+        (role === 'training' && ['sealed', 'completed'].includes(beast.attempt.status))
+      )
         b.disabled = true;
       list.append(b);
     }
@@ -314,6 +514,11 @@ export function createBeastActions(context) {
           if (isCurrent()) openBeastPicker(role);
         }),
       );
+  }
+  async function cancelBeastRole(role) {
+    const result = await mutateBeast({ operation: 'cancel', role });
+    if (result) toast('Đã hủy thay đổi.');
+    return result;
   }
   function portrait(species, form, thumbnail = false, perfect = false, awakened = false) {
     const image = el('img');
@@ -330,63 +535,140 @@ export function createBeastActions(context) {
     image.decoding = 'async';
     return image;
   }
-  function showBeast(beast, previewForm) {
+  function applyEvolution(result) {
+    const data = state.beastData;
+    if (!data || !result.attempt) return;
+    for (const entry of [...data.selected, ...(state.beastCollection?.beasts ?? [])])
+      if (entry.id === result.beastId && entry.attemptId === result.attemptId)
+        entry.attempt = result.attempt;
+    data.discoveries ??= {};
+    const history = data.discoveries[result.attempt.speciesId] ?? { form: 1 };
+    const beast = {
+      id: result.beastId,
+      speciesId: result.attempt.speciesId,
+      attempt: result.attempt,
+    };
+    const p = beastProgress(data, beast);
+    data.discoveries[result.attempt.speciesId] = {
+      form: Math.max(history.form, p.form),
+      awakened: history.awakened || p.awakened,
+      perfect: history.perfect || p.perfect,
+    };
+  }
+  async function evolveBeast(beast) {
+    if (state.beastBusy || runtime.saving || runtime.pendingBeast) return;
+    if (!beastProgress(state.beastData, beast).canEvolve) return;
+    const wasOpen = context.sheet.open,
+      isCurrent = currentSheet();
+    for (const control of sheetContent.querySelectorAll('.beast-evolve-button')) {
+      control.textContent = 'Đang tiến hóa…';
+      control.setAttribute('aria-busy', 'true');
+    }
+    const result = await mutateBeast({ operation: 'evolve', beastId: beast.id });
+    if (wasOpen && isCurrent()) {
+      for (const control of sheetContent.querySelectorAll('.beast-evolve-button')) {
+        control.textContent = `Tiến hóa lên T${beastProgress(state.beastData, beast).form + 1}`;
+        control.removeAttribute('aria-busy');
+      }
+    }
+    if (result && state.tab === 'beasts' && (wasOpen ? isCurrent() : !context.sheet.open))
+      showEvolutionResult(result);
+    else if (result) toast(`Đã tiến hóa lên T${result.form}.`);
+  }
+  function showEvolutionResult(result) {
+    applyEvolution(result);
+    const data = state.beastData;
+    const beast = [...(data?.selected ?? []), ...(state.beastCollection?.beasts ?? [])].find(
+      (entry) => entry.id === result.beastId && entry.attemptId === result.attemptId,
+    );
+    if (!beast) {
+      toast(`Đã tiến hóa lên T${result.form}.`);
+      return;
+    }
+    const progress = beastProgress(data, beast);
+    closeSheet();
+    activeEvolution?.();
+    const panel = state.beastPanel;
+    const evolution = createBeastEvolution({
+      data,
+      result,
+      progress,
+      portrait,
+      isCurrent: () => state.loaded && state.tab === 'beasts' && state.beastPanel === panel,
+      onClose: () => {
+        if (activeEvolution === evolution) activeEvolution = undefined;
+      },
+    });
+    activeEvolution = evolution;
+  }
+  function showBeast(beast, previewForm, allSkills = false) {
     const data = state.beastData,
       progress = beastProgress(data, beast),
       species = progress.species;
-    const form = previewForm ?? progress.form;
-    openSheet(species.forms[form - 1]);
-    const image = portrait(species, form, false, progress.perfect, progress.awakened);
-    image.className = 'beast-detail-image';
-    sheetContent.append(
-      image,
-      el(
-        'p',
-        `${species.rank} · ${species.title}${form !== progress.form ? ' · Xem trước hình dạng' : ''}`,
-        'hint',
-      ),
-      el('p', `${beastIdentity(beast)} · Độ thuần ${beastPurityLabel(progress)}`, 'hint'),
-    );
-    const forms = el('div', undefined, 'beast-evolutions');
-    species.forms.forEach((name, index) =>
-      forms.append(
-        button(
-          `T${index + 1} · ${name}`,
-          () => showBeast(beast, index + 1),
-          index + 1 === form ? 'primary' : 'secondary',
-        ),
-      ),
-    );
-    sheetContent.append(
-      forms,
-      el(
-        'p',
-        `${beastPoints(beast.attempt.earned)} điểm thực · ${beastPoints(beast.attempt.gray)} tạp chất`,
-        'hint',
-      ),
-    );
-    const skills = data.config.skills[species.id];
-    skills.talents.forEach((skill) => {
-      sheetContent.append(el('h3', skill.name), el('p', beastSkillLabel(skill), 'hint'));
-    });
-    sheetContent.append(
-      el('h3', '95% · ' + skills.awakening.name),
-      el('p', beastSkillLabel(skills.awakening), 'hint'),
-      el('h3', '100% · ' + skills.ultimate.name),
-      el('p', beastUltimateText[skills.ultimate.kind], 'hint'),
-      el(
-        'p',
-        'Mở khi luyện đầy dạng IV với độ thuần chính xác 100%. Một tuyệt kỹ mỗi tài khoản mỗi tuần.',
-        'hint',
-      ),
-    );
-    if (progress.perfect)
+    if (allSkills) {
+      openSheet('Toàn bộ năng lực');
+      context.sheet.classList.add('beast-sheet-open');
       sheetContent.append(
-        button('Xem & kích hoạt tuyệt kỹ', () => openBeastUltimate(beast), 'primary'),
+        el(
+          'p',
+          `${species.forms[progress.form - 1]} · ${species.rank} · T${progress.form}`,
+          'beast-roadmap-intro',
+        ),
+        beastAbilityRoadmap(context.ui, data, beast),
       );
+      return;
+    }
+    const form = [1, 2, 3, 4].includes(previewForm) ? previewForm : progress.form;
+    const history = beastDiscovery(data, beast),
+      known = form <= history.form;
+    openSheet(known ? species.forms[form - 1] : `T${form} · Chưa khám phá`);
+    context.sheet.classList.add('beast-sheet-open');
+    const presentation = {
+      ...context.ui,
+      showBeast,
+      evolveBeast,
+      beastPending: () => !!runtime.pendingBeast,
+    };
+    const header = el('div', undefined, 'beast-detail-portrait');
+    if (known) {
+      const image = portrait(
+        species,
+        form,
+        false,
+        form === progress.form && progress.perfect,
+        form === progress.form && progress.awakened,
+      );
+      image.className = 'beast-detail-image' + (form > progress.form ? ' is-discovered' : '');
+      header.append(image);
+    } else {
+      const mystery = el('div', undefined, 'beast-detail-mystery');
+      const journey = beastJourney(presentation, data, beast, form);
+      mystery.append(journey.querySelector(`[data-form="${form}"] .beast-paw`));
+      header.append(mystery, el('p', 'Tiến hóa để khám phá diện mạo này.', 'hint'));
+    }
+    header.append(
+      el('p', `${species.rank} · T${form}`, 'beast-detail-meta'),
+      el(
+        'p',
+        form === progress.form
+          ? `${beastIdentity(beast)} · Dạng hiện tại`
+          : form <= progress.form
+            ? 'Dạng cá thể này đã đạt'
+            : known
+              ? 'Đã khám phá · Cá thể này chưa đạt'
+              : '',
+        'hint',
+      ),
+    );
+    sheetContent.append(header, beastJourney(presentation, data, beast, form));
+    sheetContent.append(beastAbilities(presentation, data, beast, form));
     if (['sealed', 'completed'].includes(beast.attempt.status))
       sheetContent.append(
-        button('Luyện lại bằng Tịnh Linh Đan', () => resetBeast(beast), 'secondary'),
+        button(
+          'Luyện lại bằng Tịnh Linh Đan',
+          () => resetBeast(beast),
+          'secondary beast-reset-button',
+        ),
       );
   }
   function openBeastExchange() {
@@ -449,6 +731,8 @@ export function createBeastActions(context) {
         'hint',
       ),
     );
+    if (beastUltimateRules[skill.kind])
+      sheetContent.append(el('p', beastUltimateRules[skill.kind], 'beast-skill-description'));
     if (data.ultimate) {
       const active = data.ultimate,
         activeSkill = data.config.skills[active.speciesId]?.ultimate;
@@ -593,6 +877,31 @@ export function createBeastActions(context) {
     const result = await mutateBeast({ operation: 'choose_reward', choiceId: choice.id, option });
     if (result) toast('Đã nhận ' + beastRewardLabel(result.reward));
   }
+  function openBeastSummonPool() {
+    const catalog = state.beastData?.config.catalog;
+    if (!catalog) return;
+    openSheet('Linh thú có thể nhận');
+    context.sheet.classList.add('beast-sheet-open');
+    sheetContent.append(
+      el(
+        'p',
+        'Mỗi lượt nhận một cá thể dạng I. Các loài trong cùng tư chất có tỷ lệ bằng nhau.',
+        'hint',
+      ),
+    );
+    const grid = el('div', undefined, 'beast-summon-pool');
+    for (const species of catalog) {
+      const card = el('div', undefined, 'beast-pool-card');
+      card.dataset.rank = species.rank;
+      card.append(
+        el('small', species.rank),
+        portrait(species, 1, true),
+        el('strong', species.forms[0]),
+      );
+      grid.append(card);
+    }
+    sheetContent.append(grid);
+  }
   function openBeastRates() {
     openSheet('Tỷ lệ và bảo hiểm');
     sheetContent.append(
@@ -693,17 +1002,7 @@ export function createBeastActions(context) {
           if (input.checked) selected.add(index);
           else selected.delete(index);
         });
-        label.append(
-          input,
-          el(
-            'span',
-            beastSkillLabel({ trigger: 'draw', reward })
-              .split(': ')
-              .slice(1)
-              .join(': ')
-              .replace(/\.$/, ''),
-          ),
-        );
+        label.append(input, el('span', beastRewardLabel(reward)));
         box.append(label);
       });
       box.append(
@@ -734,60 +1033,19 @@ export function createBeastActions(context) {
     const data = state.beastData;
     if (!data || !result?.beasts?.length) return;
     closeSheet();
-    const dialog = el('dialog', undefined, 'beast-reveal');
-    const ranks = { R: 0, SR: 1, SSR: 2, UR: 3 };
-    const best = result.beasts.reduce((a, b) =>
-      ranks[beastSpecies(data, a.speciesId).rank] >= ranks[beastSpecies(data, b.speciesId).rank]
-        ? a
-        : b,
-    );
-    const species = beastSpecies(data, best.speciesId);
-    dialog.dataset.rank = species.rank;
-    dialog.setAttribute('aria-label', 'Kết quả triệu hồi');
-    const stage = el('div', undefined, 'beast-reveal-stage'),
-      skip = button('Bỏ qua hiệu ứng', finish, 'beast-reveal-skip');
-    stage.append(
-      el('div', undefined, 'beast-summon-sigil'),
-      el('p', 'MỘT GIAO ƯỚC ĐANG THÀNH HÌNH', 'beast-reveal-caption'),
-    );
-    dialog.append(skip, stage);
-    let timer;
-    function finish() {
-      clearTimeout(timer);
-      dialog.classList.add('is-revealed');
-      skip.remove();
-      stage.replaceChildren();
-      stage.append(
-        el('p', species.rank + ' · TRIỆU HỒI THÀNH CÔNG', 'beast-reveal-caption'),
-        portrait(species, 1),
-        el('h2', species.forms[0]),
-        el('p', species.title, 'beast-reveal-subtitle'),
-      );
-      if (result.beasts.length > 1) {
-        const grid = el('div', undefined, 'beast-result-grid');
-        for (const beast of result.beasts) {
-          const entry = beastSpecies(data, beast.speciesId),
-            card = el('div', undefined, 'beast-result-card');
-          card.dataset.rank = entry.rank;
-          card.append(
-            portrait(entry, 1, true),
-            el('strong', entry.forms[0]),
-            el('small', entry.rank),
-          );
-          grid.append(card);
-        }
-        stage.append(grid);
-      }
-      stage.append(button('Tiếp tục hành trình', () => dialog.close(), 'primary'));
-    }
-    dialog.addEventListener('close', () => {
-      clearTimeout(timer);
-      dialog.remove();
+    activeReveal?.();
+    const openedTab = state.tab;
+    const openedPanel = state.beastPanel;
+    const reveal = createBeastReveal({
+      data,
+      result,
+      portrait,
+      isCurrent: () => state.loaded && state.tab === openedTab && state.beastPanel === openedPanel,
+      onClose: () => {
+        if (activeReveal === reveal) activeReveal = undefined;
+      },
     });
-    document.body.append(dialog);
-    dialog.showModal();
-    if (prefersReducedMotion()) finish();
-    else timer = setTimeout(finish, 1800);
+    activeReveal = reveal;
   }
   function openBeastAlchemy() {
     openSheet('Lò đan');
@@ -1053,173 +1311,28 @@ export function createBeastActions(context) {
       },
     );
   }
-  async function openBeastTower() {
-    openSheet('Tháp giao ước');
-    context.sheet.classList.add('beast-sheet-open');
-    const isCurrent = currentSheet(),
-      loadingHint = el('p', 'Đang mở tháp…', 'hint');
-    sheetContent.append(loadingHint);
-    const revision = runtime.revision;
-    await loadTower();
-    if (!isCurrent() || revision !== runtime.revision) return;
-    loadingHint.remove();
-    const data = state.beastTower;
-    if (!data || state.towerError) {
-      sheetContent.append(el('p', state.towerError ?? 'Chưa tải được lượt tháp.', 'hint'));
-      sheetContent.append(button('Thử lại', openBeastTower, 'secondary'));
-      return;
-    }
-    const run = data.run;
-    const track = el('div', undefined, 'beast-tower-track');
-    ['2 vé thường', '3 vé thường', '1 vé triệu hồi', '2 vé triệu hồi'].forEach((reward, i) => {
-      const step = el(
-        'div',
-        undefined,
-        'beast-tower-step' +
-          ((run?.cleared ?? 0) > i ? ' is-cleared' : '') +
-          (run?.floor === i + 1 && run?.status === 'choosing' ? ' is-current' : ''),
-      );
-      step.append(el('strong', 'Tầng ' + (i + 1)), el('small', reward));
-      track.append(step);
+  async function openBeastTower(confirmedResult = null) {
+    return openBeastTowerSheet({
+      context,
+      loadTower,
+      mutateBeast,
+      currentSheet,
+      recoverBeast,
+      confirmedClaim: confirmedResult?.tower?.status === 'claimed' ? confirmedResult : null,
     });
-    sheetContent.append(track);
-    if (runtime.pendingBeast)
-      sheetContent.append(button('Kiểm tra kết quả trước', recoverBeast, 'primary'));
-    if (!run) {
-      const eligibility = data.eligibility;
-      const requirements = el('ul', undefined, 'beast-tower-requirements');
-      for (const [met, text] of [
-        [eligibility.achieved > 0 && eligibility.missed === 0, 'Hoàn thành đủ habit hôm nay'],
-        [!!eligibility.taskId, 'Hoàn thành 1 task công việc hợp lệ hôm nay'],
-      ]) {
-        const item = el('li', (met ? '✓ ' : '○ ') + text);
-        item.dataset.met = String(met);
-        requirements.append(item);
-      }
-      sheetContent.append(el('p', 'Một lượt miễn phí mỗi ngày.', 'hint'), requirements);
-      if (eligibility.rescueAvailable)
-        sheetContent.append(el('p', 'Đã có bảo hộ: cứu 1 bẫy ở tầng 1–3.', 'beast-tower-risk'));
-      const start = button(
-        'Bắt đầu leo tháp',
-        async () => {
-          const result = await mutateBeast({ operation: 'tower_start' });
-          if (result && isCurrent()) openBeastTower();
-        },
-        'primary',
-      );
-      start.disabled = !data.eligibility.eligible || state.beastBusy || !!runtime.pendingBeast;
-      sheetContent.append(start);
-      return;
-    }
-    if (['claimed', 'expired', 'failed'].includes(run.status)) {
-      sheetContent.append(
-        el(
-          'h3',
-          run.status === 'failed'
-            ? 'Giao ước chưa thành'
-            : run.cleared
-              ? 'Quà đã vào ví'
-              : 'Lượt tháp đã kết thúc',
-        ),
-        el(
-          'p',
-          run.status === 'failed'
-            ? 'Cậu gặp bẫy. Chỉ quà của lượt này mất đi; vé trong ví được giữ nguyên.'
-            : beastRewardLabel(run.atRisk),
-          'hint',
-        ),
-        el('p', 'Hẹn cậu lượt mới vào ngày sinh hoạt kế tiếp.', 'hint'),
-      );
-      return;
-    }
-    sheetContent.append(
-      el('h3', 'Tầng ' + run.floor),
-      el(
-        'p',
-        (run.cleared ? 'Quà chưa nhận: ' : '') + beastRewardLabel(run.atRisk),
-        'beast-tower-risk',
-      ),
-    );
-    if (run.rescueAvailable)
-      sheetContent.append(el('p', 'Bảo hộ sẵn sàng · Cứu 1 bẫy ở tầng 1–3.', 'hint'));
-    if (run.lastResult === 'rescued')
-      sheetContent.append(
-        el('p', 'Phân thân đã cứu một lần. Các lá đã xáo lại; vẫn còn một bẫy.', 'hint'),
-      );
-    if (run.status === 'choosing') {
-      sheetContent.append(el('p', `Chọn một trong ${run.cards} lá. Có đúng một lá bẫy.`, 'hint'));
-      const cards = el('div', undefined, 'beast-tower-cards');
-      for (let card = 0; card < run.cards; card++) {
-        const control = button(
-          '✦',
-          async () => {
-            const result = await mutateBeast({
-              operation: 'tower_pick',
-              runVersion: run.version,
-              card,
-            });
-            if (result && isCurrent()) openBeastTower();
-          },
-          'beast-tower-card',
-        );
-        control.setAttribute('aria-label', 'Lật lá ' + (card + 1));
-        control.disabled = state.beastBusy || !!runtime.pendingBeast;
-        cards.append(control);
-      }
-      sheetContent.append(cards);
-    } else {
-      sheetContent.append(
-        button(
-          'Dừng · Nhận ' + beastRewardLabel(run.atRisk),
-          async () => {
-            const result = await mutateBeast({ operation: 'tower_claim', runVersion: run.version });
-            if (result && isCurrent()) openBeastTower();
-          },
-          'primary beast-tower-claim',
-        ),
-      );
-      if (run.floor < 4)
-        sheetContent.append(
-          button(
-            'Đi tiếp · ' + beastRewardLabel(run.nextReward),
-            () =>
-              confirm(
-                'Đánh cược đi tiếp?',
-                `Nếu gặp bẫy, cậu mất ${beastRewardLabel(run.atRisk)} chưa nhận của lượt này. Quà tầng sau thay thế quà hiện tại.`,
-                async () => {
-                  // Confirmation closes its sheet before invoking this action.
-                  // Keep that identity so a newer sheet is never replaced.
-                  const title = sheetContent.firstElementChild;
-                  const result = await mutateBeast({
-                    operation: 'tower_continue',
-                    runVersion: run.version,
-                  });
-                  if (
-                    result &&
-                    state.loaded &&
-                    state.live &&
-                    sheetContent.firstElementChild === title
-                  )
-                    openBeastTower();
-                },
-              ),
-            'secondary beast-tower-continue',
-          ),
-        );
-    }
-    for (const control of sheetContent.querySelectorAll(
-      '.beast-tower-claim, .beast-tower-continue',
-    ))
-      control.disabled = state.beastBusy || !!runtime.pendingBeast;
   }
+
   return {
     loadBeasts,
     loadTower,
     setBeastPanel,
+    openBeastSpecies,
     openBeastPicker,
     showBeast,
+    evolveBeast,
     openBeastExchange,
     openBeastRates,
+    openBeastSummonPool,
     summonBeast,
     showBeastReveal,
     openBeastAlchemy,
@@ -1230,9 +1343,6 @@ export function createBeastActions(context) {
     openBeastSummonChoice,
     openBeastDrawChoices,
     beastPending: () => !!runtime.pendingBeast,
-    cancelBeastRole: async (role) => {
-      const result = await mutateBeast({ operation: 'cancel', role });
-      if (result) toast('Đã hủy lựa chọn đang chờ.');
-    },
+    cancelBeastRole,
   };
 }

@@ -164,7 +164,7 @@ export function renderToday(ui, state) {
     const plan = state.dailyPlan?.plan;
     const now = (state.serverNow ?? Date.now()) + Date.now() - (state.loadedAt ?? Date.now());
     const root = el('section', undefined, 'today-page');
-    const top = heading('Một ngày, từng bước.', dayLabel(state)), attendance = checkinProgress(state.cultivation, now, state.checkin?.rewards);
+    const top = heading('Hôm nay', dayLabel(state)), attendance = checkinProgress(state.cultivation, now, state.checkin?.rewards);
     const rewardLink = button(attendance.canClaim ? 'Quà hôm nay' : 'Quà hằng ngày', () => ui.openRewardCalendar(), 'secondary daily-reward-entry');
     rewardLink.setAttribute('aria-label', attendance.canClaim ? 'Quà hôm nay: ' + dailyRewardLabel(attendance.rewards[attendance.count]) + '. Xem lịch quà.' : 'Xem lịch quà điểm danh 30 ngày');
     top.append(rewardLink);

@@ -1,6 +1,17 @@
 import {TOOL_DECLARATIONS,modelStep,type ModelContent} from './contracts.ts';
 import {TOOL_PERSONA,PROMPT_VERSION} from './persona.ts';
 export class ModelError extends Error {}
+function tokenUsage(response: unknown) {
+ if(!response||typeof response!=='object'||Array.isArray(response))return {};
+ const usage=(response as Record<string,unknown>).usageMetadata;
+ if(!usage||typeof usage!=='object'||Array.isArray(usage))return {};
+ const tokens:Partial<Record<'promptTokens'|'outputTokens'|'thinkingTokens'|'cachedTokens'|'totalTokens',number>>={};
+ for(const [source,target] of [['promptTokenCount','promptTokens'],['candidatesTokenCount','outputTokens'],['thoughtsTokenCount','thinkingTokens'],['cachedContentTokenCount','cachedTokens'],['totalTokenCount','totalTokens']] as const){
+  const value=(usage as Record<string,unknown>)[source];
+  if(typeof value==='number'&&Number.isSafeInteger(value)&&value>=0&&value<=1000000000)tokens[target]=value;
+ }
+ return tokens;
+}
 export class Gemini {
  private options:{apiKey:string;model:string;transport?:typeof fetch;timeoutMs?:number};
  constructor(options:{apiKey:string;model:string;transport?:typeof fetch;timeoutMs?:number}){
@@ -19,13 +30,17 @@ export class Gemini {
     body:JSON.stringify({systemInstruction:{parts:[{text:systemInstruction}]},contents,tools:[{functionDeclarations:allowedNames?TOOL_DECLARATIONS.filter(t=>allowedNames.includes(t.name)):TOOL_DECLARATIONS}],
       toolConfig:{functionCallingConfig:{mode:allowTools?'AUTO':'NONE'}},generationConfig:{maxOutputTokens:2048}})
    });
-   if(!response.ok){await response.body?.cancel();throw new ModelError(response.status===429?'PROVIDER_RATE_LIMIT':`PROVIDER_HTTP_${response.status}`);}
+   if(controller.signal.aborted)throw new ModelError('PROVIDER_TIMEOUT');
+   if(!response.ok){await response.body?.cancel().catch(()=>{});throw new ModelError(response.status===429?'PROVIDER_RATE_LIMIT':`PROVIDER_HTTP_${response.status}`);}
    const raw=await response.text();if(raw.length>200000)throw new ModelError('PROVIDER_RESPONSE_TOO_LARGE');
-   const output=modelStep(JSON.parse(raw));
-   return {output,metrics:{model:this.options.model,promptVersion:PROMPT_VERSION,latencyMs:Date.now()-started}};
+   if(controller.signal.aborted)throw new ModelError('PROVIDER_TIMEOUT');
+   let output:ReturnType<typeof modelStep>,parsed:unknown;
+   try{parsed=JSON.parse(raw);output=modelStep(parsed);}catch{throw new ModelError('PROVIDER_INVALID_RESPONSE');}
+   return {output,metrics:{model:this.options.model,promptVersion:PROMPT_VERSION,latencyMs:Date.now()-started,tokens:tokenUsage(parsed)}};
   }catch(error){
+   if(controller.signal.aborted)throw new ModelError('PROVIDER_TIMEOUT');
    if(error instanceof ModelError)throw error;
-   throw new ModelError(controller.signal.aborted?'PROVIDER_TIMEOUT':'PROVIDER_TRANSPORT_OR_RESPONSE_ERROR');
+   throw new ModelError('PROVIDER_TRANSPORT_ERROR');
   }finally{clearTimeout(timer);}
  }
 }

@@ -30,6 +30,7 @@ type CollectionRow = {
   status: BeastAttempt['status'];
   earned: number;
   gray: number;
+  form: NonNullable<BeastAttempt['form']>;
   counters_json: string;
 };
 
@@ -46,6 +47,7 @@ function owned(row: CollectionRow): OwnedBeast {
       status: row.status,
       earned: row.earned,
       gray: row.gray,
+      form: row.form,
     },
   };
 }
@@ -95,7 +97,7 @@ export class D1BeastStore implements BeastStore {
     const rows = (
       await query(
         this.db,
-        `SELECT b.id,b.species_id,b.current_attempt_id,b.acquired_at,a.rule_version,a.status,a.earned,a.gray,a.counters_json
+        `SELECT b.id,b.species_id,b.current_attempt_id,b.acquired_at,a.rule_version,a.status,a.earned,a.gray,a.form,a.counters_json
        FROM beasts b JOIN beast_attempts a ON a.owner=b.owner AND a.id=b.current_attempt_id
        WHERE b.owner=? AND (b.acquired_at<? OR (b.acquired_at=? AND b.id<?))
        ORDER BY b.acquired_at DESC,b.id DESC LIMIT ?`,
@@ -118,7 +120,7 @@ export class D1BeastStore implements BeastStore {
   async individual(owner: string, id: string, attemptId?: string): Promise<OwnedBeast | null> {
     const row = await query(
       this.db,
-      `SELECT b.id,b.species_id,a.id AS current_attempt_id,b.acquired_at,a.rule_version,a.status,a.earned,a.gray,a.counters_json
+      `SELECT b.id,b.species_id,a.id AS current_attempt_id,b.acquired_at,a.rule_version,a.status,a.earned,a.gray,a.form,a.counters_json
        FROM beasts b JOIN beast_attempts a ON a.owner=b.owner AND a.beast_id=b.id AND a.id=COALESCE(?,b.current_attempt_id)
        WHERE b.owner=? AND b.id=?`,
       attemptId ?? null,
@@ -137,6 +139,30 @@ export class D1BeastStore implements BeastStore {
       ).all<{ species_id: string; total: number }>()
     ).results;
     return Object.fromEntries(rows.map((row) => [row.species_id, row.total]));
+  }
+
+  async discoveries(owner: string) {
+    const rows = (
+      await query(
+        this.db,
+        `SELECT b.species_id,MAX(a.form) AS form,
+       MAX(CASE WHEN a.form=4 AND a.earned+a.gray=a.capacity AND a.gray<=a.capacity/20 THEN 1 ELSE 0 END) AS awakened,
+       MAX(CASE WHEN a.form=4 AND a.earned=a.capacity AND a.gray=0 THEN 1 ELSE 0 END) AS perfect
+       FROM beasts b JOIN beast_attempts a ON a.owner=b.owner AND a.beast_id=b.id
+       WHERE b.owner=? GROUP BY b.species_id`,
+        owner,
+      ).all<{ species_id: string; form: number; awakened: number; perfect: number }>()
+    ).results;
+    return Object.fromEntries(
+      rows.map((row) => [
+        row.species_id,
+        {
+          form: row.form,
+          awakened: !!row.awakened,
+          perfect: !!row.perfect,
+        },
+      ]),
+    );
   }
 
   async ultimate(owner: string, week: number): Promise<BeastUltimate | null> {
@@ -505,11 +531,12 @@ export class D1BeastStore implements BeastStore {
               ),
               query(
                 this.db,
-                `UPDATE beast_attempts SET status=?,earned=?,gray=?,counters_json=COALESCE(?,counters_json),
+                `UPDATE beast_attempts SET status=?,earned=?,gray=?,form=COALESCE(?,form),counters_json=COALESCE(?,counters_json),
              started_day=COALESCE(?,started_day),ended_day=COALESCE(?,ended_day),last_settled_day=COALESCE(?,last_settled_day) WHERE owner=? AND id=?`,
                 update.attempt.status,
                 update.attempt.earned,
                 update.attempt.gray,
+                update.attempt.form ?? null,
                 update.counters ? JSON.stringify(update.counters) : null,
                 update.startedDay ?? null,
                 update.endedDay ?? null,

@@ -1,8 +1,8 @@
-import { resetBeastWithElixir } from '../domain/linh-thu-training.ts';
+import { evolveBeast, resetBeastWithElixir, trainingView } from '../domain/linh-thu-training.ts';
 import type { BeastRole, BeastStore, BeastRoleSelection } from '../ports/linh-thu-store.ts';
 
 export type BeastRoleCommand = {
-  operation: 'select' | 'cancel' | 'reset';
+  operation: 'select' | 'cancel' | 'reset' | 'evolve';
   version: number;
   day: number;
   role?: BeastRole;
@@ -24,13 +24,13 @@ export class BeastRoleService {
     deadline?: number,
   ) {
     if (
-      !['select', 'cancel', 'reset'].includes(command.operation) ||
+      !['select', 'cancel', 'reset', 'evolve'].includes(command.operation) ||
       Object.keys(command).some(
         (key) => !['operation', 'version', 'day', 'role', 'beastId'].includes(key),
       ) ||
-      (command.operation !== 'reset' &&
+      (!['reset', 'evolve'].includes(command.operation) &&
         !['training', 'companion'].includes(String(command.role))) ||
-      (command.operation === 'reset' && command.role !== undefined) ||
+      (['reset', 'evolve'].includes(command.operation) && command.role !== undefined) ||
       (command.operation === 'cancel' && command.beastId !== undefined) ||
       (command.operation !== 'cancel' &&
         (typeof command.beastId !== 'string' || !/^[a-zA-Z0-9_-]{8,120}$/.test(command.beastId)))
@@ -62,6 +62,22 @@ export class BeastRoleService {
             ],
           };
         if (!selected) throw Error('BEAST_NOT_FOUND');
+        if (command.operation === 'evolve') {
+          const attempt = evolveBeast(selected.attempt);
+          return {
+            state: snapshot.state,
+            healthy,
+            updateAttempts: [{ id: selected.attemptId, attempt }],
+            result: {
+              evolved: true,
+              beastId: selected.id,
+              attemptId: selected.attemptId,
+              from: trainingView(selected.attempt).form,
+              form: attempt.form,
+              attempt,
+            },
+          };
+        }
         if (command.operation === 'reset') {
           const reset = resetBeastWithElixir(selected.attempt, snapshot.state.alchemy);
           const companion = selections.current.find((selection) => selection.role === 'companion');

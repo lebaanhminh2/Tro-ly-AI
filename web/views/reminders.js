@@ -1,7 +1,7 @@
 export function renderReminders(ui, state) {
   const { el, button, heading } = ui,
     root = el('section', undefined, 'reminders-page');
-  const top = heading('Nhớ việc, nhẹ đầu.', 'Chỉ những lời nhắc cậu chủ động đặt.');
+  const top = heading('Lời nhắc', 'Chỉ những lời nhắc cậu chủ động đặt.');
   top.append(button('+ Tạo lời nhắc', () => ui.openReminder(null), 'primary top-create'));
   root.append(top);
   if (state.rest?.reason === 'asleep')

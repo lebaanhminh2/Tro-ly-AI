@@ -29,6 +29,102 @@ import { handleBeasts } from '../../src/entrypoints/mini-app/linh-thu.ts';
 
 const now = Date.parse('2026-10-19T10:00:00+07:00');
 const day = 20745;
+test('manual evolution persists once, rejects gray-only progress, and retains discovery through reset and duplicate species', async () => {
+  const { mf, db, store } = await fixture();
+  try {
+    await store.transact(
+      '123',
+      'evolution_seed_001',
+      'fixture',
+      {},
+      day,
+      now,
+      0,
+      (snapshot, healthy) => ({
+        state: { ...snapshot.state, alchemy: { ...snapshot.state.alchemy, inventory: 1 } },
+        healthy,
+        newBeasts: [
+          { id: 'evolution_beast_001', speciesId: 'gibber', attemptId: 'evolution_attempt_001' },
+          { id: 'evolution_beast_002', speciesId: 'gibber', attemptId: 'evolution_attempt_002' },
+        ],
+        result: {},
+      }),
+    );
+    const roles = new BeastRoleService(store);
+    await db
+      .prepare(
+        "UPDATE beast_attempts SET status='training',earned=90,gray=20 WHERE id='evolution_attempt_001'",
+      )
+      .run();
+    await assert.rejects(
+      roles.execute(
+        '123',
+        'evolution_blocked_001',
+        {
+          operation: 'evolve',
+          day,
+          version: (await store.read('123')).version,
+          beastId: 'evolution_beast_001',
+        },
+        day,
+        now,
+      ),
+      /NOT_READY/,
+    );
+    await db
+      .prepare(
+        "UPDATE beast_attempts SET status='completed',earned=600,gray=0 WHERE id='evolution_attempt_001'",
+      )
+      .run();
+    for (let form = 2; form <= 4; form++) {
+      const input = {
+        operation: 'evolve' as const,
+        day,
+        version: (await store.read('123')).version,
+        beastId: 'evolution_beast_001',
+      };
+      const result = await roles.execute('123', 'evolution_step_00' + form, input, day, now);
+      assert.equal(result.form, form);
+      const replay = await roles.execute('123', 'evolution_step_00' + form, input, day, now);
+      assert.deepEqual(replay, result);
+      assert.equal((await store.individual('123', 'evolution_beast_001'))!.attempt.earned, 600);
+      assert.equal((await store.individual('123', 'evolution_beast_001'))!.attempt.form, form);
+      if (form === 2)
+        await assert.rejects(
+          roles.execute('123', 'evolution_stale_001', input, day, now),
+          /CHANGED/,
+        );
+    }
+    assert.deepEqual((await store.discoveries('123')).gibber, {
+      form: 4,
+      awakened: true,
+      perfect: true,
+    });
+    await roles.execute(
+      '123',
+      'evolution_reset_001',
+      {
+        operation: 'reset',
+        day,
+        version: (await store.read('123')).version,
+        beastId: 'evolution_beast_001',
+      },
+      day,
+      now,
+    );
+    assert.equal((await store.individual('123', 'evolution_beast_001'))!.attempt.form, 1);
+    assert.equal((await store.individual('123', 'evolution_beast_002'))!.attempt.form, 1);
+    assert.deepEqual((await store.discoveries('123')).gibber, {
+      form: 4,
+      awakened: true,
+      perfect: true,
+    });
+    assert.deepEqual(await store.discoveries('another-owner'), {});
+  } finally {
+    await mf.dispose();
+  }
+});
+
 async function perfectCompanion(db: Database, store: D1BeastStore, speciesId: string, id: string) {
   const capacity = BEAST_TRAINING[beastSpecies(speciesId).rank].capacity;
   const snapshot = await store.read('123');
@@ -48,7 +144,9 @@ async function perfectCompanion(db: Database, store: D1BeastStore, speciesId: st
     }),
   );
   await db
-    .prepare("UPDATE beast_attempts SET earned=?,status='completed' WHERE owner='123' AND id=?")
+    .prepare(
+      "UPDATE beast_attempts SET earned=?,form=4,status='completed' WHERE owner='123' AND id=?",
+    )
     .bind(capacity, 'a_' + id)
     .run();
   await db

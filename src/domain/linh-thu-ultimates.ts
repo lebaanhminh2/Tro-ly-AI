@@ -159,7 +159,7 @@ export function applyBeastUltimate(saved: BeastUltimate, event: UltimateEvent): 
       : state.kind === 'sleep_bounty'
         ? 'sleep'
         : state.kind === 'dream_bounty'
-          ? 'combined'
+          ? 'habit'
           : null;
   if (bounty && event.kind === bounty && event.qualified && state.count < p.target!) {
     if (++state.count === p.target) {

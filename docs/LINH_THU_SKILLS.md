@@ -33,6 +33,8 @@ Không nhân giảm toàn bộ thiên phú theo độ thuần trong bản này. 
 
 ### Bốn dạng tiến hóa
 
+**Cập nhật 21/10/2026:** tăng T bằng nút tiến hóa sau khi đủ điểm thực; tạp chất không góp vào mốc. Sức mạnh dùng dạng đã tiến hóa thực tế, không dùng dạng suy ra từ tổng điểm. Mốc 95%/100% yêu cầu đã lên T4 và đã luyện đầy. Giao diện so sánh xác suất trước/sau mỗi lần tiến hóa; ngoại hình chưa khám phá được giữ bí mật. Xem [luật tiến hóa](LINH_THU_SPEC.md#tiến-hóa-chủ-động-và-khám-phá-ngoại-hình--duyệt-21102026).
+
 Các số ở mục từng loài là sức mạnh đầy đủ tại T4. Trước đó giữ nguyên lượng thưởng nguyên, tăng dần **xác suất kích hoạt**:
 
 | Dạng | Thiên phú thứ nhất | Thiên phú thứ hai của SSR/UR |

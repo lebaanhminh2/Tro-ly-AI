@@ -128,18 +128,18 @@ test(
       await browser.wait("!!document.querySelector('.beast-empty')");
       await browser.reducedMotion();
       await browser.click('Đến Triệu hồi');
-      await browser.click('Đổi vé');
+      await browser.tap('.beast-summon-exchange');
       await browser.evaluate(
         "const amount=document.querySelector('#sheet input');amount.value='2';amount.dispatchEvent(new Event('input',{bubbles:true}))",
       );
       await browser.click('Xác nhận đổi');
       await browser.wait(
-        "!document.querySelector('#sheet').open&&document.querySelector('.beast-wallet strong')?.textContent==='2 vé triệu hồi'",
+        "!document.querySelector('#sheet').open&&document.querySelector('.beast-wallet strong')?.getAttribute('aria-label')==='2 vé triệu hồi'",
       );
       assert.equal((await healthy.read('123')).state.tickets, 0);
       for (let index = 0; index < 2; index++) {
         if (index) control.loseNextSummon = true;
-        await browser.click('Triệu hồi ×1 · 1 vé');
+        await browser.tap('.beast-summon-actions .secondary');
         if (index) {
           await committedSummon.promise;
           assert.equal(
@@ -188,7 +188,13 @@ test(
       await browser.click('Chọn linh thú');
       await browser.evaluate("document.querySelector('.beast-picker-item').click()");
       await browser.click('Xác nhận');
-      await browser.wait("document.body.textContent.includes('Ngày kế tiếp')");
+      await browser.wait(
+        `document.querySelector('.beast-hero')?.dataset.beastId===${JSON.stringify(owned[0].id)}&&document.querySelector('.beast-role-label')?.textContent==='Bắt đầu luyện từ ngày mai'`,
+      );
+      assert.equal(
+        (await beasts.roles('123', day)).current.some((role) => role.role === 'training'),
+        false,
+      );
       assert.equal(
         (await beasts.roles('123', day)).pending.find((role) => role.role === 'training').beastId,
         owned[0].id,
@@ -221,9 +227,9 @@ test(
       );
       await browser.click('Vào tháp');
       await browser.wait(
-        "[...document.querySelectorAll('button')].some(b=>b.textContent==='Bắt đầu leo tháp'&&!b.disabled)",
+        "[...document.querySelectorAll('button')].some(b=>b.textContent==='Bắt đầu · Miễn phí'&&!b.disabled)",
       );
-      await browser.click('Bắt đầu leo tháp');
+      await browser.click('Bắt đầu · Miễn phí');
       for (let floor = 1; floor <= 3; floor++) {
         await browser.wait(
           `document.querySelectorAll('.beast-tower-card').length===${floor === 3 ? 3 : 4}`,
@@ -233,16 +239,17 @@ test(
         await browser.evaluate(`document.querySelectorAll('.beast-tower-card')[${safe}].click()`);
         const reward = floor === 1 ? '2 vé thường' : floor === 2 ? '3 vé thường' : '1 vé triệu hồi';
         await browser.wait(
-          `[...document.querySelectorAll('button')].some(b=>b.textContent==='Dừng · Nhận ${reward}')`,
+          `!!document.querySelector('.beast-tower-claim')&&document.querySelector('.tower-purse-value').textContent==='${reward}'`,
         );
         if (floor < 3) {
-          const next = floor === 1 ? '3 vé thường' : '1 vé triệu hồi';
-          await browser.click('Đi tiếp · ' + next);
-          await browser.click('Xác nhận');
+          await browser.tap('.beast-tower-continue');
+          await browser.wait(
+            `document.querySelector('.tower-floor-label').textContent==='Tầng ${floor + 1} / 4'&&!document.querySelector('.tower-board.has-selection')`,
+          );
         }
       }
-      await browser.click('Dừng · Nhận 1 vé triệu hồi');
-      await browser.wait("document.body.textContent.includes('Quà đã vào ví')");
+      await browser.tap('.beast-tower-claim');
+      await browser.wait("!!document.querySelector('.tower-receipt')");
       assert.equal((await beasts.read('123')).state.summonTickets, 1);
       assert.equal((await beasts.tower('123', day + 1)).state.status, 'claimed');
       await screenshot('live-tower-390.png');
@@ -252,7 +259,18 @@ test(
       await browser.click('Đổi linh thú luyện');
       await browser.evaluate("document.querySelectorAll('.beast-picker-item')[1].click()");
       await browser.click('Xác nhận');
-      await browser.wait("document.body.textContent.includes('Ngày kế tiếp')");
+      await browser.wait(
+        `document.querySelector('.beast-hero')?.dataset.beastId===${JSON.stringify(owned[1].id)}&&document.querySelector('.beast-hero')?.dataset.pending==='true'`,
+      );
+      assert.equal(
+        (await beasts.roles('123', day + 1)).current.find((role) => role.role === 'training')
+          .beastId,
+        owned[0].id,
+      );
+      assert.equal(
+        await browser.evaluate("!!document.querySelector('.beast-role-previous')"),
+        true,
+      );
       control.at += DAY;
       await habits.settle('123', control.at, 30);
       await new BeastSettlementService(beasts, () => 0).settle('123', control.at, 14);
@@ -321,7 +339,7 @@ test(
       );
       await db
         .prepare(
-          "UPDATE beast_attempts SET status='completed',earned=1200 WHERE owner='123' AND id='live_perfect_attempt'",
+          "UPDATE beast_attempts SET status='completed',earned=1200,form=4 WHERE owner='123' AND id='live_perfect_attempt'",
         )
         .run();
       await browser.navigate(server.url, 390);
@@ -332,7 +350,18 @@ test(
       await browser.click('Chọn linh thú');
       await browser.evaluate("document.querySelector('.beast-picker-item').click()");
       await browser.click('Xác nhận');
-      await browser.wait("document.body.textContent.includes('Ngày kế tiếp')");
+      await browser.wait(
+        "document.querySelector('.beast-hero')?.dataset.beastId==='live_perfect_frost'&&document.querySelector('.beast-role-label')?.textContent==='Hỗ trợ từ ngày mai'",
+      );
+      await browser.click('Xem tuyệt kỹ hoàn mỹ');
+      assert.equal(
+        await browser.evaluate(
+          "[...document.querySelectorAll('#sheet button')].some(button=>button.textContent==='Kích hoạt tuyệt kỹ tuần này')",
+        ),
+        false,
+        'Pending companion cannot activate an ultimate early',
+      );
+      await browser.press('Escape');
       assert.equal(
         (await beasts.roles('123', day + 2)).pending.find((role) => role.role === 'companion')
           .beastId,

@@ -29,7 +29,7 @@ for(const scenario of ['phase-boundary','sleep-race']){
      bind:(...values)=>wrap(statement.bind(...values)),all:()=>statement.all(),
      first:async<T>()=>{
       const result=await statement.first<T>();
-      if(scenario==='sleep-race'&&claimed&&!raced&&sql==='SELECT reported_at FROM sleep_reports WHERE owner=?'){
+      if(scenario==='sleep-race'&&claimed&&!raced&&(sql==='SELECT reported_at FROM sleep_reports WHERE owner=?'||sql.includes('FROM (SELECT ? AS owner) o'))){
        raced=true;await schedule.reportSleep('123',current);
       }
       return result;

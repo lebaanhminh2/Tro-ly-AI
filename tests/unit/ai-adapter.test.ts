@@ -6,8 +6,30 @@ import {Gemini} from '../../src/ai/gemini.ts';
 import {modelStep,toolResponse} from '../../src/ai/contracts.ts';
 import {validateTool} from '../../src/ai/policy.ts';
 
+test('native usage metrics are optional, numeric and do not change request or model parts',async()=>{
+ const content={role:'model',parts:[{thoughtSignature:'keep-signature',text:'Same reply'}]};
+ const usageCases:[unknown,Record<string,number>][]=[
+  [undefined,{}], [null,{}], ['private-metadata',{}], [[],{}],
+  [{promptTokenCount:120,candidatesTokenCount:30,thoughtsTokenCount:10,cachedContentTokenCount:0,totalTokenCount:160,privateField:'private-metadata'},
+   {promptTokens:120,outputTokens:30,thinkingTokens:10,cachedTokens:0,totalTokens:160}],
+  [{promptTokenCount:'120',candidatesTokenCount:-1,thoughtsTokenCount:0.5,cachedContentTokenCount:1000000001,totalTokenCount:null},{}],
+ ];
+ const requests:unknown[]=[];
+ for(const [usage,expected] of usageCases){
+  const client=new Gemini({apiKey:'fake',model:'test-model',transport:async(_url,init)=>{
+   requests.push(JSON.parse(String(init?.body)));
+   return Response.json({candidates:[{finishReason:'STOP',content}],usageMetadata:usage});
+  }});
+  const result=await client.generateTools([{role:'user',parts:[{text:'Same input'}]}]);
+  assert.deepEqual(result.metrics.tokens,expected);
+  assert.deepEqual(result.output.content,content);
+  assert.equal(result.output.text,'Same reply');
+ }
+ for(const request of requests)assert.deepEqual(request,requests[0]);
+});
+
 test('native adapter bounds failures and never logs or follows credentials on redirect',async()=>{
- for(const status of [302,401,429,503]){
+ for(const status of [302,400,401,403,404,408,429,500,503]){
   let calls=0;
   const client=new Gemini({apiKey:'private-test',model:'test-model',transport:async(_url,init)=>{
    calls++;assert.equal(init?.redirect,'manual');return new Response('private-test',{status,headers:{location:'https://not-called.invalid'}});
@@ -19,6 +41,46 @@ test('native adapter bounds failures and never logs or follows credentials on re
   init?.signal?.addEventListener('abort',()=>reject(Error('private-test')),{once:true});
  })});
  await assert.rejects(timed.generateTools([{role:'user',parts:[{text:'hi'}]}]),{message:'PROVIDER_TIMEOUT'});
+});
+
+test('native adapter distinguishes invalid output from transport failure without exposing provider details',async()=>{
+ const user={role:'user' as const,parts:[{text:'hi'}]};
+ const cases:[()=>Response,string][]=[
+  [()=>new Response('private-test: invalid JSON'),'PROVIDER_INVALID_RESPONSE'],
+  [()=>Response.json({candidates:[]}), 'PROVIDER_INVALID_RESPONSE'],
+  [()=>Response.json({candidates:[{finishReason:'MAX_TOKENS',content:{role:'model',parts:[{text:'unfinished'}]}}]}),'PROVIDER_INVALID_RESPONSE'],
+  [()=>Response.json({candidates:[{finishReason:'STOP',content:{role:'model',parts:[{functionCall:{name:'run_sql',args:{sql:'private-test'}}}]}}]}),'PROVIDER_INVALID_RESPONSE'],
+  [()=>new Response('x'.repeat(200001)), 'PROVIDER_RESPONSE_TOO_LARGE'],
+  [()=>{throw Error('private-test: network details');},'PROVIDER_TRANSPORT_ERROR'],
+ ];
+ for(const [respond,code] of cases){
+  let calls=0;
+  const client=new Gemini({apiKey:'private-test',model:'test-model',transport:async()=>{calls++;return respond();}});
+  await assert.rejects(client.generateTools([user]),{message:code});
+  assert.equal(calls,1,'Failures never trigger a hidden model retry');
+ }
+});
+
+test('native adapter accepts a 9.25s response within budget and rejects a result arriving after abort',async t=>{
+ t.mock.timers.enable({apis:['setTimeout']});
+ let complete!:(response:Response)=>void;
+ let signal:AbortSignal|undefined;
+ const client=new Gemini({apiKey:'private-test',model:'test-model',timeoutMs:20000,transport:async(_url,options)=>{
+  signal=options?.signal??undefined;
+  // Deliberately ignore abort, as a non-compliant transport might do.
+  return new Promise<Response>(resolve=>{complete=resolve;});
+ }});
+ const response=()=>Response.json({candidates:[{finishReason:'STOP',content:{role:'model',parts:[{text:'hello'}]}}]});
+ const first=client.generateTools([{role:'user',parts:[{text:'hi'}]}]);
+ t.mock.timers.tick(9250);
+ assert.equal(signal?.aborted,false);
+ complete(response());
+ assert.equal((await first).output.text,'hello');
+ const late=client.generateTools([{role:'user',parts:[{text:'hi again'}]}]);
+ t.mock.timers.tick(20000);
+ assert.equal(signal?.aborted,true);
+ complete(response());
+ await assert.rejects(late,{message:'PROVIDER_TIMEOUT'});
 });
 
 test('native function calling preserves signature and call ID across tool response without JSON-output mode',async()=>{

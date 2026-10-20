@@ -134,6 +134,8 @@ export async function miniAppApi(request: Request, env: Env, now = Date.now()): 
       BEAST_CHOICE_CLOSED: 'Phần thưởng này đã được chọn hoặc không còn tồn tại.',
       BEAST_SUMMON_CHOICE_PENDING: 'Chọn ứng viên của lần triệu hồi trước để tiếp tục nhé.',
       BEAST_TRAINING_LOCKED: 'Lượt luyện này đã khóa. Cần Tịnh Linh Đan để luyện lại.',
+      BEAST_EVOLUTION_NOT_READY:
+        'Chưa đủ điểm thực để tiến hóa, hoặc lượt luyện đã khóa. Kiểm tra lại tiến độ nhé.',
       BEAST_NO_ELIXIR: 'Cậu chưa có Tịnh Linh Đan.',
       BEAST_RESET_NOT_AVAILABLE: 'Chỉ luyện lại khi lượt cũ đã khóa hoặc đã hoàn tất.',
       TOWER_ALREADY_PLAYED: 'Cậu đã bắt đầu lượt tháp hôm nay. Tiếp tục lượt đã lưu nhé.',

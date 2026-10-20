@@ -20,14 +20,36 @@
           </div>
         </div>
         <div class="header-actions">
-          <button class="text-button" id="logout" hidden>Đăng xuất</button
+          <button class="text-button" id="logout" aria-label="Đăng xuất" title="Đăng xuất" hidden>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M9 5H5v14h4M14 8l4 4-4 4M9 12h9" /></svg
+            ><span>Đăng xuất</span></button
           ><button class="icon-button" id="settings" aria-label="Cài đặt">⚙</button>
         </div>
       </header>
       <main id="content" tabindex="-1"></main>
       <nav class="bottom-nav" aria-label="Điều hướng chính">
         <button data-tab="today" aria-current="page">
-          <span aria-hidden="true">◷</span>Hôm nay
+          <span aria-hidden="true" class="nav-svg"
+            ><svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="8.5" />
+              <path d="M12 7v5h4" /></svg></span
+          ><span class="nav-label">Hôm nay</span>
         </button>
         <button data-tab="habits">
           <span aria-hidden="true" class="nav-svg"
@@ -41,9 +63,21 @@
             >
               <rect x="4" y="4" width="16" height="16" rx="5" />
               <path d="m8 12 3 3 5-6" /></svg></span
-          >Thói quen
+          ><span class="nav-label">Thói quen</span>
         </button>
-        <button data-tab="reminders"><span aria-hidden="true">♧</span>Lời nhắc</button>
+        <button data-tab="reminders">
+          <span aria-hidden="true" class="nav-svg"
+            ><svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4" /></svg></span
+          ><span class="nav-label">Lời nhắc</span>
+        </button>
         <button data-tab="beasts">
           <span aria-hidden="true" class="nav-svg"
             ><svg
@@ -61,9 +95,23 @@
               <path
                 d="M12 11c-2.5 0-3 2.5-5 4.5-2 2-.5 5 2 5 1.5 0 2-1 3-1s1.5 1 3 1c2.5 0 4-3 2-5-2-2-2.5-4.5-5-4.5Z"
               /></svg></span
-          >Linh thú
+          ><span class="nav-label">Linh thú</span>
         </button>
-        <button data-tab="achievements"><span aria-hidden="true">✦</span>Thành tích</button>
+        <button data-tab="achievements">
+          <span aria-hidden="true" class="nav-svg"
+            ><svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path
+                d="m12 3 2.6 5.6 6.2.9-4.5 4.4 1 6.1-5.3-2.9-5.3 2.9 1-6.1-4.5-4.4 6.2-.9Z"
+              /></svg></span
+          ><span class="nav-label">Thành tích</span>
+        </button>
       </nav>
     </div>
     <dialog id="sheet" aria-labelledby="sheet-title">

@@ -285,7 +285,7 @@ export function renderRewardCalendar(ui, state, now) {
 export function renderAchievements(ui, state) {
   const { el, button, heading, card } = ui,
     root = el('section', undefined, 'achievements-page');
-  const top = heading('Tích lũy từng ngày.', 'Không cần hoàn hảo. Chỉ cần tiếp tục.');
+  const top = heading('Thành tích', 'Không cần hoàn hảo. Chỉ cần tiếp tục.');
   const sleepTime = Number.isFinite(state.day?.target_sleep)
     ? new Date(state.day.target_sleep).toLocaleTimeString('vi-VN', {
         timeZone: 'Asia/Ho_Chi_Minh',

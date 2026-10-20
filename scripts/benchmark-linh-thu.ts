@@ -202,7 +202,7 @@ for (const [job, pendingSleep] of [
     );
     raw
       .prepare(
-        "UPDATE beast_attempts SET earned=capacity,status='completed' WHERE id='active_attempt'",
+        "UPDATE beast_attempts SET earned=capacity,form=4,status='completed' WHERE id='active_attempt'",
       )
       .run();
     raw

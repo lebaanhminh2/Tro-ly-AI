@@ -9,6 +9,57 @@ import type {Database} from '../../src/adapters/d1/database.ts';
 import {ScheduleStore} from '../../src/adapters/d1/schedule-store.ts';
 import {breakthrough} from '../../src/domain/healthy.ts';
 
+test('rest snapshots use one read, preserve precedence and immediately reflect sleep, undo and wake',async()=>{
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
+  const now=Date.parse('2026-10-21T20:00:00+07:00'),schedule=new ScheduleStore(db),healthy=new HealthyStore(db);
+  const day=(await schedule.configure('123','04:30','22:30',0,now))!;
+  let reads=0;
+  const reader=new ScheduleStore({prepare:sql=>{reads++;return db.prepare(sql);},batch:statements=>db.batch(statements)});
+  const status=async(owner='123',time=now)=>{reads=0;const value=await reader.restStatus(owner,time);assert.equal(reads,1,'Rest checks must fit one D1 round trip');return value;};
+  assert.deepEqual(await status(),{reason:'active',until:null});
+  assert.deepEqual(await status('999'),{reason:'active',until:null});
+  const report=await schedule.reportSleep('123',now,'snapshot-sleep');
+  assert.deepEqual(await status(),{reason:'asleep',until:day.end_at,reportedAt:now});
+  await db.prepare("INSERT INTO reminder_preferences(owner,quiet_start,quiet_end,pause_until) VALUES('123',0,0,?)").bind(now+60000).run();
+  assert.deepEqual(await status(),{reason:'paused',until:now+60000});
+  await healthy.mutate('123','snapshot-suspend','fixture',{},now,s=>({state:{...s,suspended:true},result:{}}));
+  assert.deepEqual(await status(),{reason:'inactive',until:null});
+  assert.deepEqual(await status('999'),{reason:'active',until:null});
+  await healthy.mutate('123','snapshot-resume','fixture',{},now,s=>({state:{...s,suspended:false},result:{}}));
+  assert.equal((await status()).reason,'paused');
+  await db.prepare("UPDATE reminder_preferences SET pause_until=0 WHERE owner='123'").run();
+  assert.equal((await status()).reason,'asleep');
+  await schedule.undoSleep('123',now+1000,'snapshot-undo',report.generation!);
+  assert.equal((await status('123',now+1000)).reason,'active');
+  await schedule.reportSleep('123',now+2000,'snapshot-sleep-again');
+  assert.equal((await status('123',Date.parse('2026-10-22T00:30:00+07:00'))).reason,'asleep');
+  assert.equal((await status('123',day.end_at)).reason,'active');
+  assert.equal((await status('123',Date.parse('2026-10-22T22:35:00+07:00'))).reason,'bedtime');
+ }finally{await mf.dispose();}
+});
+
+test('chat settles an older unassessed day even when the current day already exists',async()=>{
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
+  const now=Date.parse('2026-10-20T12:00:00+07:00'),schedule=new ScheduleStore(db),healthy=new HealthyStore(db);
+  const previous=(await schedule.configure('123','04:30','22:30',0,now))!;
+  await healthy.mutate('123','settlement-seed','fixture',{},now,s=>({state:{...s,qi:100},result:{}}));
+  const current=(await schedule.ensureDay('123',now+86400000))!;
+  await schedule.chatActivity('123',now+86400000,'first-chat');
+  assert.equal((await healthy.read('123')).state.qi,80);
+  assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM sleep_assessments WHERE day=?').bind(previous.day).first<{n:number}>())!.n,1);
+  assert.equal((await schedule.ensureDay('123',now+86400000))!.last_chat_at,now+86400000);
+  await schedule.chatActivity('123',now+86401000,'second-chat');
+  assert.equal((await healthy.read('123')).state.qi,80);
+  assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM sleep_assessments WHERE day=?').bind(current.day).first<{n:number}>())!.n,0);
+ }finally{await mf.dispose();}
+});
+
 test('sleep undo reverses its assessment only, preserves later rewards and allows repeated corrections with immutable retries',async()=>{
  const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
  try{

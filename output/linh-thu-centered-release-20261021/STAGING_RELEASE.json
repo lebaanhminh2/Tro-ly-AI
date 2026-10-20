@@ -1,0 +1,110 @@
+{
+  "at": "2026-10-20T21:53:47.161Z",
+  "url": "https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev/app/",
+  "worker": "personal-assistant-staging",
+  "version": "ba25782a-32e5-40fe-b596-6a60ea2a1ffc",
+  "trafficPercent": 100,
+  "deployedAtUtc": "2026-10-20T21:51:57.526392Z",
+  "previousVersion": "24ea1aa5-abb3-4019-b298-c7dbb1c4c731",
+  "authorization": "User approved all necessary code changes, staging deployment and pushing all current source code to GitHub.",
+  "changes": [
+    "Centered portrait, identity above and two actions below in training and companion tabs",
+    "Training prioritizes stage progress and manual evolution before current abilities",
+    "Soft near-portrait qi gathering, compression, 100 ms hold and release synced to the new form",
+    "Minimum viewport height for evolution on desktop",
+    "Release the complete current workspace application source, including previous approved evolution, summon, tower, role and chat changes"
+  ],
+  "checks": {
+    "backendTests": {
+      "passed": 353,
+      "failed": 0,
+      "skipped": 0
+    },
+    "experimentTests": {
+      "passed": 25,
+      "failed": 0,
+      "skipped": 0
+    },
+    "browserTests": {
+      "passed": 83,
+      "failed": 0,
+      "skipped": 0
+    },
+    "typecheck": true,
+    "typecheckWeb": true,
+    "checkWebModules": 43,
+    "lint": true,
+    "format": true,
+    "assetGate": {
+      "normal": 72,
+      "awakened": 18,
+      "perfect": 18
+    },
+    "stagingDryRun": true,
+    "webAssets": {
+      "total": 409,
+      "matched": 409
+    },
+    "unauthenticatedGuards": [
+      {
+        "path": "/api/bootstrap",
+        "status": 401
+      },
+      {
+        "path": "/api/linh-thu",
+        "status": 401
+      },
+      {
+        "path": "/api/linh-thu/collection",
+        "status": 401
+      },
+      {
+        "path": "/api/linh-thu/tower",
+        "status": 401
+      },
+      {
+        "path": "/telegram",
+        "status": 405
+      }
+    ],
+    "stagingBrowser": [
+      {
+        "width": 390,
+        "title": "Minh Anh · Trợ lý của cậu",
+        "loginVisible": true,
+        "overflow": false,
+        "errors": []
+      },
+      {
+        "width": 1440,
+        "title": "Minh Anh · Trợ lý của cậu",
+        "loginVisible": true,
+        "overflow": false,
+        "errors": []
+      }
+    ],
+    "layoutWidths": [
+      320,
+      390,
+      1440
+    ],
+    "pendingDarkText200Percent": true,
+    "runtimeSnapshotUnchanged": 542
+  },
+  "database": {
+    "migration": "0042_linh_thu_evolution.sql",
+    "applied": true,
+    "pendingMigrations": 0,
+    "privateBackup": true,
+    "offlineRehearsal": {
+      "integrity": "ok",
+      "foreignKeyViolations": 0,
+      "legacyTables": 111,
+      "legacyDataUnchanged": true
+    }
+  },
+  "limitations": [
+    "Layout screenshots use local fixtures; no authenticated account mutation or physical phone test was performed."
+  ],
+  "privateEvidence": ".wrangler/linh-thu-centered-release-20261021/"
+}

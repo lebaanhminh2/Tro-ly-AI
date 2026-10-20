@@ -10,6 +10,7 @@ import {
   sealBeast,
   trainBeast,
   trainingView,
+  evolveBeast,
 } from '../../src/domain/linh-thu-training.ts';
 import {
   beastTowerPublic,
@@ -25,15 +26,29 @@ test('approved rank journeys distinguish entering T4 from completing it', () => 
   for (const rank of ['R', 'SR', 'SSR', 'UR'] as const) {
     const rule = BEAST_TRAINING[rank];
     for (const [i, threshold] of rule.thresholds.entries()) {
-      const before = { ...newBeastAttempt(species[rank]), earned: threshold - 1 };
+      const before = {
+        ...newBeastAttempt(species[rank]),
+        form: (i + 1) as 1 | 2 | 3,
+        status: 'training' as const,
+        earned: threshold - 1,
+      };
       assert.equal(trainingView(before).form, i + 1);
-      assert.equal(trainingView({ ...before, earned: threshold }).form, i + 2);
+      assert.equal(trainingView({ ...before, earned: threshold }).form, i + 1);
+      assert.equal(trainingView(evolveBeast({ ...before, earned: threshold })).form, i + 2);
     }
-    const t4 = trainingView({ ...newBeastAttempt(species[rank]), earned: rule.thresholds[2] });
+    const t4 = trainingView({
+      ...newBeastAttempt(species[rank]),
+      form: 4,
+      earned: rule.thresholds[2],
+    });
     assert.equal(t4.form, 4);
     assert.equal(t4.perfect, false);
     assert.equal(t4.awakened, false);
-    const finished = trainingView({ ...newBeastAttempt(species[rank]), earned: rule.capacity });
+    const finished = trainingView({
+      ...newBeastAttempt(species[rank]),
+      form: 4,
+      earned: rule.capacity,
+    });
     assert.equal(finished.perfect, true);
   }
 });
@@ -43,6 +58,7 @@ test('final day allocates remaining capacity by habit fraction and never rounds 
     for (let completed = 0; completed <= 4; completed++) {
       const attempt = {
         ...newBeastAttempt('frostnip'),
+        form: 4 as const,
         status: 'training' as const,
         earned: 1200 - remaining,
       };
@@ -71,6 +87,7 @@ test('gray persists, neutral adds nothing, switching seals exact settled state a
     status: 'training' as const,
     earned: 720,
     gray: 120,
+    form: 3 as const,
   };
   const settled = trainBeast(start, ['achieved', 'achieved', 'achieved', 'missed']).attempt;
   assert.deepEqual({ earned: settled.earned, gray: settled.gray }, { earned: 732, gray: 124 });
@@ -79,7 +96,7 @@ test('gray persists, neutral adds nothing, switching seals exact settled state a
   const sealed = sealBeast(rest);
   assert.equal(sealed.status, 'sealed');
   assert.equal(sealed.earned, 732);
-  assert.equal(trainingView(sealed).form, 4);
+  assert.equal(trainingView(sealed).form, 3);
   assert.throws(() => trainBeast(sealed, ['achieved']), /NOT_TRAINING/);
   const reset = resetBeastWithElixir(sealed, { days: 24, failures: 1, inventory: 1 });
   assert.deepEqual(reset.attempt, newBeastAttempt('frostnip'));
@@ -94,6 +111,7 @@ test('gray persists, neutral adds nothing, switching seals exact settled state a
     status: 'training',
     earned: 720,
     gray: 120,
+    form: 3,
   });
 });
 

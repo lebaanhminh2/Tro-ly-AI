@@ -222,15 +222,17 @@ export class ScheduleStore {
     return { day, window };
   }
   async ensureDay(owner: string, now: number): Promise<DayRow | null> {
-    const settings = await this.settings(owner);
+    const [settings, existing] = await Promise.all([
+      this.settings(owner),
+      query(
+        this.db,
+        'SELECT * FROM schedule_days WHERE owner=? AND start_at<=? AND end_at>? ORDER BY start_at DESC LIMIT 1',
+        owner,
+        now,
+        now,
+      ).first<DayRow>(),
+    ]);
     if (!settings || settings.sleep_minutes === null) return null;
-    const existing = await query(
-      this.db,
-      'SELECT * FROM schedule_days WHERE owner=? AND start_at<=? AND end_at>? ORDER BY start_at DESC LIMIT 1',
-      owner,
-      now,
-      now,
-    ).first<DayRow>();
     if (existing) return existing;
     const previous = await query(
       this.db,
@@ -271,10 +273,9 @@ export class ScheduleStore {
   }
   async chatActivity(owner: string, now: number, requestId: string) {
     await this.settleClosedDays(owner, now);
-    const day = await this.ensureDay(owner, now);
-    if (!day) return null;
     const healthy = new HealthyStore(this.db);
-    const current = await healthy.read(owner);
+    const [day, current] = await Promise.all([this.ensureDay(owner, now), healthy.read(owner)]);
+    if (!day) return null;
     if (current.state.suspended)
       await healthy.mutate(
         owner,
@@ -752,25 +753,38 @@ export class ScheduleStore {
     );
   }
   async restStatus(owner: string, now: number) {
-    if ((await new HealthyStore(this.db).read(owner)).state.suspended)
+    // One read gives a consistent snapshot and avoids four D1 round trips on
+    // every chat. Do not cache it: /ngu and undo must affect the next request.
+    const state = await query(
+      this.db,
+      `SELECT a.state_json,p.pause_until,s.start_minutes,s.sleep_minutes,r.reported_at
+       FROM (SELECT ? AS owner) o
+       LEFT JOIN cultivation_accounts a ON a.owner=o.owner
+       LEFT JOIN reminder_preferences p ON p.owner=o.owner
+       LEFT JOIN schedule_settings s ON s.owner=o.owner
+       LEFT JOIN sleep_reports r ON r.owner=o.owner`,
+      owner,
+    ).first<{
+      state_json: string | null;
+      pause_until: number | null;
+      start_minutes: number | null;
+      sleep_minutes: number | null;
+      reported_at: number | null;
+    }>();
+    if (state?.state_json && JSON.parse(state.state_json).suspended)
       return { reason: 'inactive', until: null };
-    const pause = await query(
-      this.db,
-      'SELECT pause_until FROM reminder_preferences WHERE owner=?',
-      owner,
-    ).first<{ pause_until: number }>();
-    if ((pause?.pause_until ?? 0) > now) return { reason: 'paused', until: pause!.pause_until };
-    const settings = await this.settings(owner);
-    const start = settings?.start_minutes ?? 270;
-    const window = dayWindow(operatingDay(now, start), start, settings?.sleep_minutes ?? 1350);
+    if ((state?.pause_until ?? 0) > now) return { reason: 'paused', until: state!.pause_until };
+    const start = state?.start_minutes ?? 270;
+    const window = dayWindow(operatingDay(now, start), start, state?.sleep_minutes ?? 1350);
     // Sleep starts when reported; the current wake setting ends it next day.
-    const sleep = await query(
-      this.db,
-      'SELECT reported_at FROM sleep_reports WHERE owner=?',
-      owner,
-    ).first<{ reported_at: number }>();
-    if (sleep && sleep.reported_at >= window.start && sleep.reported_at <= now)
-      return { reason: 'asleep', until: window.end, reportedAt: sleep.reported_at };
+    const reportedAt = state?.reported_at;
+    if (
+      reportedAt !== null &&
+      reportedAt !== undefined &&
+      reportedAt >= window.start &&
+      reportedAt <= now
+    )
+      return { reason: 'asleep', until: window.end, reportedAt };
     if (now < window.target) return { reason: 'active', until: null };
     return { reason: 'bedtime', until: window.end };
   }
@@ -886,7 +900,16 @@ export class ScheduleStore {
       throw Error('INVALID_SLEEP_SETTLEMENT_LIMIT');
     let changed = false;
     const healthy = new HealthyStore(this.db);
-    if (await this.taskPlanSchema())
+    const [modern, latest, settings] = await Promise.all([
+      this.taskPlanSchema(),
+      query(
+        this.db,
+        'SELECT * FROM schedule_days WHERE owner=? ORDER BY start_at DESC LIMIT 1',
+        owner,
+      ).first<DayRow>(),
+      this.settings(owner),
+    ]);
+    if (modern)
       await query(
         this.db,
         "UPDATE schedule_days SET task_plan_status='closed' WHERE owner=? AND end_at<=? AND task_plan_status!='closed'",
@@ -895,12 +918,7 @@ export class ScheduleStore {
       ).run();
     // At most three absent days are settled. No unbounded catch-up or retroactive
     // penalties before setup. A recorded active day can reset the absence count.
-    let row = await query(
-      this.db,
-      'SELECT * FROM schedule_days WHERE owner=? ORDER BY start_at DESC LIMIT 1',
-      owner,
-    ).first<DayRow>();
-    const settings = await this.settings(owner);
+    let row = latest;
     if (!row || !settings || settings.sleep_minutes === null) return changed;
     for (let n = 0; n < limit; n++) {
       const account = await healthy.read(owner);
@@ -924,6 +942,9 @@ export class ScheduleStore {
         changed = true;
         if ((await healthy.read(owner)).state.suspended) return changed;
       }
+      // Nothing changed the day in this path. The usual same-day chat does not
+      // need to read the identical latest row again.
+      if (!pending && row.end_at > now) return changed;
       row = (await query(
         this.db,
         'SELECT * FROM schedule_days WHERE owner=? ORDER BY start_at DESC LIMIT 1',

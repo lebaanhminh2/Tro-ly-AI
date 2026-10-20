@@ -27,13 +27,15 @@ export const BEAST_TRAINING: Readonly<
 
 export type BeastAttempt = TrainingPoints & {
   speciesId: string;
+  /** Absent only on legacy snapshots; new attempts always persist their attained form. */
+  form?: BeastForm;
   ruleVersion: 1;
   status: 'ready' | 'training' | 'sealed' | 'completed';
 };
 
 export function newBeastAttempt(speciesId: string): BeastAttempt {
   beastSpecies(speciesId);
-  return { speciesId, ruleVersion: 1, status: 'ready', earned: 0, gray: 0 };
+  return { speciesId, form: 1, ruleVersion: 1, status: 'ready', earned: 0, gray: 0 };
 }
 
 export function trainingView(attempt: BeastAttempt) {
@@ -41,15 +43,39 @@ export function trainingView(attempt: BeastAttempt) {
   const rule = BEAST_TRAINING[species.rank];
   const purity = beastPurity(attempt, rule.capacity);
   const occupied = attempt.earned + attempt.gray;
-  const form = (1 +
-    rule.thresholds.filter((threshold) => occupied >= threshold).length) as BeastForm;
+  const form =
+    attempt.form ??
+    ((1 + rule.thresholds.filter((threshold) => occupied >= threshold).length) as BeastForm);
+  if (![1, 2, 3, 4].includes(form)) throw Error('INVALID_BEAST_FORM');
+  const start = form === 1 ? 0 : rule.thresholds[form - 2]!;
+  const end = form === 4 ? rule.capacity : rule.thresholds[form - 1]!;
+  const attainable = rule.capacity - attempt.gray;
   return {
     ...purity,
+    awakened: form === 4 && purity.awakened,
+    perfect: form === 4 && purity.perfect,
     form,
+    canEvolve:
+      form < 4 &&
+      attempt.earned >= end &&
+      (attempt.status === 'training' || attempt.status === 'completed'),
+    blocked: form < 4 && attainable < end,
+    stageStart: start,
+    stageEnd: end,
+    stageCapacity: end - start,
+    stageEarned: Math.max(0, Math.min(end, attempt.earned) - start),
+    stageGray: Math.max(0, end - Math.max(start, attainable)),
     capacity: rule.capacity,
     occupied,
     remaining: rule.capacity - occupied,
   };
+}
+
+/** One deliberate evolution at a time; points and excess progress are never spent. */
+export function evolveBeast(attempt: BeastAttempt): BeastAttempt {
+  const view = trainingView(attempt);
+  if (!view.canEvolve) throw Error('BEAST_EVOLUTION_NOT_READY');
+  return { ...attempt, form: (view.form + 1) as BeastForm };
 }
 
 export function trainBeast(attempt: BeastAttempt, outcomes: readonly HabitTrainingStatus[]) {

@@ -5,7 +5,60 @@ import {Miniflare} from 'miniflare';
 import {D1WorkStore} from '../../src/adapters/d1/work-store.ts';
 import {boardCommand} from '../../src/application/progress-renderer.ts';
 import {unlockAchievements} from '../../src/adapters/d1/progress-store.ts';
-import type {Database} from '../../src/adapters/d1/database.ts';
+import type {Database,Statement} from '../../src/adapters/d1/database.ts';
+import {buildContext} from '../../src/application/context-builder.ts';
+import type {WorkReader} from '../../src/ports/work-store.ts';
+
+test('conversation progress keeps exactly the previous facts with three read-only queries at scale',async()=>{
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+f,'utf8').replace(/\r?\n/g,' '));
+  const now=Date.parse('2026-10-21T23:59:59+07:00'),seed:Statement[]=[];
+  for(let i=0;i<250;i++){
+   const id='completed-'+String(i).padStart(3,'0'),at=now-Math.floor(i/2)*86400000;
+   seed.push(db.prepare("INSERT INTO tasks(id,owner,title,status,created,archived_at,deleted_at) VALUES(?,'123',?,'completed',?,?,?)").bind(id,'Completed '+i,at,i%5===0?at:null,i%7===0?at:null));
+   seed.push(db.prepare("INSERT INTO task_completions(owner,task_id,completed_at,deadline,precision) VALUES('123',?,?,?,?)").bind(id,at,i%2?'2026-10-21':null,i%2?'date':null));
+   seed.push(db.prepare("INSERT INTO task_progress(id,owner,task_id,content,created,source_update) VALUES(?,'123',?,?,?,?)").bind('progress-'+id,id,'Small step '+i,at,i+1));
+  }
+  for(let i=0;i<25;i++)seed.push(db.prepare("INSERT INTO achievements(owner,code,unlocked_at,notified) VALUES('123',?,?,?)").bind('a'+String(i).padStart(2,'0'),now-i,i%2));
+  seed.push(db.prepare("INSERT INTO tasks(id,owner,title,status,created) VALUES('foreign','999','private-title','completed',0)"));
+  seed.push(db.prepare("INSERT INTO task_completions(owner,task_id,completed_at) VALUES('999','foreign',?)").bind(now+1));
+  seed.push(db.prepare("INSERT INTO task_progress(id,owner,task_id,content,created,source_update) VALUES('foreign-progress','999','foreign','private-note',?,999)").bind(now+1));
+  seed.push(db.prepare("INSERT INTO achievements(owner,code,unlocked_at) VALUES('999','private-achievement',?)").bind(now+1));
+  for(let i=0;i<seed.length;i+=100)await db.batch(seed.slice(i,i+100));
+  const sqls:string[]=[];
+  const wrap=(statement:Statement,sql:string):Statement=>({
+   bind:(...args)=>wrap(statement.bind(...args),sql),
+   first:async<T>()=>{sqls.push(sql);return statement.first<T>();},
+   all:async<T>()=>{sqls.push(sql);return statement.all<T>();},
+   run:async()=>{throw Error('Progress context must not write');},
+  });
+  const observed:Database={prepare:sql=>wrap(db.prepare(sql),sql),batch:async()=>{throw Error('Progress context must not write');}};
+  const store=new D1WorkStore(observed);
+  const full=await store.progress('123',now);
+  assert.equal(sqls.length,6);
+  sqls.length=0;
+  const compact=await store.conversationProgress('123');
+  assert.equal(sqls.length,3);
+  assert.ok(sqls.every(sql=>sql.startsWith('SELECT ')&&!/WITH |COUNT\(|SUM\(|ROW_NUMBER|calendar/i.test(sql)));
+  assert.deepEqual(compact,{completions:full.completions.slice(0,3),milestones:full.milestones.slice(0,3),achievements:full.achievements});
+  assert.equal(compact.achievements.length,20);
+  assert.doesNotMatch(JSON.stringify(compact),/private-/);
+  assert.deepEqual(await store.conversationProgress('empty'),{completions:[],milestones:[],achievements:[]});
+  // Exercise the real builder through both interfaces: history trimming and all
+  // other fields must remain byte-for-byte identical, including action context.
+  const reader=new D1WorkStore(db);
+  const legacy=Object.create(reader) as WorkReader;
+  legacy.conversationProgress=undefined;
+  for(const includeSummaryRequest of [false,true]){
+   const before=await buildContext(legacy,'123','Mai thì sao?',now,{includeSummaryRequest});
+   const after=await buildContext(reader,'123','Mai thì sao?',now,{includeSummaryRequest});
+   assert.deepEqual(after,before);
+  }
+  assert.ok((await reader.progress('123',now)).summary,'Full progress still has chart and streak statistics');
+ }finally{await mf.dispose();}
+});
 test('board selection is non-destructive, confirmed deletion is scoped and preserves achievements',async()=>{
  const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
  try{

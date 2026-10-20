@@ -1,5 +1,24 @@
 import { button, el, icon } from './dom.js';
 export function createSheets({ sheet, sheetContent, render }) {
+  let opener;
+  function syncVisibleViewport() {
+    const viewport = window.visualViewport;
+    if (!sheet.open || !viewport || Math.abs(viewport.scale - 1) > 0.01) return;
+    const covered = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
+    sheet.style.setProperty('--sheet-visible-height', viewport.height + 'px');
+    sheet.style.setProperty('--sheet-covered-bottom', covered > 80 ? covered + 'px' : '0px');
+    const input = document.activeElement;
+    if (sheet.contains(input) && input.matches('input, textarea, select'))
+      requestAnimationFrame(() => {
+        if (!sheet.open || document.activeElement !== input) return;
+        const rect = input.getBoundingClientRect();
+        if (
+          rect.bottom > viewport.offsetTop + viewport.height - 12 ||
+          rect.top < viewport.offsetTop
+        )
+          input.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      });
+  }
   function lockPageScroll() {
     document.documentElement.classList.add('sheet-open');
     document.body.classList.add('sheet-open');
@@ -24,6 +43,7 @@ export function createSheets({ sheet, sheetContent, render }) {
   }
   function openSheet(title) {
     resetSheetLayout();
+    if (!sheet.open) opener = document.activeElement;
     sheetContent.replaceChildren();
     const row = el('div', undefined, 'sheet-title-row'),
       h = el('h2', title);
@@ -45,6 +65,7 @@ export function createSheets({ sheet, sheetContent, render }) {
       sheet.showModal();
     }
     h.focus({ preventScroll: true });
+    syncVisibleViewport();
   }
   function confirm(title, description, action) {
     openSheet(title);
@@ -64,6 +85,8 @@ export function createSheets({ sheet, sheetContent, render }) {
     sheetContent.append(actions);
   }
   function installSheetEvents() {
+    globalThis.visualViewport?.addEventListener('resize', syncVisibleViewport);
+    globalThis.visualViewport?.addEventListener('scroll', syncVisibleViewport);
     sheet.addEventListener('click', (event) => {
       const target = event.target?.closest?.('[data-sheet-close]');
       if (target) {
@@ -86,7 +109,25 @@ export function createSheets({ sheet, sheetContent, render }) {
       if (sheet.open) return;
       resetSheetLayout();
       unlockPageScroll();
+      sheet.style?.removeProperty('--sheet-visible-height');
+      sheet.style?.removeProperty('--sheet-covered-bottom');
       render();
+      // Rendering may have replaced the card that originally opened this sheet.
+      const target = opener?.isConnected
+        ? opener
+        : opener
+          ? [
+              .../** @type {NodeListOf<HTMLButtonElement>} */ (
+                document.querySelectorAll('#content button')
+              ),
+            ].find((node) =>
+              opener?.dataset?.beastId
+                ? node.dataset.beastId === opener.dataset.beastId
+                : node.className === opener?.className && node.textContent === opener?.textContent,
+            )
+          : null;
+      if (target && !target.disabled) target.focus({ preventScroll: true });
+      opener = null;
     });
     // Keep the live reward hint short; rest/sleep rules are shown elsewhere in the app.
     const rewardHintCleaner = new MutationObserver(() => {

@@ -6,6 +6,205 @@ import { serve, chrome, browserBin, clone } from './app-harness.mjs';
 import { beastFixture } from './linh-thu-fixture.mjs';
 
 test(
+  'role tabs retain decoded images, navigation focus and scroll during refresh and rapid switching',
+  { skip: !browserBin, timeout: 60000 },
+  async () => {
+    const control = beastFixture(),
+      server = await serve(control);
+    let browser, held;
+    try {
+      browser = await chrome();
+      await browser.navigate(server.url, 390);
+      await browser.wait("!!document.querySelector('.focus-flip-card')");
+      await browser.evaluate("document.querySelector('[data-tab=beasts]').click()");
+      await browser.wait("!!document.querySelector('.beast-hero img')");
+      const before = await browser.evaluate(`(() => {
+        window.roleImage = document.querySelector('.beast-hero > img');
+        window.roleHero = document.querySelector('.beast-hero');
+        window.roleTabs = document.querySelector('.beast-tabs');
+        scrollTo({top:80,behavior:'instant'});
+        return {scroll:scrollY,top:window.roleHero.getBoundingClientRect().top};
+      })()`);
+      await browser.evaluate(
+        "document.querySelectorAll('.beast-tab')[1].focus({preventScroll:true});document.querySelectorAll('.beast-tab')[1].click()",
+      );
+      assert.deepEqual(
+        await browser.evaluate(`({
+        scroll:scrollY,top:document.querySelector('.beast-hero').getBoundingClientRect().top,
+        sameImage:window.roleImage===document.querySelector('.beast-hero > img'),
+        sameHero:window.roleHero===document.querySelector('.beast-hero'),
+        sameTabs:window.roleTabs===document.querySelector('.beast-tabs'),
+        focused:document.activeElement===document.querySelectorAll('.beast-tab')[1]
+      })`),
+        { ...before, sameImage: true, sameHero: true, sameTabs: true, focused: true },
+      );
+      held = holdRead(control, 'linh-thu');
+      await browser.evaluate("window.dispatchEvent(new Event('focus'))");
+      await held.started;
+      assert.equal(
+        await browser.evaluate("document.querySelector('.beast-hero').getBoundingClientRect().top"),
+        before.top,
+      );
+      held.release();
+      await finishRead(browser, 'linh-thu', 1);
+      assert.equal(
+        await browser.evaluate("window.roleImage===document.querySelector('.beast-hero > img')"),
+        true,
+      );
+      assert.equal(
+        await browser.evaluate("document.querySelector('.beast-hero').getBoundingClientRect().top"),
+        before.top,
+      );
+      await browser.evaluate("scrollTo({top:0,behavior:'instant'})");
+      const positions = await browser.evaluate(`(() => {
+        const tops=[];
+        for(const index of [0,1,3,2,0]) {
+          document.querySelectorAll('.beast-tab')[index].click();
+          tops.push(document.querySelector('.beast-tabs').getBoundingClientRect().top);
+        }
+        return tops;
+      })()`);
+      assert.equal(
+        new Set(positions).size,
+        1,
+        'All four panels share the same navigation geometry',
+      );
+      const other = {
+        ...clone(control.beastData.selected[0]),
+        id: 'other_companion',
+        attemptId: 'other_attempt',
+        speciesId: 'pyropup',
+        attempt: { speciesId: 'pyropup', ruleVersion: 1, status: 'training', earned: 0, gray: 0 },
+      };
+      control.beastData.selected.push(other);
+      Object.assign(
+        control.beastData.roles.current.find((role) => role.role === 'companion'),
+        { beastId: other.id, attemptId: other.attemptId },
+      );
+      await browser.networkConditions(false, 120, 30000);
+      await browser.evaluate("window.dispatchEvent(new Event('focus'))");
+      await finishRead(browser, 'linh-thu', 2);
+      await browser.wait("document.querySelector('.beast-updating')?.textContent===''");
+      await browser.evaluate(
+        "for(const i of [1,0,1,0,1]) document.querySelectorAll('.beast-tab')[i].click()",
+      );
+      assert.deepEqual(
+        await browser.evaluate(
+          "({name:document.querySelector('.beast-hero img').alt,ready:document.querySelector('.beast-hero img').complete && document.querySelector('.beast-hero img').naturalWidth>0})",
+        ),
+        { name: 'Pyropup', ready: true },
+      );
+      await browser.evaluate(`document.querySelectorAll('.beast-tab')[3].click();
+        window.summonButton=document.querySelector('.beast-summon-actions .primary');
+        window.summonButton.focus();window.dispatchEvent(new Event('focus'))`);
+      assert.equal(
+        await browser.evaluate(
+          "window.summonButton===document.querySelector('.beast-summon-actions .primary') && document.activeElement===window.summonButton",
+        ),
+        true,
+        'Starting a background refresh cannot replace a button under the finger',
+      );
+      await browser.wait("document.querySelector('.beast-updating')?.textContent===''");
+      assert.equal(
+        await browser.evaluate(
+          "window.summonButton===document.querySelector('.beast-summon-actions .primary') && document.activeElement===window.summonButton",
+        ),
+        true,
+        'Finishing an unchanged refresh preserves the button and focus',
+      );
+      assert.equal(control.posts.length, 0);
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      held?.release();
+      await browser?.close();
+      await server.close();
+    }
+  },
+);
+
+test(
+  'species collection conceals unknown beasts, finds the highest owned form across pages and opens only that species',
+  { skip: !browserBin, timeout: 60000 },
+  async () => {
+    const control = beastFixture(),
+      original = control.beastApi;
+    const first = clone(control.beastData.selected[0]);
+    Object.assign(first.attempt, { earned: 0, gray: 0 });
+    const highest = {
+      ...clone(control.beastData.selected[0]),
+      id: 'highest_frost',
+      attemptId: 'highest_attempt',
+    };
+    const other = {
+      ...clone(first),
+      id: 'other_pyro',
+      speciesId: 'pyropup',
+      attemptId: 'pyro_attempt',
+      attempt: { ...first.attempt, speciesId: 'pyropup' },
+    };
+    control.beastData.speciesCounts = { frostnip: 2, pyropup: 1 };
+    const pages = [[first], [other], [highest]];
+    control.beastApi = (request, endpoint) => {
+      if (endpoint === 'linh-thu/collection') {
+        const index = Number(
+          new URL(request.url, 'http://localhost').searchParams.get('cursor') ?? 0,
+        );
+        return { body: { beasts: pages[index], nextCursor: index < 2 ? String(index + 1) : null } };
+      }
+      return original(request, endpoint);
+    };
+    const server = await serve(control);
+    let browser;
+    try {
+      browser = await chrome();
+      await browser.navigate(server.url, 390);
+      await browser.wait("!!document.querySelector('.focus-flip-card')");
+      await browser.evaluate("document.querySelector('[data-tab=beasts]').click()");
+      await browser.wait("!!document.querySelector('.beast-hero')");
+      await browser.click('Bộ sưu tập');
+      await browser.wait(
+        "document.querySelector('[data-species=frostnip] img')?.alt==='Frostique'",
+      );
+      assert.deepEqual(
+        await browser.evaluate(`({
+        slots:document.querySelectorAll('.beast-atlas-entry').length,
+        individuals:document.querySelectorAll('.beast-collection-card').length,
+        unknown:document.querySelectorAll('.beast-atlas-entry.is-unowned .beast-paw').length,
+        leaked:[...document.querySelectorAll('.beast-atlas-entry.is-unowned')].some(e=>e.querySelector('img')||e.dataset.species||e.dataset.rank||!e.disabled),
+        count:document.querySelector('[data-species=frostnip] small').textContent
+      })`),
+        { slots: 18, individuals: 0, unknown: 16, leaked: false, count: 'SSR · 2 cá thể' },
+      );
+      await browser.evaluate(
+        "scrollTo({top:120,behavior:'instant'});document.querySelector('[data-species=frostnip]').click()",
+      );
+      await browser.wait("document.querySelectorAll('.beast-collection-card').length===2");
+      assert.deepEqual(
+        await browser.evaluate(
+          "[...document.querySelectorAll('.beast-collection-card img')].map(e=>e.alt)",
+        ),
+        ['Frostnip', 'Frostique'],
+      );
+      assert.equal(await browser.evaluate("document.querySelector('#sheet').open"), false);
+      await browser.evaluate(
+        "const card=document.querySelectorAll('.beast-collection-card')[1];card.focus();card.click()",
+      );
+      await browser.wait("document.querySelector('#sheet').open");
+      await browser.press('Escape');
+      await browser.wait("!document.querySelector('#sheet').open");
+      assert.equal(await browser.evaluate('document.activeElement.dataset.beastId'), highest.id);
+      await browser.click('‹ Bộ sưu tập');
+      assert.equal(await browser.evaluate('scrollY'), 120);
+      assert.equal(control.posts.length, 0);
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      await browser?.close();
+      await server.close();
+    }
+  },
+);
+
+test(
   'alchemy stays compact, explains guarantee, locks pending writes, and pages the reset picker',
   { skip: !browserBin, timeout: 60000 },
   async () => {
@@ -152,12 +351,12 @@ test(
       await browser.evaluate("document.querySelector('[data-tab=habits]').click()");
       await browser.wait("!!document.querySelector('.beast-tower-entry')");
       await browser.click('Vào tháp');
-      await browser.wait("!!document.querySelector('.beast-tower-requirements')");
+      await browser.wait("!!document.querySelector('.tower-conditions')");
       assert.deepEqual(
         await browser.evaluate(
-          "[...document.querySelectorAll('.beast-tower-requirements li')].map(node=>node.dataset.met)",
+          "[...document.querySelectorAll('.tower-conditions p')].map(node=>node.textContent)",
         ),
-        ['true', 'false'],
+        ['○ Hoàn thành 1 công việc hợp lệ hôm nay'],
       );
       assert.equal(
         await browser.evaluate("document.querySelector('#sheet .primary').disabled"),
@@ -169,13 +368,10 @@ test(
       await browser.wait(
         "[...document.querySelectorAll('#sheet button')].some(button=>button.textContent==='Thử lại')",
       );
-      assert.equal(
-        await browser.evaluate("!!document.querySelector('.beast-tower-requirements')"),
-        false,
-      );
+      assert.equal(await browser.evaluate("!!document.querySelector('.tower-conditions')"), false);
       control.failedReads.clear();
       await browser.click('Thử lại');
-      await browser.wait("!!document.querySelector('.beast-tower-requirements')");
+      await browser.wait("!!document.querySelector('.tower-conditions')");
       assert.deepEqual(browser.errors, []);
     } finally {
       await browser?.close();
@@ -255,26 +451,31 @@ test(
       );
       assert.equal(
         await browser.evaluate(
-          "document.querySelectorAll('.beast-evolution-card img[data-art-variant=perfect]').length",
+          "document.querySelectorAll('.beast-hero img[data-art-variant=perfect]').length",
         ),
         1,
       );
-      await browser.click('Bốn hình dạng & kỹ năng');
+      await browser.click('Chi tiết linh thú');
       await browser.wait(
         "document.querySelector('.beast-detail-image')?.dataset.artVariant==='perfect'",
       );
-      await browser.click('T3 · Frostique');
+      await browser.evaluate(
+        'document.querySelector(\'#sheet-content .beast-journey [data-form="3"]\').click()',
+      );
       assert.equal(
         await browser.evaluate("document.querySelector('.beast-detail-image').dataset.artVariant"),
         'normal',
       );
-      await browser.click('T4 · Frostluna');
+      await browser.evaluate(
+        'document.querySelector(\'#sheet-content .beast-journey [data-form="4"]\').click()',
+      );
       assert.equal(
         await browser.evaluate("document.querySelector('.beast-detail-image').dataset.artVariant"),
         'perfect',
       );
       await browser.press('Escape');
       await browser.click('Bộ sưu tập');
+      await browser.evaluate("document.querySelector('[data-species=frostnip]').click()");
       await browser.wait("document.querySelectorAll('.beast-collection-card').length===3");
       assert.deepEqual(
         await browser.evaluate(
@@ -299,19 +500,21 @@ test(
       await browser.press('Escape');
       await browser.click('Triệu hồi');
       assert.equal(
+        await browser.evaluate("document.querySelector('.beast-summon-banner img').alt"),
+        'Thẻ triệu hồi chưa mở · Ấn tinh tú',
+      );
+      await browser.tap('.beast-summon-actions .secondary');
+      await browser.wait("!!document.querySelector('.beast-reveal.is-revealed img')");
+      assert.equal(
         await browser.evaluate(
-          "document.querySelector('.beast-summon-banner img').dataset.artVariant",
+          "document.querySelector('.beast-reveal [data-reveal=beast-art]').dataset.artVariant",
         ),
         'normal',
       );
-      await browser.click('Triệu hồi ×1 · 1 vé');
-      await browser.wait("!!document.querySelector('.beast-reveal.is-revealed img')");
       assert.equal(
-        await browser.evaluate("document.querySelector('.beast-reveal img').dataset.artVariant"),
-        'normal',
-      );
-      assert.equal(
-        await browser.evaluate("document.querySelector('.beast-reveal img').alt"),
+        await browser.evaluate(
+          "document.querySelector('.beast-reveal [data-reveal=beast-art]').alt",
+        ),
         'Pyropup',
       );
       assert.deepEqual(browser.errors, []);
@@ -418,6 +621,7 @@ test(
       assert.equal(control.posts[0].input.beastId, second.id);
       assert.equal(control.posts[0].input.role, 'companion');
       await browser.click('Bộ sưu tập');
+      await browser.evaluate("document.querySelector('[data-species=frostnip]').click()");
       await browser.wait("document.querySelectorAll('.beast-collection-card').length===3");
       const cards = await browser.evaluate(
         "[...document.querySelectorAll('.beast-collection-card')].map(b=>b.textContent)",
@@ -507,7 +711,7 @@ test(
         ),
         true,
       );
-      await browser.click('Đổi vé');
+      await browser.tap('.beast-summon-exchange');
       await browser.wait("!!document.querySelector('#sheet[open]')");
       assert.equal(
         await browser.evaluate("document.querySelector('#sheet .primary').disabled"),
@@ -520,15 +724,20 @@ test(
         true,
       );
       await browser.press('Escape');
+      // Let the collection read and queued dialog-close event finish before
+      // changing the server fixture and testing a separate refresh.
+      await browser.wait(
+        "!document.querySelector('.feature-updating')&&!document.body.classList.contains('sheet-open')",
+      );
       control.beastData.wallet.state.tickets = 60;
       // Changing the fixture only becomes visible after the real data reload.
       await browser.evaluate(
         "document.querySelector('[data-tab=today]').click();document.querySelector('[data-tab=beasts]').click()",
       );
       await browser.wait(
-        "document.querySelector('.beast-wallet')?.textContent.includes('60 vé thường')",
+        "document.querySelector('.beast-summon-exchange')?.getAttribute('aria-label').includes('60 vé thường')",
       );
-      await browser.click('Đổi vé');
+      await browser.tap('.beast-summon-exchange');
       for (const [value, disabled] of [
         ['0', true],
         ['1.5', true],
@@ -734,7 +943,13 @@ test(
       await committed.promise;
       await browser.press('Escape');
       await browser.click('Triệu hồi');
-      await browser.click('Tỷ lệ & bảo hiểm');
+      await browser.evaluate(
+        "document.querySelector('.beast-summon-rates').scrollIntoView({block:'center',behavior:'instant'})",
+      );
+      await browser.tap('.beast-summon-rates');
+      await browser.wait(
+        "document.querySelector('#sheet[open] #sheet-title')?.textContent==='Tỷ lệ và bảo hiểm'",
+      );
       reply.resolve();
       await browser.wait("sessionStorage.getItem('minh-anh-beast-pending-v1')===null");
       await browser.wait(
@@ -778,11 +993,11 @@ test(
         await browser.click('Triệu hồi');
       }
       await first.reducedMotion();
-      await first.click('Triệu hồi ×10 · 10 vé');
+      await first.tap('.beast-summon-actions .primary');
       await first.wait("document.querySelectorAll('.beast-result-card').length===10");
-      await second.click('Triệu hồi ×10 · 10 vé');
+      await second.tap('.beast-summon-actions .primary');
       await second.wait(
-        "document.querySelector('.beast-wallet strong')?.textContent==='1 vé triệu hồi'",
+        "document.querySelector('.beast-wallet strong')?.getAttribute('aria-label')==='1 vé triệu hồi'",
       );
       assert.equal(control.beastData.account.state.summonTickets, 1);
       assert.equal(control.receipts.size, 1);
@@ -879,6 +1094,7 @@ test(
   async () => {
     const control = beastFixture(),
       server = await serve(control);
+    Object.assign(control.beastData.selected[0].attempt, { form: 3, gray: 450 });
     let browser;
     try {
       browser = await chrome();
@@ -925,16 +1141,22 @@ test(
         await browser.evaluate("matchMedia('(prefers-reduced-motion: reduce)').matches"),
         true,
       );
-      await browser.click('Triệu hồi ×10 · 10 vé');
+      await browser.tap('.beast-summon-actions .primary');
       await browser.wait("!!document.querySelector('dialog.beast-reveal[open]')");
       assert.equal(control.beastData.account.state.summonTickets, 1);
       assert.equal(control.posts.filter((post) => post.input.operation === 'summon').length, 1);
       await browser.wait("document.querySelectorAll('.beast-result-card').length===10");
-      assert.equal(await browser.evaluate("!!document.querySelector('.beast-reveal-skip')"), false);
+      assert.equal(await browser.evaluate("!!document.querySelector('.beast-reveal-skip')"), true);
+      assert.equal(
+        await browser.evaluate("document.querySelector('.beast-reveal-counter').textContent"),
+        'Linh thú 1 / 10',
+      );
       assert.equal(
         await browser.evaluate("document.querySelector('.beast-reveal').dataset.rank"),
         'UR',
       );
+      await browser.tap('.beast-reveal-skip');
+      await browser.wait("!!document.querySelector('.beast-reveal.is-summary')");
       await browser.click('Tiếp tục hành trình');
       await browser.click('Lò đan · 0/30');
       await browser.wait(
@@ -963,18 +1185,20 @@ test(
       await browser.wait("!!document.querySelector('.beast-tower-entry')");
       await browser.click('Vào tháp');
       await browser.wait(
-        "[...document.querySelectorAll('button')].some(b=>b.textContent==='Bắt đầu leo tháp'&&!b.disabled)",
+        "[...document.querySelectorAll('button')].some(b=>b.textContent==='Bắt đầu · Miễn phí'&&!b.disabled)",
       );
-      await browser.click('Bắt đầu leo tháp');
+      await browser.click('Bắt đầu · Miễn phí');
       await browser.wait("document.querySelectorAll('.beast-tower-card').length===4");
-      await browser.evaluate("document.querySelector('.beast-tower-card').click()");
-      await browser.wait("document.body.textContent.includes('Dừng · Nhận 2 vé thường')");
+      await browser.evaluate("document.querySelectorAll('.beast-tower-card')[1].click()");
+      await browser.wait("!!document.querySelector('.beast-tower-claim')");
       assert.equal(
-        await browser.evaluate("document.body.textContent.includes('Đi tiếp · 3 vé thường')"),
+        await browser.evaluate(
+          "document.querySelector('.beast-tower-continue').textContent.includes('3 vé thường')",
+        ),
         true,
       );
-      await browser.click('Dừng · Nhận 2 vé thường');
-      await browser.wait("document.body.textContent.includes('Quà đã vào ví')");
+      await browser.tap('.beast-tower-claim');
+      await browser.wait("!!document.querySelector('.tower-receipt')");
       assert.deepEqual(
         control.posts.map((post) => post.input.operation),
         ['tower_start', 'tower_pick', 'tower_claim'],
@@ -1010,7 +1234,7 @@ test(
       await browser.evaluate("document.querySelector('[data-tab=beasts]').click()");
       await browser.wait("!!document.querySelector('.beast-hero img')");
       await browser.click('Triệu hồi');
-      await browser.click('Triệu hồi ×1 · 1 vé');
+      await browser.tap('.beast-summon-actions .secondary');
       await browser.wait("!!sessionStorage.getItem('minh-anh-beast-pending-v1')");
       await browser.wait(
         "[...document.querySelectorAll('button')].some(b=>b.textContent==='Kiểm tra kết quả'&&!b.disabled)",
@@ -1037,7 +1261,7 @@ test(
       await browser.press('Escape');
       await browser.evaluate("document.querySelectorAll('.beast-tab')[3].click()");
       await browser.networkConditions(true, 0);
-      await browser.click('Triệu hồi ×1 · 1 vé');
+      await browser.tap('.beast-summon-actions .secondary');
       await browser.wait("!!sessionStorage.getItem('minh-anh-beast-pending-v1')");
       await browser.wait(
         "[...document.querySelectorAll('button')].some(b=>b.textContent==='Kiểm tra kết quả'&&!b.disabled)",

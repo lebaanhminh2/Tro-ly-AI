@@ -10,7 +10,7 @@ import { D1UiStore } from '../adapters/d1/ui-store.ts';
 import { acknowledgeAppointments } from '../adapters/d1/conversation-store.ts';
 import { receiveNudgeReply } from '../adapters/d1/work-nudges.ts';
 import { approveBrowserCode } from '../adapters/d1/browser-auth.ts';
-import { logFailure } from '../adapters/observability.ts';
+import { logChatTiming, logFailure, measureChatPhase } from '../adapters/observability.ts';
 import type { ChatService } from '../application/plan-command.ts';
 import type { Clock } from '../ports/work-store.ts';
 
@@ -64,6 +64,8 @@ export async function handleTelegramWebhook(
     /^\/(start|tasks|today|progress|settings)(?:@[A-Za-z0-9_]+)?$/i.test(input.text ?? '')
   )
     input = { ...input, text: '/kiemtra' };
+  const startedAt = clock.now();
+  let status: 'ok' | 'failed' = 'ok';
   try {
     if (env.ASSETS && /^\/dangnhap(?:@[A-Za-z0-9_]+)?(?:\s|$)/i.test(input.text ?? '')) {
       const code = (input.text ?? '').trim().split(/\s+/)[1] ?? '';
@@ -93,25 +95,35 @@ export async function handleTelegramWebhook(
       return Response.json(message(input.chat, text, []));
     }
     const store = new D1WorkStore(env.DB, cardsEnabled);
-    const isNew = await store.accept(input, clock.now(), env.DELIVERY_MODE === 'outbox');
+    const isNew = await measureChatPhase(
+      'inbox_accept',
+      () => store.accept(input, clock.now(), env.DELIVERY_MODE === 'outbox'),
+      () => clock.now(),
+    );
     if (isNew && env.ASSETS && input.text)
       try {
-        await receiveNudgeReply(
-          env,
-          input.updateId,
-          input.text,
-          clock.now(),
-          transport,
-          input.replyToMessageId,
+        await measureChatPhase(
+          'reminder_reply',
+          () =>
+            receiveNudgeReply(
+              env,
+              input.updateId,
+              input.text!,
+              clock.now(),
+              transport,
+              input.replyToMessageId,
+            ),
+          () => clock.now(),
         );
       } catch {
         /* A reply must not block normal chat. */
       }
     if (isNew && env.ASSETS && input.text)
-      await new ScheduleStore(env.DB).chatActivity(
-        input.owner,
-        clock.now(),
-        String(input.updateId),
+      await measureChatPhase(
+        'schedule_activity',
+        () =>
+          new ScheduleStore(env.DB).chatActivity(input.owner, clock.now(), String(input.updateId)),
+        () => clock.now(),
       );
     if (isNew && env.ASSETS && /^\/kiemtra(?:\s|$|@)/i.test(input.text ?? '')) {
       const appUrl = new URL('/app/', request.url).toString();
@@ -168,18 +180,26 @@ export async function handleTelegramWebhook(
       ).run();
       await flushOutbox(env, transport, clock.now(), () => clock.now(), ackId, 1);
     }
+    logChatTiming('webhook_prepare', clock.now() - startedAt, 'ok');
     await processInbox(store, input.owner, clock, chat, 4);
     // Deliver this update before optional bookkeeping. On the Workers Free CPU
     // budget a later maintenance step may be interrupted, but a committed reply
     // must not remain behind unrelated reminder jobs in the shared outbox.
-    await flushOutbox(
-      env,
-      transport,
-      clock.now(),
-      () => clock.now(),
-      `reply:${input.owner}:${input.updateId}`,
-      1,
-    );
+    const deliveryStarted = clock.now();
+    let deliveryStatus: 'ok' | 'failed' = 'failed';
+    try {
+      await flushOutbox(
+        env,
+        transport,
+        clock.now(),
+        () => clock.now(),
+        `reply:${input.owner}:${input.updateId}`,
+        1,
+      );
+      deliveryStatus = 'ok';
+    } finally {
+      logChatTiming('reply_delivery', clock.now() - deliveryStarted, deliveryStatus);
+    }
     await flushCards();
     if (isNew && env.ASSETS)
       await new HealthyStore(env.DB).syncTaskTickets(input.owner, clock.now());
@@ -189,7 +209,10 @@ export async function handleTelegramWebhook(
       ? Response.json(message(input.chat, result.text, result.buttons))
       : new Response('OK');
   } catch (error) {
+    status = 'failed';
     logFailure('telegram_webhook', error);
     return new Response('Unavailable', { status: 503 });
+  } finally {
+    logChatTiming('webhook_total', clock.now() - startedAt, status);
   }
 }

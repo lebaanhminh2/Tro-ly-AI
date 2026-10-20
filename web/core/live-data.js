@@ -1,5 +1,24 @@
 import { liveRequest, settleRequest } from './http.js';
 import { applyTheme } from './theme.js';
+let viewportApp;
+function connectViewport(app) {
+  if (viewportApp === app) return;
+  viewportApp = app;
+  const sync = (event) => {
+    if (event?.isStateStable === false) return;
+    const root = document.documentElement;
+    if (Number.isFinite(app.viewportStableHeight) && app.viewportStableHeight > 0)
+      root.style.setProperty('--app-viewport-height', app.viewportStableHeight + 'px');
+    for (const edge of ['top', 'right', 'bottom', 'left'])
+      root.style.setProperty(
+        '--app-host-safe-' + edge,
+        Math.max(0, app.safeAreaInset?.[edge] ?? 0, app.contentSafeAreaInset?.[edge] ?? 0) + 'px',
+      );
+  };
+  for (const name of ['viewportChanged', 'safeAreaChanged', 'contentSafeAreaChanged'])
+    app.onEvent?.(name, sync);
+  sync();
+}
 export async function connectLive() {
   if (!globalThis.Telegram?.WebApp && location.hash.includes('tgWebAppData')) {
     await new Promise((resolve, reject) => {
@@ -14,6 +33,7 @@ export async function connectLive() {
   const theme = () => applyTheme();
   theme();
   if (app?.initData) {
+    connectViewport(app);
     app.onEvent?.('themeChanged', theme);
     app.ready();
     app.expand();

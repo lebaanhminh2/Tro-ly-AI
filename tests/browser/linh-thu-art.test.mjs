@@ -8,7 +8,7 @@ import { beastFixture } from './linh-thu-fixture.mjs';
 import { serve, chrome, browserBin, clone } from './app-harness.mjs';
 
 test(
-  'all 108 production images load through paginated collection and form details with correct purity variants',
+  'all 108 production images load through species collection and owned individuals with correct purity variants',
   { skip: !browserBin, timeout: 120000 },
   async () => {
     const control = beastFixture(),
@@ -41,11 +41,13 @@ test(
       Object.assign(role, { beastId: beasts[0].id, attemptId: beasts[0].attemptId }),
     );
     control.beastData.speciesCounts = Object.fromEntries(BEAST_CATALOG.map((s) => [s.id, 3]));
+    const pagesRead = new Set();
     control.beastApi = (request, endpoint) => {
       if (endpoint === 'linh-thu/collection') {
         const start = Number(
           new URL(request.url, 'http://localhost').searchParams.get('cursor') ?? 0,
         );
+        pagesRead.add(start);
         return {
           body: {
             beasts: beasts.slice(start, start + 24),
@@ -65,50 +67,85 @@ test(
       await browser.evaluate("document.querySelector('[data-tab=beasts]').click()");
       await browser.wait("!!document.querySelector('.beast-hero img')");
       await browser.click('Bộ sưu tập');
-      await browser.wait("document.querySelectorAll('.beast-collection-card').length===24");
-      await browser.click('Tải thêm linh thú');
-      await browser.wait("document.querySelectorAll('.beast-collection-card').length===48");
-      await browser.click('Tải thêm linh thú');
-      await browser.wait("document.querySelectorAll('.beast-collection-card').length===54");
-      const cards = await browser.evaluate(`(async () => {
-        const images = [...document.querySelectorAll('.beast-collection-card img')];
+      await browser.wait("document.querySelectorAll('.beast-atlas-entry img').length===18");
+      assert.deepEqual(
+        [...pagesRead].sort((a, b) => a - b),
+        [0, 24, 48],
+      );
+      assert.equal(
+        await browser.evaluate("document.querySelectorAll('.beast-collection-card').length"),
+        0,
+        'The collection opens with one tile per species, not the individual inventory',
+      );
+      const representatives = await browser.evaluate(`(async () => {
+        const images = [...document.querySelectorAll('.beast-atlas-entry img')];
         for (const image of images) image.loading = 'eager';
         await Promise.all(images.map(image => image.decode()));
         return images.map(image => ({ src: image.src, variant: image.dataset.artVariant, kind: image.dataset.artKind, width: image.naturalWidth }));
       })()`);
-      for (let i = 0; i < beasts.length; i++) {
-        const variant = ['normal', 'awakened', 'perfect'][i % 3];
-        const species = BEAST_CATALOG[Math.floor(i / 3)];
-        assert.equal(cards[i].variant, variant);
-        assert.equal(cards[i].kind, 'redesigned');
-        assert.equal(cards[i].width, 128);
-        assert.ok(cards[i].src.endsWith(BEAST_ART[`${species.id}:4:${variant}`].thumb));
-        await browser.evaluate(`document.querySelectorAll('.beast-collection-card')[${i}].click()`);
-        for (const form of variant === 'normal' ? [1, 2, 3, 4] : [4]) {
-          await browser.click(`T${form} · ${species.forms[form - 1]}`);
-          const displayed = await browser.evaluate(`(async () => {
+      const checkedForms = new Set();
+      let checkedThumbnails = 0;
+      for (const [speciesIndex, species] of BEAST_CATALOG.entries()) {
+        const representative = representatives[speciesIndex];
+        assert.equal(representative.variant, 'perfect');
+        assert.equal(representative.kind, 'redesigned');
+        assert.equal(representative.width, 128);
+        assert.ok(representative.src.endsWith(BEAST_ART[`${species.id}:4:perfect`].thumb));
+        await browser.evaluate(`document.querySelector('[data-species="${species.id}"]').click()`);
+        await browser.wait("document.querySelectorAll('.beast-collection-card').length===3");
+        assert.equal(await browser.evaluate("document.querySelector('#sheet').open"), false);
+        const cards = await browser.evaluate(`(async () => {
+          const images = [...document.querySelectorAll('.beast-collection-card img')];
+          for (const image of images) image.loading = 'eager';
+          await Promise.all(images.map(image => image.decode()));
+          return images.map(image => ({ src: image.src, variant: image.dataset.artVariant, kind: image.dataset.artKind, width: image.naturalWidth }));
+        })()`);
+        for (const [index, variant] of ['normal', 'awakened', 'perfect'].entries()) {
+          assert.equal(cards[index].variant, variant);
+          assert.equal(cards[index].kind, 'redesigned');
+          assert.equal(cards[index].width, 128);
+          assert.ok(cards[index].src.endsWith(BEAST_ART[`${species.id}:4:${variant}`].thumb));
+          checkedThumbnails++;
+          await browser.evaluate(
+            `document.querySelectorAll('.beast-collection-card')[${index}].click()`,
+          );
+          for (const form of variant === 'normal' ? [1, 2, 3, 4] : [4]) {
+            await browser.evaluate(
+              `document.querySelector('#sheet-content .beast-journey [data-form="${form}"]').click()`,
+            );
+            const displayed = await browser.evaluate(`(async () => {
             const image = document.querySelector('.beast-detail-image');
             await image.decode();
             return { src: image.src, variant: image.dataset.artVariant, width: image.naturalWidth, kind: image.dataset.artKind };
           })()`);
-          const expected = form === 4 ? variant : 'normal';
-          assert.equal(displayed.variant, expected);
-          assert.equal(displayed.kind, 'redesigned');
-          assert.equal(displayed.width, 512);
-          assert.ok(displayed.src.endsWith(BEAST_ART[`${species.id}:${form}:${expected}`].full));
-          assert.equal(
-            await browser.evaluate('document.documentElement.scrollWidth <= innerWidth'),
-            true,
-          );
+            const expected = form === 4 ? variant : 'normal';
+            assert.equal(displayed.variant, expected);
+            assert.equal(displayed.kind, 'redesigned');
+            assert.equal(displayed.width, 512);
+            const key = `${species.id}:${form}:${expected}`;
+            assert.ok(displayed.src.endsWith(BEAST_ART[key].full));
+            checkedForms.add(key);
+            assert.equal(
+              await browser.evaluate('document.documentElement.scrollWidth <= innerWidth'),
+              true,
+            );
+          }
+          const i = speciesIndex * 3 + index;
+          if (process.env.LINH_THU_CAPTURE === '1' && [0, 2, 9, 11, 17, 35, 53].includes(i)) {
+            await mkdir('trial-results/linh-thu/art-v3', { recursive: true });
+            await browser.screenshot(
+              `trial-results/linh-thu/art-v3/${species.id}-${variant}-390.png`,
+            );
+          }
+          await browser.press('Escape');
+          await browser.wait("!document.querySelector('#sheet').open");
         }
-        if (process.env.LINH_THU_CAPTURE === '1' && [0, 2, 9, 11, 17, 35, 53].includes(i)) {
-          await mkdir('trial-results/linh-thu/art-v3', { recursive: true });
-          await browser.screenshot(
-            `trial-results/linh-thu/art-v3/${species.id}-${variant}-390.png`,
-          );
-        }
-        await browser.press('Escape');
+        await browser.click('‹ Bộ sưu tập');
+        await browser.wait("document.querySelectorAll('.beast-atlas-entry').length===18");
       }
+      assert.equal(checkedThumbnails, 54);
+      assert.equal(checkedForms.size, 108);
+      assert.equal(control.posts.length, 0, 'Reviewing art does not change the account');
       assert.deepEqual(browser.errors, []);
     } finally {
       await browser?.close();

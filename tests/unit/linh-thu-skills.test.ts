@@ -14,6 +14,7 @@ const day = 20745;
 function max(id: string) {
   return {
     ...newBeastAttempt(id),
+    form: 4 as const,
     status: 'completed' as const,
     earned: BEAST_TRAINING[beastSpecies(id).rank].capacity,
   };

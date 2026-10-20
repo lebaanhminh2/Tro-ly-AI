@@ -1,5 +1,7 @@
 # Linh thú — tổng hợp thiết kế và quyết định
 
+**Cập nhật 21/10/2026:** đã triển khai cục bộ cơ chế tiến hóa chủ động, khám phá ngoại hình và thanh tiến độ theo từng T; chưa phát hành thay đổi này. Khi phát hành cần áp dụng migration `0042_linh_thu_evolution.sql` trước runtime mới. Các ghi nhận phát hành ngày 19/10 bên dưới chỉ nói về phiên bản trước.
+
 Cập nhật 19/10/2026. Tài liệu tổng hợp quyết định sản phẩm về luyện linh thú, triệu hồi, tháp và kỹ năng. Runtime đã tích hợp và kiểm thử, đủ18loài/108ảnh; người dùng đã duyệt bản hiện tại và cho phép phát hành staging. Migration 0041 và deploy đã hoàn tất, kiểm tra sau phát hành đạt; xem [hồ sơ phát hành](LINH_THU_RELEASE.md) và [tiến độ](LINH_THU_IMPLEMENTATION.md). Ảnh95%/100% dùng tạm theo yêu cầu, có thể chỉnh riêng sau.
 
 Giữ bộ kỹ năng hiện tại làm **bản ban đầu**, cân chỉnh từng loài sau. Goal cho phép triển khai trong phạm vi tính năng, không cần hỏi lại từng file; xác nhận riêng cho đợt staging hiện tại đã nhận và thực hiện. Các lần phát hành tương lai cần quyền tương ứng.
@@ -109,6 +111,17 @@ Khi triển khai nên lưu điểm luyện ở đơn vị một phần mười �
 | UR | 30 | 70 | 110 | 160 |
 
 Ngày cuối chỉ dùng dung lượng còn lại. Chia thực/xám theo tỷ lệ habit đạt, làm tròn một chữ số; nếu còn habit thiếu thì giữ tối thiểu 0,1 xám để không vô tình mở Hoàn mỹ. Vào T4 chưa có nghĩa đã luyện đầy hoặc mở 95%/100%.
+
+### Tiến hóa chủ động và khám phá ngoại hình — duyệt 21/10/2026
+
+- Dạng thực tế được lưu riêng với điểm. Cá thể mới bắt đầu T1; đủ **điểm thực tích lũy** tại mốc trong bảng trên mới có thể bấm tiến hóa. Mỗi lần bấm tăng một T, không trừ điểm, giữ cả điểm vượt mốc. Chưa bấm thì vẫn ở dạng cũ và vẫn tích điểm từ habit.
+- Tạp chất chiếm dung lượng nhưng không giúp mở T. Nếu `dung lượng − tạp chất < mốc T kế tiếp`, lượt này không thể đạt T đó. Ví dụ R ở T3 có 32 điểm thực và 24 tạp chất: chỉ còn 4 dung lượng, tối đa 36 điểm thực nên không thể lên T4 ở mốc 40.
+- Lượt đã dùng hết dung lượng vẫn được tiến hóa nếu đủ điểm thực; lượt đã khóa do đổi con không được tiến hóa. T4 cần luyện đầy tổng dung lượng rồi mới xét Thức tỉnh từ 95% và Hoàn mỹ chính xác 100%.
+- Dấu ấn nỗ lực hiển thị chặng hiện tại: T1→T2, T2→T3, T3→T4, hoặc T4→luyện đầy. Thanh là đoạn tương ứng của hành trình tổng: điểm thực đi từ trái, tạp chất lấn ngược từ cuối tổng dung lượng. Tạp chất chỉ xuất hiện trên thanh chặng khi đã lấn vào chặng đó; phần Chi tiết luôn hiển thị tổng thực/xám/độ thuần.
+- Hành trình gồm bốn ô. Dạng chưa khám phá dùng dấu chân, không tải ảnh hoặc hiện tên dạng tương lai. Dạng từng đạt bằng cá thể khác cùng loài hiện xám; dạng cá thể này đã đạt hiện màu. Xem thông tin kỹ năng không được tính là khám phá ngoại hình.
+- Khám phá thuộc tài khoản và loài, lấy từ các lượt luyện đã lưu, giữ qua luyện lại. Migration bảo toàn dạng từng đạt theo luật cũ, kể cả khi điểm xám từng góp phần chuyển dạng.
+- Trước khi tiến hóa hiển thị chính xác xác suất hiện tại → xác suất mới và thiên phú sắp mở. Sau khi server xác nhận, hiệu ứng tụ năng lượng → chuyển hình → hiện kết quả kéo dài khoảng 3,8 giây; có Bỏ qua hiệu ứng và tự rút gọn khi người dùng bật giảm chuyển động. Mất kết nối phải kiểm tra cùng biên nhận, không tự thực hiện thêm lần tiến hóa.
+- Cơ chế tăng thiên phú theo T giữ nguyên bảng trong [bộ kỹ năng](LINH_THU_SKILLS.md). Đợt này chưa thay đổi cách nhận thưởng kỹ năng sang kho chờ nhận.
 
 ## 5. Lịch habit, thêm và sửa
 

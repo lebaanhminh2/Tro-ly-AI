@@ -73,6 +73,7 @@ export async function readBeasts(
         'select',
         'cancel',
         'reset',
+        'evolve',
         'ultimate',
         'choose_reward',
         'tower_start',
@@ -127,19 +128,22 @@ export async function readBeasts(
     createdAt: row.created,
     result: JSON.parse(row.result_json),
   }));
-  const [speciesCounts, ultimate, choices, summonChoice, drawChoices] = await Promise.all([
-    store.speciesCounts(owner),
-    store.ultimate(owner, beastCalendarWeek(now)),
-    store.pendingRewards(owner),
-    store.summonChoice(owner),
-    store.pendingDraws(owner),
-  ]);
+  const [speciesCounts, discoveries, ultimate, choices, summonChoice, drawChoices] =
+    await Promise.all([
+      store.speciesCounts(owner),
+      store.discoveries(owner),
+      store.ultimate(owner, beastCalendarWeek(now)),
+      store.pendingRewards(owner),
+      store.summonChoice(owner),
+      store.pendingDraws(owner),
+    ]);
   return json({
     now,
     day: day ? { day: day.day, endAt: day.end_at } : null,
     account,
     wallet,
     speciesCounts,
+    discoveries,
     ultimate,
     choices,
     summonChoice,
@@ -197,6 +201,7 @@ export async function handleBeasts(
       'select',
       'cancel',
       'reset',
+      'evolve',
       'ultimate',
       'choose_reward',
       'tower_start',
@@ -292,7 +297,7 @@ export async function handleBeasts(
                   now,
                   current.end_at,
                 )
-              : ['select', 'cancel', 'reset'].includes(command.operation)
+              : ['select', 'cancel', 'reset', 'evolve'].includes(command.operation)
                 ? await new BeastRoleService(store).execute(
                     owner,
                     id,

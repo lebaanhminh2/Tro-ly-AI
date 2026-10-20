@@ -8,6 +8,7 @@ import { executeTool, type ToolOutcome } from '../../application/tool-executor.t
 import { runToolTurn } from '../../application/conversation-command.ts';
 import type { Change } from '../../domain/work.ts';
 import type { ConversationMutation } from '../../domain/conversation.ts';
+import { measureChatPhase } from '../observability.ts';
 
 export class ConversationStore {
   public requestedView: ToolCall | null = null;
@@ -38,29 +39,39 @@ export class ConversationStore {
     model: (contents: ModelContent[], allowTools: boolean, step: number) => Promise<ModelStep>,
     clock: () => number,
   ) {
-    const saved = await query(
-      this.db,
-      'SELECT tool_context,tool_reply FROM command_inbox WHERE owner=? AND update_id=?',
-      lease.owner,
-      lease.input.updateId,
-    ).first<{ tool_context: string | null; tool_reply: string | null }>();
+    const saved = await measureChatPhase(
+      'journal_lookup',
+      () =>
+        query(
+          this.db,
+          'SELECT tool_context,tool_reply FROM command_inbox WHERE owner=? AND update_id=?',
+          lease.owner,
+          lease.input.updateId,
+        ).first<{ tool_context: string | null; tool_reply: string | null }>(),
+      clock,
+    );
     if (!saved) throw Error('MISSING_COMMAND');
     if (saved.tool_reply !== null) return saved.tool_reply;
     const context = saved.tool_context
       ? (JSON.parse(saved.tool_context) as ModelContent[])
       : initial;
     if (!saved.tool_context)
-      await this.db.batch([
-        this.fence(lease, clock()),
-        query(
-          this.db,
-          'UPDATE command_inbox SET tool_context=? WHERE owner=? AND update_id=? AND tool_context IS NULL',
-          JSON.stringify(initial),
-          lease.owner,
-          lease.input.updateId,
-        ),
-        query(this.db, 'DELETE FROM transaction_guard'),
-      ]);
+      await measureChatPhase(
+        'journal_context',
+        () =>
+          this.db.batch([
+            this.fence(lease, clock()),
+            query(
+              this.db,
+              'UPDATE command_inbox SET tool_context=? WHERE owner=? AND update_id=? AND tool_context IS NULL',
+              JSON.stringify(initial),
+              lease.owner,
+              lease.input.updateId,
+            ),
+            query(this.db, 'DELETE FROM transaction_guard'),
+          ]),
+        clock,
+      );
     const readIndexes = new Map<number, number>();
     let resolvedPending: string | null = null;
     const request = (call: ToolCall) => ({ name: call.name, args: call.args });
@@ -287,7 +298,7 @@ export class ConversationStore {
       query(this.db, 'DELETE FROM transaction_guard'),
     ];
     if (this.defer) this.defer(finish);
-    else await this.db.batch(finish);
+    else await measureChatPhase('journal_reply', () => this.db.batch(finish), clock);
     return reply;
   }
   async commitBatch(
@@ -438,81 +449,122 @@ export class ConversationStore {
       throw Error('INVALID_STEP');
     const requestJson = JSON.stringify(request);
     if (!requestJson || requestJson.length > 100000) throw Error('INVALID_STEP_REQUEST');
-    const prior = await query(
-      this.db,
-      'SELECT state,kind,request_json,result_json FROM tool_steps WHERE owner=? AND update_id=? AND step_key=?',
-      lease.owner,
-      lease.input.updateId,
-      key,
-    ).first<{ state: string; kind: string; request_json: string; result_json: string | null }>();
+    const metrics = { step: Number(key.split(':')[1]) };
+    const prior = await measureChatPhase(
+      'journal_lookup',
+      () =>
+        query(
+          this.db,
+          'SELECT state,kind,request_json,result_json FROM tool_steps WHERE owner=? AND update_id=? AND step_key=?',
+          lease.owner,
+          lease.input.updateId,
+          key,
+        ).first<{
+          state: string;
+          kind: string;
+          request_json: string;
+          result_json: string | null;
+        }>(),
+      clock,
+      metrics,
+    );
     if (prior) {
       if (prior.request_json !== requestJson || prior.kind !== kind)
         throw Error('STEP_INPUT_CHANGED');
       if (prior.state === 'done' && prior.result_json) return JSON.parse(prior.result_json) as T;
       throw Error('STEP_ALREADY_ATTEMPTED');
     }
-    await this.db.batch([
-      this.fence(lease, clock()),
-      query(
-        this.db,
-        "INSERT INTO tool_steps(owner,update_id,step_key,kind,state,request_json,created) VALUES(?,?,?,?,'started',?,?)",
-        lease.owner,
-        lease.input.updateId,
-        key,
-        kind,
-        requestJson,
-        clock(),
-      ),
-      query(this.db, 'DELETE FROM transaction_guard'),
-    ]);
+    await measureChatPhase(
+      'journal_start',
+      () =>
+        this.db.batch([
+          this.fence(lease, clock()),
+          query(
+            this.db,
+            "INSERT INTO tool_steps(owner,update_id,step_key,kind,state,request_json,created) VALUES(?,?,?,?,'started',?,?)",
+            lease.owner,
+            lease.input.updateId,
+            key,
+            kind,
+            requestJson,
+            clock(),
+          ),
+          query(this.db, 'DELETE FROM transaction_guard'),
+        ]),
+      clock,
+      metrics,
+    );
     try {
       const result = await run(),
         json = JSON.stringify(result);
       if (!json || json.length > 100000) throw Error('INVALID_STEP_RESULT');
-      await this.db.batch([
-        this.fence(lease, clock()),
-        query(
-          this.db,
-          "UPDATE tool_steps SET state='done',result_json=? WHERE owner=? AND update_id=? AND step_key=? AND state='started'",
-          json,
-          lease.owner,
-          lease.input.updateId,
-          key,
-        ),
-        query(this.db, 'DELETE FROM transaction_guard'),
-      ]);
+      await measureChatPhase(
+        'journal_finish',
+        () =>
+          this.db.batch([
+            this.fence(lease, clock()),
+            query(
+              this.db,
+              "UPDATE tool_steps SET state='done',result_json=? WHERE owner=? AND update_id=? AND step_key=? AND state='started'",
+              json,
+              lease.owner,
+              lease.input.updateId,
+              key,
+            ),
+            query(this.db, 'DELETE FROM transaction_guard'),
+          ]),
+        clock,
+        metrics,
+      );
       return result;
     } catch (error) {
       // A provider may have processed a timed-out request. Never auto-repeat the model step.
-      await query(
-        this.db,
-        `UPDATE tool_steps SET state='failed' WHERE owner=? AND update_id=? AND step_key=? AND state='started'
+      await measureChatPhase(
+        'journal_failure',
+        () =>
+          query(
+            this.db,
+            `UPDATE tool_steps SET state='failed' WHERE owner=? AND update_id=? AND step_key=? AND state='started'
     AND EXISTS(SELECT 1 FROM owner_leases WHERE owner=? AND token=? AND expires>?)`,
-        lease.owner,
-        lease.input.updateId,
-        key,
-        lease.owner,
-        lease.token,
-        clock(),
-      ).run();
+            lease.owner,
+            lease.input.updateId,
+            key,
+            lease.owner,
+            lease.token,
+            clock(),
+          ).run(),
+        clock,
+        metrics,
+      );
       const code = error instanceof Error ? error.message : '';
-      const safe = [
-        'AI_QUOTA',
-        'AI_TRIAL_ENDED',
-        'PROVIDER_RATE_LIMIT',
-        'PROVIDER_TIMEOUT',
-        'PROVIDER_TRANSPORT_OR_RESPONSE_ERROR',
-      ].includes(code)
-        ? code
-        : 'STEP_UNAVAILABLE';
-      await query(
-        this.db,
-        "UPDATE tool_steps SET result_json=? WHERE owner=? AND update_id=? AND step_key=? AND state='failed'",
-        JSON.stringify({ error: safe }),
-        lease.owner,
-        lease.input.updateId,
-        key,
-      ).run();
+      const safe =
+        [
+          'AI_QUOTA',
+          'AI_TRIAL_ENDED',
+          'AI_DISABLED',
+          'PROVIDER_RATE_LIMIT',
+          'PROVIDER_TIMEOUT',
+          'PROVIDER_TRANSPORT_ERROR',
+          'PROVIDER_INVALID_RESPONSE',
+          'PROVIDER_RESPONSE_TOO_LARGE',
+          'PROVIDER_TRANSPORT_OR_RESPONSE_ERROR',
+        ].includes(code) || /^PROVIDER_HTTP_[345]\d{2}$/.test(code)
+          ? code
+          : 'STEP_UNAVAILABLE';
+      await measureChatPhase(
+        'journal_failure',
+        () =>
+          query(
+            this.db,
+            "UPDATE tool_steps SET result_json=? WHERE owner=? AND update_id=? AND step_key=? AND state='failed'",
+            JSON.stringify({ error: safe }),
+            lease.owner,
+            lease.input.updateId,
+            key,
+          ).run(),
+        clock,
+        metrics,
+      );
       throw Error(safe);
     }
   }

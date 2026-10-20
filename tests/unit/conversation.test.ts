@@ -67,3 +67,33 @@ test('action reply without a mutation cannot report fake success; plain chat can
  const blocked=await runToolTurn([{role:'user',parts:[{text:'hello'}]}],{...ports,mode:'chat',model:async()=>({content:{role:'model' as const,parts:[]},calls:[{name:'create_task' as const,args:{title:'unauthorized',deadline:null}}],text:''})});
  assert.match(blocked,/gửi \//);
 });
+
+test('tool turn explains safe provider failure categories without executing changes or retrying',async()=>{
+ const cases:[string,RegExp][]=[
+  ['PROVIDER_TIMEOUT',/phản hồi quá chậm/],
+  ['PROVIDER_TRANSPORT_ERROR',/chưa kết nối/],
+  ['PROVIDER_INVALID_RESPONSE',/không hợp lệ hoặc chưa đầy đủ/],
+  ['PROVIDER_RESPONSE_TOO_LARGE',/không hợp lệ hoặc chưa đầy đủ/],
+  ['PROVIDER_HTTP_401',/quyền truy cập/],
+  ['PROVIDER_HTTP_403',/quyền truy cập/],
+  ['PROVIDER_HTTP_503',/Google đang tạm gián đoạn/],
+  ['PROVIDER_HTTP_408',/Google đang tạm gián đoạn/],
+  ['PROVIDER_HTTP_302',/chuyển hướng/],
+  ['PROVIDER_HTTP_400',/cấu hình model/],
+  ['PROVIDER_HTTP_404',/cấu hình model/],
+  ['PROVIDER_RATE_LIMIT',/giới hạn lượt gọi/],
+  ['AI_DISABLED',/AI đang tắt/],
+  ['private-provider-details',/Hội thoại đang gián đoạn/],
+ ];
+ for(const [code,expected] of cases){
+  let calls=0;
+  const result=await runToolTurn([{role:'user',parts:[{text:'hi'}]}],{
+   model:async()=>{calls++;throw Error(code);},
+   execute:async()=>{throw Error('must not execute');},
+   commit:async()=>{throw Error('must not commit');},
+  });
+  assert.match(result,expected);
+  assert.doesNotMatch(result,/private-provider-details/);
+  assert.equal(calls,1);
+ }
+});

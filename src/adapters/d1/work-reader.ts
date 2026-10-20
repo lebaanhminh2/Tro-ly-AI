@@ -4,7 +4,12 @@ import type { Proposal, Selection } from '../../domain/work.ts';
 import type { WorkReader } from '../../ports/work-store.ts';
 import { query } from './database.ts';
 import { localEvents } from './event-store.ts';
-import { boardSelection, progressData, workPage } from './progress-store.ts';
+import {
+  boardSelection,
+  conversationProgressData,
+  progressData,
+  workPage,
+} from './progress-store.ts';
 import { ScheduleStore } from './schedule-store.ts';
 import { TaskHierarchyStore } from './task-hierarchy-store.ts';
 import { currentTaskFocus } from './work-nudges.ts';
@@ -27,6 +32,9 @@ export class D1WorkReader extends TaskHierarchyStore implements WorkReader {
   }
   progress(owner: string, now = Date.now()) {
     return progressData(this.db, owner, now);
+  }
+  conversationProgress(owner: string) {
+    return conversationProgressData(this.db, owner);
   }
   workPage(
     owner: string,

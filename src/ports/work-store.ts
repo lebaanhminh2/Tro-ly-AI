@@ -63,6 +63,10 @@ export interface WorkReader {
     now: number,
   ): Promise<{ applied: boolean; delta: number; demoted: boolean }>;
   progress?(owner: string, now?: number): Promise<import('../domain/progress.ts').ProgressData>;
+  conversationProgress?(
+    owner: string,
+    now?: number,
+  ): Promise<import('../domain/progress.ts').ProgressData>;
   workPage?(
     owner: string,
     filter: import('../domain/progress.ts').WorkFilter,

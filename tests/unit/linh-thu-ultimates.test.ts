@@ -15,6 +15,7 @@ const now = Date.parse('2026-10-19T10:00:00+07:00'),
 function activate(speciesId: string, extra = {}) {
   const attempt = {
     ...newBeastAttempt(speciesId),
+    form: 4 as const,
     status: 'completed' as const,
     earned: BEAST_TRAINING[beastSpecies(speciesId).rank].capacity,
   };
@@ -88,7 +89,7 @@ test('habit, sleep and combined bounties count only qualified original events af
   for (const [species, kind] of [
     ['shardsnail', 'habit'],
     ['fluffle', 'sleep'],
-    ['funglet', 'combined'],
+    ['funglet', 'habit'],
   ] as const) {
     let state = activate(species);
     assert.equal(applyBeastUltimate(state, event(kind, { qualified: false })).state.count, 0);

@@ -12,7 +12,7 @@ import { ScheduleStore } from './schedule-store.ts';
 import { sessionStatements } from './session-store.ts';
 import { D1UiStore } from './ui-store.ts';
 import { D1WorkReader } from './work-reader.ts';
-import { logFailure } from '../observability.ts';
+import { logFailure, measureChatPhase } from '../observability.ts';
 // Command coordinator: leases, prepared writes, UI intents and atomic commit.
 export class D1WorkStore extends D1WorkReader implements WorkStore {
   reportFailure(error: unknown) {
@@ -831,6 +831,6 @@ export class D1WorkStore extends D1WorkReader implements WorkStore {
     );
     statements.push(q('DELETE FROM transaction_guard'));
     statements.push(q('DELETE FROM owner_leases WHERE owner=? AND token=?', owner, token));
-    await this.db.batch(statements);
+    await measureChatPhase('command_commit', () => this.db.batch(statements));
   }
 }

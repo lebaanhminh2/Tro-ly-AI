@@ -5,7 +5,7 @@ import { renderReminders } from '../views/reminders.js';
 import { updateTimelineClock } from '../views/timeline.js';
 import { renderToday } from '../views/today.js';
 import { renderHabits } from '../views/habits.js';
-import { renderBeasts } from '../views/linh-thu.js';
+import { renderBeasts, reconcileBeasts } from '../views/linh-thu.js';
 import { settleRequest } from './http.js';
 import { connectLive, refreshLive } from './live-data.js';
 import { applySnapshot } from './state.js';
@@ -59,8 +59,10 @@ export function createLifecycle({
       state.tab === 'habits'
         ? 'habits:' + (state.habitPanel ?? 'today') + ':' + (state.habitFilter ?? 'active')
         : state.tab === 'beasts'
-          ? 'beasts:' + (state.beastPanel ?? 'training')
-          : null;
+          ? ['training', 'companion'].includes(state.beastPanel ?? 'training')
+            ? 'beasts:roles'
+            : 'beasts:' + state.beastPanel + ':' + (state.beastCollectionSpecies ?? '')
+          : state.tab;
     const previousScroll = document.querySelector('.time-scroll');
     if (previousScroll) state.timelineScroll = previousScroll.scrollTop;
     content.removeAttribute('aria-busy');
@@ -70,9 +72,23 @@ export function createLifecycle({
       if (b.dataset.tab === state.tab) b.setAttribute('aria-current', 'page');
       else b.removeAttribute('aria-current');
     }
-    content.replaceChildren();
+    const previousBeasts =
+      state.tab === 'beasts' && state.screenState === 'ready'
+        ? content.querySelector(':scope > .beast-page')
+        : null;
+    if (!previousBeasts) content.replaceChildren();
+    else for (const child of [...content.children]) if (child !== previousBeasts) child.remove();
     const login = state.live && state.screenState === 'login';
     document.body.classList.toggle('login-screen', login);
+    document.body.classList.toggle('live-app', state.live);
+    document.body.classList.toggle(
+      'app-ready',
+      state.screenState === 'ready' && (!state.live || state.loaded),
+    );
+    document.body.classList.toggle(
+      'browser-session',
+      state.live && state.loaded && !globalThis.Telegram?.WebApp?.initData,
+    );
     /** @type {HTMLButtonElement} */ (document.querySelector('button#settings')).disabled =
       state.live && !state.loaded;
     /** @type {HTMLButtonElement} */ (document.querySelector('button#logout')).hidden =
@@ -122,17 +138,17 @@ export function createLifecycle({
       content.setAttribute('aria-busy', 'true');
     } else {
       content.removeAttribute('aria-busy');
-      content.append(
+      const view =
         state.tab === 'today'
           ? renderToday(ui, state)
           : state.tab === 'habits'
             ? renderHabits(ui, state)
             : state.tab === 'beasts'
-              ? renderBeasts(ui, state)
+              ? reconcileBeasts(previousBeasts, renderBeasts(ui, state))
               : state.tab === 'reminders'
                 ? renderReminders(ui, state)
-                : renderAchievements(ui, state),
-      );
+                : renderAchievements(ui, state);
+      if (view.parentNode !== content) content.append(view);
     }
     const now = (state.serverNow ?? Date.now()) + Date.now() - (state.loadedAt ?? Date.now());
     const boundaries = (state.dailyPlan?.plan?.items ?? []).flatMap((item) =>
@@ -263,6 +279,15 @@ export function createLifecycle({
       });
   }
   function installLifecycleEvents() {
+    const navigation = document.querySelector('.bottom-nav');
+    const measureNavigation = () => {
+      document.documentElement.style.setProperty(
+        '--app-nav-height',
+        navigation.getBoundingClientRect().height + 'px',
+      );
+    };
+    new ResizeObserver(measureNavigation).observe(navigation);
+    measureNavigation();
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') refreshOnReturn();
     });

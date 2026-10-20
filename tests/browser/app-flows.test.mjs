@@ -11,6 +11,113 @@ import { createDemo } from '../../web/demo/state.js';
 import { checkinProgress } from '../../web/models/cultivation.js';
 import { assessHabitDay, newHabitPeriod } from '../../src/domain/habits.ts';
 import { browserBin, fixture, serve, chrome, snapshot, clone, now } from './app-harness.mjs';
+import { beastFixture } from './linh-thu-fixture.mjs';
+
+test(
+  'mobile screens and sheets keep Vietnamese text and controls reachable at large text and short heights',
+  { skip: !browserBin, timeout: 90000 },
+  async () => {
+    const control = beastFixture();
+    const longTitle = 'Chuẩn bị nội dung thuyết trình và kiểm tra toàn bộ công việc trong tuần';
+    control.state.tasks[0].title = longTitle;
+    control.state.reminders[0].title = longTitle;
+    const server = await serve(control);
+    let browser;
+    const checkLayout = async (label) => {
+      const issues = await browser.evaluate(`(()=>{
+        const dialog=document.querySelector('#sheet[open]');
+        const root=dialog??document.querySelector('#content');
+        const overflow=root.scrollWidth>root.clientWidth+1||document.documentElement.scrollWidth>innerWidth+1;
+        const clipped=[...root.querySelectorAll('button,.sheet-title-row h2,.beast-hero-copy h2,.beast-atlas-entry strong,.beast-collection-card strong')].filter(e=>{
+          if(!e.getClientRects().length)return false;
+          const s=getComputedStyle(e);
+          return (['hidden','clip'].includes(s.overflowX)&&e.scrollWidth>e.clientWidth+1)||(['hidden','clip'].includes(s.overflowY)&&e.scrollHeight>e.clientHeight+1);
+        }).map(e=>e.textContent);
+        return {overflow,clipped};
+      })()`);
+      assert.deepEqual(issues, { overflow: false, clipped: [] }, label);
+    };
+    try {
+      browser = await chrome();
+      await browser.navigate(server.url, 320);
+      await browser.wait("!!document.querySelector('.focus-flip-card')");
+      for (const [width, height] of [
+        [320, 568],
+        [390, 844],
+        [430, 740],
+        [740, 360],
+      ]) {
+        await browser.resize(width, height);
+        for (const tab of ['today', 'habits', 'reminders', 'beasts', 'achievements']) {
+          await browser.evaluate(`document.querySelector('[data-tab=${tab}]').click()`);
+          if (tab === 'beasts') await browser.wait("!!document.querySelector('.beast-hero')");
+          await browser.scaleText(2);
+          await checkLayout(`${tab} ${width}x${height} text 200%`);
+          await browser.scaleText(1);
+          if (tab === 'beasts') {
+            for (const panel of [1, 2, 3, 0]) {
+              await browser.evaluate(`document.querySelectorAll('.beast-tab')[${panel}].click()`);
+              await browser.scaleText(2);
+              await checkLayout(`beast panel ${panel} ${width}x${height}`);
+              await browser.scaleText(1);
+            }
+          }
+        }
+      }
+      for (const tab of ['habits', 'reminders']) {
+        await browser.resize(320, 568);
+        await browser.evaluate(`document.querySelector('[data-tab=${tab}]').click()`);
+        if (tab === 'habits') {
+          await browser.wait('!!document.querySelector(\'[aria-label="Thêm thói quen"]\')');
+          await browser.evaluate(
+            'document.querySelector(\'[aria-label="Thêm thói quen"]\').click()',
+          );
+        } else await browser.click('+ Tạo lời nhắc');
+        await browser.wait("document.querySelector('#sheet').open");
+        await browser.scaleText(2);
+        await checkLayout(`${tab} editor text 200%`);
+        await browser.scaleText(1);
+        await browser.evaluate(`(() => {
+          Object.defineProperty(visualViewport,'height',{configurable:true,value:280});
+          Object.defineProperty(visualViewport,'offsetTop',{configurable:true,value:0});
+          visualViewport.dispatchEvent(new Event('resize'));
+        })()`);
+        assert.equal(
+          await browser.evaluate(
+            "document.querySelector('#sheet').getBoundingClientRect().bottom<=281",
+          ),
+          true,
+          'An overlay keyboard keeps the sheet inside the visible viewport',
+        );
+        await browser.evaluate(
+          "delete visualViewport.height;delete visualViewport.offsetTop;visualViewport.dispatchEvent(new Event('resize'))",
+        );
+        await browser.resize(320, 320);
+        await browser.evaluate(
+          `(()=>{const input=document.querySelector('#sheet input:not([type=hidden])');input?.focus();input?.scrollIntoView({block:'center'});})()`,
+        );
+        await checkLayout(`${tab} reduced viewport`);
+        await browser.evaluate(
+          `(()=>{const buttons=[...document.querySelectorAll('#sheet button')];buttons.at(-1)?.scrollIntoView({block:'center'});})()`,
+        );
+        assert.equal(
+          await browser.evaluate(
+            `(()=>{const button=[...document.querySelectorAll('#sheet button')].at(-1),r=button.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight+1})()`,
+          ),
+          true,
+          `${tab} last action remains reachable`,
+        );
+        await browser.press('Escape');
+        await browser.wait("!document.querySelector('#sheet').open");
+      }
+      assert.equal(control.posts.length, 0, 'Layout inspection does not modify account data');
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      await browser?.close();
+      await server.close();
+    }
+  },
+);
 
 test(
   'habit completion awards one visible ticket through undo and redo, then x10 keeps mobile controls reachable',
@@ -170,6 +277,124 @@ test(
   },
 );
 test(
+  'mobile frame prioritizes content, shares heading geometry and follows stable Telegram viewport and safe areas',
+  { skip: !browserBin, timeout: 60000 },
+  async () => {
+    const control = beastFixture();
+    const html = await readFile(new URL('../../web/index.html', import.meta.url), 'utf8');
+    const telegram = `<script>
+      globalThis.__telegramEvents=new Map();
+      globalThis.Telegram={WebApp:{initData:'local-mobile-test',colorScheme:'light',
+        viewportStableHeight:730,safeAreaInset:{top:0,bottom:34,left:0,right:0},
+        contentSafeAreaInset:{top:0,bottom:0,left:0,right:0},
+        ready(){},expand(){},onEvent(name,fn){__telegramEvents.set(name,fn)}}};
+    </script>`;
+    control.staticFiles = new Map([
+      [
+        'index.html',
+        Buffer.from(html.replace('<script type="module"', telegram + '<script type="module"')),
+      ],
+    ]);
+    const server = await serve(control);
+    let browser;
+    try {
+      browser = await chrome();
+      await browser.navigate(server.url, 390);
+      await browser.resize(390, 730);
+      await browser.wait('!!document.querySelector(".focus-flip-card")');
+      const expected = {
+        today: 'Hôm nay',
+        habits: 'Thói quen',
+        reminders: 'Lời nhắc',
+        beasts: 'Linh thú',
+        achievements: 'Thành tích',
+      };
+      for (const [tab, title] of Object.entries(expected)) {
+        await browser.tap('[data-tab=' + tab + ']');
+        await browser.wait('!!document.querySelector("#content h1")');
+        const geometry = await browser.evaluate(`(()=>{
+          const heading=document.querySelector('#content h1'),r=heading.getBoundingClientRect();
+          const gear=document.querySelector('#settings'),g=gear.getBoundingClientRect();
+          return {title:heading.textContent,font:getComputedStyle(heading).fontSize,top:r.top,
+            gearTop:g.top,gearReachable:document.elementFromPoint(g.left+g.width/2,g.top+g.height/2)?.closest('button')===gear,
+            strip:getComputedStyle(document.querySelector('.demo-strip')).display,
+            identity:getComputedStyle(document.querySelector('.identity')).display,
+            overflow:document.documentElement.scrollWidth>innerWidth+1};
+        })()`);
+        assert.deepEqual(geometry, {
+          title,
+          font: '28px',
+          top: 24,
+          gearTop: 24,
+          gearReachable: true,
+          strip: 'none',
+          identity: 'none',
+          overflow: false,
+        });
+      }
+      await browser.evaluate('scrollTo({top:180,behavior:"instant"})');
+      await browser.tap('[data-tab=today]');
+      await browser.tap('[data-tab=achievements]');
+      assert.equal(
+        await browser.evaluate('scrollY'),
+        180,
+        'Every primary tab retains its own scroll position',
+      );
+      await browser.evaluate('scrollTo({top:0,behavior:"instant"})');
+      await browser.tap('[data-tab=beasts]');
+      await browser.wait('!!document.querySelector(".beast-hero")');
+      await browser.click('Triệu hồi');
+      await browser.wait('document.querySelector(".beast-summon-banner img")?.naturalWidth>0');
+      await browser.evaluate(
+        `Telegram.WebApp.viewportStableHeight=640;__telegramEvents.get('viewportChanged')({isStateStable:false})`,
+      );
+      assert.equal(
+        await browser.evaluate(
+          'document.documentElement.style.getPropertyValue("--app-viewport-height")',
+        ),
+        '730px',
+      );
+      await browser.resize(390, 640);
+      await browser.evaluate(`__telegramEvents.get('viewportChanged')({isStateStable:true})`);
+      assert.equal(
+        await browser.evaluate(
+          'document.documentElement.style.getPropertyValue("--app-viewport-height")',
+        ),
+        '640px',
+      );
+      await browser.wait('document.documentElement.scrollHeight>innerHeight');
+      await browser.evaluate('scrollTo({top:10000,behavior:"instant"})');
+      const bottom = await browser.evaluate(`(()=>{
+        const nav=document.querySelector('.bottom-nav'),n=nav.getBoundingClientRect();
+        const pool=document.querySelector('.beast-summon-pool-link').getBoundingClientRect();
+        return {scrolled:scrollY>0,clear:pool.bottom<=n.top-12,safe:getComputedStyle(nav).paddingBottom,
+          art:document.querySelector('.beast-summon-banner').getBoundingClientRect().height};
+      })()`);
+      assert.equal(bottom.scrolled, true);
+      assert.equal(bottom.clear, true);
+      assert.equal(bottom.safe, '34px');
+      assert.ok(bottom.art >= 220);
+      await browser.evaluate(
+        `scrollTo(0,0);Telegram.WebApp.contentSafeAreaInset.top=20;__telegramEvents.get('contentSafeAreaChanged')()`,
+      );
+      assert.equal(
+        await browser.evaluate('document.querySelector("#settings").getBoundingClientRect().top'),
+        44,
+      );
+      await browser.tap('#settings');
+      await browser.wait('document.querySelector("#sheet").open');
+      await browser.press('Escape');
+      await browser.wait('!document.querySelector("#sheet").open');
+      assert.equal(control.posts.length, 0);
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      await browser?.close();
+      await server.close();
+    }
+  },
+);
+
+test(
   'all five mobile navigation icons and labels share rows across screen sizes',
   { skip: !browserBin, timeout: 60000 },
   async () => {
@@ -179,13 +404,14 @@ test(
       browser = await chrome();
       await browser.navigate(server.url, 390);
       await browser.wait("!!document.querySelector('.focus-flip-card')");
-      for (const width of [320, 375, 390, 430, 899, 900, 1440]) {
+      for (const width of [320, 375, 390, 391, 393, 414, 430, 899, 900, 1440]) {
         await browser.resize(width, width < 900 ? 844 : 1000);
         const view = await browser.evaluate(`(() => {
                 const rows=[...document.querySelectorAll('.bottom-nav button')].map(button=>{
-                    const icon=button.querySelector(':scope>span').getBoundingClientRect();
-                    const range=document.createRange();range.selectNodeContents(button.lastChild);const label=range.getBoundingClientRect();
-                    return {iconY:icon.y,labelY:label.y,width:icon.width,height:icon.height,display:getComputedStyle(button).display};
+                    const icon=button.querySelector('.nav-svg').getBoundingClientRect();
+                    const label=button.querySelector('.nav-label').getBoundingClientRect();
+                    return {iconY:icon.y,labelY:label.y,width:icon.width,height:icon.height,display:getComputedStyle(button).display,
+                      labelHeight:label.height,lineHeight:parseFloat(getComputedStyle(button).lineHeight),svg:!!button.querySelector('svg')};
                 });return {rows,overflow:document.documentElement.scrollWidth>innerWidth+1};
             })()`);
         assert.equal(view.rows.length, 5);
@@ -193,6 +419,9 @@ test(
         for (const row of view.rows) {
           assert.equal(row.width, 24);
           assert.equal(row.height, 24);
+          assert.equal(row.svg, true);
+          if (width < 900)
+            assert.ok(row.labelHeight <= row.lineHeight + 1, 'Normal labels stay on one line');
         }
         if (width < 900) {
           assert.ok(
@@ -541,7 +770,8 @@ test(
         "window.holdHabitRead=true;const savedFetch=fetch;window.fetch=(url,init)=>savedFetch(url,init).then(async response=>{if(String(url).startsWith('/api/habits')&&init.method==='GET'&&window.holdHabitRead){await new Promise(resolve=>window.releaseHabitRead=resolve)}return response});document.querySelector('[data-tab=habits]').click()",
       );
       await browser.wait("typeof window.releaseHabitRead==='function'");
-      await browser.click('Đăng xuất');
+      await browser.evaluate('scrollTo({top:0,behavior:"instant"})');
+      await browser.tap('#logout');
       await browser.wait("!!document.querySelector('.browser-login')");
       await browser.evaluate('window.holdHabitRead=false;window.releaseHabitRead()');
       await delay(120);
@@ -2150,7 +2380,7 @@ test(
         await browser.evaluate(
           "[...document.querySelectorAll('[data-tab]')].map(button=>button.dataset.tab)",
         ),
-        ['today', 'habits', 'beasts', 'reminders', 'achievements'],
+        ['today', 'habits', 'reminders', 'beasts', 'achievements'],
       );
       await browser.evaluate(
         "document.querySelector('#settings').click();document.querySelector('#sheet input[type=time]').value='06:00';document.querySelector('#sheet input[type=time]').dispatchEvent(new Event('input'));const select=document.querySelector('.settings-experience select');select.value='reduce';select.dispatchEvent(new Event('change'))",

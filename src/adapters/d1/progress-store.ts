@@ -8,6 +8,32 @@ import {
   type WorkPage,
 } from '../../domain/progress.ts';
 import { query, type Database, type Statement } from './database.ts';
+// Chat consumes these facts only. Keep ordering and filters identical to the
+// full progress view without calculating all-time streaks or calendar totals.
+export async function conversationProgressData(db: Database, owner: string): Promise<ProgressData> {
+  const [completions, milestones, achievements] = await Promise.all([
+    query(
+      db,
+      'SELECT c.task_id,c.completed_at,c.deadline,c.precision,t.title FROM task_completions c JOIN tasks t ON t.id=c.task_id AND t.owner=c.owner WHERE c.owner=? ORDER BY c.completed_at DESC,c.task_id LIMIT 3',
+      owner,
+    ).all<ProgressData['completions'][number]>(),
+    query(
+      db,
+      'SELECT id,task_id,content,created FROM task_progress WHERE owner=? ORDER BY created DESC,id LIMIT 3',
+      owner,
+    ).all<ProgressData['milestones'][number]>(),
+    query(
+      db,
+      'SELECT code,unlocked_at,notified FROM achievements WHERE owner=? ORDER BY code LIMIT 20',
+      owner,
+    ).all<ProgressData['achievements'][number]>(),
+  ]);
+  return {
+    completions: completions.results,
+    milestones: milestones.results,
+    achievements: achievements.results,
+  };
+}
 export async function progressData(
   db: Database,
   owner: string,

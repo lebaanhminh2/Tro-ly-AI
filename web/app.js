@@ -56,10 +56,13 @@ for (const name of [
   'loadBeasts',
   'loadTower',
   'setBeastPanel',
+  'openBeastSpecies',
   'openBeastPicker',
   'showBeast',
+  'evolveBeast',
   'openBeastExchange',
   'openBeastRates',
+  'openBeastSummonPool',
   'summonBeast',
   'showBeastReveal',
   'openBeastAlchemy',
@@ -162,11 +165,14 @@ for (const b of /** @type {NodeListOf<HTMLButtonElement>} */ (
       actions.toast('Mở lại từ Telegram để tải dữ liệu thật.');
       return;
     }
+    if (state.tab === b.dataset.tab && state.screenState === 'ready') {
+      if (state.tab !== 'beasts') actions.refreshOnReturn();
+      return;
+    }
     state.tab = b.dataset.tab;
     state.screenState = 'ready';
     actions.render();
     actions.refreshOnReturn();
-    if (state.tab !== 'habits') window.scrollTo(0, 0);
   });
 if (state.live) actions.startConnection();
 else actions.render();

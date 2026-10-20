@@ -1021,6 +1021,20 @@ dialog::backdrop {
   gap: 12px;
   margin-bottom: 20px;
 }
+.sheet-title-row h2 {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.sheet-title-row > .icon-button {
+  flex: 0 0 auto;
+}
+/* The visual viewport also shrinks when a mobile keyboard overlays the page. */
+@media (max-width: 899px) {
+  #sheet[open] {
+    bottom: var(--sheet-covered-bottom, 0px);
+    max-height: min(88dvh, var(--sheet-visible-height, 100dvh));
+  }
+}
 .form-field {
   display: grid;
   gap: 8px;
@@ -5443,8 +5457,11 @@ dialog.task-sheet-open .task-actions > .task-plan-action {
   max-width: 330px;
   margin: 0;
 }
-.reminder-filters button {
+.reminder-filters button.secondary {
   min-height: 42px;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .reminder-list {
   display: grid;
@@ -6107,6 +6124,9 @@ dialog.reward-sheet-open .checkin-calendar-content {
   display: block;
   font-size: 15px;
   line-height: 1.45;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  overflow: visible;
 }
 .reminder-row .reminder-repeat {
   margin-top: 4px;
@@ -6202,7 +6222,7 @@ dialog.reward-sheet-open .checkin-calendar-content {
     font-size: 11px;
   }
   .reminder-list .reminder-row {
-    grid-template-columns: 72px minmax(0, 1fr);
+    grid-template-columns: max-content minmax(0, 1fr);
     gap: 0 12px;
     padding: 14px;
     min-height: 108px;
@@ -6374,4 +6394,213 @@ dialog.draw-sheet-open .sheet-title-row {
 .habit-ticket-hint {
   margin: 0 0 14px;
   font-size: 12px;
+}
+
+/* Shared mobile frame: one page heading, one scroll surface, measured navigation. */
+:root {
+  --page-title-size: 28px;
+  --tab-label-size: 13px;
+  --app-safe-top: max(env(safe-area-inset-top, 0px), var(--app-host-safe-top, 0px));
+  --app-safe-bottom: max(env(safe-area-inset-bottom, 0px), var(--app-host-safe-bottom, 0px));
+}
+.live-app .demo-strip {
+  display: none;
+}
+#logout > svg {
+  display: none;
+}
+.bottom-nav button > .nav-label {
+  display: block;
+  width: auto;
+  height: auto;
+  font-size: inherit;
+  line-height: inherit;
+}
+@media (max-width: 899px) {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+  .shell {
+    min-height: var(--app-viewport-height, 100dvh);
+  }
+  .app-ready .app-header {
+    position: relative;
+    padding: 0;
+    height: 0;
+    min-height: 0;
+  }
+  .app-ready .app-header .identity {
+    display: none;
+  }
+  .app-ready .header-actions {
+    position: absolute;
+    top: calc(24px + var(--app-safe-top));
+    right: max(20px, env(safe-area-inset-right), var(--app-host-safe-right, 0px));
+    gap: 4px;
+    z-index: 2;
+  }
+  .app-ready #logout {
+    display: grid;
+    place-items: center;
+    padding: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    color: var(--muted);
+  }
+  .app-ready #logout[hidden] {
+    display: none;
+  }
+  .app-ready #logout > span {
+    display: none;
+  }
+  .app-ready #logout > svg {
+    display: block;
+    width: 22px;
+    height: 22px;
+  }
+  .app-ready main {
+    padding: calc(24px + var(--app-safe-top))
+      max(20px, env(safe-area-inset-right), var(--app-host-safe-right, 0px))
+      calc(var(--app-nav-height, 78px) + 24px)
+      max(20px, env(safe-area-inset-left), var(--app-host-safe-left, 0px));
+  }
+  .app-ready #content > section > .heading {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    min-height: 44px;
+    padding-right: 0;
+    margin: 0 0 16px;
+    gap: 4px 16px;
+  }
+  .app-ready.browser-session #content > section > .heading h1 {
+    padding-right: 100px;
+  }
+  .app-ready #content > section > .heading > div:first-child {
+    display: contents;
+  }
+  .app-ready #content > section > .heading h1 {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding-right: 52px;
+    font-size: var(--page-title-size);
+    font-weight: 650;
+    line-height: 1.25;
+    letter-spacing: -0.6px;
+  }
+  .app-ready #content > section > .heading .subtitle {
+    display: block;
+    grid-column: 1;
+    grid-row: 2;
+    font-size: 13px;
+    line-height: 1.6;
+    margin: 0;
+    max-width: none;
+    text-wrap: pretty;
+  }
+  .app-ready #content > section > .heading:not(:has(> button)) .subtitle {
+    grid-column: 1 / -1;
+  }
+  .app-ready #content > section > .heading .achievement-bedtime {
+    grid-column: 1 / -1;
+    margin: 0;
+  }
+  .app-ready #content > :is(.today-page, .reminders-page, .achievements-page) > .heading {
+    margin-bottom: 8px;
+  }
+  .app-ready #content > section > .heading > :is(button, .primary) {
+    grid-column: 2;
+    grid-row: 2;
+    min-height: 44px;
+    margin: 0;
+    padding: 10px 12px;
+    font-size: 12px;
+    white-space: normal;
+    max-width: min(44vw, 180px);
+    flex-shrink: 0;
+  }
+  .habits-page > .heading > .primary {
+    background: var(--accent);
+    color: #fff;
+  }
+  .app-ready #content .segment,
+  .app-ready #content .beast-tabs {
+    border-radius: 0;
+    border-bottom: 1px solid var(--line);
+    background: transparent;
+    padding: 0;
+  }
+  .app-ready #content .segment button,
+  .app-ready #content .beast-tab {
+    position: relative;
+    min-height: 48px;
+    font-size: var(--tab-label-size);
+    font-weight: 500;
+    line-height: 1.4;
+    padding: 12px 4px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .app-ready #content .segment button::after,
+  .app-ready #content .beast-tab::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 50%;
+    width: calc(100% - 24px);
+    max-width: 112px;
+    height: 3px;
+    border-radius: 3px;
+    transform: translateX(-50%) scaleX(0.8);
+    background: var(--accent);
+    opacity: 0;
+    transition:
+      opacity 0.18s ease,
+      transform 0.18s ease;
+  }
+  .app-ready #content .segment button[aria-pressed='true'],
+  .app-ready #content .beast-tab[aria-current='page'] {
+    color: var(--text);
+    font-weight: 650;
+  }
+  .app-ready #content .segment button[aria-pressed='true']::after,
+  .app-ready #content .beast-tab[aria-current='page']::after {
+    opacity: 1;
+    transform: translateX(-50%) scaleX(1);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .app-ready #content .segment button::after,
+    .app-ready #content .beast-tab::after {
+      transition: none;
+    }
+  }
+  .bottom-nav {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    padding: 8px max(8px, env(safe-area-inset-right), var(--app-host-safe-right, 0px))
+      max(12px, var(--app-safe-bottom))
+      max(8px, env(safe-area-inset-left), var(--app-host-safe-left, 0px));
+  }
+  .bottom-nav button {
+    min-width: 0;
+    min-height: 52px;
+    grid-template-rows: 24px auto;
+    padding: 2px;
+    gap: 4px;
+    font-size: 11px;
+    line-height: 1.4;
+    font-weight: 600;
+  }
+  .bottom-nav button > .nav-label {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: normal;
+  }
 }

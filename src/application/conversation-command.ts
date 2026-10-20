@@ -18,10 +18,17 @@ export async function runToolTurn(initial:ModelContent[],ports:ToolTurnPorts):Pr
   try{response=await ports.model(step,contents,!wrote);}catch(error){
    const code=error instanceof Error?error.message:'';
    if(code==='PROVIDER_TIMEOUT')return 'Gemini phản hồi quá chậm nên tớ đã dừng lượt này; chưa lưu thay đổi. Cậu thử lại sau nhé.';
+   if(code==='PROVIDER_TRANSPORT_ERROR')return 'Tớ chưa kết nối được với Gemini; chưa thực hiện thay đổi nào. Cậu thử lại sau nhé.';
+   if(code==='PROVIDER_INVALID_RESPONSE'||code==='PROVIDER_RESPONSE_TOO_LARGE')return 'Gemini trả về phản hồi không hợp lệ hoặc chưa đầy đủ; tớ chưa thực hiện thay đổi nào. Cậu thử lại sau nhé.';
    if(code==='PROVIDER_TRANSPORT_OR_RESPONSE_ERROR')return 'Kết nối hoặc phản hồi Gemini không hợp lệ; chưa lưu thay đổi. Cậu thử lại sau nhé.';
+   if(code==='PROVIDER_HTTP_401'||code==='PROVIDER_HTTP_403')return 'Gemini đang từ chối quyền truy cập của bot. Cần kiểm tra lại cấu hình kết nối AI; tớ chưa thực hiện thay đổi nào.';
+   if(/^PROVIDER_HTTP_5\d{2}$/.test(code)||code==='PROVIDER_HTTP_408')return 'Dịch vụ Gemini phía Google đang tạm gián đoạn. Cậu thử lại sau nhé; tớ chưa thực hiện thay đổi nào.';
+   if(/^PROVIDER_HTTP_3\d{2}$/.test(code))return 'Kết nối Gemini đang gián đoạn do phản hồi chuyển hướng không được chấp nhận; tớ chưa thực hiện thay đổi nào.';
+   if(/^PROVIDER_HTTP_4\d{2}$/.test(code))return 'Gemini chưa chấp nhận yêu cầu của bot. Cần kiểm tra lại cấu hình model và yêu cầu AI; tớ chưa thực hiện thay đổi nào.';
    if(code==='PROVIDER_RATE_LIMIT')return 'Gemini phía Google đang giới hạn lượt gọi hoặc tốc độ lúc này. Cậu thử lại sau nhé; các lời nhắc đã lưu vẫn chạy.';
    if(code==='AI_QUOTA')return 'Tớ đã chạm giới hạn gọi AI do bot đặt cho hôm nay. Lời nhắc đã lưu vẫn chạy; khi có lượt trở lại mình trò chuyện tiếp nhé.';
    if(code==='AI_TRIAL_ENDED')return 'Đợt dùng thử AI đã hết thời hạn cấu hình. Các lời nhắc đã lưu vẫn chạy; cần mở lại thời hạn trước khi chat tiếp.';
+   if(code==='AI_DISABLED')return 'Hội thoại AI đang tắt; cậu có thể mở lại bằng /ai on.';
    return fallback;
   }
   // Persisted model steps from the retired feature must never execute or

@@ -1,5 +1,27 @@
 # Demo FE linh thú SSR — thiết kế trước triển khai
 
+## Cập nhật 21/10/2026 — tổ chức lại năng lực và tiến hóa
+
+Đã triển khai trong runtime và [playground](../scripts/linh-thu-playground/index.html). Phần này thay thế mô tả xem trước toàn bộ ngoại hình và thanh tổng trong các demo lịch sử bên dưới.
+
+Thứ tự màn Đang luyện: nhân vật hiện tại → hàng bốn T thu gọn → năng lực hiện tại → Dấu ấn nỗ lực của chặng hiện tại → lợi ích T kế ngay trước nút tiến hóa. Mỗi năng lực là câu đủ nghĩa: hành động, cơ hội và lợi ích. Có nhãn phân biệt đang hỗ trợ, hỗ trợ từ ngày mai hoặc cần chọn đồng hành. Chỉ hiển thị nút tiến hóa khi đủ điểm. Trường hợp bị chặn nêu chính xác điểm thực tối đa so với mốc cần đạt, không quảng bá nâng cấp hoặc hiện nút vô hiệu hóa. Tổng điểm và giải thích cách tính nằm trong Chi tiết lượt luyện.
+
+Toàn bộ năng lực mở một màn đọc liền theo chiều dọc: T1, T2, T3, T4, luyện đầy T4, độ thuần từ 95%, độ thuần 100%. T1 nêu hiệu ứng nền; các T sau chỉ rõ mức tăng và thiên phú mới. Luyện đầy T4 là bước chốt độ thuần, không phải T mới. Hình dạng chưa khám phá vẫn không xuất hiện. Điều kiện công việc/quay thường hiển thị cạnh năng lực; các ngoại lệ chi tiết nằm trong Điều kiện áp dụng. Toàn bộ 18 loài dùng cùng dữ liệu và cách trình bày, bao gồm đơn vị được đếm, hạn mức tuần và thời hạn tuyệt kỹ.
+
+Màn Đồng hành ưu tiên năng lực có hiệu lực, tiến độ Thức tỉnh tích lũy và tuyệt kỹ. Bộ đếm lấy từ dữ liệu đã lưu, không suy đoán số lần công việc trong ngày. Hootlet dùng đúng bộ đếm tuần và trạng thái đã nhận trong tuần; Funglet 100% chỉ yêu cầu đủ thói quen, không thêm điều kiện ngủ. T4 đang luyện có hai mục tiêu độ thuần; T4 đã đầy hiển thị kết quả cuối lượt và các năng lực đã mở.
+
+Ô chưa khám phá dùng dấu chân; ô từng khám phá bằng cá thể khác có ảnh xám. Trạng thái và tên có trong nhãn hỗ trợ đọc màn hình, không lặp nhãn dài dưới từng ô. Chạm vào ô vẫn xem được năng lực từng T, không lộ ảnh/tên của dạng chưa khám phá. Ảnh chỉ hiện màu ở những dạng cá thể này đã đạt.
+
+Bấm tiến hóa → nút khóa và báo đang xử lý → server lưu kết quả → sân khấu toàn màn hình với nền che kín → tích lực → nén lực → phá ngưỡng → hé lộ hình dạng mới → tên dạng cùng từng xác suất tăng/thiên phú mới → Tiếp tục nuôi dưỡng. Không thêm âm thanh theo yêu cầu đã duyệt. T2 dùng 5,6 giây; T3 dùng 6 giây; T4 dùng 6,6 giây và xung năng lượng rộng hơn. Dạng mới đổi bên trong lớp năng lượng che phủ, không hòa mờ hai ảnh. Góc nhìn chuyển từ trung tâm sân khấu lên vị trí màn kết quả ở cuối cảnh; phần năng lực giữ chỗ từ đầu để không đẩy ảnh khi xuất hiện.
+
+Hiệu ứng được dựng bằng canvas trong `web/ui/beast-evolution-motion.js`, phần điều khiển/màn kết quả ở `web/ui/beast-evolution.js`. Mỗi loài có màu và chất liệu riêng trong chín nhóm: lửa, đất, băng, lôi, lăng kính, hoa, gió, thủy triều và mộng (gió/thủy triều/mộng có luồng năng lượng mảnh). Gibber có bụi đá và lớp vỏ phân mảnh, Pyropup có luồng lửa và tàn lửa. Kết quả T3 ghi rõ thiên phú mở mới; lên T4 không tự nhận đã max hoặc đã mở mốc 95%/100%.
+
+Luôn có Bỏ qua hiệu ứng. Escape trong cảnh chuyển đến kết quả, Escape tại kết quả đóng màn. Có Xem lại hiệu ứng chỉ phát lại trình diễn, không gửi yêu cầu tiến hóa. Chế độ giảm chuyển động hiện ngay kết quả và ẩn Xem lại. Đổi tùy chọn giảm chuyển động giữa cảnh cũng dừng hiệu ứng; canvas ngừng khi hoàn thành hoặc đóng, tạm dừng khi chuyển ứng dụng. Mất ảnh/canvas vẫn đọc được kết quả và tiếp tục. Bấm bỏ qua/đóng không hoàn tác tiến hóa đã lưu. Đóng màn hình khi đang chờ mạng không bị ép mở lại hiệu ứng.
+
+Các kịch bản playground: `?scene=evolution` sẵn sàng T1→T2; `progress` đang luyện T2; `blocked` kẹt T3 vì tạp chất; `t4` đang luyện T4; `history` cá thể mới biết ngoại hình từ lịch sử. Chọn loài ở Công cụ mô phỏng để thử đủ bốn rank. Nút Sang ngày quyết toán habit theo dữ liệu mẫu, không truy cập tài khoản thật.
+
+Ảnh kiểm tra giao diện và lộ trình đủ 18 loài lưu tại `output/linh-thu-information-review-20261021/`. Ảnh từng giai đoạn, kết quả các T và video hiệu ứng mới ở `output/linh-thu-evolution-cinematic-20261021/`. Các bài kiểm tra Chrome bao gồm màn 320/390/1440 px, sáng/tối, chữ 150%, giảm chuyển động, ẩn ngoại hình, ảnh lịch sử xám, tiến hóa và khôi phục biên nhận khi mất phản hồi. Kiểm tra tiến hóa bổ sung đủ 18 loài, nhịp T2/T3/T4, nền che kín, bỏ qua/xem lại không nhân thao tác, Escape, kết thúc tự động, đổi tùy chọn chuyển động giữa cảnh và lỗi ảnh.
+
 Trạng thái: [HTML độc lập đã duyệt](prototypes/linh-thu/index.html) vẫn được giữ nguyên. Runtime đã tích hợp riêng trong `web/`, dùng API và DB, đủ 108 ảnh mới; [xem gallery](../output/imagegen/catalog-v3/index.html). **Bố cục mới nhất ở mục 10**: tím chủ đạo, bốn tab, Lò đan là nút, tháp ở Habit, không lặp danh sách habit. Các mô tả hai/ba tab, màu xanh và ghi habit trong Linh thú ở bản demo cũ bên dưới là lịch sử. Tiến độ kiểm thử xem [LINH_THU_IMPLEMENTATION.md](LINH_THU_IMPLEMENTATION.md).
 
 ## 1. Mục tiêu bản demo
