@@ -109,8 +109,8 @@
   line-height: 1.8;
 }
 .beast-hero {
-  --hero-bg: #f8f7f4;
-  --hero-line: #e5e3dc;
+  --hero-bg: #ffffff;
+  --hero-line: #d9d0ee;
   --hero-text: #292a27;
   --hero-muted: #62635d;
   --hero-control-bg: #ffffff65;
@@ -148,8 +148,8 @@
   --hero-rank: #326092;
 }
 :root[data-theme='dark'] .beast-hero {
-  --hero-bg: #252625;
-  --hero-line: #3a3b35;
+  --hero-bg: #252525;
+  --hero-line: #554b69;
   --hero-text: #f2f2ed;
   --hero-muted: #c5c6bf;
   --hero-control-bg: #ffffff06;

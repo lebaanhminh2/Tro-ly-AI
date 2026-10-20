@@ -558,11 +558,7 @@ test(
           closeOutlined: false,
           outline: 'none',
         });
-        await b.screenshot(
-          'output/linh-thu-roles-focus-release-20261021/opening-' +
-            (keyboard ? 'keyboard' : 'pointer') +
-            '.png',
-        );
+        await shot(b, 'opening-' + (keyboard ? 'keyboard' : 'pointer'));
         await b.press('Tab');
         assert.deepEqual(
           await b.evaluate(
