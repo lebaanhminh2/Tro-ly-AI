@@ -1,5 +1,13 @@
 # Bàn giao đợt dọn dự án
 
+## Nền trắng ngà tối giản cho linh thú — 21/10/2026
+
+Theo phản hồi “basic mà sang”, đổi nền hero sang trắng ngà rất nhẹ `#f8f7f4`, chữ `#292a27`, viền mảnh `#e5e3dc`, giảm bóng và độ đậm tên linh thú. Chế độ tối dùng `#252625` với viền chìm. Giữ bố cục, các thao tác và màu hạng dễ đọc. Playground đã đồng bộ.
+
+Kiểm 16 trường hợp trên bốn hạng, hai tab và hai theme bằng Chrome: không lỗi JS, tràn ngang hoặc chồng ảnh/chữ; độ tương phản chữ thấp nhất 5,58:1. CSS đạt Prettier; playground mở được với ảnh thật và nút tiến hóa. Hồ sơ tại `output/linh-thu-ivory-20261021/`; chưa thử trên điện thoại thật.
+
+Đã phát hành staging version `10691f60-1a5f-4d6c-82f4-c34f45105fb8`. CSS trên server khớp SHA256 local, app trả 200. [Kiểm tra sau deploy](../output/linh-thu-ivory-20261021/POST_DEPLOY.json).
+
 ## Nền xám trung tính theo giao diện sáng/tối — 21/10/2026
 
 Người dùng thấy nền than vẫn chưa hợp và cho phép tự chọn màu xám phù hợp. Đã so sánh bốn sắc nền trên Beetleknight, Frostluna và Pyrodaemon, chọn xám sáng `#e5e5e2` cho giao diện sáng, xám đậm trung tính `#3b3d3f` cho giao diện tối. Chữ, nút, viền, nhãn ngày mai và nhãn Thức tỉnh/Hoàn mỹ đổi theo nền; màu hạng được điều chỉnh để dễ đọc. Giảm bóng dưới chân, giữ bố cục và vị trí thao tác của lượt trước.

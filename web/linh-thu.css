@@ -109,16 +109,16 @@
   line-height: 1.8;
 }
 .beast-hero {
-  --hero-bg: #e5e5e2;
-  --hero-line: #cdceca;
-  --hero-text: #2e3031;
-  --hero-muted: #555856;
-  --hero-control-bg: #ffffff60;
-  --hero-control-line: #babcba;
-  --hero-hover: #ffffff85;
-  --hero-quality: #76531b;
-  --hero-quality-line: #ac884a65;
-  --hero-pending: #76531b;
+  --hero-bg: #f8f7f4;
+  --hero-line: #e5e3dc;
+  --hero-text: #292a27;
+  --hero-muted: #62635d;
+  --hero-control-bg: #ffffff65;
+  --hero-control-line: #ddddd5;
+  --hero-hover: #efeee8;
+  --hero-quality: #78602d;
+  --hero-quality-line: #aa95603d;
+  --hero-pending: #78602d;
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -133,6 +133,7 @@
   border-radius: 22px;
   background: var(--hero-bg);
   color: var(--hero-text);
+  box-shadow: 0 4px 18px #292a2703;
 }
 .beast-hero[data-rank='UR'] {
   --hero-rank: #a82c40;
@@ -147,13 +148,13 @@
   --hero-rank: #326092;
 }
 :root[data-theme='dark'] .beast-hero {
-  --hero-bg: #3b3d3f;
-  --hero-line: #555759;
-  --hero-text: #f5f5f2;
-  --hero-muted: #d1d2cf;
-  --hero-control-bg: #ffffff0c;
-  --hero-control-line: #ffffff32;
-  --hero-hover: #ffffff1a;
+  --hero-bg: #252625;
+  --hero-line: #3a3b35;
+  --hero-text: #f2f2ed;
+  --hero-muted: #c5c6bf;
+  --hero-control-bg: #ffffff06;
+  --hero-control-line: #ffffff20;
+  --hero-hover: #ffffff0d;
   --hero-quality: #f0d9ac;
   --hero-quality-line: #e8ca8c55;
   --hero-pending: #f0d9ac;
@@ -172,7 +173,7 @@
   left: 50%;
   transform: translateX(-50%);
   border-radius: 50%;
-  background: radial-gradient(ellipse, #0000001f, transparent 70%);
+  background: radial-gradient(ellipse, #00000014, transparent 70%);
 }
 .beast-hero-copy {
   position: relative;
@@ -189,7 +190,7 @@
   margin: 0;
   font-size: 23px;
   line-height: 1.2;
-  font-weight: 650;
+  font-weight: 600;
   letter-spacing: -0.5px;
   overflow-wrap: anywhere;
 }
@@ -261,7 +262,7 @@
   aspect-ratio: 1;
   justify-self: center;
   object-fit: contain;
-  filter: drop-shadow(0 8px 12px #00000024);
+  filter: drop-shadow(0 6px 10px #00000014);
   z-index: 1;
 }
 .beast-hero-view {

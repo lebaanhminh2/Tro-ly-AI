@@ -1,0 +1,23 @@
+{
+  "at": "2026-10-20T22:16:13.864Z",
+  "version": "10691f60-1a5f-4d6c-82f4-c34f45105fb8",
+  "url": "https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev/app/",
+  "background": {
+    "light": "#f8f7f4",
+    "dark": "#252625"
+  },
+  "css": {
+    "matches": true,
+    "sha256": "823c0ab5a55479bc1a971fe3aea0edc2f422617a3b8ee9a670e7db68a110286c"
+  },
+  "appStatus": 200,
+  "checks": {
+    "visualCases": 16,
+    "minimumContrast": 5.585144397233957,
+    "playground": true,
+    "prettier": true
+  },
+  "limitations": [
+    "Local fixtures and Chrome; no physical phone test."
+  ]
+}
