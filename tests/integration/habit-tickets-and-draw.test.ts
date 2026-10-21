@@ -9,6 +9,11 @@ import { HealthyStore } from '../../src/adapters/d1/healthy-store.ts';
 import { ScheduleStore } from '../../src/adapters/d1/schedule-store.ts';
 import { HabitService } from '../../src/application/habit-service.ts';
 import { handleCultivation } from '../../src/entrypoints/mini-app/cultivation.ts';
+import { D1BeastStore } from '../../src/adapters/d1/linh-thu-store.ts';
+import { BeastUltimateService } from '../../src/application/linh-thu-ultimates.ts';
+import { BEAST_TRAINING } from '../../src/domain/linh-thu-training.ts';
+import { beastSpecies } from '../../src/domain/linh-thu-catalog.ts';
+import { setTimeout as delay } from 'node:timers/promises';
 
 const monday = Date.parse('2026-10-12T08:00:00+07:00'),
   DAY = 86400000;
@@ -49,6 +54,260 @@ async function fixture() {
   }
   return { mf, db, store, service, healthy, record };
 }
+
+async function drawCompanion(db: Database, now = monday, speciesId = 'frostnip') {
+  const store = new D1BeastStore(db),
+    day = (await new ScheduleStore(db).ensureDay('123', now))!.day;
+  await store.transact(
+    '123',
+    'draw_companion_seed',
+    'fixture',
+    {},
+    day,
+    now,
+    0,
+    (account, state) => ({
+      state: account.state,
+      healthy: { ...state, tickets: 40 },
+      newBeasts: [{ id: 'draw_companion_01', speciesId, attemptId: 'draw_attempt_001' }],
+      result: {},
+    }),
+  );
+  await db
+    .prepare(
+      "UPDATE beast_attempts SET earned=?,form=4,status='completed' WHERE owner='123' AND id='draw_attempt_001'",
+    )
+    .bind(BEAST_TRAINING[beastSpecies(speciesId).rank].capacity)
+    .run();
+  await db
+    .prepare(
+      "INSERT INTO beast_roles(owner,role,effective_day,beast_id,attempt_id,created) VALUES('123','companion',?,'draw_companion_01','draw_attempt_001',?)",
+    )
+    .bind(day, now)
+    .run();
+  return { store, day };
+}
+
+function drawContext(db: Database, now = monday) {
+  return {
+    env: { DB: db, TELEGRAM_USER_ID: '123' } as Env,
+    owner: '123',
+    now,
+    healthy: new HealthyStore(db),
+  };
+}
+
+test('real draw handler uses four database round trips with a companion under binding latency, including repeated x1/x10 and day rollover', async (t) => {
+  const { mf, db, healthy } = await fixture();
+  try {
+    const { day } = await drawCompanion(db);
+    let calls: string[] = [];
+    const native = new WeakMap<ReturnType<Database['prepare']>, ReturnType<Database['prepare']>>();
+    const slow = {
+      prepare(sql: string) {
+        const wrap = (
+          statement: ReturnType<Database['prepare']>,
+        ): ReturnType<Database['prepare']> => {
+          const wrapped: ReturnType<Database['prepare']> = {
+            bind: (...values) => wrap(statement.bind(...values)),
+            first: async <T>() => {
+              calls.push('read');
+              await delay(25);
+              return statement.first<T>();
+            },
+            all: async <T>() => {
+              calls.push('read');
+              await delay(25);
+              return statement.all<T>();
+            },
+            run: async () => {
+              calls.push('write');
+              await delay(25);
+              return statement.run();
+            },
+          };
+          native.set(wrapped, statement);
+          return wrapped;
+        };
+        return wrap(db.prepare(sql));
+      },
+      batch: async (statements) => {
+        calls.push('batch');
+        await delay(25);
+        return db.batch(statements.map((statement) => native.get(statement)!));
+      },
+    } satisfies Database;
+    const context = drawContext(slow);
+    let balance = 40;
+    for (const [index, count] of [1, 10, 1].entries()) {
+      calls = [];
+      const input = { id: 'slow_draw_000' + index, operation: 'draw', count };
+      const started = performance.now();
+      const response = await handleCultivation(context, input),
+        body = (await response.json()) as any;
+      assert.equal(response.status, 200);
+      assert.equal(body.result.rewards.length, count);
+      assert.equal(body.account.state.tickets, (balance -= count));
+      assert.deepEqual(body.account, await healthy.read('123'));
+      assert.deepEqual(calls, ['read', 'read', 'read', 'batch']);
+      t.diagnostic(
+        JSON.stringify({
+          count,
+          bindingLatencyMs: 25,
+          dbCalls: calls.length,
+          elapsedMs: Math.round(performance.now() - started),
+        }),
+      );
+      calls = [];
+      assert.deepEqual(await (await handleCultivation(context, input)).json(), body);
+      assert.deepEqual(calls, ['read'], 'A replay must not prepare effects or write again');
+    }
+    const events = (
+      await db
+        .prepare(
+          "SELECT json_extract(result_json,'$.ordinal') AS ordinal FROM beast_skill_events WHERE owner='123' AND kind='draw' ORDER BY json_extract(result_json,'$.ordinal')",
+        )
+        .all<{ ordinal: number }>()
+    ).results;
+    assert.deepEqual(
+      events.map((event) => event.ordinal),
+      Array.from({ length: 12 }, (_, i) => i + 1),
+    );
+    const next = await handleCultivation(drawContext(db, monday + DAY), {
+      id: 'rollover_draw_01',
+      operation: 'draw',
+    });
+    assert.equal(next.status, 200);
+    assert.equal(
+      (
+        await db
+          .prepare(
+            "SELECT json_extract(result_json,'$.ordinal') AS ordinal FROM beast_skill_events WHERE owner='123' AND day=?",
+          )
+          .bind(day + 1)
+          .first<{ ordinal: number }>()
+      )?.ordinal,
+      1,
+    );
+    assert.equal((await healthy.read('456')).state.tickets, 0);
+  } finally {
+    await mf.dispose();
+  }
+});
+
+test('draw wallet, choices, companion, ultimate and receipt roll back together, then recover a lost committed response once', async () => {
+  const { mf, db, healthy } = await fixture();
+  try {
+    const { store, day } = await drawCompanion(db, monday, 'skinklet');
+    await new BeastUltimateService(store).execute(
+      '123',
+      'draw_ultimate_01',
+      {
+        operation: 'ultimate',
+        day,
+        version: (await store.read('123')).version,
+        beastId: 'draw_companion_01',
+      },
+      day,
+      monday,
+      (await new ScheduleStore(db).ensureDay('123', monday))!.end_at,
+    );
+    const before = await healthy.read('123'),
+      beastBefore = await store.read('123'),
+      ultimateBefore = await store.ultimate('123', day);
+    let loseCommitted = false;
+    const broken: Database = {
+      prepare: db.prepare.bind(db),
+      batch: async (statements) => {
+        if (!loseCommitted)
+          return db.batch([...statements, db.prepare('INSERT INTO transaction_guard SELECT 0')]);
+        await db.batch(statements);
+        throw Error('SIMULATED_LOST_COMMITTED_RESPONSE');
+      },
+    };
+    const input = { id: 'draw_atomic_001', operation: 'draw', count: 10 };
+    await assert.rejects(
+      handleCultivation(drawContext(broken), input),
+      /CHECK|constraint|D1_ERROR/i,
+    );
+    assert.deepEqual(await healthy.read('123'), before);
+    assert.deepEqual(await store.read('123'), beastBefore);
+    assert.deepEqual(await store.ultimate('123', day), ultimateBefore);
+    assert.equal((await store.pendingDraws('123')).length, 0);
+    assert.equal(
+      await db.prepare("SELECT 1 FROM beast_skill_events WHERE kind='draw'").first(),
+      null,
+    );
+    assert.equal(await healthy.receipt('123', input.id, 'draw', input), null);
+    loseCommitted = true;
+    const responses = await Promise.all([
+      handleCultivation(drawContext(broken), input),
+      handleCultivation(drawContext(broken), input),
+    ]);
+    const [saved, replay] = (await Promise.all(
+      responses.map((response) => response.json()),
+    )) as any[];
+    assert.deepEqual(saved, replay);
+    assert.equal(saved.result.choices.length, 3);
+    assert.equal(saved.result.rewards.length, 7);
+    assert.equal(saved.account.state.tickets, before.state.tickets - 10);
+    assert.deepEqual(saved.account, await healthy.read('123'));
+    assert.equal((await store.pendingDraws('123')).length, 3);
+    assert.equal((await store.ultimate('123', day))!.remaining, 0);
+    assert.equal(
+      (await db
+        .prepare("SELECT COUNT(*) AS n FROM cultivation_receipts WHERE operation='draw'")
+        .first<{ n: number }>())!.n,
+      1,
+    );
+  } finally {
+    await mf.dispose();
+  }
+});
+
+test('a wallet change during slow draw preparation rejects the stale batch and preserves the competing reward for retry', async () => {
+  const { mf, db, healthy } = await fixture();
+  let didPrepare!: () => void, resume!: () => void;
+  const prepared = new Promise<void>((resolve) => {
+      didPrepare = resolve;
+    }),
+    release = new Promise<void>((resolve) => {
+      resume = resolve;
+    });
+  try {
+    const { store } = await drawCompanion(db);
+    const beastBefore = await store.read('123');
+    const held: Database = {
+      prepare: db.prepare.bind(db),
+      batch: async (statements) => {
+        didPrepare();
+        await release;
+        return db.batch(statements);
+      },
+    };
+    const input = { id: 'draw_guarded_01', operation: 'draw', count: 10 };
+    const pending = handleCultivation(drawContext(held), input);
+    const rejected = assert.rejects(pending, /CHECK|constraint|D1_ERROR/i);
+    await prepared;
+    await healthy.mutate('123', 'draw_competing_bonus', 'fixture', {}, monday, (state) => ({
+      state: { ...state, tickets: state.tickets + 3 },
+      result: {},
+    }));
+    resume();
+    await rejected;
+    assert.equal((await healthy.read('123')).state.tickets, 43);
+    assert.deepEqual(await store.read('123'), beastBefore);
+    assert.equal(await healthy.receipt('123', input.id, 'draw', input), null);
+    const response = await handleCultivation(drawContext(db), input),
+      body = (await response.json()) as any;
+    assert.equal(response.status, 200);
+    assert.equal(body.account.state.tickets, 33);
+    assert.deepEqual(body.account, await healthy.read('123'));
+  } finally {
+    resume();
+    await mf.dispose();
+  }
+});
 
 test('habit tickets require a new scheduled completion, survive undo once and never backfill settlements', async () => {
   const { mf, db, store, service, healthy, record } = await fixture();

@@ -1,6 +1,81 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { logChatTiming, logFailure, measureChatPhase } from '../../src/adapters/observability.ts';
+import {
+  logChatTiming,
+  logFailure,
+  measureChatPhase,
+  MiniAppTiming,
+} from '../../src/adapters/observability.ts';
+
+test('mini app timings expose only fixed phases, route and numbers in logs and Server-Timing', async (t) => {
+  const lines: string[] = [];
+  t.mock.method(console, 'info', (value: unknown) => lines.push(String(value)));
+  let now = 0;
+  const timing = new MiniAppTiming(() => now);
+  const result = { secret: 'private-result' };
+  assert.equal(
+    await timing.measure('ledger_read', async () => {
+      now += 12;
+      return result;
+    }),
+    result,
+  );
+  const error = Error('private-token');
+  await assert.rejects(
+    timing.measure('commit', async () => {
+      now += 7;
+      throw error;
+    }),
+    (caught) => caught === error,
+  );
+  timing.record('auth', NaN);
+  timing.record('auth', -1);
+  timing.record('auth', 3600001);
+  timing.record('private-owner' as any, 10);
+  now = 22;
+  const response = timing.finish(
+    new Response('private-body', {
+      status: 409,
+      headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' },
+    }),
+    'cultivation',
+  );
+  assert.equal(await response.text(), 'private-body');
+  assert.equal(response.headers.get('Cache-Control'), 'no-store');
+  assert.equal(response.headers.get('X-Content-Type-Options'), 'nosniff');
+  assert.equal(
+    response.headers.get('Server-Timing'),
+    'total;dur=22.0, ledger_read;dur=12.0, commit;dur=7.0',
+  );
+  assert.deepEqual(JSON.parse(lines[0]!), {
+    event: 'mini_app_timing',
+    route: 'cultivation',
+    status: 409,
+    durationMs: 22,
+    phases: { ledger_read: 12, commit: 7 },
+  });
+  assert.doesNotMatch(lines.join('') + response.headers.get('Server-Timing'), /private-/);
+  const other = new MiniAppTiming(() => 0).finish(
+    new Response(null, { status: 401 }),
+    'private-route' as any,
+  );
+  assert.equal(other.status, 401);
+  assert.equal(JSON.parse(lines[1]!).route, 'other');
+});
+
+test('a failing timing sink preserves successful responses and cannot trigger another mutation', async (t) => {
+  t.mock.method(console, 'info', () => {
+    throw Error('sink failed');
+  });
+  const timing = new MiniAppTiming(() => 0);
+  let commits = 0;
+  const response = await timing.measure('commit', async () => {
+    commits++;
+    return Response.json({ result: 'confirmed' });
+  });
+  assert.deepEqual(await timing.finish(response, 'cultivation').json(), { result: 'confirmed' });
+  assert.equal(commits, 1);
+});
 test('failure logs expose only fixed events and allowlisted codes', () => {
   const lines: string[] = [];
   const original = console.warn;

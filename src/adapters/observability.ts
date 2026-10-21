@@ -1,5 +1,69 @@
 type FailureEvent =
   'mini_app' | 'browser_auth' | 'telegram_webhook' | 'scheduled_job' | 'inbox_command';
+const miniAppPhases = new Set(['auth', 'ledger_read', 'draw_context', 'draw_prepare', 'commit']);
+type MiniAppPhase = 'auth' | 'ledger_read' | 'draw_context' | 'draw_prepare' | 'commit';
+const miniAppRoutes = new Set(['cultivation', 'bootstrap', 'linh-thu', 'other']);
+
+// Request-local timings contain only fixed labels and bounded numbers.
+export class MiniAppTiming {
+  private readonly clock: () => number;
+  private readonly started: number;
+  private readonly phases = new Map<MiniAppPhase, number>();
+  constructor(clock: () => number = () => performance.now()) {
+    this.clock = clock;
+    this.started = clock();
+  }
+  record(phase: MiniAppPhase, durationMs: number) {
+    if (
+      !miniAppPhases.has(phase) ||
+      !Number.isFinite(durationMs) ||
+      durationMs < 0 ||
+      durationMs > 3600000
+    )
+      return;
+    this.phases.set(phase, Math.min(3600000, (this.phases.get(phase) ?? 0) + durationMs));
+  }
+  async measure<T>(phase: MiniAppPhase, run: () => Promise<T>): Promise<T> {
+    const started = this.clock();
+    try {
+      return await run();
+    } finally {
+      this.record(phase, this.clock() - started);
+    }
+  }
+  finish(response: Response, route: 'cultivation' | 'bootstrap' | 'linh-thu' | 'other'): Response {
+    const elapsed = this.clock() - this.started;
+    const durationMs = Number.isFinite(elapsed) ? Math.min(3600000, Math.max(0, elapsed)) : 0;
+    const phases = Object.fromEntries(
+      [...this.phases].map(([phase, ms]) => [phase, Math.round(ms)]),
+    );
+    const headers = new Headers(response.headers);
+    headers.set(
+      'Server-Timing',
+      [['total', durationMs], ...this.phases]
+        .map(([phase, ms]) => `${phase};dur=${Number(ms).toFixed(1)}`)
+        .join(', '),
+    );
+    try {
+      console.info(
+        JSON.stringify({
+          event: 'mini_app_timing',
+          route: miniAppRoutes.has(route) ? route : 'other',
+          status: response.status,
+          durationMs: Math.round(durationMs),
+          phases,
+        }),
+      );
+    } catch {
+      // Logging cannot change a committed result or cause a retry.
+    }
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
+    });
+  }
+}
 const codes = new Set([
   'REQUEST_ID_REUSED',
   'PLAN_CHANGED',

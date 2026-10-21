@@ -168,15 +168,17 @@ export function createBeastActions(context) {
         } else {
           const [data, page] = await Promise.all([liveRequest('linh-thu'), readCollection()]);
           if (!isCurrent()) return;
-          await prepareRoleImages(data);
-          if (requestGeneration !== generation || revision !== runtime.revision || !state.loaded)
-            return;
           if (state.beastData && data.account.version < state.beastData.account.version) return;
           state.beastData = data;
           state.beastCollection = page;
           state.cultivation = mapAccount(data.wallet, state.day?.day);
           invalidateSpeciesPage();
           loadBeastSpecies();
+          // Publish data and usable controls immediately. Keep the update
+          // indicator until role portraits are warm so rapid tab switches
+          // retain decoded art; image completion never reapplies old data.
+          render();
+          await prepareRoleImages(data);
         }
       } catch (error) {
         if (requestGeneration === generation && revision === runtime.revision)

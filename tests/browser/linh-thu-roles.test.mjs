@@ -63,6 +63,81 @@ async function using(control, run) {
   }
 }
 
+test(
+  'authoritative role data appears before slow portrait decoding and keeps the same portrait on refresh',
+  options,
+  async () => {
+    const control = beastFixture();
+    await using(control, async (browser, url) => {
+      await browser.navigate(url, 390);
+      await browser.wait("!!document.querySelector('.focus-flip-card')");
+      await browser.evaluate(`(() => {
+      window.savedDecode=HTMLImageElement.prototype.decode;
+      window.decodeStarted=0;window.releaseDecodes=[];
+      HTMLImageElement.prototype.decode=function(){window.decodeStarted++;return new Promise(resolve=>window.releaseDecodes.push(resolve));};
+      document.querySelector('[data-tab=beasts]').click();
+    })()`);
+      await browser.wait('window.decodeStarted>0');
+      assert.equal(
+        await browser.evaluate(
+          "!!document.querySelector('.beast-hero')&&!document.querySelector('.beast-hero-view').disabled",
+        ),
+        true,
+        'Data must be visible while decode is still blocked',
+      );
+      assert.equal(await browser.evaluate('window.releaseDecodes.length>0'), true);
+      assert.equal(
+        await browser.evaluate("document.querySelector('.beast-hero').dataset.beastId"),
+        control.beastData.selected[0].id,
+      );
+      await browser.evaluate(
+        "window.savedPortrait=document.querySelector('.beast-hero img');window.savedHero=document.querySelector('.beast-hero');window.releaseDecodes.forEach(resolve=>resolve());window.releaseDecodes=[]",
+      );
+      await settled(browser);
+      const progress = await browser.evaluate(
+        "Number(document.querySelector('.beast-progress-track').getAttribute('aria-valuenow'))",
+      );
+      control.beastData.account.version++;
+      control.beastData.selected[0].attempt.earned += 10;
+      await browser.evaluate("window.dispatchEvent(new Event('focus'))");
+      await browser.wait(
+        `window.releaseDecodes.length>0&&Number(document.querySelector('.beast-progress-track').getAttribute('aria-valuenow'))===${progress + 1}`,
+      );
+      assert.deepEqual(
+        await browser.evaluate(
+          "({image:window.savedPortrait===document.querySelector('.beast-hero img'),hero:window.savedHero===document.querySelector('.beast-hero'),waiting:window.releaseDecodes.length>0})",
+        ),
+        { image: true, hero: true, waiting: true },
+      );
+      await browser.evaluate(
+        'HTMLImageElement.prototype.decode=window.savedDecode;window.releaseDecodes.forEach(resolve=>resolve())',
+      );
+      await settled(browser);
+    });
+  },
+);
+
+test(
+  'training and companion cards share the adjacent surface in light and dark themes',
+  options,
+  async () => {
+    await using(beastFixture(), async (browser, url) => {
+      await open(browser, url);
+      for (const theme of ['light', 'dark']) {
+        await browser.evaluate(`document.documentElement.dataset.theme='${theme}'`);
+        for (const label of ['Đang luyện', 'Đồng hành']) {
+          await browser.click(label);
+          const colors = await browser.evaluate(`(() => {
+          const hero=document.querySelector('.beast-hero'),neighbor=document.querySelector('.beast-progress,.beast-support');
+          return {hero:getComputedStyle(hero).backgroundColor,neighbor:getComputedStyle(neighbor).backgroundColor};
+        })()`);
+          assert.equal(colors.hero, colors.neighbor, `${theme} ${label}`);
+        }
+      }
+    });
+  },
+);
+
 test('displayed roles resolve exact pending attempts while effective roles remain current', () => {
   const control = beastFixture(),
     data = control.beastData;

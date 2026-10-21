@@ -10,7 +10,7 @@ import { handleSchedule } from './mini-app/schedule.ts';
 import { handleTasks } from './mini-app/tasks.ts';
 import { handleHabits, readHabits } from './mini-app/habits.ts';
 import { handleBeasts, readBeasts } from './mini-app/linh-thu.ts';
-import { logFailure } from '../adapters/observability.ts';
+import { logFailure, MiniAppTiming } from '../adapters/observability.ts';
 const taskRoutes = new Set(['/api/tasks', '/api/tasks-delete']);
 const reminderRoutes = new Set(['/api/reminders', '/api/reminder-instance']);
 const scheduleRoutes = new Set([
@@ -32,6 +32,24 @@ const writeRoutes = new Set([
   '/api/linh-thu',
 ]);
 export async function miniAppApi(request: Request, env: Env, now = Date.now()): Promise<Response> {
+  const timing = new MiniAppTiming();
+  const path = new URL(request.url).pathname;
+  const route =
+    path === '/api/cultivation'
+      ? 'cultivation'
+      : path === '/api/bootstrap'
+        ? 'bootstrap'
+        : path === '/api/linh-thu' || path.startsWith('/api/linh-thu/')
+          ? 'linh-thu'
+          : 'other';
+  return timing.finish(await dispatchMiniAppApi(request, env, now, timing), route);
+}
+async function dispatchMiniAppApi(
+  request: Request,
+  env: Env,
+  now: number,
+  timing: MiniAppTiming,
+): Promise<Response> {
   const receivedAt = Date.now();
   const url = new URL(request.url);
   if (!url.pathname.startsWith('/api/')) return json({ error: 'NOT_FOUND' }, 404);
@@ -51,6 +69,7 @@ export async function miniAppApi(request: Request, env: Env, now = Date.now()): 
     }
   }
   let owner: string;
+  const authStarted = performance.now();
   try {
     const initData = request.headers.get('X-Telegram-Init-Data');
     if (initData)
@@ -72,6 +91,8 @@ export async function miniAppApi(request: Request, env: Env, now = Date.now()): 
       },
       401,
     );
+  } finally {
+    timing.record('auth', performance.now() - authStarted);
   }
   try {
     const context = { env, owner, now, healthy: new HealthyStore(env.DB) };
@@ -118,7 +139,7 @@ export async function miniAppApi(request: Request, env: Env, now = Date.now()): 
       return (
         (await handleSchedule(context, input, url.pathname)) ?? json({ error: 'NOT_FOUND' }, 404)
       );
-    return await handleCultivation(context, input);
+    return await handleCultivation(context, input, timing);
   } catch (error) {
     const code = error instanceof Error ? error.message : '';
     const beastErrors: Record<string, string> = {

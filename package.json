@@ -18,7 +18,7 @@
     "try:ai": "node experiments/ai-trial/try-ai.ts",
     "typecheck": "tsc --noEmit",
     "check:web": "node scripts/check-web.mjs",
-    "test:browser": "node --test tests/browser/*.test.mjs",
+    "test:browser": "node --test --test-concurrency=1 tests/browser/*.test.mjs",
     "typecheck:web": "tsc -p tsconfig.web.json",
     "lint": "eslint src web scripts/*.mjs eslint.config.mjs",
     "format:check": "node scripts/format.mjs --check",

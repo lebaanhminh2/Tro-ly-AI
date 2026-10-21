@@ -7,8 +7,10 @@ import {
   type HealthyState,
 } from '../../domain/healthy.ts';
 import { prepareBeastSleepEffect } from './linh-thu-effects.ts';
+import type { MiniAppTiming } from '../observability.ts';
 
 type Account = { state_json: string; version: number };
+type Mutation<T> = { state: HealthyState; result: T; statements?: Statement[] };
 // Every write has an immutable request receipt. Random samples must be supplied
 // by the server; retries return the existing result instead of rolling again.
 export class HealthyStore {
@@ -64,16 +66,59 @@ export class HealthyStore {
     operation: string,
     input: unknown,
     now: number,
-    apply: (state: HealthyState) => { state: HealthyState; result: T; statements?: Statement[] },
+    apply: (state: HealthyState) => Mutation<T>,
   ): Promise<T> {
+    return (await this.mutateWithAccount(owner, id, operation, input, now, apply)).result;
+  }
+  // Read receipt and wallet in one snapshot. The version guard below still
+  // rejects any competing write while asynchronous effects are prepared.
+  async mutateWithAccount<T>(
+    owner: string,
+    id: string,
+    operation: string,
+    input: unknown,
+    now: number,
+    apply: (state: HealthyState) => Mutation<T> | Promise<Mutation<T>>,
+    timing?: MiniAppTiming,
+  ) {
     if (!/^\d+$/.test(owner) || !id || id.length > 120 || !operation || operation.length > 40)
       throw Error('INVALID_LEDGER_REQUEST');
     const request = JSON.stringify(input);
     if (!request || request.length > 12000) throw Error('INVALID_LEDGER_REQUEST');
-    const receipt = await this.receipt<T>(owner, id, operation, input);
-    if (receipt) return receipt.result;
-    const current = await this.read(owner),
-      outcome = apply(current.state);
+    const read = async () => {
+      const row = await query(
+        this.db,
+        `SELECT a.state_json,a.version,r.operation,r.request_json,r.result_json
+         FROM (SELECT ? AS owner) o
+         LEFT JOIN cultivation_accounts a ON a.owner=o.owner
+         LEFT JOIN cultivation_receipts r ON r.owner=o.owner AND r.request_id=?`,
+        owner,
+        id,
+      ).first<{
+        state_json: string | null;
+        version: number | null;
+        operation: string | null;
+        request_json: string | null;
+        result_json: string | null;
+      }>();
+      const account = {
+        state: {
+          ...initialHealthy(),
+          ...(row?.state_json ? JSON.parse(row.state_json) : {}),
+        } as HealthyState,
+        version: row?.version ?? 0,
+      };
+      if (row?.operation != null) {
+        if (row.operation !== operation || row.request_json !== request)
+          throw Error('REQUEST_ID_REUSED');
+        return { account, receipt: { result: JSON.parse(row.result_json!) as T } };
+      }
+      return { account, receipt: null };
+    };
+    const snapshot = await (timing ? timing.measure('ledger_read', read) : read());
+    if (snapshot.receipt) return { result: snapshot.receipt.result, account: snapshot.account };
+    const current = snapshot.account,
+      outcome = await apply(current.state);
     const json = JSON.stringify(outcome.state),
       result = JSON.stringify(outcome.result);
     if (json.length > 12000 || !result || result.length > 12000)
@@ -108,14 +153,19 @@ export class HealthyStore {
     if (this.defer) this.defer(statements);
     else {
       try {
-        await this.db.batch(statements);
+        await (timing
+          ? timing.measure('commit', () => this.db.batch(statements))
+          : this.db.batch(statements));
       } catch (error) {
-        const saved = await this.receipt<T>(owner, id, operation, input);
-        if (saved) return saved.result;
+        const saved = await read();
+        if (saved.receipt) return { result: saved.receipt.result, account: saved.account };
         throw error;
       }
     }
-    return outcome.result;
+    return {
+      result: outcome.result,
+      account: { state: outcome.state, version: current.version + 1 },
+    };
   }
   prepareSleep(
     owner: string,

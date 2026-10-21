@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { createHmac } from 'node:crypto';
+import { Miniflare } from 'miniflare';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
@@ -12,6 +14,214 @@ import { checkinProgress } from '../../web/models/cultivation.js';
 import { assessHabitDay, newHabitPeriod } from '../../src/domain/habits.ts';
 import { browserBin, fixture, serve, chrome, snapshot, clone, now } from './app-harness.mjs';
 import { beastFixture } from './linh-thu-fixture.mjs';
+import { miniAppApi } from '../../src/entrypoints/mini-app.ts';
+import { HealthyStore } from '../../src/adapters/d1/healthy-store.ts';
+import { ScheduleStore } from '../../src/adapters/d1/schedule-store.ts';
+import { D1BeastStore } from '../../src/adapters/d1/linh-thu-store.ts';
+
+test(
+  'ordinary draws use the production API and real delayed D1, preserve waiting UX and recover a lost x10 response',
+  { skip: !browserBin, timeout: 90000 },
+  async () => {
+    const mf = new Miniflare({
+      modules: true,
+      script: 'export default {fetch(){return new Response("ok")}}',
+      d1Databases: ['DB'],
+    });
+    let browser, server;
+    let releaseResponse;
+    try {
+      const db = await mf.getD1Database('DB');
+      for (const file of readdirSync('migrations')
+        .filter((file) => file.endsWith('.sql'))
+        .sort())
+        await db.exec(readFileSync('migrations/' + file, 'utf8').replace(/\r?\n/g, ' '));
+      const healthy = new HealthyStore(db),
+        schedule = new ScheduleStore(db),
+        token = 'local-draw-test-token';
+      await schedule.configure('123', '04:30', '22:30', 0, now);
+      const day = (await schedule.ensureDay('123', now)).day;
+      await new D1BeastStore(db).initialize('123', day, now);
+      await healthy.mutate('123', 'draw_ui_seed_001', 'fixture', {}, now, (state) => ({
+        state: { ...state, tickets: 30 },
+        result: {},
+      }));
+      const calls = [],
+        native = new WeakMap();
+      const slow = {
+        prepare(sql) {
+          const wrap = (statement) => {
+            const wrapped = {
+              bind: (...values) => wrap(statement.bind(...values)),
+              first: async () => {
+                calls.push('read');
+                await delay(50);
+                return statement.first();
+              },
+              all: async () => {
+                calls.push('read');
+                await delay(50);
+                return statement.all();
+              },
+              run: async () => {
+                calls.push('write');
+                await delay(50);
+                return statement.run();
+              },
+            };
+            native.set(wrapped, statement);
+            return wrapped;
+          };
+          return wrap(db.prepare(sql));
+        },
+        batch: async (statements) => {
+          calls.push('batch');
+          await delay(50);
+          return db.batch(statements.map((statement) => native.get(statement)));
+        },
+      };
+      const control = fixture();
+      control.state.account = await healthy.read('123');
+      let holdResponse = false,
+        loseResponse = false,
+        committed = false;
+      const timings = [];
+      control.api = async (incoming, endpoint) => {
+        if (endpoint === 'bootstrap') return Response.json(control.bootstrap());
+        if (endpoint === 'history')
+          return Response.json({ result: { items: [], offset: 0, total: 0, hasMore: false } });
+        if (endpoint === 'habits') return Response.json(control.habits);
+        if (endpoint === 'linh-thu/tower')
+          return Response.json({
+            eligibility: { day, eligible: false },
+            run: null,
+            account: { version: 1, state: {} },
+            wallet: control.state.account,
+          });
+        if (endpoint !== 'cultivation')
+          return Response.json({ error: 'NOT_FOUND' }, { status: 404 });
+        let raw = '';
+        for await (const part of incoming) raw += part;
+        const input = JSON.parse(raw);
+        control.posts.push({ path: endpoint, input });
+        const params = new URLSearchParams({
+          auth_date: String(Math.floor(now / 1000)),
+          user: JSON.stringify({ id: 123 }),
+        });
+        params.set(
+          'hash',
+          createHmac('sha256', createHmac('sha256', 'WebAppData').update(token).digest())
+            .update(
+              [...params]
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([key, value]) => key + '=' + value)
+                .join('\n'),
+            )
+            .digest('hex'),
+        );
+        const response = await miniAppApi(
+          new Request(new URL(incoming.url, server.url), {
+            method: 'POST',
+            headers: {
+              'X-Telegram-Init-Data': params.toString(),
+              'Content-Type': 'application/json',
+            },
+            body: raw,
+          }),
+          { DB: slow, TELEGRAM_USER_ID: '123', TELEGRAM_BOT_TOKEN: token },
+          now,
+        );
+        assert.equal(response.status, 200);
+        timings.push(response.headers.get('Server-Timing'));
+        control.state.account = (await response.clone().json()).account;
+        committed = true;
+        await delay(150); // Response transport latency, separate from database latency.
+        if (holdResponse)
+          await new Promise((resolve) => {
+            releaseResponse = resolve;
+          });
+        if (loseResponse) {
+          loseResponse = false;
+          return Response.json({ error: 'OPERATION_NOT_CONFIRMED' }, { status: 503 });
+        }
+        return response;
+      };
+      server = await serve(control);
+      browser = await chrome();
+      await browser.navigate(server.url, 390);
+      await browser.wait("!!document.querySelector('.focus-flip-card')");
+      await browser.evaluate("document.querySelector('[data-tab=achievements]').click()");
+      await browser.click('Quay thưởng · 30 vé');
+      for (const [index, count] of [1, 10, 1].entries()) {
+        calls.length = 0;
+        committed = false;
+        holdResponse = index === 0;
+        loseResponse = index === 1;
+        await browser.evaluate(`document.querySelector('[data-draw-count="${count}"]').click()`);
+        if (holdResponse) {
+          const deadline = Date.now() + 10000;
+          while ((!committed || !releaseResponse) && Date.now() < deadline) await delay(20);
+          assert.ok(
+            committed && releaseResponse,
+            'The real draw must commit before the response gate',
+          );
+          await delay(450);
+          assert.deepEqual(
+            await browser.evaluate(
+              `({busy:document.querySelector('.draw-result').getAttribute('aria-busy'),hint:document.querySelector('.draw-hint').textContent,reveal:!!document.querySelector('.mystery-revealed'),disabled:[...document.querySelectorAll('[data-draw-count]')].every(button=>button.disabled)})`,
+            ),
+            { busy: 'true', hint: 'Đang xác nhận phần thưởng…', reveal: false, disabled: true },
+          );
+          releaseResponse();
+        }
+        if (index === 1) {
+          await browser.wait(
+            "document.querySelector('[data-draw-count=\"10\"]').textContent.includes('Kiểm tra lại')",
+          );
+          assert.equal((await healthy.read('123')).state.tickets, 19);
+          assert.equal(
+            await browser.evaluate('document.querySelector(\'[data-draw-count="1"]\').disabled'),
+            true,
+          );
+          await browser.evaluate('document.querySelector(\'[data-draw-count="10"]\').click()');
+        }
+        const balance = [29, 19, 18][index];
+        await browser.wait(
+          `document.querySelector('[data-ticket-balance]').textContent==='${balance}'&&document.querySelector('.draw-result').getAttribute('aria-busy')==='false'`,
+        );
+        assert.equal((await healthy.read('123')).state.tickets, balance);
+        assert.deepEqual(
+          calls,
+          index === 1
+            ? ['read', 'read', 'read', 'batch', 'read']
+            : ['read', 'read', 'read', 'batch'],
+        );
+        assert.match(timings.at(-1), /total;dur=\d/);
+      }
+      assert.equal(new Set(control.posts.map((post) => post.input.id)).size, 3);
+      assert.equal(control.posts.length, 4, 'Recovery reuses the original request id');
+      assert.equal(
+        (
+          await db
+            .prepare("SELECT COUNT(*) AS n FROM cultivation_receipts WHERE operation='draw'")
+            .first()
+        ).n,
+        3,
+      );
+      assert.equal(
+        (await db.prepare("SELECT COUNT(*) AS n FROM beast_skill_events WHERE kind='draw'").first())
+          .n,
+        12,
+      );
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      releaseResponse?.();
+      await browser?.close();
+      await server?.close();
+      await mf.dispose();
+    }
+  },
+);
 
 test(
   'mobile screens and sheets keep Vietnamese text and controls reachable at large text and short heights',

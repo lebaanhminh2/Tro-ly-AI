@@ -8,6 +8,12 @@ import { beastCalendarWeek } from '../../domain/linh-thu-ultimates.ts';
 import { creditBeastReward } from './linh-thu-effects.ts';
 import { D1BeastStore } from './linh-thu-store.ts';
 import { query, type Database, type Statement } from './database.ts';
+import {
+  validBeastAccount,
+  type BeastAccount,
+  type OwnedBeast,
+} from '../../domain/linh-thu-account.ts';
+import type { BeastUltimate } from '../../domain/linh-thu-ultimates.ts';
 
 export type DrawLoot = ReturnType<typeof drawReward>['reward'];
 export function drawLootReward(loot: readonly DrawLoot[]): SkillReward {
@@ -31,24 +37,67 @@ export async function prepareBeastDraw(
   count: 1 | 10,
   random: () => number,
 ) {
-  const store = new D1BeastStore(db),
-    account = await store.read(owner);
-  if (account.activatedDay === null) return null;
-  const roles = await store.roles(owner, day),
-    role = roles.current.find((role) => role.role === 'companion');
-  const beast = role?.beastId ? await store.individual(owner, role.beastId, role.attemptId!) : null;
-  const ultimate = await store.ultimate(owner, beastCalendarWeek(now));
-  const ordinal =
-    (
-      await query(
-        db,
-        `SELECT COALESCE(SUM(COALESCE(json_extract(r.request_json,'$.count'),1)),0) AS total
-    FROM cultivation_receipts r JOIN schedule_days d ON d.owner=r.owner AND d.day=?
-    WHERE r.owner=? AND r.operation='draw' AND r.created>=d.start_at AND r.created<d.end_at`,
-        day,
-        owner,
-      ).first<{ total: number }>()
-    )?.total ?? 0;
+  // A single read keeps account, effective companion, ultimate and daily
+  // ordinal coherent without five sequential database round trips.
+  const row = await query(
+    db,
+    `SELECT ba.state_json AS account_json,ba.version,ba.activated_day,
+      u.state_json AS ultimate_json,
+      b.id,b.species_id,b.acquired_at,a.id AS attempt_id,a.rule_version,a.status,a.earned,a.gray,a.form,a.counters_json,
+      (SELECT COALESCE(SUM(COALESCE(json_extract(cr.request_json,'$.count'),1)),0)
+       FROM cultivation_receipts cr JOIN schedule_days d ON d.owner=cr.owner AND d.day=?
+       WHERE cr.owner=ba.owner AND cr.operation='draw' AND cr.created>=d.start_at AND cr.created<d.end_at) AS ordinal
+     FROM beast_accounts ba
+     LEFT JOIN beast_roles r ON r.owner=ba.owner AND r.role='companion'
+       AND r.effective_day=(SELECT MAX(effective_day) FROM beast_roles WHERE owner=ba.owner AND role='companion' AND effective_day<=?)
+     LEFT JOIN beasts b ON b.owner=ba.owner AND b.id=r.beast_id
+     LEFT JOIN beast_attempts a ON a.owner=b.owner AND a.beast_id=b.id AND a.id=COALESCE(r.attempt_id,b.current_attempt_id)
+     LEFT JOIN beast_ultimates u ON u.owner=ba.owner AND u.week_start=?
+     WHERE ba.owner=?`,
+    day,
+    day,
+    beastCalendarWeek(now),
+    owner,
+  ).first<{
+    account_json: string;
+    version: number;
+    activated_day: number | null;
+    ultimate_json: string | null;
+    id: string | null;
+    species_id: string;
+    acquired_at: number;
+    attempt_id: string | null;
+    rule_version: 1;
+    status: OwnedBeast['attempt']['status'];
+    earned: number;
+    gray: number;
+    form: NonNullable<OwnedBeast['attempt']['form']>;
+    counters_json: string;
+    ordinal: number;
+  }>();
+  if (!row || row.activated_day === null) return null;
+  const account = { state: JSON.parse(row.account_json) as BeastAccount, version: row.version };
+  validBeastAccount(account.state);
+  const beast: OwnedBeast | null =
+    row.id && row.attempt_id
+      ? {
+          id: row.id,
+          speciesId: row.species_id,
+          attemptId: row.attempt_id,
+          acquiredAt: row.acquired_at,
+          counters: JSON.parse(row.counters_json),
+          attempt: {
+            speciesId: row.species_id,
+            ruleVersion: row.rule_version,
+            status: row.status,
+            earned: row.earned,
+            gray: row.gray,
+            form: row.form,
+          },
+        }
+      : null;
+  const ultimate = row.ultimate_json ? (JSON.parse(row.ultimate_json) as BeastUltimate) : null,
+    ordinal = row.ordinal;
   return (healthy: HealthyState) => {
     if (healthy.suspended || healthy.tickets < count) throw Error('NO_TICKETS');
     let state = { ...healthy, tickets: healthy.tickets - count },
