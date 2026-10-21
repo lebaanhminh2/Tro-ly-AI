@@ -154,7 +154,9 @@ test('tower stops pay only the last cleared floor; claims and terminal failures 
         ? { tickets: 2, summonTickets: 0 }
         : floor === 2
           ? { tickets: 3, summonTickets: 0 }
-          : { tickets: 0, summonTickets: floor === 3 ? 1 : 2 },
+          : floor === 3
+            ? { tickets: 5, summonTickets: 0 }
+            : { tickets: 0, summonTickets: 1 },
     );
     assert.throws(() => claimBeastTower(claimed.state));
     assert.throws(() => pickBeastTower(state, 2, () => 0));

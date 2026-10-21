@@ -38,7 +38,9 @@ for (const individuals of [24, 2400]) {
     raw.exec('BEGIN');
     for (let i = 0; i < individuals; i++) {
       raw
-        .prepare("INSERT INTO beasts VALUES('123',?,'frostnip',?,?,?)")
+        .prepare(
+          "INSERT INTO beasts(owner,id,species_id,current_attempt_id,acquired_at,acquired_receipt) VALUES('123',?,'frostnip',?,?,?)",
+        )
         .run('beast_perf_' + i, 'a_' + i, now + i, 'fixture');
       raw
         .prepare(
@@ -340,7 +342,11 @@ for (const [job, pendingSleep] of [
     metrics.push(metric);
     console.log(JSON.stringify(metric));
     assert.ok(queries <= 50, JSON.stringify(metric));
-    if (job === 0) assert.equal((await store.read('123')).state.summonTickets, 1);
+    if (job === 0) {
+      assert.equal((await store.read('123')).state.summonTickets, 0);
+      const expired = await store.tower('123', day);
+      assert.equal(expired!.state.status, 'expired');
+    }
     if (pendingSleep) {
       assert.equal(
         (await store.individual('123', 'active_training'))!.attempt.earned,

@@ -15,7 +15,14 @@ import {
   beastDiscovery,
   beastUltimateRules,
 } from '../models/linh-thu.js';
-import { beastJourney, beastAbilities, beastAbilityRoadmap } from '../views/linh-thu.js';
+import {
+  beastJourney,
+  beastAbilities,
+  beastAbilityRoadmap,
+  beastCollectionCard,
+  beastProtectionButton,
+  updateBeastProtectionButton,
+} from '../views/linh-thu.js';
 import { prefersReducedMotion } from '../core/experience.js';
 import { createBeastReveal } from '../ui/beast-reveal.js';
 import { createBeastEvolution } from '../ui/beast-evolution.js';
@@ -25,6 +32,15 @@ const pendingKey = 'minh-anh-beast-pending-v1';
 export function createBeastActions(context) {
   const { state, runtime, render, toast, openSheet, closeSheet, sheetContent, confirm } = context;
   let activeReveal, activeEvolution;
+  // Only one account version can commit at a time. Coalesce each individual's
+  // latest desired value while acknowledging its star without rebuilding cards.
+  const protectionChanges = new Map();
+  state.beastProtectionChanges = protectionChanges;
+  let protectionSaving = false,
+    protectionReconciling = false;
+  let previewGeneration = 0,
+    previewLoading,
+    trainingDayTimer;
   let generation = 0,
     speciesGeneration = 0,
     speciesLoading,
@@ -84,10 +100,11 @@ export function createBeastActions(context) {
       }),
     );
   }
-  async function readCollection(cursor = null, species = null) {
+  async function readCollection(cursor = null, species = null, purpose = null) {
     const params = new URLSearchParams();
     if (cursor) params.set('cursor', cursor);
     if (species) params.set('species', species);
+    if (purpose) params.set('purpose', purpose);
     const page = await liveRequest('linh-thu/collection' + (params.size ? '?' + params : ''));
     if (cursor && page.nextCursor === cursor)
       throw Error('Không thể tải tiếp bộ sưu tập. Cậu thử lại nhé.');
@@ -144,6 +161,54 @@ export function createBeastActions(context) {
     speciesLoading = { revision, promise };
     return promise;
   }
+  function scheduleTrainingDay(data) {
+    clearTimeout(trainingDayTimer);
+    if (!data.day || !Number.isFinite(data.day.endAt) || !Number.isFinite(data.now)) return;
+    trainingDayTimer = setTimeout(
+      () => {
+        if (!state.loaded || state.beastData !== data) return;
+        data.trainingPreview = null;
+        render();
+        if (state.tab === 'beasts' && document.visibilityState === 'visible' && !runtime.saving)
+          loadBeasts();
+      },
+      Math.max(1, Math.min(2147483647, data.day.endAt - data.now + 30)),
+    );
+  }
+  async function loadBeastTrainingPreview(invalidate = false) {
+    if (!state.live || !state.loaded || !state.beastData) return;
+    const data = state.beastData,
+      revision = runtime.revision;
+    if (!invalidate && previewLoading?.data === data && previewLoading.revision === revision)
+      return previewLoading.promise;
+    const requestGeneration = ++previewGeneration;
+    if (invalidate) {
+      data.trainingPreview = null;
+      render();
+    }
+    const isCurrent = () =>
+      requestGeneration === previewGeneration &&
+      revision === runtime.revision &&
+      state.loaded &&
+      state.beastData === data;
+    const promise = (async () => {
+      try {
+        const startedAt = Date.now();
+        // A newer base needs its own read even while transport coalesces older GETs.
+        const result = await liveRequest(
+          `linh-thu/training-preview?revision=${revision}&generation=${requestGeneration}`,
+        );
+        if (isCurrent()) data.trainingPreview = { ...result, receivedAt: startedAt };
+      } catch {
+        if (isCurrent()) data.trainingPreview = null;
+      } finally {
+        if (requestGeneration === previewGeneration) previewLoading = null;
+        if (isCurrent()) render();
+      }
+    })();
+    previewLoading = { data, revision, promise };
+    return promise;
+  }
   async function loadBeasts(more = false, scope = 'inventory') {
     if (scope === 'species') return loadBeastSpecies(more);
     if (!state.live || !state.loaded) return;
@@ -169,7 +234,9 @@ export function createBeastActions(context) {
           const [data, page] = await Promise.all([liveRequest('linh-thu'), readCollection()]);
           if (!isCurrent()) return;
           if (state.beastData && data.account.version < state.beastData.account.version) return;
+          data.trainingPreview = state.beastData?.trainingPreview ?? null;
           state.beastData = data;
+          scheduleTrainingDay(data);
           state.beastCollection = page;
           state.cultivation = mapAccount(data.wallet, state.day?.day);
           invalidateSpeciesPage();
@@ -181,7 +248,7 @@ export function createBeastActions(context) {
           // indicator until role portraits are warm so rapid tab switches
           // retain decoded art; image completion never reapplies old data.
           render();
-          await prepareRoleImages(data);
+          await Promise.all([prepareRoleImages(data), loadBeastTrainingPreview()]);
         }
       } catch (error) {
         if (requestGeneration === generation && revision === runtime.revision)
@@ -224,7 +291,10 @@ export function createBeastActions(context) {
     return towerLoading;
   }
   async function mutateBeast(fields) {
-    if (runtime.saving) return null;
+    if (runtime.saving) {
+      if (protectionSaving) toast('Đang lưu dấu sao. Chờ lưu xong rồi thực hiện thao tác này nhé.');
+      return null;
+    }
     if (!state.live) {
       toast('Mở ứng dụng đã đăng nhập để sử dụng.');
       return null;
@@ -324,6 +394,8 @@ export function createBeastActions(context) {
       runtime.revision++;
       render();
       if (unchanged && !runtime.pendingBeast) {
+        // Routine star writes use their own queue. This path also handles a
+        // recovered receipt, whose optimistic snapshot must be reconciled.
         if (state.tab === 'beasts') loadBeasts();
         if (fields.operation.startsWith('tower_') || state.tab === 'habits') loadTower();
       }
@@ -342,6 +414,10 @@ export function createBeastActions(context) {
         state.live &&
         !context.sheet.open &&
         sheetContent.firstElementChild === recoveryTitle;
+      if (pending.input.operation === 'sacrifice') {
+        presentResult('sacrifice', result, recoveryWasOpen ? recoverySheet() : unchangedPage);
+        return;
+      }
       if (
         (!pending.input.operation.startsWith('tower_') && pending.input.operation !== 'evolve') ||
         (recoveryWasOpen ? recoverySheet() : unchangedPage)
@@ -362,6 +438,7 @@ export function createBeastActions(context) {
       if (revision !== runtime.revision || !state.loaded || runtime.pendingBeast !== pending)
         return;
       clearPending();
+      if (pending.input.operation === 'protect') protectionChanges.clear();
       await loadBeasts();
       await loadTower();
       presentRecovered(receipt.result);
@@ -375,6 +452,7 @@ export function createBeastActions(context) {
       render();
     }
     if (retry) {
+      if (pending.input.operation === 'protect') protectionChanges.clear();
       // Recovery can be opened before the reloaded page has its first beast data.
       // Its revision invalidated that initial read, so load an authoritative base
       // before retrying an intent that never reached the server.
@@ -386,12 +464,20 @@ export function createBeastActions(context) {
       if (result) presentRecovered(result);
     }
   }
-  function presentResult(operation, result) {
+  function presentResult(operation, result, mayReplaceSheet = true) {
     if (operation === 'summon' || operation === 'choose_summon')
       result.choice ? openBeastSummonChoice(result.choice) : showBeastReveal(result);
     else if (operation.startsWith('tower_')) openBeastTower(result);
     else if (operation === 'craft') showAlchemyResult(result);
     else if (operation === 'evolve') showEvolutionResult(result);
+    else if (operation === 'sacrifice') {
+      state.beastSacrifice = null;
+      if (mayReplaceSheet && context.sheet.open) openBeastExchange('sacrifice');
+      toast(
+        `Đã hiến tế ${result.sacrificedIds.length} cá thể, nhận ${result.tickets} vé triệu hồi. Dư ${result.remainder} điểm.`,
+      );
+    } else if (operation === 'protect')
+      toast(result.isProtected ? 'Đã bảo vệ linh thú.' : 'Đã bỏ bảo vệ linh thú.');
     else toast('Đã lưu.');
   }
   function setBeastPanel(panel) {
@@ -402,7 +488,12 @@ export function createBeastActions(context) {
     if (panel === 'collection') loadBeastSpecies();
   }
   function openBeastSpecies(speciesId) {
-    if (speciesId && !(state.beastData?.speciesCounts?.[speciesId] > 0)) return;
+    if (
+      speciesId &&
+      !(state.beastData?.speciesCounts?.[speciesId] > 0) &&
+      !state.beastData?.discoveries?.[speciesId]
+    )
+      return;
     state.beastCollectionSpecies = speciesId;
     invalidateSpeciesPage();
     render();
@@ -647,7 +738,7 @@ export function createBeastActions(context) {
     });
     activeEvolution = evolution;
   }
-  function showBeast(beast, previewForm, allSkills = false) {
+  function showBeast(beast, previewForm, allSkills = false, onBack = null) {
     const data = state.beastData,
       progress = beastProgress(data, beast),
       species = progress.species;
@@ -669,13 +760,29 @@ export function createBeastActions(context) {
       known = form <= history.form;
     openSheet(known ? species.forms[form - 1] : `T${form} · Chưa khám phá`);
     context.sheet.classList.add('beast-sheet-open');
+    if (onBack)
+      sheetContent.append(
+        button('‹ Quay lại hiến tế', onBack, 'text-button beast-collection-back'),
+      );
     const presentation = {
       ...context.ui,
-      showBeast,
+      showBeast: (entry, form, skills) => showBeast(entry, form, skills, onBack),
       evolveBeast,
       beastPending: () => !!runtime.pendingBeast,
     };
     const header = el('div', undefined, 'beast-detail-portrait');
+    const identityRow = el('div', undefined, 'beast-detail-identity-row');
+    const identityCopy = el('div');
+    identityCopy.append(
+      el(
+        'p',
+        `${beastIdentity(beast)} · ${form === progress.form ? 'Dạng hiện tại' : form <= progress.form ? 'Dạng cá thể này đã đạt' : known ? 'Đã khám phá · Cá thể này chưa đạt' : 'Chưa khám phá'}`,
+        'hint',
+      ),
+      el('p', `${species.rank} · T${form}`, 'beast-detail-meta'),
+    );
+    identityRow.append(identityCopy, beastProtectionButton(context.ui, state, beast));
+    header.append(identityRow);
     if (known) {
       const image = portrait(
         species,
@@ -692,20 +799,6 @@ export function createBeastActions(context) {
       mystery.append(journey.querySelector(`[data-form="${form}"] .beast-paw`));
       header.append(mystery, el('p', 'Tiến hóa để khám phá diện mạo này.', 'hint'));
     }
-    header.append(
-      el('p', `${species.rank} · T${form}`, 'beast-detail-meta'),
-      el(
-        'p',
-        form === progress.form
-          ? `${beastIdentity(beast)} · Dạng hiện tại`
-          : form <= progress.form
-            ? 'Dạng cá thể này đã đạt'
-            : known
-              ? 'Đã khám phá · Cá thể này chưa đạt'
-              : '',
-        'hint',
-      ),
-    );
     sheetContent.append(header, beastJourney(presentation, data, beast, form));
     sheetContent.append(beastAbilities(presentation, data, beast, form));
     if (['sealed', 'completed'].includes(beast.attempt.status))
@@ -717,10 +810,213 @@ export function createBeastActions(context) {
         ),
       );
   }
-  function openBeastExchange() {
-    openSheet('Đổi vé triệu hồi');
+  function applyProtectionValue(beast, value) {
+    beast.isProtected = value;
+    if (state.beastSacrifice) {
+      state.beastSacrifice.generation++;
+      state.beastSacrifice.loading = false;
+      state.beastSacrifice.pages.clear();
+      state.beastSacrifice.availableCounts = null;
+      if (value) state.beastSacrifice.selected.delete(beast.id);
+    }
+    for (const entry of [
+      ...(state.beastSpeciesPage?.beasts ?? []),
+      ...(state.beastCollection?.beasts ?? []),
+      ...(state.beastData?.selected ?? []),
+      ...Object.values(state.beastData?.collectionOverview ?? {}).map((entry) => entry.best),
+    ])
+      if (entry.id === beast.id) entry.isProtected = value;
+    for (const star of /** @type {NodeListOf<HTMLButtonElement>} */ (
+      document.querySelectorAll(`.beast-protection[data-protection-id="${CSS.escape(beast.id)}"]`)
+    )) {
+      updateBeastProtectionButton(star, beast, protectionChanges.get(beast.id));
+      if (star.dataset.protectionReadonly !== 'true') star.disabled = protectionReconciling;
+    }
+  }
+  function protectionFeedback(message, unconfirmed = false) {
+    const root =
+      context.sheet.open && sheetContent.querySelector('.beast-detail-identity-row')
+        ? sheetContent.querySelector('.beast-detail-identity-row')
+        : context.content.querySelector('.beast-collection-heading');
+    document.querySelectorAll('.beast-protection-feedback').forEach((node) => node.remove());
+    const feedback = el('div', undefined, 'beast-protection-feedback');
+    feedback.setAttribute('role', 'status');
+    feedback.append(el('span', message));
+    if (unconfirmed) feedback.append(button('Kiểm tra kết quả', recoverBeast, 'text-button'));
+    if (root) root.after(feedback);
+    else toast(message);
+  }
+  function toggleBeastProtection(beast) {
+    if (!state.live || !state.loaded || !state.beastData) {
+      toast('Mở ứng dụng đã đăng nhập để sử dụng.');
+      return false;
+    }
+    if (
+      protectionReconciling ||
+      (!protectionSaving && (runtime.saving || runtime.pendingBeast || runtime.pendingDraw))
+    ) {
+      toast('Có thao tác chưa xác nhận. Kiểm tra kết quả trước nhé.');
+      return false;
+    }
+    const change = protectionChanges.get(beast.id) ?? {
+      beast,
+      confirmed: !!beast.isProtected,
+      desired: !!beast.isProtected,
+      status: 'queued',
+    };
+    change.desired = !change.desired;
+    if (change.status !== 'saving') change.status = 'queued';
+    protectionChanges.set(beast.id, change);
+    applyProtectionValue(beast, change.desired);
+    document.querySelectorAll('.beast-protection-feedback').forEach((node) => node.remove());
+    void saveProtectionChanges();
+    return true;
+  }
+  async function saveProtectionChanges() {
+    if (protectionSaving) return;
+    protectionSaving = true;
+    state.beastProtectionSaving = true;
+    runtime.saving = true;
+    try {
+      while (protectionChanges.size && state.live && state.loaded) {
+        const [beastId, change] = protectionChanges.entries().next().value;
+        if (change.desired === change.confirmed) {
+          protectionChanges.delete(beastId);
+          applyProtectionValue(change.beast, change.confirmed);
+          continue;
+        }
+        const sentValue = change.desired;
+        change.status = 'saving';
+        applyProtectionValue(change.beast, change.desired);
+        const data = state.beastData;
+        const input = {
+          operation: 'protect',
+          beastId,
+          isProtected: sentValue,
+          day: data.day?.day,
+          version: data.account.version,
+        };
+        const id = requestIdentity('linh-thu', input);
+        runtime.pendingBeast = { input, id };
+        persistPending(runtime.pendingBeast);
+        const revision = ++runtime.revision;
+        let failure;
+        try {
+          const response = await liveRequest('linh-thu', input);
+          if (revision !== runtime.revision || !state.loaded || !state.live) {
+            // A newer session/page cannot adopt this response. Retain the receipt
+            // intent, then reconcile before allowing any other business write.
+            failure = {
+              code: 'NETWORK_UNCONFIRMED',
+              message: 'Chưa xác nhận lưu dấu sao. Kiểm tra kết quả để tiếp tục.',
+            };
+          } else {
+            clearPending();
+            state.beastData.account = response.account;
+            state.beastData.wallet = response.wallet;
+            state.cultivation = mapAccount(response.wallet, state.day?.day);
+            change.confirmed = response.result.isProtected;
+            if (change.desired === change.confirmed) protectionChanges.delete(beastId);
+            else change.status = 'queued';
+            applyProtectionValue(change.beast, change.desired);
+            state.beastError = null;
+          }
+        } catch (error) {
+          failure = error;
+        }
+        if (failure) {
+          protectionReconciling = true;
+          const unconfirmed =
+            !failure.code ||
+            ['NETWORK_UNCONFIRMED', 'OPERATION_NOT_CONFIRMED'].includes(failure.code);
+          if (!unconfirmed) clearPending();
+          const queued = [...protectionChanges.values()];
+          protectionChanges.clear();
+          if (unconfirmed) {
+            change.desired = sentValue;
+            change.status = 'unconfirmed';
+            protectionChanges.set(beastId, change);
+          }
+          for (const other of queued)
+            applyProtectionValue(
+              other.beast,
+              unconfirmed && other === change ? sentValue : other.confirmed,
+            );
+          const message = unconfirmed
+            ? 'Chưa xác nhận lưu dấu sao. Kiểm tra kết quả trước khi tiếp tục.'
+            : failure.message;
+          state.beastError = message;
+          protectionFeedback(message, unconfirmed);
+          if (!unconfirmed && ['BEAST_CHANGED', 'BEAST_DAY_CLOSED'].includes(failure.code)) {
+            // Read a new version before the next queued intent; never replay a
+            // rejected request using a different body or receipt identity.
+            try {
+              const fresh = await liveRequest('linh-thu');
+              if (state.loaded && revision === runtime.revision) {
+                state.beastData.account = fresh.account;
+                state.beastData.day = fresh.day;
+                let cursor = null;
+                do {
+                  const page = await readCollection(cursor, change.beast.speciesId);
+                  if (!state.loaded || revision !== runtime.revision) break;
+                  const current = page.beasts.find((entry) => entry.id === beastId);
+                  if (current) {
+                    applyProtectionValue(change.beast, !!current.isProtected);
+                    break;
+                  }
+                  cursor = page.nextCursor;
+                } while (cursor);
+              }
+            } catch {
+              /* The next interaction can retry after connectivity returns. */
+            }
+          }
+          break;
+        }
+      }
+    } finally {
+      protectionSaving = false;
+      protectionReconciling = false;
+      state.beastProtectionSaving = false;
+      runtime.saving = false;
+      for (const star of /** @type {NodeListOf<HTMLButtonElement>} */ (
+        document.querySelectorAll('.beast-protection')
+      ))
+        star.disabled =
+          !!runtime.pendingBeast || !!state.beastBusy || star.dataset.protectionReadonly === 'true';
+      if (
+        state.loaded &&
+        !runtime.pendingBeast &&
+        state.beastPanel === 'collection' &&
+        state.beastCollectionSpecies &&
+        !state.beastSpeciesPage
+      )
+        void loadBeastSpecies();
+    }
+  }
+  function openBeastExchange(tab = 'exchange') {
+    tab = tab === 'sacrifice' ? 'sacrifice' : 'exchange';
+    const switching =
+      context.sheet.open && context.sheet.classList.contains('beast-exchange-sheet');
+    if (switching) {
+      for (const panel of sheetContent.querySelectorAll('.beast-exchange-panel, .beast-sacrifice'))
+        panel.remove();
+    } else openSheet('Đổi vé triệu hồi');
+    context.sheet.classList.add('beast-sheet-open', 'beast-exchange-sheet');
+    if (!switching) buildExchangeTabs();
+    for (const control of sheetContent.querySelectorAll('[data-exchange-tab]')) {
+      const selected = control.dataset.exchangeTab === tab;
+      control.setAttribute('aria-selected', String(selected));
+      control.tabIndex = selected ? 0 : -1;
+      control.disabled = state.beastBusy || !!runtime.pendingBeast;
+    }
+    if (switching)
+      sheetContent.querySelector(`[data-exchange-tab="${tab}"]`)?.focus({ preventScroll: true });
+    if (tab === 'sacrifice') return renderBeastSacrifice();
+    const panel = el('div', undefined, 'beast-exchange-panel');
+    sheetContent.append(panel);
     const isCurrent = currentSheet();
-    sheetContent.append(
+    panel.append(
       el(
         'p',
         '20 vé thường = 1 vé triệu hồi. Vé thường vẫn dùng chung với vòng quay hiện tại.',
@@ -761,7 +1057,440 @@ export function createBeastActions(context) {
     }
     amount.input.addEventListener('input', updateCost);
     updateCost();
-    sheetContent.append(amount.wrap, cost, exchange);
+    panel.append(amount.wrap, cost, exchange);
+  }
+
+  function buildExchangeTabs() {
+    const tabs = el('div', undefined, 'beast-exchange-tabs');
+    tabs.setAttribute('role', 'tablist');
+    tabs.setAttribute('aria-label', 'Cách đổi vé triệu hồi');
+    for (const [id, label] of [
+      ['exchange', 'Đổi vé'],
+      ['sacrifice', 'Hiến tế'],
+    ]) {
+      const control = button(label, () => openBeastExchange(id), 'beast-exchange-tab');
+      control.dataset.exchangeTab = id;
+      control.setAttribute('role', 'tab');
+      control.addEventListener('keydown', (event) => {
+        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key) || control.disabled)
+          return;
+        event.preventDefault();
+        const next =
+          event.key === 'Home'
+            ? 'exchange'
+            : event.key === 'End'
+              ? 'sacrifice'
+              : id === 'exchange'
+                ? 'sacrifice'
+                : 'exchange';
+        openBeastExchange(next);
+        sheetContent.querySelector(`[data-exchange-tab="${next}"]`)?.focus({ preventScroll: true });
+      });
+      control.disabled = state.beastBusy || !!runtime.pendingBeast;
+      tabs.append(control);
+    }
+    sheetContent.append(tabs);
+  }
+
+  function sacrificeDraft() {
+    return (state.beastSacrifice ??= {
+      selected: new Map(),
+      pages: new Map(),
+      availableCounts: null,
+      screen: 'summary',
+      species: null,
+      rank: 'all',
+      loading: false,
+      error: null,
+      generation: 0,
+    });
+  }
+  function sacrificeQuote() {
+    const selected = [...sacrificeDraft().selected.values()];
+    const config = state.beastData.config;
+    const values = config.sacrificePoints ?? { R: 1, SR: 1, SSR: 2, UR: 3 };
+    const cost = config.sacrificeCost ?? 10;
+    const points = selected.reduce(
+      (sum, beast) => sum + values[beastSpecies(state.beastData, beast.speciesId).rank],
+      0,
+    );
+    const previous = state.beastData.account.state.sacrificePoints ?? 0;
+    return {
+      selected,
+      points,
+      previous,
+      tickets: Math.floor((points + previous) / cost),
+      remainder: (points + previous) % cost,
+      cost,
+    };
+  }
+  async function loadSacrificeSpecies(more = false) {
+    const draft = sacrificeDraft(),
+      species = draft.species;
+    if (draft.loading || !state.live || !state.loaded) return;
+    const page = draft.pages.get(species),
+      cursor = more ? page?.nextCursor : null;
+    if (more && !cursor) return;
+    const token = ++draft.generation,
+      isCurrent = currentSheet();
+    draft.loading = true;
+    draft.error = null;
+    renderBeastSacrifice();
+    try {
+      const result = await readCollection(cursor, species, 'sacrifice');
+      if (draft !== state.beastSacrifice || token !== draft.generation) return;
+      if (result.day !== undefined && result.day !== state.beastData.day.day)
+        throw Error('Ngày hoạt động vừa thay đổi. Đóng cửa sổ và tải lại để tiếp tục.');
+      draft.availableCounts = result.availableCounts ?? {};
+      if (species) draft.pages.set(species, mergeCollection(more ? page : null, result));
+      for (const beast of result.beasts) {
+        if (!draft.selected.has(beast.id)) continue;
+        if (beast.isProtected || beast.sacrificeBlockedReason) draft.selected.delete(beast.id);
+        else draft.selected.set(beast.id, beast);
+      }
+    } catch (error) {
+      if (token === draft.generation) draft.error = error.message;
+    } finally {
+      if (token === draft.generation) {
+        draft.loading = false;
+        if (isCurrent() || sheetContent.querySelector('.beast-sacrifice')) renderBeastSacrifice();
+      }
+    }
+  }
+  function renderBeastSacrifice() {
+    if (
+      !context.sheet.open ||
+      !sheetContent.querySelector('[data-exchange-tab="sacrifice"][aria-selected="true"]')
+    )
+      return;
+    const draft = sacrificeDraft(),
+      quote = sacrificeQuote(),
+      data = state.beastData;
+    const old = sheetContent.querySelector('.beast-sacrifice');
+    const focusedBeast = old?.contains(document.activeElement)
+      ? document.activeElement.closest('.beast-collection-card')?.getAttribute('data-beast-id')
+      : null;
+    const focusedControl = old?.contains(document.activeElement)
+      ? document.activeElement
+          .closest('[data-sacrifice-focus]')
+          ?.getAttribute('data-sacrifice-focus')
+      : null;
+    const previousScroll = old?.querySelector('.beast-sacrifice-body')?.scrollTop ?? 0;
+    const previousOuterScroll = old?.scrollTop ?? 0;
+    const root = el('div', undefined, 'beast-sacrifice');
+    root.dataset.screen = draft.screen;
+    root.dataset.species = draft.species ?? '';
+    root.dataset.rank = draft.rank;
+    const body = el('div', undefined, 'beast-sacrifice-body');
+    if (draft.screen !== 'picker') {
+      body.append(
+        el(
+          'p',
+          '10 điểm hiến tế = 1 vé triệu hồi. R / SR: 1 điểm · SSR: 2 điểm · UR: 3 điểm.',
+          'hint',
+        ),
+        el('p', `Điểm đang tích lũy: ${quote.previous}/${quote.cost}`, 'beast-sacrifice-balance'),
+      );
+    }
+    const blocked = state.beastBusy || !!runtime.pendingBeast;
+    if (runtime.pendingBeast) {
+      body.append(
+        el('p', 'Có thao tác chưa xác nhận. Kiểm tra kết quả trước khi tiếp tục.', 'hint'),
+        button('Kiểm tra kết quả', recoverBeast, 'secondary'),
+      );
+    }
+    if (draft.screen === 'summary') {
+      const choose = button(
+        quote.selected.length ? 'Chọn thêm linh thú' : 'Chọn linh thú',
+        () => {
+          draft.screen = 'picker';
+          draft.species = null;
+          renderBeastSacrifice();
+          loadSacrificeSpecies();
+        },
+        'secondary beast-sacrifice-choose',
+      );
+      choose.dataset.sacrificeFocus = 'choose';
+      choose.disabled = blocked;
+      body.append(
+        choose,
+        el('p', 'Linh thú sao vàng và cá thể đang được sử dụng không thể hiến tế.', 'hint'),
+      );
+      if (quote.selected.length) body.append(sacrificeSelectedList());
+    } else if (draft.screen === 'picker') {
+      // Keep navigation outside the changing list, including empty rarity results.
+      const navigation = el('div', undefined, 'beast-sacrifice-navigation');
+      root.append(navigation);
+      const back = button(
+        draft.species ? '‹ Các loài linh thú' : '‹ Quay lại',
+        () => {
+          if (draft.loading) {
+            draft.generation++;
+            draft.loading = false;
+          }
+          if (draft.species) draft.species = null;
+          else draft.screen = 'summary';
+          renderBeastSacrifice();
+        },
+        'text-button beast-collection-back',
+      );
+      back.dataset.sacrificeFocus = 'back';
+      back.disabled = blocked;
+      navigation.append(back);
+      if (!draft.species) {
+        const filters = el('div', undefined, 'beast-sacrifice-filters');
+        filters.setAttribute('aria-label', 'Lọc phẩm cấp');
+        for (const rank of ['all', 'R', 'SR', 'SSR', 'UR']) {
+          const filter = button(
+            rank === 'all' ? 'Tất cả' : rank,
+            () => {
+              draft.rank = rank;
+              renderBeastSacrifice();
+            },
+            'secondary',
+          );
+          filter.dataset.sacrificeFocus = 'rank-' + rank;
+          filter.setAttribute('aria-pressed', String(draft.rank === rank));
+          filter.disabled = blocked;
+          filters.append(filter);
+        }
+        navigation.append(filters);
+        const atlas = el('div', undefined, 'beast-atlas');
+        for (const species of data.config.catalog) {
+          if (draft.rank !== 'all' && draft.rank !== species.rank) continue;
+          const count = data.speciesCounts?.[species.id] ?? 0;
+          if (!count) continue;
+          const available = draft.availableCounts?.[species.id];
+          const entry = button(
+            '',
+            () => {
+              draft.species = species.id;
+              renderBeastSacrifice();
+              loadSacrificeSpecies();
+            },
+            'beast-atlas-entry',
+          );
+          entry.dataset.rank = species.rank;
+          entry.dataset.species = species.id;
+          entry.disabled = blocked || draft.loading;
+          entry.append(
+            portrait(species, 1, true),
+            el('strong', species.title),
+            el(
+              'small',
+              `${species.rank} · ${available === undefined ? 'Đang kiểm tra…' : `${available}/${count} có thể hiến tế`}`,
+            ),
+          );
+          atlas.append(entry);
+        }
+        body.append(atlas);
+        if (!atlas.childElementCount)
+          body.append(el('p', 'Chưa có cá thể thuộc phẩm cấp này.', 'hint'));
+      } else {
+        const species = beastSpecies(data, draft.species),
+          page = draft.pages.get(draft.species);
+        body.append(el('h3', species.title));
+        const grid = el('div', undefined, 'beast-collection-grid');
+        for (const beast of page?.beasts ?? []) {
+          const rank = beastSpecies(data, beast.speciesId).rank;
+          grid.append(
+            beastCollectionCard(context.ui, state, beast, {
+              selected: draft.selected.has(beast.id),
+              points: (data.config.sacrificePoints ?? { R: 1, SR: 1, SSR: 2, UR: 3 })[rank],
+              blockedReason: beast.isProtected
+                ? 'Đã đánh dấu bảo vệ'
+                : beast.sacrificeBlockedReason,
+              onSelect: (entry) => {
+                if (draft.selected.has(entry.id)) draft.selected.delete(entry.id);
+                else {
+                  if (draft.selected.size >= (data.config.sacrificeLimit ?? 24)) {
+                    toast('Mỗi lần chọn tối đa 24 cá thể.');
+                    return;
+                  }
+                  draft.selected.set(entry.id, entry);
+                }
+                renderBeastSacrifice();
+              },
+              onDetails: (entry) =>
+                showBeast(entry, undefined, false, () => {
+                  openBeastExchange('sacrifice');
+                  loadSacrificeSpecies();
+                }),
+            }),
+          );
+        }
+        body.append(grid);
+        if (!draft.loading && !page?.beasts.length && !draft.error)
+          body.append(el('p', 'Không còn cá thể trong loài này.', 'hint'));
+        if (page?.nextCursor) {
+          const more = button('Tải tiếp các cá thể', () => loadSacrificeSpecies(true), 'secondary');
+          more.dataset.sacrificeFocus = 'more';
+          more.disabled = draft.loading || blocked;
+          body.append(more);
+        }
+      }
+    } else if (draft.screen === 'review') {
+      body.append(el('h3', `Hiến tế ${quote.selected.length} cá thể?`));
+      const ranks = {};
+      for (const beast of quote.selected) {
+        const rank = beastSpecies(data, beast.speciesId).rank;
+        ranks[rank] = (ranks[rank] ?? 0) + 1;
+      }
+      body.append(
+        el(
+          'p',
+          Object.entries(ranks)
+            .map(([rank, count]) => `${count} ${rank}`)
+            .join(' · '),
+          'hint',
+        ),
+      );
+      const warnings = [];
+      if (
+        quote.selected.some((beast) =>
+          ['SSR', 'UR'].includes(beastSpecies(data, beast.speciesId).rank),
+        )
+      )
+        warnings.push('Có cá thể SSR / UR.');
+      if (
+        quote.selected.some(
+          (beast) =>
+            beast.attempt.earned > 0 ||
+            beast.attempt.gray > 0 ||
+            beastProgress(data, beast).form > 1,
+        )
+      )
+        warnings.push(
+          'Có cá thể đã luyện hoặc tiến hóa. Toàn bộ tiến trình luyện của chúng sẽ mất.',
+        );
+      const selectedCounts = {};
+      for (const beast of quote.selected)
+        selectedCounts[beast.speciesId] = (selectedCounts[beast.speciesId] ?? 0) + 1;
+      if (Object.entries(selectedCounts).some(([id, count]) => count >= data.speciesCounts[id]))
+        warnings.push('Có loài sẽ không còn cá thể đang sở hữu. Lịch sử khám phá vẫn được giữ.');
+      body.append(
+        el('p', 'Các cá thể đã hiến tế sẽ bị tiêu hao vĩnh viễn.', 'beast-sacrifice-warning'),
+      );
+      for (const warning of warnings) body.append(el('p', warning, 'beast-sacrifice-warning'));
+      body.append(sacrificeSelectedList());
+      const cancel = button(
+        '‹ Quay lại lựa chọn',
+        () => {
+          draft.screen = 'summary';
+          renderBeastSacrifice();
+        },
+        'text-button',
+      );
+      cancel.disabled = blocked;
+      body.append(cancel);
+    }
+    if (draft.loading) body.append(el('p', 'Đang kiểm tra các cá thể…', 'hint'));
+    if (draft.error)
+      body.append(
+        el('p', draft.error, 'beast-sacrifice-warning'),
+        button('Thử lại', () => loadSacrificeSpecies(), 'secondary'),
+      );
+    const footer = el('div', undefined, 'beast-sacrifice-footer');
+    const status = el(
+      'p',
+      `Đã chọn ${quote.selected.length} cá thể · ${quote.points} điểm`,
+      'beast-sacrifice-total',
+    );
+    status.setAttribute('role', 'status');
+    footer.append(
+      status,
+      el('p', `Điểm cũ: ${quote.previous} · Tổng: ${quote.previous + quote.points}`, 'hint'),
+      el(
+        'p',
+        quote.tickets
+          ? `Nhận ${quote.tickets} vé triệu hồi · Còn dư ${quote.remainder} điểm`
+          : `Cần thêm ${quote.cost - quote.previous - quote.points} điểm để đổi 1 vé`,
+        'beast-sacrifice-result',
+      ),
+    );
+    const submit = button(
+      draft.screen === 'review' ? `Hiến tế ${quote.selected.length} cá thể` : 'Xem lại hiến tế',
+      async () => {
+        if (submit.disabled) return;
+        if (draft.screen !== 'review') {
+          draft.screen = 'review';
+          renderBeastSacrifice();
+          sheetContent.querySelector('.beast-sacrifice-body').scrollTop = 0;
+          return;
+        }
+        const isCurrent = currentSheet();
+        const result = await mutateBeast({
+          operation: 'sacrifice',
+          beastIds: quote.selected.map((beast) => beast.id).sort(),
+        });
+        if (result) {
+          state.beastSacrifice = null;
+          if (isCurrent()) openBeastExchange('sacrifice');
+          toast(
+            `Đã hiến tế ${result.sacrificedIds.length} cá thể, nhận ${result.tickets} vé triệu hồi. Dư ${result.remainder} điểm.`,
+          );
+        } else if (isCurrent()) {
+          if (!runtime.pendingBeast) {
+            draft.screen = 'summary';
+            draft.selected.clear();
+            draft.pages.clear();
+            draft.availableCounts = null;
+          }
+          renderBeastSacrifice();
+        }
+      },
+      'primary beast-sacrifice-submit',
+    );
+    submit.dataset.sacrificeFocus = 'submit';
+    submit.disabled = blocked || draft.loading || !quote.selected.length || quote.tickets < 1;
+    footer.append(submit);
+    root.append(body, footer);
+    if (old) old.replaceWith(root);
+    else sheetContent.append(root);
+    if (
+      old?.dataset.screen === root.dataset.screen &&
+      old?.dataset.species === root.dataset.species
+    ) {
+      if (old?.dataset.rank === root.dataset.rank) body.scrollTop = previousScroll;
+      root.scrollTop = previousOuterScroll;
+    }
+    if (focusedControl)
+      root
+        .querySelector(`[data-sacrifice-focus="${CSS.escape(focusedControl)}"]`)
+        ?.focus({ preventScroll: true });
+    if (focusedBeast)
+      root
+        .querySelector(`.beast-collection-card[data-beast-id="${CSS.escape(focusedBeast)}"]`)
+        ?.focus({ preventScroll: true });
+  }
+  function sacrificeSelectedList() {
+    const draft = sacrificeDraft(),
+      list = el('div', undefined, 'beast-sacrifice-selected');
+    for (const beast of draft.selected.values()) {
+      const p = beastProgress(state.beastData, beast);
+      const row = el('div', undefined, 'beast-sacrifice-row');
+      const copy = el('div');
+      copy.append(
+        el('strong', `${p.species.forms[p.form - 1]} · ${beastIdentity(beast)}`),
+        el('small', `${p.species.rank} · Dạng ${p.form} · ${beastPurityLabel(p)}`),
+      );
+      const remove = button(
+        'Bỏ chọn',
+        () => {
+          draft.selected.delete(beast.id);
+          renderBeastSacrifice();
+        },
+        'text-button',
+      );
+      remove.disabled = state.beastBusy || !!runtime.pendingBeast;
+      remove.setAttribute(
+        'aria-label',
+        `Bỏ chọn ${p.species.forms[p.form - 1]} ${beastIdentity(beast)}`,
+      );
+      row.append(portrait(p.species, p.form, true, p.perfect, p.awakened), copy, remove);
+      list.append(row);
+    }
+    return list;
   }
   function openBeastUltimate(beast, draft = { targets: [], pact: 'reward' }) {
     const data = state.beastData,
@@ -1370,6 +2099,7 @@ export function createBeastActions(context) {
 
   return {
     loadBeasts,
+    loadBeastTrainingPreview,
     loadTower,
     setBeastPanel,
     openBeastSpecies,
@@ -1377,6 +2107,7 @@ export function createBeastActions(context) {
     showBeast,
     evolveBeast,
     openBeastExchange,
+    toggleBeastProtection,
     openBeastRates,
     openBeastSummonPool,
     summonBeast,

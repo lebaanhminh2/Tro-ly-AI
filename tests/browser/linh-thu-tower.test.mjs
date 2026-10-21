@@ -138,7 +138,7 @@ test(
         );
         assert.match(
           amount,
-          floor === 1 ? /2\s+vé thường/ : floor === 2 ? /3\s+vé thường/ : /1\s+vé triệu hồi/,
+          floor === 1 ? /2\s+vé thường/ : floor === 2 ? /3\s+vé thường/ : /5\s+vé thường/,
         );
         positions.push(
           await b.evaluate(
@@ -161,7 +161,7 @@ test(
       await b.wait("!!document.querySelector('.tower-stage.is-failed')");
       assert.equal(
         await b.evaluate("document.querySelector('.tower-purse-value').textContent"),
-        '1 vé triệu hồi',
+        '5 vé thường',
       );
       assert.equal(
         await b.evaluate("document.querySelector('.tower-stage-hint').textContent"),
@@ -180,7 +180,7 @@ test(
       await b.wait("!!document.querySelector('.tower-stage.is-failed')");
       assert.equal(
         await b.evaluate("document.querySelector('.tower-purse-value').textContent"),
-        '1 vé triệu hồi',
+        '5 vé thường',
       );
     });
   },
@@ -208,8 +208,8 @@ test(
           assert.equal(await b.evaluate("!!document.querySelector('.tower-receipt')"), false);
           release();
           await b.wait("!!document.querySelector('.tower-receipt')");
-          const normal = [0, 2, 3, 0, 0][floor],
-            special = [0, 0, 0, 1, 2][floor];
+          const normal = [0, 2, 3, 5, 0][floor],
+            special = [0, 0, 0, 0, 1][floor];
           assert.equal(c.beastData.wallet.state.tickets, tickets + normal);
           assert.equal(c.beastData.account.state.summonTickets, summon + special);
           assert.equal(c.posts.filter((p) => p.input.operation === 'tower_claim').length, 1);

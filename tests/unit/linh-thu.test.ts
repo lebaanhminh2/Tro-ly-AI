@@ -2,6 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import {
+  initialBeastAccount,
+  sacrificeBeastTickets,
+  validBeastAccount,
+  type OwnedBeast,
+} from '../../src/domain/linh-thu-account.ts';
+import {
   BEAST_CATALOG,
   beastReferencePath,
   beastSpecies,
@@ -17,6 +23,46 @@ import {
   TOWER_CARD_COUNTS,
   towerReward,
 } from '../../src/domain/linh-thu.ts';
+
+test('sacrifice converts all four ranks, carries remainders, and rejects protected or insufficient selections', () => {
+  const beasts = ['gibber', 'flameow', 'frostnip', 'pyropup'].map((speciesId, i) => ({
+    id: 'individual_' + i,
+    speciesId,
+  })) as OwnedBeast[];
+  const legacy = initialBeastAccount();
+  delete legacy.sacrificePoints;
+  validBeastAccount(legacy);
+  assert.throws(() => sacrificeBeastTickets(legacy, beasts), /BEAST_NOT_ENOUGH_SACRIFICE_POINTS/);
+  const result = sacrificeBeastTickets({ ...legacy, sacrificePoints: 5 }, beasts);
+  assert.equal(result.points, 7);
+  assert.equal(result.tickets, 1);
+  assert.equal(result.remainder, 2);
+  assert.equal(result.state.summonTickets, 1);
+  assert.equal(legacy.summonTickets, 0);
+  assert.throws(() => sacrificeBeastTickets(legacy, []), /INVALID_BEAST_SACRIFICE/);
+  assert.throws(
+    () => sacrificeBeastTickets(legacy, [beasts[0]!, beasts[0]!]),
+    /INVALID_BEAST_SACRIFICE/,
+  );
+  assert.throws(
+    () => sacrificeBeastTickets(legacy, [{ ...beasts[0]!, isProtected: true }]),
+    /BEAST_PROTECTED/,
+  );
+  assert.throws(
+    () => sacrificeBeastTickets(legacy, [{ ...beasts[0]!, sacrificeBlockedReason: 'Đang luyện' }]),
+    /BEAST_IN_USE/,
+  );
+  for (const sacrificePoints of [-1, 10, 1.5, NaN, Infinity])
+    assert.throws(() => validBeastAccount({ ...legacy, sacrificePoints }));
+  assert.throws(
+    () =>
+      sacrificeBeastTickets(
+        { ...legacy, sacrificePoints: 9, summonTickets: Number.MAX_SAFE_INTEGER },
+        beasts,
+      ),
+    /INVALID_BEAST_ACCOUNT/,
+  );
+});
 
 test('catalog matches all 18 approved species, exact ranks, evolution order and 72 reference images', () => {
   const catalog = JSON.parse(
@@ -153,8 +199,8 @@ test('tower has one trap per 4/4/3/2 cards and terminal rewards replace previous
     { tickets: 0, summonTickets: 0 },
     { tickets: 2, summonTickets: 0 },
     { tickets: 3, summonTickets: 0 },
+    { tickets: 5, summonTickets: 0 },
     { tickets: 0, summonTickets: 1 },
-    { tickets: 0, summonTickets: 2 },
   ]);
   const chance = TOWER_CARD_COUNTS.reduce((p, cards) => (p * (cards - 1)) / cards, 1);
   assert.equal(chance, 0.1875);

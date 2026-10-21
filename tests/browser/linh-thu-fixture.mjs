@@ -1,7 +1,13 @@
 import { BEAST_CATALOG } from '../../src/domain/linh-thu-catalog.ts';
 import { BEAST_SKILLS } from '../../src/domain/linh-thu-skills.ts';
 import { BEAST_TRAINING } from '../../src/domain/linh-thu-training.ts';
-import { initialBeastAccount } from '../../src/domain/linh-thu-account.ts';
+import {
+  initialBeastAccount,
+  sacrificeBeastTickets,
+  BEAST_SACRIFICE_COST,
+  BEAST_SACRIFICE_LIMIT,
+  BEAST_SACRIFICE_POINTS,
+} from '../../src/domain/linh-thu-account.ts';
 import {
   beginBeastTower,
   beastTowerPublic,
@@ -9,7 +15,7 @@ import {
   continueBeastTower,
   pickBeastTower,
 } from '../../src/domain/linh-thu-tower.ts';
-import { evolveBeast, trainingView } from '../../src/domain/linh-thu-training.ts';
+import { evolveBeast, trainBeast, trainingView } from '../../src/domain/linh-thu-training.ts';
 import { fixture, serve, chrome, browserBin, now, clone } from './app-harness.mjs';
 
 export function beastFixture() {
@@ -41,13 +47,41 @@ export function beastFixture() {
     ultimate: null,
     summonChoice: null,
     recentSummons: [],
-    config: { catalog: BEAST_CATALOG, skills: BEAST_SKILLS, training: BEAST_TRAINING },
+    config: {
+      catalog: BEAST_CATALOG,
+      skills: BEAST_SKILLS,
+      training: BEAST_TRAINING,
+      sacrificeCost: BEAST_SACRIFICE_COST,
+      sacrificeLimit: BEAST_SACRIFICE_LIMIT,
+      sacrificePoints: BEAST_SACRIFICE_POINTS,
+    },
   };
   control.beastData = data;
   control.ownedBeasts = [beast];
+  const individualNumbers = new Map(),
+    speciesNumbers = new Map();
+  function numberIndividuals() {
+    for (const entry of [...control.ownedBeasts, ...data.selected]) {
+      const key = entry.speciesId + ':' + entry.id;
+      if (!individualNumbers.has(key)) {
+        const number = (speciesNumbers.get(entry.speciesId) ?? 0) + 1;
+        speciesNumbers.set(entry.speciesId, number);
+        individualNumbers.set(key, number);
+      }
+      entry.individualNumber = individualNumbers.get(key);
+    }
+  }
+  numberIndividuals();
   control.collectionRequests = [];
-  control.collectionOverview = () =>
-    Object.fromEntries(
+  const sacrificeBlocked = (beast) =>
+    beast.isProtected
+      ? 'Đã đánh dấu bảo vệ'
+      : [...data.roles.current, ...data.roles.pending].some((role) => role.beastId === beast.id)
+        ? 'Đang giữ vai trò hoặc chờ đổi vai trò'
+        : null;
+  control.collectionOverview = () => {
+    numberIndividuals();
+    return Object.fromEntries(
       BEAST_CATALOG.flatMap((species) => {
         const owned = control.ownedBeasts.filter((entry) => entry.speciesId === species.id);
         owned.sort((a, b) => {
@@ -62,13 +96,47 @@ export function beastFixture() {
         return owned.length ? [[species.id, { count: owned.length, best: owned[0] }]] : [];
       }),
     );
+  };
   // Test-only oracle: runtime receives public state, never the hidden trap.
   control.setTowerState = (state, version = 1) => {
     control.towerState = state;
     control.towerRun = { ...beastTowerPublic(state), version, expiresAt: data.day.endAt };
   };
   control.beastApi = async (request, endpoint) => {
+    numberIndividuals();
     if (request.method === 'GET') {
+      if (endpoint === 'linh-thu/training-preview') {
+        const role = data.roles.current.find((entry) => entry.role === 'training');
+        const beast = data.selected.find(
+          (entry) => entry.id === role?.beastId && entry.attemptId === role?.attemptId,
+        );
+        const active =
+          beast &&
+          ['ready', 'training'].includes(beast.attempt.status) &&
+          !trainingView(beast.attempt).completed;
+        return {
+          body: {
+            now: data.now,
+            day: data.day,
+            preview: active
+              ? {
+                  beastId: beast.id,
+                  attemptId: beast.attemptId,
+                  base: {
+                    earned: beast.attempt.earned,
+                    gray: beast.attempt.gray,
+                    form: beast.attempt.form ?? null,
+                    status: beast.attempt.status,
+                  },
+                  delta: trainBeast(
+                    { ...beast.attempt, status: 'training' },
+                    control.habits.habits.map((habit) => habit.preview?.status ?? 'neutral'),
+                  ).delta,
+                }
+              : null,
+          },
+        };
+      }
       if (endpoint === 'linh-thu/collection') {
         const params = new URL(request.url, 'http://localhost').searchParams;
         const species = params.get('species'),
@@ -78,8 +146,27 @@ export function beastFixture() {
           (beast) => !species || beast.speciesId === species,
         );
         const body = {
-          beasts: owned.slice(start, start + limit),
+          beasts: owned
+            .slice(start, start + limit)
+            .map((beast) =>
+              params.get('purpose') === 'sacrifice'
+                ? { ...beast, sacrificeBlockedReason: sacrificeBlocked(beast) }
+                : beast,
+            ),
           nextCursor: start + limit < owned.length ? String(start + limit) : null,
+          ...(params.get('purpose') === 'sacrifice'
+            ? {
+                availableCounts: Object.fromEntries(
+                  BEAST_CATALOG.map((species) => [
+                    species.id,
+                    control.ownedBeasts.filter(
+                      (b) => b.speciesId === species.id && !sacrificeBlocked(b),
+                    ).length,
+                  ]),
+                ),
+                day,
+              }
+            : {}),
         };
         control.collectionRequests.push({
           species,
@@ -126,7 +213,45 @@ export function beastFixture() {
         },
       };
     let result;
-    if (input.operation === 'select') {
+    if (input.operation === 'protect') {
+      const beast = control.ownedBeasts.find((entry) => entry.id === input.beastId);
+      if (!beast) return { status: 409, body: { error: 'BEAST_NOT_FOUND' } };
+      beast.isProtected = input.isProtected;
+      result = { beastId: beast.id, isProtected: beast.isProtected };
+    } else if (input.operation === 'sacrifice') {
+      const beasts = control.ownedBeasts
+        .filter((b) => input.beastIds.includes(b.id))
+        .map((b) => ({ ...b, sacrificeBlockedReason: sacrificeBlocked(b) }));
+      if (beasts.length !== input.beastIds.length)
+        return { status: 409, body: { error: 'BEAST_NOT_FOUND' } };
+      try {
+        const outcome = sacrificeBeastTickets(data.account.state, beasts);
+        data.account.state = outcome.state;
+        data.discoveries ??= {};
+        for (const beast of beasts)
+          data.discoveries[beast.speciesId] = {
+            form: Math.max(
+              data.discoveries[beast.speciesId]?.form ?? 1,
+              trainingView(beast.attempt).form,
+            ),
+          };
+        control.ownedBeasts = control.ownedBeasts.filter((b) => !input.beastIds.includes(b.id));
+        data.speciesCounts = Object.fromEntries(
+          BEAST_CATALOG.map((s) => [
+            s.id,
+            control.ownedBeasts.filter((b) => b.speciesId === s.id).length,
+          ]).filter(([, count]) => count),
+        );
+        result = {
+          sacrificedIds: input.beastIds,
+          points: outcome.points,
+          tickets: outcome.tickets,
+          remainder: outcome.remainder,
+        };
+      } catch (error) {
+        return { status: 409, body: { error: error.message } };
+      }
+    } else if (input.operation === 'select') {
       const selected = [...control.ownedBeasts, ...data.selected].find(
         (entry) => entry.id === input.beastId,
       );

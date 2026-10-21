@@ -296,7 +296,7 @@ test(
       await browser.evaluate("document.querySelector('.beast-role-previous').click()");
       assert.match(
         await browser.evaluate("document.querySelector('#sheet-content').textContent"),
-        /#-FIXTURE/,
+        /#1\b/,
       );
       await browser.press('Escape');
       await browser.click('Đổi linh thú luyện');

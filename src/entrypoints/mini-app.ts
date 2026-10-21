@@ -103,6 +103,7 @@ async function dispatchMiniAppApi(
         '/api/linh-thu/collection',
         '/api/linh-thu/receipt',
         '/api/linh-thu/tower',
+        '/api/linh-thu/training-preview',
       ].includes(url.pathname)
     )
       return await readBeasts(context, url);
@@ -148,6 +149,10 @@ async function dispatchMiniAppApi(
       BEAST_NO_SUMMON_TICKETS: 'Chưa đủ vé triệu hồi cho lượt này.',
       BEAST_ALCHEMY_NOT_READY: 'Lò đan chưa tích đủ 30 ngày đạt thói quen.',
       BEAST_NOT_FOUND: 'Không tìm thấy linh thú này trong bộ sưu tập.',
+      BEAST_PROTECTED: 'Linh thú đã được đánh dấu sao bảo vệ. Bỏ bảo vệ trước khi hiến tế.',
+      BEAST_IN_USE:
+        'Có linh thú đang giữ vai trò, còn hiệu ứng hoặc chưa quyết toán. Kiểm tra lại danh sách nhé.',
+      BEAST_NOT_ENOUGH_SACRIFICE_POINTS: 'Cần đủ 10 điểm hiến tế để đổi ít nhất 1 vé triệu hồi.',
       BEAST_PERFECT_REQUIRED: 'Luyện đầy dạng IV với độ thuần chính xác 100% để mở tuyệt kỹ.',
       BEAST_COMPANION_REQUIRED: 'Chọn linh thú này đồng hành có hiệu lực trước khi kích hoạt.',
       BEAST_ULTIMATE_WEEK_USED: 'Tài khoản đã dùng tuyệt kỹ tuần này. Tuần mới bắt đầu thứ Hai.',

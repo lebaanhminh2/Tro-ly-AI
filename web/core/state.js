@@ -9,6 +9,7 @@ export function createAppState(live) {
   state.beastSpeciesPage = null;
   state.beastSpeciesLoading = false;
   state.beastSpeciesError = null;
+  state.beastSacrifice = null;
   state.beastTower = null;
   state.beastPanel = 'training';
   state.live = live;

@@ -201,6 +201,7 @@ export function createHabitActions(context) {
     }
     const result = await performLive('habits', input, options);
     if (result) {
+      context.ui.loadBeastTrainingPreview?.(true);
       state.habitHistory = null;
       state.habitReport = null;
       state.habitProgress = null;

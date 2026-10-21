@@ -360,11 +360,12 @@ test(
 );
 
 test(
-  'visibility, motion preference, live refresh and close/reopen preserve progress and release resources',
+  'visibility, motion preference, live refresh and consecutive openings preserve progress and release resources',
   { skip: !browserBin, timeout: 60000 },
   async () => {
     const control = beastFixture(),
       server = await serve(control);
+    control.beastData.account.state.summonTickets = 30;
     let b;
     try {
       b = await chrome();
@@ -412,30 +413,30 @@ test(
       await click(b, 'close');
       assert.equal(await b.evaluate('__released.every(c=>c.width===1&&c.height===1)'), true);
       assert.equal(await b.evaluate('__clock.revealPending()'), 0);
+      assert.equal(
+        await b.evaluate('document.querySelectorAll(".beast-page--summon > .text-button").length'),
+        0,
+      );
       await b.evaluate(
         'import("/app/core/experience.js").then(m=>m.setExperiencePreferences({motion:"system"}))',
       );
       const pending = [];
       for (let i = 0; i < 12; i++) {
-        await b.evaluate(
-          '[...document.querySelectorAll(".beast-page--summon > .text-button")][0].click()',
-        );
-        await b.wait('!!document.querySelector(".beast-reveal")');
+        await summon(b);
         await advance(b, 100);
         await click(b, 'close');
         const n = await b.evaluate('__clock.revealPending()');
         assert.equal(n, 0);
         pending.push(n);
       }
-      await b.evaluate(
-        '[...document.querySelectorAll(".beast-page--summon > .text-button")][0].click()',
-      );
-      await b.wait('!!document.querySelector(".beast-reveal")');
+      await summon(b);
       await b.evaluate('document.querySelector("[data-tab=today]").click()');
       await advance(b, 0);
       await b.wait('!document.querySelector(".beast-reveal")');
       assert.equal(await b.evaluate('__clock.revealPending()'), 0);
-      assert.equal(control.posts.length, 1);
+      assert.equal(control.posts.length, 14);
+      assert.equal(control.beastData.account.state.summonTickets, 16);
+      assert.equal(new Set(control.posts.map((post) => post.input.id)).size, 14);
       assert.deepEqual(b.errors, []);
       await report('lifecycle', {
         visibilityPaused: true,

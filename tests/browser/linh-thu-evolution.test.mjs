@@ -75,7 +75,7 @@ test(
         "document.querySelector('.beast-progress').scrollIntoView({block:'center'})",
       );
       await browser.screenshot(captures + '/ready-390.png');
-      await browser.click('Tiến hóa lên T2');
+      await browser.click('Tiến hóa');
       await browser.wait("!!document.querySelector('.beast-evolution-theatre.is-playing')");
       assert.deepEqual(
         await browser.evaluate(`(() => {
@@ -314,6 +314,168 @@ test(
 );
 
 test(
+  'ability roadmaps identify each numbered individual and show only its committed purity milestones',
+  { skip: !browserBin, timeout: 60000 },
+  async () => {
+    const control = evolutionFixture(350, 20, 3),
+      first = control.ownedBeasts[0];
+    const second = {
+      ...clone(first),
+      id: 'numbered_second',
+      attemptId: 'numbered_attempt_second',
+      attempt: { ...first.attempt, form: 4, earned: 570, gray: 30, status: 'completed' },
+    };
+    const third = {
+      ...clone(first),
+      id: 'numbered_third',
+      attemptId: 'numbered_attempt_third',
+      attempt: { ...first.attempt, form: 4, earned: 600, gray: 0, status: 'completed' },
+    };
+    control.ownedBeasts.push(second, third);
+    control.beastData.selected.push(second, third);
+    Object.assign(
+      control.beastData.roles.current.find((role) => role.role === 'companion'),
+      {
+        beastId: second.id,
+        attemptId: second.attemptId,
+      },
+    );
+    control.beastData.speciesCounts.gibber = 3;
+    control.beastData.discoveries = { gibber: { form: 4, awakened: true, perfect: true } };
+    const server = await serve(control);
+    let browser;
+    try {
+      await mkdir(captures, { recursive: true });
+      browser = await chrome();
+      await open(browser, server.url);
+      assert.equal(
+        await browser.evaluate(
+          "document.querySelector('.beast-support .beast-skill-context')?.textContent.includes('Đang hỗ trợ bạn') ?? false",
+        ),
+        false,
+      );
+      const read = () =>
+        browser.evaluate(`(() => {
+        const summary=document.querySelector('.beast-individual-summary');
+        return {id:summary.dataset.beastId,attempt:summary.dataset.attemptId,
+          number:summary.querySelector('strong').textContent,
+          status:summary.querySelector('.beast-individual-heading > span').textContent,
+          totals:[...summary.querySelectorAll('dl > div')].map(row=>[row.querySelector('dt').textContent,row.querySelector('dd').textContent]),
+          opened:[...document.querySelectorAll('.beast-roadmap .beast-milestone')].map(row=>row.classList.contains('is-open'))};
+      })()`);
+      await browser.click('Toàn bộ năng lực ›');
+      assert.deepEqual(await read(), {
+        id: first.id,
+        attempt: first.attemptId,
+        number: '#1',
+        status: 'Đang luyện',
+        totals: [
+          ['Điểm thực', '35 / 58'],
+          ['Tạp chất tích lũy', '2'],
+          ['Độ thuần', '94,5% · Tạm tính'],
+        ],
+        opened: [false, false],
+      });
+      await browser.press('Escape');
+      await browser.click('Đồng hành');
+      await browser.click('Toàn bộ năng lực ›');
+      assert.deepEqual(await read(), {
+        id: second.id,
+        attempt: second.attemptId,
+        number: '#2',
+        status: 'Luyện hoàn tất',
+        totals: [
+          ['Điểm thực', '57 / 57'],
+          ['Tạp chất tích lũy', '3'],
+          ['Độ thuần', '95%'],
+        ],
+        opened: [true, false],
+      });
+      for (const theme of ['light', 'dark']) {
+        await browser.evaluate(`document.documentElement.dataset.theme='${theme}'`);
+        for (const width of [320, 390, 1440]) {
+          await browser.resize(width, 1000);
+          await browser.scaleText(1.5);
+          assert.equal(
+            await browser.evaluate(
+              "document.querySelector('#sheet-content').scrollWidth > document.querySelector('#sheet-content').clientWidth + 1",
+            ),
+            false,
+          );
+          await browser.scaleText(1);
+        }
+        await browser.resize(390, 1000);
+        await browser.evaluate(
+          "document.querySelector('.beast-roadmap-intro').scrollIntoView({block:'start'})",
+        );
+        await browser.screenshot(`${captures}/individual-two-${theme}-390.png`);
+        await browser.evaluate(
+          "document.querySelector('.beast-milestones').scrollIntoView({block:'start'})",
+        );
+        const colors = await browser.evaluate(
+          `Array.from(document.querySelectorAll('.beast-milestone-mark')).map(node=>({color:getComputedStyle(node).color,background:getComputedStyle(node).backgroundColor,accent:getComputedStyle(node).getPropertyValue('--accent').trim()}))`,
+        );
+        assert.notEqual(colors[0].color, colors[1].color);
+        assert.notEqual(colors[0].background, colors[1].background);
+        await browser.screenshot(`${captures}/purity-95-${theme}-390.png`);
+      }
+      await browser.press('Escape');
+      await browser.click('Bộ sưu tập');
+      await browser.evaluate("document.querySelector('[data-species=gibber]').click()");
+      await browser.wait("document.querySelectorAll('.beast-collection-card').length === 3");
+      await browser.evaluate(
+        "document.querySelector('.beast-collection-card[data-beast-id=numbered_third]').click()",
+      );
+      await browser.evaluate(
+        "document.querySelector('#sheet-content .beast-abilities-link').click()",
+      );
+      assert.deepEqual(await read(), {
+        id: third.id,
+        attempt: third.attemptId,
+        number: '#3',
+        status: 'Luyện hoàn tất',
+        totals: [
+          ['Điểm thực', '60 / 60'],
+          ['Tạp chất tích lũy', '0'],
+          ['Độ thuần', '100% · Hoàn mỹ'],
+        ],
+        opened: [true, true],
+      });
+      await browser.evaluate(
+        "document.querySelector('.beast-milestones').scrollIntoView({block:'start'})",
+      );
+      await browser.screenshot(`${captures}/purity-100-dark-390.png`);
+      await browser.press('Escape');
+      await browser.click('Đang luyện');
+      for (const [attempt, purity, status] of [
+        [{ form: 4, earned: 500, gray: 0, status: 'training' }, '100% · Tạm tính', 'Đang luyện'],
+        [{ form: 4, earned: 500, gray: 20, status: 'sealed' }, '96,1% · Đã khóa', 'Đã khóa lượt'],
+        [{ form: 1, earned: 0, gray: 0, status: 'ready' }, 'Chưa xác định', 'Chưa luyện'],
+      ]) {
+        Object.assign(first.attempt, attempt);
+        await browser.evaluate("window.dispatchEvent(new Event('focus'))");
+        await browser.wait(
+          `document.querySelector('.beast-hero').dataset.individual.includes(':${attempt.earned}:${attempt.gray}:${attempt.status}')`,
+        );
+        await browser.click('Toàn bộ năng lực ›');
+        const state = await read();
+        assert.equal(state.id, first.id);
+        assert.equal(state.number, '#1');
+        assert.equal(state.status, status);
+        assert.deepEqual(state.totals[2], ['Độ thuần', purity]);
+        assert.deepEqual(state.opened, [false, false]);
+        await browser.press('Escape');
+      }
+      assert.equal(control.posts.length, 0);
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      await browser?.close();
+      await server.close();
+    }
+  },
+);
+
+test(
   'all 18 ability roadmaps name the counted event, expose every tier and preserve secret artwork',
   { skip: !browserBin, timeout: 90000 },
   async () => {
@@ -479,8 +641,8 @@ test(
       browser = await chrome();
       await open(browser, server.url);
       assert.equal(
-        await browser.evaluate("!!document.querySelector('.beast-evolve-button')"),
-        false,
+        await browser.evaluate("document.querySelector('.beast-evolve-button').disabled"),
+        true,
       );
       assert.equal(
         await browser.evaluate("document.querySelector('.beast-progress').dataset.evolutionState"),
@@ -563,7 +725,7 @@ test(
       browser = await chrome();
       await browser.reducedMotion();
       await open(browser, server.url);
-      await browser.click('Tiến hóa lên T2');
+      await browser.click('Tiến hóa');
       await browser.wait("document.body.textContent.includes('Kiểm tra kết quả')");
       await browser.navigate(server.url, 390);
       await browser.wait("!!document.querySelector('.focus-flip-card')");

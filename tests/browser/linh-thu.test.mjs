@@ -1,9 +1,147 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { mkdir } from 'node:fs/promises';
 import { BEAST_ART } from '../../web/assets/linh-thu/art.js';
 import { serve, chrome, browserBin, clone } from './app-harness.mjs';
 import { beastFixture } from './linh-thu-fixture.mjs';
+
+test(
+  'protection SVG and detail identity row keep their geometry, artwork and focus across themes and enlarged text',
+  { skip: !browserBin, timeout: 60000 },
+  async () => {
+    const control = beastFixture(),
+      seed = clone(control.ownedBeasts[0]);
+    control.ownedBeasts.push({
+      ...seed,
+      id: 'protected_detail_beast',
+      attemptId: 'protected_detail_attempt',
+      isProtected: true,
+    });
+    control.beastData.speciesCounts = { frostnip: 2 };
+    const server = await serve(control);
+    let browser;
+    const out = `trial-results/linh-thu/protection/run-${process.pid}`;
+    try {
+      await mkdir(out, { recursive: true });
+      browser = await chrome();
+      await browser.navigate(server.url, 390);
+      await browser.wait("!!document.querySelector('.focus-flip-card')");
+      await browser.evaluate("document.querySelector('[data-tab=beasts]').click()");
+      await browser.wait("!!document.querySelector('.beast-hero')");
+      await browser.click('Bộ sưu tập');
+      await browser.evaluate(
+        "document.querySelector('.beast-atlas-entry[data-species=frostnip]').click()",
+      );
+      await browser.wait("document.querySelectorAll('.beast-collection-card').length===2");
+      for (const theme of ['light', 'dark']) {
+        await browser.evaluate(`document.documentElement.dataset.theme='${theme}'`);
+        for (const [width, scale] of [
+          [320, 1],
+          [390, 2],
+        ]) {
+          await browser.resize(width, 844);
+          await browser.scaleText(scale);
+          const geometry = await browser.evaluate(`(()=>{
+          const stars=[...document.querySelectorAll('.beast-protection')];
+          return {overflow:document.documentElement.scrollWidth>innerWidth+1,
+            stars:stars.map(b=>{const r=b.getBoundingClientRect(),svg=b.querySelector('svg').getBoundingClientRect(),rank=b.parentElement.querySelector('.beast-card-rank').getBoundingClientRect(),img=b.parentElement.querySelector('img').getBoundingClientRect();return {width:r.width,height:r.height,iconWidth:svg.width,iconHeight:svg.height,clipped:b.scrollWidth>b.clientWidth||b.scrollHeight>b.clientHeight,background:getComputedStyle(b).backgroundColor,rankClear:rank.right<=r.left,imageClear:r.bottom<=img.top+1};}),
+            colors:stars.map(b=>({fill:getComputedStyle(b.querySelector('svg')).fill,stroke:getComputedStyle(b.querySelector('svg')).stroke})),nested:!!document.querySelector('button button')};
+        })()`);
+          assert.equal(geometry.overflow, false);
+          assert.equal(geometry.nested, false);
+          for (const star of geometry.stars)
+            assert.deepEqual(star, {
+              width: 44,
+              height: 44,
+              iconWidth: 20,
+              iconHeight: 20,
+              clipped: false,
+              background: 'rgba(0, 0, 0, 0)',
+              rankClear: true,
+              imageClear: true,
+            });
+          assert.notEqual(geometry.colors[0].fill, geometry.colors[1].fill);
+          await browser.screenshot(`${out}/collection-${theme}-${width}-${scale}.png`);
+          await browser.scaleText(1);
+        }
+      }
+      await browser.resize(390, 844);
+      await browser.evaluate(
+        "document.querySelector('.beast-collection-card[data-beast-id=protected_detail_beast]').click()",
+      );
+      await browser.wait(
+        "!!document.querySelector('.beast-detail-identity-row .beast-protection')",
+      );
+      const layout = await browser.evaluate(`(()=>{
+      const row=document.querySelector('.beast-detail-identity-row'),star=row.querySelector('.beast-protection'),img=document.querySelector('.beast-detail-image');
+      window.identityRow=row;window.detailImage=img;window.detailStar=star;window.detailTitle=document.querySelector('.sheet-title-row');
+      star.focus({preventScroll:true});
+      const sr=star.getBoundingClientRect(),ir=img.getBoundingClientRect();
+      return {aboveArt:sr.bottom<ir.top,onRight:sr.left>row.getBoundingClientRect().left+row.getBoundingClientRect().width/2,identity:row.textContent.includes('#2'),pressed:star.getAttribute('aria-pressed')};
+    })()`);
+      assert.deepEqual(layout, { aboveArt: true, onRight: true, identity: true, pressed: 'true' });
+      for (const theme of ['light', 'dark']) {
+        await browser.evaluate(`document.documentElement.dataset.theme='${theme}'`);
+        await browser.screenshot(`${out}/detail-${theme}.png`);
+        await browser.scaleText(2);
+        assert.equal(
+          await browser.evaluate(
+            "document.querySelector('#sheet').scrollWidth>document.querySelector('#sheet').clientWidth+1",
+          ),
+          false,
+        );
+        assert.equal(
+          await browser.evaluate(
+            "document.querySelector('.beast-detail-identity-row .beast-protection svg').getBoundingClientRect().width",
+          ),
+          20,
+        );
+        await browser.screenshot(`${out}/detail-${theme}-large.png`);
+        await browser.scaleText(1);
+      }
+      await browser.evaluate('detailStar.focus({preventScroll:true});detailStar.click()');
+      await browser.wait(
+        "detailStar.dataset.protectionStatus==='saved' && detailStar.getAttribute('aria-pressed')==='false'",
+      );
+      assert.deepEqual(
+        await browser.evaluate(
+          "({row:identityRow===document.querySelector('.beast-detail-identity-row'),image:detailImage===document.querySelector('.beast-detail-image'),star:detailStar===document.querySelector('.beast-detail-identity-row .beast-protection'),title:detailTitle===document.querySelector('.sheet-title-row'),focused:document.activeElement===detailStar,gridStar:document.querySelector('#content [data-protection-id=protected_detail_beast]').getAttribute('aria-pressed')})",
+        ),
+        { row: true, image: true, star: true, title: true, focused: true, gridStar: 'false' },
+      );
+      assert.equal(
+        control.ownedBeasts.find((b) => b.id === 'protected_detail_beast').isProtected,
+        false,
+      );
+      await browser.press('Escape');
+      await browser.click('Triệu hồi');
+      await browser.tap('.beast-summon-exchange');
+      await browser.evaluate("document.querySelector('[data-exchange-tab=sacrifice]').click()");
+      await browser.tap('.beast-sacrifice-choose');
+      await browser.wait(
+        "!document.querySelector('.beast-sacrifice .beast-atlas-entry')?.disabled",
+      );
+      await browser.evaluate(
+        "document.querySelector('.beast-sacrifice .beast-atlas-entry').click()",
+      );
+      await browser.wait(
+        "document.querySelectorAll('.beast-sacrifice .beast-collection-card').length===2",
+      );
+      assert.equal(
+        await browser.evaluate(
+          "[...document.querySelectorAll('.beast-sacrifice .beast-protection')].every(s=>s.disabled&&s.querySelector('svg')&&s.dataset.protectionReadonly==='true')",
+        ),
+        true,
+      );
+      await browser.screenshot(`${out}/sacrifice-readonly.png`);
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      await browser?.close();
+      await server.close();
+    }
+  },
+);
 
 test(
   'role tabs retain decoded images, navigation focus and scroll during refresh and rapid switching',
@@ -739,7 +877,7 @@ test(
       await browser.evaluate("document.querySelectorAll('.beast-picker-item')[1].click()");
       assert.equal(
         await browser.evaluate(
-          "document.querySelector('#sheet-content').textContent.includes('#T-SECOND')",
+          "document.querySelector('#sheet-content').textContent.includes('#2')",
         ),
         true,
       );
@@ -759,13 +897,13 @@ test(
       const cards = await browser.evaluate(
         "[...document.querySelectorAll('.beast-collection-card')].map(b=>b.textContent)",
       );
-      assert.ok(cards[0].includes('#-FIXTURE') && cards[0].includes('100% · Hoàn mỹ'));
-      assert.ok(cards[1].includes('#T-SECOND') && cards[1].includes('95%'));
+      assert.ok(cards[0].includes('#1') && cards[0].includes('100% · Hoàn mỹ'));
+      assert.ok(cards[1].includes('#2') && cards[1].includes('95%'));
       await browser.evaluate("document.querySelectorAll('.beast-collection-card')[2].click()");
       await browser.click('Luyện lại bằng Tịnh Linh Đan');
       assert.ok(
         (await browser.evaluate("document.querySelector('#sheet-title').textContent")).includes(
-          '#T-SEALED',
+          '#3',
         ),
       );
       assert.ok(
@@ -1128,7 +1266,7 @@ test(
       await first.reducedMotion();
       await first.tap('.beast-summon-actions .primary');
       await first.wait("document.querySelectorAll('.beast-result-card').length===10");
-      await second.tap('.beast-summon-actions .primary');
+      await second.evaluate("document.querySelector('.beast-summon-actions .primary').click()");
       await second.wait(
         "document.querySelector('.beast-wallet strong')?.getAttribute('aria-label')==='1 vé triệu hồi'",
       );

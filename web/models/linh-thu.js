@@ -12,7 +12,10 @@ const skillItems = {
   keepsake: 'tín vật',
 };
 export const beastPoints = (value) => number.format(value / 10);
-export const beastIdentity = (beast) => '#' + beast.id.slice(-8).replaceAll('_', '-').toUpperCase();
+export const beastIdentity = (beast) =>
+  Number.isSafeInteger(beast.individualNumber) && beast.individualNumber > 0
+    ? '#' + beast.individualNumber
+    : '#' + beast.id.slice(-8).replaceAll('_', '-').toUpperCase();
 export function beastPurityLabel(progress) {
   if (progress.purity === null) return 'Chưa xác định';
   if (progress.perfect) return '100% · Hoàn mỹ';
@@ -72,6 +75,45 @@ export function beastDiscovery(data, beast) {
     awakened: !!history?.awakened || views.some((view) => view.awakened),
     perfect: !!history?.perfect || views.some((view) => view.perfect),
   };
+}
+/** Server projections never change the committed attempt or evolution eligibility. */
+export function beastTrainingProjection(data, beast, now = Date.now()) {
+  const response = data?.trainingPreview,
+    preview = response?.preview;
+  const current = roleBeast(data, 'training');
+  if (
+    !preview ||
+    !current ||
+    !data.day ||
+    response.day?.day !== data.day.day ||
+    !Number.isFinite(response.receivedAt) ||
+    !Number.isFinite(response.now) ||
+    !Number.isFinite(response.day.endAt) ||
+    response.now + Math.max(0, now - response.receivedAt) >= response.day.endAt ||
+    current.id !== beast.id ||
+    current.attemptId !== beast.attemptId ||
+    preview.beastId !== beast.id ||
+    preview.attemptId !== beast.attemptId ||
+    preview.base?.earned !== beast.attempt.earned ||
+    preview.base?.gray !== beast.attempt.gray ||
+    preview.base?.form !== (beast.attempt.form ?? null) ||
+    preview.base?.status !== beast.attempt.status ||
+    !['ready', 'training'].includes(beast.attempt.status)
+  )
+    return null;
+  const p = beastProgress(data, beast),
+    delta = preview.delta;
+  if (
+    p.completed ||
+    !delta ||
+    ![delta.earned, delta.gray].every((n) => Number.isSafeInteger(n) && n >= 0) ||
+    delta.earned + delta.gray > p.capacity - p.occupied
+  )
+    return null;
+  const room = Math.max(0, p.stageCapacity - p.stageEarned - p.stageGray);
+  const earned = Math.min(room, delta.earned);
+  const gray = Math.min(Math.max(0, room - earned), delta.gray);
+  return { delta, earned, gray, total: earned + gray };
 }
 export function beastTalentChance(skill, form, index) {
   const scale = index === 0 ? form / 4 : form < 3 ? 0 : form === 3 ? 0.5 : 1;

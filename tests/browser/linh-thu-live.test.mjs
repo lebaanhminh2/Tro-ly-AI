@@ -237,7 +237,7 @@ test(
         const run = await beasts.tower('123', day + 1);
         const safe = run.state.trap === 0 ? 1 : 0; // Oracle is DB-only; API must never reveal the trap.
         await browser.evaluate(`document.querySelectorAll('.beast-tower-card')[${safe}].click()`);
-        const reward = floor === 1 ? '2 vé thường' : floor === 2 ? '3 vé thường' : '1 vé triệu hồi';
+        const reward = floor === 1 ? '2 vé thường' : floor === 2 ? '3 vé thường' : '5 vé thường';
         await browser.wait(
           `!!document.querySelector('.beast-tower-claim')&&document.querySelector('.tower-purse-value').textContent==='${reward}'`,
         );
@@ -250,7 +250,7 @@ test(
       }
       await browser.tap('.beast-tower-claim');
       await browser.wait("!!document.querySelector('.tower-receipt')");
-      assert.equal((await beasts.read('123')).state.summonTickets, 1);
+      assert.equal((await beasts.read('123')).state.summonTickets, 0);
       assert.equal((await beasts.tower('123', day + 1)).state.status, 'claimed');
       await screenshot('live-tower-390.png');
       await browser.press('Escape');

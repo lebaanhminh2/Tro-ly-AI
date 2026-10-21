@@ -95,7 +95,7 @@ async function readDrawContext(
      FROM context c LEFT JOIN beast_accounts ba ON ba.owner=c.owner
      LEFT JOIN beast_roles r ON r.owner=ba.owner AND r.role='companion'
        AND r.effective_day=(SELECT MAX(effective_day) FROM beast_roles WHERE owner=ba.owner AND role='companion' AND effective_day<=c.day)
-     LEFT JOIN beasts b ON b.owner=ba.owner AND b.id=r.beast_id
+     LEFT JOIN beasts b ON b.owner=ba.owner AND b.id=r.beast_id AND b.sacrificed_at IS NULL
      LEFT JOIN beast_attempts a ON a.owner=b.owner AND a.beast_id=b.id AND a.id=COALESCE(r.attempt_id,b.current_attempt_id)
      LEFT JOIN beast_ultimates u ON u.owner=ba.owner AND u.week_start=?`,
     requestedDay ?? null,

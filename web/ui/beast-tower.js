@@ -54,13 +54,13 @@ export async function openBeastTowerSheet(options) {
   root.setAttribute('aria-label', 'Lượt Tháp giao ước');
   const track = el('ol', undefined, 'tower-path');
   track.setAttribute('aria-label', 'Tiến độ bốn tầng');
-  const floorRewards = ['2 vé thường', '3 vé thường', '1 vé triệu hồi', '2 vé triệu hồi'];
+  const floorRewards = ['2 vé thường', '3 vé thường', '5 vé thường', '1 vé triệu hồi'];
   const displayRewards = [
     { tickets: 0, summonTickets: 0 },
     { tickets: 2, summonTickets: 0 },
     { tickets: 3, summonTickets: 0 },
+    { tickets: 5, summonTickets: 0 },
     { tickets: 0, summonTickets: 1 },
-    { tickets: 0, summonTickets: 2 },
   ];
   const steps = floorRewards.map((label, i) => {
     const step = el('li', undefined, 'tower-path-step');

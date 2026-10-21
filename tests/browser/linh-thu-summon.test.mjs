@@ -20,6 +20,641 @@ async function shot(browser, name) {
   await browser.screenshot(fileURLToPath(new URL(name + '.png', out)));
 }
 
+function sacrificeInventory(control) {
+  const template = clone(control.ownedBeasts[0]);
+  const individual = (speciesId, id) => ({
+    ...clone(template),
+    id,
+    speciesId,
+    attemptId: 'attempt_' + id,
+    isProtected: false,
+    attempt: { speciesId, ruleVersion: 1, status: 'ready', form: 1, earned: 0, gray: 0 },
+  });
+  control.ownedBeasts.push(
+    ...Array.from({ length: 26 }, (_, i) => individual('gibber', 'sacrifice_r_' + i)),
+    individual('frostnip', 'sacrifice_ssr'),
+    individual('pyropup', 'sacrifice_ur'),
+  );
+  control.beastData.speciesCounts = { frostnip: 2, gibber: 26, pyropup: 1 };
+  control.beastData.account.state.sacrificePoints = 2;
+}
+
+test(
+  'protection acknowledges rapid clicks immediately and serializes only final desired values without replacing cards',
+  { skip: !browserBin, timeout: 60000 },
+  async () => {
+    const control = beastFixture();
+    sacrificeInventory(control);
+    const api = control.beastApi;
+    let simultaneous = 0,
+      peak = 0;
+    control.beastApi = async (request, endpoint) => {
+      if (request.method !== 'POST') return api(request, endpoint);
+      simultaneous++;
+      peak = Math.max(peak, simultaneous);
+      try {
+        await delay(350);
+        return await api(request, endpoint);
+      } finally {
+        simultaneous--;
+      }
+    };
+    const server = await serve(control);
+    let browser;
+    try {
+      browser = await chrome();
+      await openSummon(browser, server.url);
+      await browser.click('Bộ sưu tập');
+      await browser.evaluate(
+        "document.querySelector('.beast-atlas-entry[data-species=gibber]').click()",
+      );
+      await browser.wait("document.querySelectorAll('.beast-collection-card').length===24");
+      await browser.wait("document.querySelector('.beast-updating')?.textContent===''");
+      const reads = control.collectionRequests.length;
+      const immediate = await browser.evaluate(`(()=>{
+      window.retainedCards=[...document.querySelectorAll('.beast-collection-card')];
+      window.retainedImages=retainedCards.map(c=>c.querySelector('img'));
+      window.retainedStars=[...document.querySelectorAll('.beast-protection')];
+      window.removedCards=0;
+      new MutationObserver(rs=>{for(const r of rs)for(const n of r.removedNodes)if(n.nodeType===1)window.removedCards+=Number(n.matches('.beast-collection-card'))+n.querySelectorAll('.beast-collection-card').length;}).observe(document.querySelector('.beast-page'),{childList:true,subtree:true});
+      window.starScroll=120;scrollTo({top:starScroll,behavior:'instant'});
+      const star=i=>document.querySelector('[data-protection-id=sacrifice_r_'+i+']');
+      const t=performance.now();
+      star(0).focus({preventScroll:true});
+      for(const i of [0,1,0,0,2,2,3])star(i).click();
+      return {elapsed:performance.now()-t,pressed:[0,1,2,3].map(i=>star(i).getAttribute('aria-pressed')),enabled:[...document.querySelectorAll('.beast-protection')].every(s=>!s.disabled),retained:retainedCards.every(c=>c.isConnected)};
+    })()`);
+      assert.deepEqual(immediate.pressed, ['true', 'true', 'false', 'true']);
+      assert.equal(immediate.enabled, true);
+      assert.equal(immediate.retained, true);
+      assert.ok(immediate.elapsed < 100, JSON.stringify(immediate));
+      await browser.wait(
+        "!sessionStorage.getItem('minh-anh-beast-pending-v1') && [...document.querySelectorAll('.beast-protection')].every(s=>s.dataset.protectionStatus==='saved')",
+      );
+      assert.equal(peak, 1);
+      assert.equal(control.posts.length, 3, 'Queued toggles with no final change require no write');
+      assert.deepEqual(
+        control.posts.map((p) => p.input.beastId),
+        ['sacrifice_r_0', 'sacrifice_r_1', 'sacrifice_r_3'],
+      );
+      assert.equal(new Set(control.posts.map((p) => p.input.version)).size, 3);
+      assert.equal(
+        control.collectionRequests.length,
+        reads,
+        'Saving a star must not reload inventory',
+      );
+      const after = await browser.evaluate(
+        `({cards:retainedCards.every((c,i)=>c===document.querySelectorAll('.beast-collection-card')[i]),images:retainedImages.every((img,i)=>img===document.querySelectorAll('.beast-collection-card img')[i]),stars:retainedStars.every((s,i)=>s===document.querySelectorAll('.beast-protection')[i]),removed:removedCards,scroll:scrollY,focused:document.activeElement===retainedStars[0]})`,
+      );
+      assert.deepEqual(after, {
+        cards: true,
+        images: true,
+        stars: true,
+        removed: 0,
+        scroll: 120,
+        focused: true,
+      });
+      await mkdir(out, { recursive: true });
+      await writeFile(
+        new URL('protection-performance.json', out),
+        JSON.stringify(
+          {
+            simulatedServerDelayMs: 350,
+            immediate,
+            after,
+            peakConcurrentWrites: peak,
+            writes: control.posts.length,
+          },
+          null,
+          2,
+        ),
+      );
+      await browser.evaluate(
+        "document.querySelector('[data-protection-id=sacrifice_r_0]').click();document.querySelector('[data-protection-id=sacrifice_r_0]').click()",
+      );
+      await browser.wait(
+        "!sessionStorage.getItem('minh-anh-beast-pending-v1') && document.querySelector('[data-protection-id=sacrifice_r_0]').dataset.protectionStatus==='saved'",
+      );
+      assert.equal(control.ownedBeasts.find((b) => b.id === 'sacrifice_r_0').isProtected, true);
+      assert.equal(
+        control.posts.length,
+        5,
+        'An already sent toggle is followed by its latest intent',
+      );
+      await shot(browser, 'protection-redesigned');
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      await browser?.close();
+      await server.close();
+    }
+  },
+);
+
+test(
+  'a rejected protection write reverts queued stars and a stale client reconciles without replacing the grid',
+  { skip: !browserBin, timeout: 60000 },
+  async () => {
+    const control = beastFixture();
+    sacrificeInventory(control);
+    const api = control.beastApi;
+    let reject = true;
+    control.beastApi = async (request, endpoint) => {
+      if (request.method === 'POST' && reject) {
+        reject = false;
+        let raw = '';
+        for await (const part of request) raw += part;
+        control.posts.push({ path: endpoint, input: JSON.parse(raw) });
+        await delay(250);
+        return {
+          status: 409,
+          body: { error: 'ACCOUNT_SUSPENDED', message: 'Không thể lưu dấu sao lúc này.' },
+        };
+      }
+      return api(request, endpoint);
+    };
+    const server = await serve(control);
+    let browser;
+    try {
+      browser = await chrome();
+      await openSummon(browser, server.url);
+      await browser.click('Bộ sưu tập');
+      await browser.evaluate(
+        "document.querySelector('.beast-atlas-entry[data-species=gibber]').click()",
+      );
+      await browser.wait("document.querySelectorAll('.beast-collection-card').length===24");
+      await browser.evaluate(
+        "window.sameGrid=document.querySelector('.beast-collection-grid');document.querySelector('[data-protection-id=sacrifice_r_0]').click();document.querySelector('[data-protection-id=sacrifice_r_1]').click()",
+      );
+      await browser.wait(
+        "!!document.querySelector('.beast-protection-feedback') && !sessionStorage.getItem('minh-anh-beast-pending-v1')",
+      );
+      assert.deepEqual(
+        await browser.evaluate(
+          "[0,1].map(i=>document.querySelector('[data-protection-id=sacrifice_r_'+i+']').getAttribute('aria-pressed'))",
+        ),
+        ['false', 'false'],
+      );
+      assert.equal(control.posts.length, 1);
+      assert.equal(
+        await browser.evaluate("sameGrid===document.querySelector('.beast-collection-grid')"),
+        true,
+      );
+      const remote = control.ownedBeasts.find((b) => b.id === 'sacrifice_r_0');
+      remote.isProtected = true;
+      control.beastData.account.version++;
+      await browser.evaluate(
+        "document.querySelector('[data-protection-id=sacrifice_r_0]').click()",
+      );
+      await browser.wait(
+        "document.querySelector('.beast-protection-feedback')?.textContent.includes('thay đổi') && document.querySelector('[data-protection-id=sacrifice_r_0]').getAttribute('aria-pressed')==='true'",
+      );
+      // Feedback may appear before reconciliation has acquired the new version.
+      await browser.wait(
+        "!sessionStorage.getItem('minh-anh-beast-pending-v1') && !document.querySelector('[data-protection-id=sacrifice_r_0]').disabled",
+      );
+      await browser.evaluate(
+        "document.querySelector('[data-protection-id=sacrifice_r_0]').click()",
+      );
+      await browser.wait(
+        "document.querySelector('[data-protection-id=sacrifice_r_0]').dataset.protectionStatus==='saved' && document.querySelector('[data-protection-id=sacrifice_r_0]').getAttribute('aria-pressed')==='false'",
+      );
+      assert.equal(remote.isProtected, false);
+      assert.equal(
+        await browser.evaluate("sameGrid===document.querySelector('.beast-collection-grid')"),
+        true,
+      );
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      await browser?.close();
+      await server.close();
+    }
+  },
+);
+
+test(
+  'an ambiguous protection write stops queued changes and recovers exactly once after reload',
+  { skip: !browserBin, timeout: 60000 },
+  async () => {
+    const control = beastFixture();
+    sacrificeInventory(control);
+    const api = control.beastApi;
+    let lose = true;
+    control.beastApi = async (request, endpoint) => {
+      if (request.method === 'POST' && lose) {
+        lose = false;
+        await delay(250);
+        await api(request, endpoint);
+        return { status: 503, body: { error: 'OPERATION_NOT_CONFIRMED' } };
+      }
+      return api(request, endpoint);
+    };
+    const server = await serve(control);
+    let browser;
+    try {
+      browser = await chrome();
+      await openSummon(browser, server.url);
+      await browser.click('Bộ sưu tập');
+      await browser.evaluate(
+        "document.querySelector('.beast-atlas-entry[data-species=gibber]').click()",
+      );
+      await browser.wait("document.querySelectorAll('.beast-collection-card').length===24");
+      await browser.evaluate(
+        "document.querySelector('[data-protection-id=sacrifice_r_0]').click();document.querySelector('[data-protection-id=sacrifice_r_1]').click()",
+      );
+      await browser.wait(
+        "document.querySelector('[data-protection-id=sacrifice_r_0]').dataset.protectionStatus==='unconfirmed' && document.querySelector('[data-protection-id=sacrifice_r_0]').disabled",
+      );
+      assert.equal(control.posts.length, 1);
+      assert.equal(
+        await browser.evaluate(
+          "document.querySelector('[data-protection-id=sacrifice_r_1]').getAttribute('aria-pressed')",
+        ),
+        'false',
+      );
+      const pending = await browser.evaluate(
+        "JSON.parse(sessionStorage.getItem('minh-anh-beast-pending-v1'))",
+      );
+      await browser.navigate(server.url, 390);
+      await browser.wait("!!document.querySelector('.focus-flip-card')");
+      await browser.evaluate("document.querySelector('[data-tab=beasts]').click()");
+      await browser.wait(
+        "[...document.querySelectorAll('button')].some(b=>b.textContent==='Kiểm tra kết quả'&&!b.disabled)",
+      );
+      await browser.click('Kiểm tra kết quả');
+      await browser.wait("!sessionStorage.getItem('minh-anh-beast-pending-v1')");
+      assert.equal(control.posts.length, 1);
+      assert.equal(control.posts[0].input.id, pending.id);
+      assert.equal(control.ownedBeasts.find((b) => b.id === 'sacrifice_r_0').isProtected, true);
+      assert.equal(control.ownedBeasts.find((b) => b.id === 'sacrifice_r_1').isProtected, false);
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      await browser?.close();
+      await server.close();
+    }
+  },
+);
+
+test(
+  'offline protection retains its original intent and can be recovered without a false success',
+  { skip: !browserBin, timeout: 60000 },
+  async () => {
+    const control = beastFixture();
+    sacrificeInventory(control);
+    const server = await serve(control);
+    let browser;
+    try {
+      browser = await chrome();
+      await openSummon(browser, server.url);
+      await browser.click('Bộ sưu tập');
+      await browser.evaluate(
+        "document.querySelector('.beast-atlas-entry[data-species=gibber]').click()",
+      );
+      await browser.wait("document.querySelectorAll('.beast-collection-card').length===24");
+      await browser.networkConditions(true, 0, 10000000);
+      await browser.evaluate(
+        "document.querySelector('[data-protection-id=sacrifice_r_0]').click()",
+      );
+      await browser.wait(
+        "document.querySelector('[data-protection-id=sacrifice_r_0]').dataset.protectionStatus==='unconfirmed'",
+      );
+      assert.equal(control.posts.length, 0);
+      const pending = await browser.evaluate(
+        "JSON.parse(sessionStorage.getItem('minh-anh-beast-pending-v1'))",
+      );
+      assert.equal(pending.input.isProtected, true);
+      assert.match(
+        await browser.evaluate("document.querySelector('.beast-protection-feedback').textContent"),
+        /Chưa xác nhận/,
+      );
+      await browser.networkConditions(false, 0, 10000000);
+      await browser.click('Kiểm tra kết quả');
+      await browser.wait(
+        "sessionStorage.getItem('minh-anh-beast-pending-v1')===null && document.querySelector('[data-protection-id=sacrifice_r_0]')?.getAttribute('aria-pressed')==='true'",
+      );
+      assert.equal(control.posts.length, 1);
+      assert.equal(control.posts[0].input.id, pending.id);
+      assert.equal(control.ownedBeasts.find((b) => b.id === 'sacrifice_r_0').isProtected, true);
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      await browser?.close();
+      await server.close();
+    }
+  },
+);
+
+test(
+  'a protection response updates a newly opened detail without closing or replacing it',
+  { skip: !browserBin, timeout: 60000 },
+  async () => {
+    const control = beastFixture();
+    sacrificeInventory(control);
+    const api = control.beastApi;
+    const released = Promise.withResolvers(),
+      started = Promise.withResolvers();
+    control.beastApi = async (request, endpoint) => {
+      if (request.method === 'POST') {
+        started.resolve();
+        await released.promise;
+      }
+      return api(request, endpoint);
+    };
+    const server = await serve(control);
+    let browser;
+    try {
+      browser = await chrome();
+      await openSummon(browser, server.url);
+      await browser.click('Bộ sưu tập');
+      await browser.evaluate(
+        "document.querySelector('.beast-atlas-entry[data-species=gibber]').click()",
+      );
+      await browser.wait("document.querySelectorAll('.beast-collection-card').length===24");
+      await browser.evaluate(
+        "document.querySelector('[data-protection-id=sacrifice_r_0]').click()",
+      );
+      await started.promise;
+      await browser.evaluate(
+        "document.querySelector('.beast-collection-card[data-beast-id=sacrifice_r_0]').click();window.newDetailTitle=document.querySelector('.sheet-title-row');window.newDetailImage=document.querySelector('.beast-detail-image')",
+      );
+      assert.equal(
+        await browser.evaluate(
+          "document.querySelector('.beast-detail-identity-row .beast-protection').getAttribute('aria-pressed')",
+        ),
+        'true',
+      );
+      released.resolve();
+      await browser.wait(
+        "document.querySelector('.beast-detail-identity-row .beast-protection').dataset.protectionStatus==='saved'",
+      );
+      assert.equal(
+        await browser.evaluate(
+          "newDetailTitle===document.querySelector('.sheet-title-row') && newDetailImage===document.querySelector('.beast-detail-image') && document.querySelector('#sheet').open",
+        ),
+        true,
+      );
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      released.resolve();
+      await browser?.close();
+      await server.close();
+    }
+  },
+);
+
+test(
+  'protection stars stay separate from details; sacrifice retains multi-species selections, banks points and preserves discoveries',
+  { skip: !browserBin, timeout: 60000 },
+  async () => {
+    const control = beastFixture();
+    sacrificeInventory(control);
+    const server = await serve(control);
+    let browser;
+    try {
+      browser = await chrome();
+      await openSummon(browser, server.url);
+      await browser.click('Bộ sưu tập');
+      await browser.evaluate(
+        "document.querySelector('.beast-atlas-entry[data-species=gibber]').click()",
+      );
+      await browser.wait("document.querySelectorAll('.beast-collection-card').length===24");
+      await browser.evaluate(
+        "document.querySelector('.beast-collection-card[data-beast-id=sacrifice_r_0]').parentElement.querySelector('.beast-protection').click()",
+      );
+      await browser.wait(
+        "document.querySelector('.beast-collection-card[data-beast-id=sacrifice_r_0]')?.parentElement.querySelector('.beast-protection').getAttribute('aria-pressed')==='true' && document.querySelector('[data-protection-id=sacrifice_r_0]')?.dataset.protectionStatus==='saved'",
+      );
+      assert.equal(await browser.evaluate("document.querySelector('#sheet').open"), false);
+      assert.equal(control.posts.filter((p) => p.input.operation === 'protect').length, 1);
+      await shot(browser, 'sacrifice-stars');
+      await browser.click('Tải tiếp các cá thể');
+      await browser.wait("document.querySelectorAll('.beast-collection-card').length===26");
+      for (const value of ['true', 'false']) {
+        await browser.evaluate(
+          "document.querySelector('.beast-collection-card[data-beast-id=sacrifice_r_25]').parentElement.querySelector('.beast-protection').click()",
+        );
+        await browser.wait(
+          "document.querySelector('.beast-collection-card[data-beast-id=sacrifice_r_25]')?.parentElement.querySelector('.beast-protection').getAttribute('aria-pressed')==='" +
+            value +
+            "'",
+        );
+        await browser.wait(
+          "document.querySelector('[data-protection-id=sacrifice_r_25]')?.dataset.protectionStatus==='saved'",
+        );
+        assert.equal(
+          await browser.evaluate("document.querySelectorAll('.beast-collection-card').length"),
+          26,
+        );
+      }
+      await browser.click('Triệu hồi');
+      await browser.tap('.beast-summon-exchange');
+      assert.equal(
+        await browser.evaluate(
+          "document.querySelector('[data-exchange-tab=exchange]').getAttribute('aria-selected')",
+        ),
+        'true',
+      );
+      await browser.click('Hiến tế');
+      await shot(browser, 'sacrifice-summary');
+      await browser.click('Chọn linh thú');
+      await browser.wait(
+        "!document.querySelector('.beast-sacrifice .beast-atlas-entry')?.disabled",
+      );
+      await browser.click('R', '.beast-sacrifice-filters button');
+      await browser.evaluate(
+        "document.querySelector('.beast-sacrifice .beast-atlas-entry[data-species=gibber]').click()",
+      );
+      await browser.wait(
+        "document.querySelectorAll('.beast-sacrifice .beast-collection-card').length===24",
+      );
+      assert.equal(
+        await browser.evaluate(
+          "document.querySelector('.beast-sacrifice .beast-collection-card[data-beast-id=sacrifice_r_0]').disabled",
+        ),
+        true,
+      );
+      for (let i = 1; i <= 6; i++)
+        await browser.evaluate(
+          `document.querySelector('.beast-sacrifice .beast-collection-card[data-beast-id=sacrifice_r_${i}]').click()`,
+        );
+      assert.equal(
+        await browser.evaluate("document.querySelector('.beast-sacrifice-submit').disabled"),
+        true,
+      );
+      await browser.click('Tải tiếp các cá thể');
+      await browser.wait(
+        "document.querySelectorAll('.beast-sacrifice .beast-collection-card').length===26",
+      );
+      await browser.evaluate(
+        "document.querySelector('.beast-sacrifice .beast-collection-card[data-beast-id=sacrifice_r_25]').click()",
+      );
+      await browser.click('‹ Các loài linh thú');
+      await browser.click('SSR', '.beast-sacrifice-filters button');
+      await browser.evaluate(
+        "document.querySelector('.beast-sacrifice .beast-atlas-entry[data-species=frostnip]').click()",
+      );
+      await browser.wait(
+        "document.querySelectorAll('.beast-sacrifice .beast-collection-card').length===2",
+      );
+      assert.equal(
+        await browser.evaluate(
+          "document.querySelector('.beast-sacrifice .beast-collection-card[data-beast-id=beast_frost_fixture]').disabled",
+        ),
+        true,
+      );
+      await browser.evaluate(
+        "document.querySelector('.beast-sacrifice .beast-collection-card[data-beast-id=sacrifice_ssr]').click()",
+      );
+      await browser.click('‹ Các loài linh thú');
+      await browser.click('UR', '.beast-sacrifice-filters button');
+      await browser.evaluate(
+        "document.querySelector('.beast-sacrifice .beast-atlas-entry[data-species=pyropup]').click()",
+      );
+      await browser.wait(
+        "!!document.querySelector('.beast-sacrifice .beast-collection-card[data-beast-id=sacrifice_ur]')",
+      );
+      await browser.evaluate(
+        "document.querySelector('.beast-sacrifice .beast-collection-card[data-beast-id=sacrifice_ur]').click()",
+      );
+      assert.match(
+        await browser.evaluate("document.querySelector('.beast-sacrifice-total').textContent"),
+        /9 cá thể · 12 điểm/,
+      );
+      assert.match(
+        await browser.evaluate("document.querySelector('.beast-sacrifice-result').textContent"),
+        /Nhận 1 vé triệu hồi · Còn dư 4 điểm/,
+      );
+      await shot(browser, 'sacrifice-picker');
+      await browser.click('Xem lại hiến tế');
+      assert.equal(control.posts.filter((p) => p.input.operation === 'sacrifice').length, 0);
+      assert.match(
+        await browser.evaluate("document.querySelector('.beast-sacrifice').textContent"),
+        /SSR \/ UR/,
+      );
+      await shot(browser, 'sacrifice-review');
+      for (const [width, height, scale] of [
+        [320, 568, 1],
+        [740, 360, 1],
+        [390, 844, 2],
+      ]) {
+        await browser.resize(width, height);
+        await browser.scaleText(scale);
+        assert.equal(
+          await browser.evaluate('document.documentElement.scrollWidth>innerWidth+1'),
+          false,
+        );
+        assert.equal(
+          await browser.evaluate(
+            "document.querySelector('#sheet').scrollWidth>document.querySelector('#sheet').clientWidth+1",
+          ),
+          false,
+        );
+      }
+      await browser.scaleText(1);
+      await browser.resize(390, 844);
+      const tickets = control.beastData.account.state.summonTickets;
+      await browser.click('Hiến tế 9 cá thể');
+      await browser.wait(
+        "document.querySelector('.beast-sacrifice-balance')?.textContent.includes('4/10')",
+      );
+      assert.equal(control.beastData.account.state.summonTickets, tickets + 1);
+      assert.equal(
+        control.ownedBeasts.some((b) => b.id === 'sacrifice_ur'),
+        false,
+      );
+      assert.equal(control.ownedBeasts.find((b) => b.id === 'sacrifice_r_0').isProtected, true);
+      assert.equal(control.posts.filter((p) => p.input.operation === 'sacrifice').length, 1);
+      await browser.press('Escape');
+      await browser.click('Bộ sưu tập');
+      await browser.click('‹ Bộ sưu tập');
+      await browser.wait(
+        "document.querySelector('.beast-atlas-entry[data-species=pyropup]')?.textContent.includes('0 cá thể')",
+      );
+      await browser.evaluate(
+        "document.querySelector('.beast-atlas-entry[data-species=pyropup]').click()",
+      );
+      await browser.wait(
+        "document.querySelector('.beast-collection-heading')?.textContent.includes('0 cá thể')",
+      );
+      assert.equal(
+        await browser.evaluate("document.querySelectorAll('.beast-collection-card').length"),
+        0,
+      );
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      await browser?.close();
+      await server.close();
+    }
+  },
+);
+
+test(
+  'a sacrifice whose response is lost recovers from its receipt without consuming twice',
+  { skip: !browserBin, timeout: 60000 },
+  async () => {
+    const control = beastFixture();
+    sacrificeInventory(control);
+    const api = control.beastApi;
+    let lost = false;
+    control.beastApi = async (request, endpoint) => {
+      const response = await api(request, endpoint);
+      if (!lost && request.method === 'POST' && response.body?.result?.sacrificedIds) {
+        lost = true;
+        return { status: 503, body: { error: 'OPERATION_NOT_CONFIRMED' } };
+      }
+      return response;
+    };
+    const server = await serve(control);
+    let browser;
+    try {
+      browser = await chrome();
+      await openSummon(browser, server.url);
+      await browser.tap('.beast-summon-exchange');
+      await browser.click('Hiến tế');
+      await browser.click('Chọn linh thú');
+      await browser.wait(
+        "!document.querySelector('.beast-sacrifice .beast-atlas-entry')?.disabled",
+      );
+      await browser.evaluate(
+        "document.querySelector('.beast-sacrifice .beast-atlas-entry[data-species=gibber]').click()",
+      );
+      await browser.wait(
+        "document.querySelectorAll('.beast-sacrifice .beast-collection-card').length===24",
+      );
+      for (let i = 0; i < 8; i++)
+        await browser.evaluate(
+          `document.querySelector('.beast-sacrifice .beast-collection-card[data-beast-id=sacrifice_r_${i}]').click()`,
+        );
+      await browser.click('Xem lại hiến tế');
+      await browser.click('Hiến tế 8 cá thể');
+      await browser.wait(
+        "document.querySelector('.beast-sacrifice').textContent.includes('Kiểm tra kết quả')",
+      );
+      const committedTickets = control.beastData.account.state.summonTickets;
+      assert.equal(control.ownedBeasts.length, 21);
+      await browser.navigate(server.url, 390);
+      await browser.wait("!!document.querySelector('.focus-flip-card')");
+      await browser.evaluate("document.querySelector('[data-tab=beasts]').click()");
+      await browser.wait(
+        "[...document.querySelectorAll('button')].some(b=>b.textContent==='Kiểm tra kết quả'&&!b.disabled)",
+      );
+      await browser.click('Kiểm tra kết quả');
+      await browser.wait("sessionStorage.getItem('minh-anh-beast-pending-v1')===null");
+      await browser.click('Triệu hồi');
+      await browser.tap('.beast-summon-exchange');
+      await browser.click('Hiến tế');
+      await browser.wait(
+        "document.querySelector('.beast-sacrifice-balance')?.textContent.includes('0/10') && !document.querySelector('.beast-sacrifice').textContent.includes('Có thao tác chưa xác nhận')",
+      );
+      assert.equal(control.beastData.account.state.summonTickets, committedTickets);
+      assert.equal(control.ownedBeasts.length, 21);
+      assert.equal(control.posts.filter((p) => p.input.operation === 'sacrifice').length, 1);
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      await browser?.close();
+      await server.close();
+    }
+  },
+);
+
 test(
   'summon layout stays usable at all approved sizes and sheets show actual catalog, rates and balances',
   { skip: !browserBin, timeout: 60000 },
@@ -108,8 +743,12 @@ test(
         result: { count: 1, beasts: [{ id: 'past_beast_' + i, speciesId: 'pyropup' }] },
       }));
       await browser.evaluate('window.dispatchEvent(new Event("focus"))');
-      await browser.wait(
-        'document.querySelectorAll(".beast-page--summon > .text-button").length===5',
+      await browser.wait('document.querySelector(".beast-updating").textContent===""');
+      assert.equal(
+        await browser.evaluate(
+          'document.querySelectorAll(".beast-page--summon > .text-button").length',
+        ),
+        0,
       );
       const afterHistory = await browser.evaluate(`(()=>{
         const r=s=>document.querySelector(s).getBoundingClientRect();
@@ -122,7 +761,7 @@ test(
       );
       assert.ok(
         afterHistory.panelBottom <= afterHistory.navTop,
-        'Receipts stay below the first panel',
+        'Historical receipts do not add controls below the panel',
       );
       await shot(browser, 'main-with-history');
       await browser.tap('.beast-summon-pool-link');
@@ -402,10 +1041,12 @@ test(
         expected.map((b) => b.id),
       );
       await shot(browser, 'results-ten');
-      await browser.click('Tiếp tục hành trình');
       await browser.reducedMotion();
-      await browser.click('Xem lại lần triệu hồi · 10 linh thú');
-      await browser.wait('!!document.querySelector(".beast-reveal.is-revealed")');
+      await browser.evaluate(
+        'document.querySelector("[data-reveal=summary-replay]").scrollIntoView({block:"center"})',
+      );
+      await browser.tap('[data-reveal=summary-replay]');
+      await browser.wait('!!document.querySelector(".beast-reveal.is-revealed:not(.is-summary)")');
       await browser.tap('[data-reveal=next]');
       assert.equal(
         await browser.evaluate('document.querySelector(".beast-reveal").dataset.beastId'),
@@ -424,13 +1065,24 @@ test(
         false,
       );
       await browser.tap('[data-reveal=skip-batch]');
-      await browser.press('Escape');
+      await browser.wait('!!document.querySelector(".beast-reveal.is-summary")');
       assert.equal(control.posts.length, posts);
       assert.equal(control.beastData.account.state.summonTickets, balance);
-      await browser.click('Xem lại lần triệu hồi · 10 linh thú');
+      await browser.evaluate(
+        'document.querySelector("[data-reveal=summary-replay]").scrollIntoView({block:"center"})',
+      );
+      await browser.tap('[data-reveal=summary-replay]');
       await browser.wait('!!document.querySelector(".beast-reveal.has-canvas")');
       await browser.evaluate('document.querySelector("[data-tab=today]").click()');
       await browser.wait('!document.querySelector(".beast-reveal")');
+      await browser.evaluate('document.querySelector("[data-tab=beasts]").click()');
+      await browser.wait('!!document.querySelector(".beast-page--summon")');
+      assert.equal(
+        await browser.evaluate(
+          'document.querySelectorAll(".beast-page--summon > .text-button").length',
+        ),
+        0,
+      );
       assert.deepEqual(browser.errors, []);
       await writeFile(
         new URL('animation-performance.json', out),

@@ -464,6 +464,333 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
+.beast-collection-item {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  min-width: 0;
+}
+.beast-collection-item > .beast-collection-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  width: 100%;
+  height: auto;
+  flex: 1;
+}
+.beast-card-heading {
+  display: flex;
+  align-items: center;
+  min-height: 30px;
+  padding-right: 34px;
+  margin-bottom: 4px;
+}
+.beast-card-heading > .beast-card-rank {
+  line-height: 1.2;
+}
+.beast-protection {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  flex: 0 0 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #87828f;
+  box-shadow: none;
+  font-size: 0;
+  line-height: 0;
+}
+.beast-protection svg {
+  display: block;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  overflow: visible;
+  fill: color-mix(in srgb, currentColor 7%, transparent);
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition:
+    fill 100ms ease,
+    stroke 100ms ease,
+    transform 100ms ease;
+}
+.beast-collection-item > .beast-protection {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+}
+.beast-protection.is-protected {
+  color: #b98525;
+}
+.beast-protection.is-protected svg {
+  fill: #efc45c;
+  stroke: #b98525;
+}
+:root[data-theme='dark'] .beast-protection {
+  color: #a6a2ae;
+}
+:root[data-theme='dark'] .beast-protection.is-protected svg {
+  fill: #f1cc70;
+  stroke: #d5aa4e;
+}
+.beast-protection:not(:disabled):active svg {
+  transform: scale(0.9);
+}
+.beast-protection:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -5px;
+}
+.beast-protection:disabled {
+  opacity: 1;
+  cursor: default;
+}
+.beast-detail-identity-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: left;
+  margin: 0 0 10px;
+}
+.beast-detail-identity-row > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.beast-detail-identity-row .hint {
+  margin: 0;
+  font-size: 12px;
+}
+.beast-detail-identity-row .beast-detail-meta {
+  margin: 3px 0 0;
+  font-size: 12px;
+}
+.beast-protection-feedback {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+@media (prefers-reduced-motion: reduce) {
+  .beast-protection svg {
+    transition: none;
+  }
+}
+:root[data-motion='reduce'] .beast-protection svg {
+  transition: none;
+}
+@media (hover: hover) {
+  .beast-protection:not(:disabled):hover {
+    background: color-mix(in srgb, var(--muted) 7%, transparent);
+  }
+}
+dialog#sheet.beast-exchange-sheet {
+  height: min(88dvh, 760px);
+}
+.beast-exchange-sheet #sheet-content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow: hidden;
+  scrollbar-gutter: auto;
+}
+.beast-exchange-sheet .sheet-title-row,
+.beast-exchange-sheet #sheet-feedback,
+.beast-exchange-tabs {
+  flex: 0 0 auto;
+}
+.beast-exchange-sheet .sheet-title-row {
+  position: static;
+}
+.beast-exchange-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+.beast-exchange-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+  padding: 4px;
+  margin: 18px 0;
+  border-radius: 13px;
+  background: var(--soft);
+}
+.beast-exchange-tab {
+  min-height: 44px;
+  border: 0;
+  border-radius: 10px;
+  padding: 9px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+}
+.beast-exchange-tab[aria-selected='true'] {
+  background: var(--surface);
+  color: var(--accent);
+  font-weight: 650;
+}
+.beast-sacrifice {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+.beast-sacrifice-body {
+  flex: 1 1 auto;
+  /* Let the outer region scroll too if large text leaves too little room for the list. */
+  min-height: min(120px, 30dvh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  overflow-anchor: none;
+  -webkit-overflow-scrolling: touch;
+}
+.beast-sacrifice-navigation {
+  flex: 0 0 auto;
+}
+.beast-sacrifice h3 {
+  margin: 18px 0 12px;
+  font-size: 16px;
+}
+.beast-sacrifice-balance {
+  color: var(--gold);
+  font-size: 13px;
+  margin: 14px 0;
+}
+.beast-sacrifice-choose {
+  width: 100%;
+  min-height: 46px;
+  margin-bottom: 12px;
+}
+.beast-sacrifice-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0;
+}
+.beast-sacrifice-filters button {
+  min-height: 44px;
+  flex: 1 1 auto;
+  padding: 8px 10px;
+}
+.beast-sacrifice-filters button[aria-pressed='true'] {
+  background: var(--soft);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.beast-sacrifice .beast-collection-grid {
+  margin: 14px 0;
+  align-items: stretch;
+}
+.beast-sacrifice .beast-collection-item {
+  display: flex;
+  flex-direction: column;
+}
+.beast-sacrifice .beast-collection-card {
+  flex: 1;
+  height: auto;
+}
+.beast-collection-card.is-selected {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 7%, var(--surface));
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.beast-sacrifice .beast-collection-card:disabled {
+  opacity: 0.65;
+}
+.beast-card-details {
+  min-height: 44px;
+  width: 100%;
+  font-size: 12px;
+}
+.beast-sacrifice .beast-card-selection {
+  margin-top: 8px;
+  color: var(--accent);
+  font-weight: 600;
+}
+.beast-sacrifice-footer {
+  flex: 0 0 auto;
+  margin-top: 0;
+  padding: 14px 0 max(16px, env(safe-area-inset-bottom));
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+  box-shadow: 0 -10px 20px color-mix(in srgb, var(--surface) 90%, transparent);
+}
+.beast-sacrifice-footer p {
+  margin: 0 0 6px;
+  overflow-wrap: anywhere;
+}
+.beast-sacrifice-total,
+.beast-sacrifice-result {
+  font-size: 13px;
+  font-weight: 600;
+}
+.beast-sacrifice-result {
+  color: var(--accent);
+}
+.beast-sacrifice-submit {
+  width: 100%;
+  min-height: 46px;
+  margin-top: 8px;
+}
+.beast-sacrifice-warning {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--gold);
+  margin: 12px 0;
+}
+.beast-sacrifice-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--line);
+  padding: 10px 0;
+}
+.beast-sacrifice-row img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.beast-sacrifice-row > div {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.beast-sacrifice-row strong,
+.beast-sacrifice-row small {
+  display: block;
+  font-size: 12px;
+}
+.beast-sacrifice-row small {
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 4px;
+}
+.beast-sacrifice-row button {
+  min-height: 44px;
+  flex-shrink: 0;
+  font-size: 11px;
+  padding: 6px;
+}
 .beast-collection-card {
   position: relative;
   min-width: 0;
@@ -2064,13 +2391,15 @@ dialog.beast-reveal {
 
 /* Approved Tower UI: flat artwork, native app surfaces and an explicit reveal. */
 dialog#sheet.beast-sheet-open:has(.tower-experience) {
+  --sheet-header-background: var(--bg);
   width: min(100%, 480px);
   max-width: 480px;
+  height: min(94dvh, 840px);
   max-height: 94dvh;
   padding: 22px 22px 26px;
   background: var(--bg);
   color: var(--text);
-  overflow: auto;
+  overflow: hidden;
   scrollbar-width: thin;
 }
 dialog#sheet.beast-sheet-open:has(.tower-experience)::backdrop {
@@ -3724,6 +4053,40 @@ html[data-motion='reduce'] .beast-progress-track * {
   line-height: 1.7;
   color: var(--muted);
 }
+.beast-roadmap:has(> .beast-individual-summary) {
+  margin-top: -10px;
+}
+.beast-individual-summary {
+  padding: 0 0 14px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+  line-height: 1.65;
+}
+.beast-individual-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin-bottom: 8px;
+}
+.beast-individual-heading strong {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+}
+.beast-individual-heading > span {
+  color: var(--muted);
+}
+.beast-roadmap .beast-milestone-mark {
+  border: 1px solid var(--line);
+}
+.beast-roadmap .beast-milestone.is-open .beast-milestone-mark {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+  background: var(--soft);
+  color: var(--accent);
+}
 .beast-roadmap-limit {
   margin: 0 0 24px;
   padding: 10px 12px;
@@ -3854,4 +4217,382 @@ html[data-motion='reduce'] .beast-progress-track * {
   .beast-support {
     padding: 20px 17px;
   }
+}
+
+/* Approved roles demo. Keep detail sheets and the ability roadmap on their existing styles. */
+.beast-page[data-role-panel] {
+  --role-line: #eae7ef;
+  --role-accent: #7959cc;
+  --role-soft: #f0ebfa;
+  --role-wash: #faf9fc;
+  --role-ink: #292638;
+  --role-text: #524d62;
+  --role-muted: #898395;
+  --role-gold: #91642d;
+  max-width: 520px;
+}
+:root[data-theme='dark'] .beast-page[data-role-panel] {
+  --role-line: #36303f;
+  --role-accent: #b59ae9;
+  --role-soft: #342c46;
+  --role-wash: #282431;
+  --role-ink: #f1eef6;
+  --role-text: #cbc4d6;
+  --role-muted: #a59aaf;
+  --role-gold: #d6b179;
+}
+.beast-page[data-role-panel] > :is(.beast-hero, .beast-progress, .beast-support) {
+  border: 1px solid var(--role-line);
+  border-radius: 22px;
+  background: var(--surface);
+  color: var(--role-ink);
+  box-shadow: 0 5px 24px #34215204;
+}
+.beast-page[data-role-panel] > .beast-hero {
+  --hero-line: var(--role-line);
+  --hero-text: var(--role-ink);
+  --hero-muted: var(--role-muted);
+  --hero-control-line: var(--role-line);
+  --hero-control-bg: var(--surface);
+  gap: 0;
+  padding: 17px 18px 13px;
+}
+.beast-page[data-role-panel] > .beast-hero::after {
+  display: none;
+}
+.beast-page[data-role-panel] .beast-hero-copy h2 {
+  font-size: 24px;
+  line-height: 1.3;
+  font-weight: 650;
+}
+.beast-page[data-role-panel] .beast-hero-meta {
+  margin-top: 6px;
+}
+.beast-page[data-role-panel] .beast-quality-label {
+  border: 0;
+  padding: 0;
+  margin-top: 5px;
+  color: var(--role-gold);
+}
+.beast-page[data-role-panel] > .beast-hero > img {
+  width: 151px;
+  height: 151px;
+  margin: 7px auto 9px;
+  filter: drop-shadow(0 5px 5px #2820370c);
+}
+.beast-page[data-role-panel] .beast-role-actions {
+  width: 100%;
+  gap: 9px;
+}
+.beast-page[data-role-panel] .beast-role-actions button {
+  min-height: 42px;
+  padding: 8px 3px;
+  border-radius: 11px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: none;
+}
+.beast-page[data-role-panel] .beast-role-actions .secondary {
+  background: var(--role-wash);
+  color: var(--role-text);
+}
+.beast-page[data-role-panel] > :is(.beast-progress, .beast-support) {
+  padding: 20px;
+  margin: 16px 0 0;
+}
+.beast-page[data-role-panel] .beast-progress > .beast-journey {
+  margin: 0 0 17px;
+  padding-bottom: 16px;
+  border-color: var(--role-line);
+}
+.beast-page[data-role-panel] .beast-progress .beast-evolution-cards {
+  gap: 8px;
+}
+.beast-page[data-role-panel] .beast-progress .beast-evolution-card {
+  min-height: 46px;
+  padding: 6px 3px;
+  gap: 5px;
+  border-radius: 11px;
+}
+.beast-page[data-role-panel] .beast-progress .beast-evolution-card.is-current {
+  background: var(--role-soft);
+  border-color: transparent;
+  color: var(--role-accent);
+}
+.beast-page[data-role-panel] .beast-progress .beast-evolution-card.is-unknown {
+  border: 1px dashed var(--role-line);
+}
+.beast-page[data-role-panel] .beast-progress .beast-form-number {
+  font-size: 11px;
+}
+.beast-page[data-role-panel] .beast-progress .beast-evolution-card img {
+  width: 31px;
+  height: 31px;
+  flex-basis: 31px;
+}
+.beast-page[data-role-panel] :is(.beast-progress-heading, .beast-support-heading) h2 {
+  font-size: 15px;
+  line-height: 1.5;
+  font-weight: 650;
+}
+.beast-page[data-role-panel] .beast-stage-badge {
+  padding: 3px 8px;
+  font-size: 11px;
+  border-radius: 7px;
+  color: var(--role-accent);
+  background: var(--role-soft);
+}
+.beast-page[data-role-panel] .beast-stage-numbers {
+  margin: 11px 0 0;
+}
+.beast-page[data-role-panel] .beast-stage-numbers strong {
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.beast-page[data-role-panel] .beast-stage-numbers .hint {
+  font-size: 12px;
+  color: var(--role-muted);
+}
+.beast-page[data-role-panel] .beast-progress-track {
+  display: flex;
+  height: 10px;
+  margin: 11px 0 0;
+  background: var(--role-line);
+}
+.beast-page[data-role-panel] .beast-progress-track > div {
+  position: static;
+  flex: 0 0 auto;
+  height: 100%;
+  min-width: 0;
+  border-radius: 0;
+}
+.beast-page[data-role-panel] .beast-progress-earned {
+  background: var(--role-accent);
+}
+.beast-page[data-role-panel] .beast-progress-gray {
+  background: #aaa4b2;
+}
+.beast-page[data-role-panel] .beast-progress-track > .beast-progress-empty {
+  flex: 1 1 auto;
+}
+.beast-page[data-role-panel] .beast-progress-track > .beast-progress-day {
+  display: flex;
+  border-radius: 0 4px 4px 0;
+  overflow: hidden;
+}
+.beast-progress-day > div {
+  flex: 0 0 auto;
+  height: 100%;
+  min-width: 0;
+}
+.beast-progress-preview-earned {
+  background: #ae92d8;
+}
+.beast-progress-preview-gray {
+  background: repeating-linear-gradient(125deg, #cec6d7 0 1px, #ded9e5 1px 7px);
+}
+:root[data-theme='dark'] .beast-progress-preview-earned {
+  background: #997fc4;
+}
+:root[data-theme='dark'] .beast-progress-preview-gray {
+  background: repeating-linear-gradient(125deg, #5b5164 0 1px, #49414f 1px 7px);
+}
+.beast-page[data-role-panel] :is(.beast-training-forecast, .beast-stage-message, .beast-gray-note) {
+  font-size: 12px;
+  color: var(--role-text);
+  line-height: 1.65;
+}
+.beast-page[data-role-panel] .beast-training-forecast {
+  margin: 9px 0 0;
+}
+.beast-page[data-role-panel] .beast-stage-message {
+  margin: 6px 0 0;
+}
+.beast-page[data-role-panel] .beast-gray-note {
+  color: var(--role-muted);
+}
+.beast-page[data-role-panel] .beast-evolve-button {
+  font-size: 13px;
+  font-weight: 600;
+  min-height: 44px;
+  padding: 10px 15px;
+  margin: 16px 0 0;
+  border-radius: 11px;
+  background: var(--role-accent);
+  color: white;
+}
+:root[data-theme='dark'] .beast-page[data-role-panel] .beast-evolve-button {
+  color: #21172e;
+}
+.beast-page[data-role-panel] .beast-evolve-button:disabled {
+  opacity: 1;
+  background: var(--role-soft);
+  color: var(--role-muted);
+  border: 1px solid var(--role-line);
+}
+:root[data-theme='dark'] .beast-page[data-role-panel] .beast-evolve-button:disabled {
+  color: var(--role-muted);
+}
+.beast-page[data-role-panel] .beast-upgrade {
+  padding: 15px;
+  margin-top: 17px;
+  border: 0;
+  border-radius: 13px;
+  background: var(--role-wash);
+}
+.beast-page[data-role-panel] .beast-upgrade-heading {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.65;
+  margin-bottom: 12px;
+  color: var(--role-accent);
+}
+.beast-page[data-role-panel] .beast-upgrade-row + .beast-upgrade-row {
+  padding-top: 12px;
+  margin-top: 12px;
+  border-top: 1px solid var(--role-line);
+}
+.beast-page[data-role-panel] .beast-upgrade-row strong {
+  font-size: 13px;
+  font-weight: 600;
+}
+.beast-page[data-role-panel] .beast-upgrade-copy {
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--role-text);
+  margin-top: 3px;
+}
+.beast-page[data-role-panel] .beast-training-details {
+  border-color: var(--role-line);
+  margin-top: 16px;
+  padding-top: 0;
+  font-size: 12px;
+  line-height: 1.65;
+  color: var(--role-muted);
+}
+.beast-page[data-role-panel] .beast-training-details summary {
+  min-height: 44px;
+  padding: 12px 0;
+  font-weight: 600;
+  color: var(--role-text);
+}
+.beast-page[data-role-panel] .beast-training-totals,
+.beast-individual-summary .beast-training-totals {
+  margin: 0;
+  padding-bottom: 8px;
+}
+.beast-page[data-role-panel] .beast-training-totals > div,
+.beast-individual-summary .beast-training-totals > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 12px;
+  padding: 5px 0;
+}
+.beast-page[data-role-panel] .beast-training-totals dt,
+.beast-individual-summary .beast-training-totals dt {
+  color: var(--role-text, var(--muted));
+}
+.beast-page[data-role-panel] .beast-training-totals dd,
+.beast-individual-summary .beast-training-totals dd {
+  margin: 0;
+  color: var(--role-ink, var(--text));
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.beast-page[data-role-panel] .beast-skill-context {
+  font-size: 12px;
+  color: var(--role-muted);
+}
+.beast-page[data-role-panel] > .beast-support .beast-skill-entry {
+  padding: 19px 0 19px 13px;
+  margin: 0;
+  border-color: var(--role-line);
+}
+.beast-page[data-role-panel] > .beast-support .beast-skill-entry::before {
+  top: 25px;
+  width: 3px;
+  height: 12px;
+  background: var(--role-accent);
+  opacity: 0.6;
+}
+.beast-page[data-role-panel] > .beast-support .beast-skill-entry h3 {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.6;
+  margin-bottom: 5px;
+  color: var(--role-ink);
+}
+.beast-page[data-role-panel] > .beast-support .beast-skill-description {
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--role-text);
+}
+.beast-page[data-role-panel] > .beast-support .beast-skill-tier {
+  font-size: 11px;
+  color: var(--role-accent);
+}
+.beast-page[data-role-panel] > .beast-support .beast-skill-entry:has(.beast-skill-tier)::before {
+  top: 48px;
+}
+.beast-page[data-role-panel] > .beast-support .beast-role-ultimate::before {
+  background: var(--role-gold);
+}
+.beast-page[data-role-panel] > .beast-support .beast-role-ultimate .beast-skill-tier {
+  color: var(--role-gold);
+}
+.beast-page[data-role-panel] > .beast-support .beast-skill-counter {
+  font-size: 12px;
+  color: var(--role-muted);
+  background: transparent;
+  padding: 0;
+}
+.beast-page[data-role-panel] > .beast-support .secondary {
+  min-height: 42px;
+  padding: 9px 13px;
+  margin-top: 13px;
+  border: 1px solid var(--role-line);
+  border-radius: 11px;
+  background: var(--surface);
+  color: var(--role-ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+.beast-page[data-role-panel] > .beast-support .beast-skill-limit {
+  font-size: 12px;
+  color: var(--role-muted);
+}
+.beast-page[data-role-panel] > .beast-support .beast-abilities-link {
+  min-height: 36px;
+  font-size: 12px;
+  color: var(--role-accent);
+}
+@media (max-width: 360px) {
+  .beast-page[data-role-panel] > :is(.beast-progress, .beast-support) {
+    padding: 17px;
+  }
+  .beast-page[data-role-panel] .beast-progress .beast-evolution-cards {
+    gap: 5px;
+  }
+  .beast-page[data-role-panel] .beast-progress .beast-evolution-card img {
+    width: 26px;
+    height: 26px;
+    flex-basis: 26px;
+  }
+  .beast-page[data-role-panel] :is(.beast-progress-heading, .beast-support-heading) h2 {
+    font-size: 14px;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .beast-progress-day,
+  .beast-progress-preview-earned,
+  .beast-progress-preview-gray {
+    transition: width 0.25s ease;
+  }
+}
+html[data-motion='reduce']
+  :is(.beast-progress-day, .beast-progress-preview-earned, .beast-progress-preview-gray) {
+  transition: none;
 }

@@ -1,14 +1,20 @@
 import { D1BeastStore } from '../../adapters/d1/linh-thu-store.ts';
 import { query } from '../../adapters/d1/database.ts';
 import { ScheduleStore } from '../../adapters/d1/schedule-store.ts';
+import { D1HabitStore } from '../../adapters/d1/habit-store.ts';
 import { BeastService, type BeastCommand } from '../../application/linh-thu-service.ts';
 import { BeastRoleService, type BeastRoleCommand } from '../../application/linh-thu-roles.ts';
 import { BeastSettlementService } from '../../application/linh-thu-settlement.ts';
 import { BeastTowerService, type BeastTowerCommand } from '../../application/linh-thu-tower.ts';
 import { beastTowerPublic } from '../../domain/linh-thu-tower.ts';
 import { BEAST_CATALOG } from '../../domain/linh-thu-catalog.ts';
+import {
+  BEAST_SACRIFICE_COST,
+  BEAST_SACRIFICE_POINTS,
+  BEAST_SACRIFICE_LIMIT,
+} from '../../domain/linh-thu-account.ts';
 import { BEAST_SKILLS } from '../../domain/linh-thu-skills.ts';
-import { BEAST_TRAINING } from '../../domain/linh-thu-training.ts';
+import { BEAST_TRAINING, trainBeast, trainingView } from '../../domain/linh-thu-training.ts';
 import {
   BeastUltimateService,
   type BeastUltimateCommand,
@@ -33,6 +39,37 @@ export async function readBeasts(
   url: URL,
 ): Promise<Response> {
   const store = new D1BeastStore(env.DB);
+  if (url.pathname === '/api/linh-thu/training-preview') {
+    const day = await new ScheduleStore(env.DB).ensureDay(owner, now);
+    const empty = { now, day: day ? { day: day.day, endAt: day.end_at } : null, preview: null };
+    if (!day) return json(empty);
+    const roles = await store.roles(owner, day.day);
+    const role = roles.current.find((entry) => entry.role === 'training');
+    if (!role?.beastId || !role.attemptId) return json(empty);
+    const beast = await store.individual(owner, role.beastId, role.attemptId);
+    if (!beast || !['ready', 'training'].includes(beast.attempt.status)) return json(empty);
+    if (trainingView(beast.attempt).completed) return json(empty);
+    // Older days must be settled before today's remaining capacity is known.
+    const nextSettlement = await store.nextSettlement(owner);
+    if (nextSettlement === null || nextSettlement < day.day) return json(empty);
+    const today = await new D1HabitStore(env.DB).today(owner, now, false, true);
+    const outcomes = today.habits.map((habit) => habit.preview?.status ?? 'neutral');
+    const { delta } = trainBeast({ ...beast.attempt, status: 'training' }, outcomes);
+    return json({
+      ...empty,
+      preview: {
+        beastId: beast.id,
+        attemptId: beast.attemptId,
+        base: {
+          earned: beast.attempt.earned,
+          gray: beast.attempt.gray,
+          form: beast.attempt.form ?? null,
+          status: beast.attempt.status,
+        },
+        delta,
+      },
+    });
+  }
   const random = () => crypto.getRandomValues(new Uint32Array(1))[0]! / 4294967296;
   if (url.pathname === '/api/linh-thu/tower') {
     await new BeastTowerService(store, random).expire(owner, now);
@@ -50,13 +87,22 @@ export async function readBeasts(
   if (url.pathname === '/api/linh-thu/collection') {
     const limit = url.searchParams.get('limit');
     if (limit !== null && !/^\d+$/.test(limit)) throw Error('INVALID_BEAST_PAGE');
+    const purpose = url.searchParams.get('purpose');
+    if (purpose !== null && purpose !== 'sacrifice') throw Error('INVALID_BEAST_PAGE');
+    const day =
+      purpose === 'sacrifice' ? await new ScheduleStore(env.DB).ensureDay(owner, now) : null;
+    if (purpose === 'sacrifice' && !day) throw Error('SETUP_REQUIRED');
+    const page = await store.collection(
+      owner,
+      url.searchParams.get('cursor'),
+      limit === null ? 24 : Number(limit),
+      url.searchParams.get('species'),
+      day ? { day: day.day, now } : undefined,
+    );
     return json(
-      await store.collection(
-        owner,
-        url.searchParams.get('cursor'),
-        limit === null ? 24 : Number(limit),
-        url.searchParams.get('species'),
-      ),
+      day
+        ? { ...page, availableCounts: await store.sacrificeOverview(owner, day.day), day: day.day }
+        : page,
     );
   }
   if (url.pathname === '/api/linh-thu/receipt') {
@@ -67,6 +113,8 @@ export async function readBeasts(
       !/^[a-zA-Z0-9_-]{8,100}$/.test(id) ||
       ![
         'exchange',
+        'protect',
+        'sacrifice',
         'summon',
         'choose_summon',
         'choose_draw',
@@ -161,6 +209,9 @@ export async function readBeasts(
       skills: BEAST_SKILLS,
       training: BEAST_TRAINING,
       exchangeCost: BEAST_EXCHANGE_COST,
+      sacrificeCost: BEAST_SACRIFICE_COST,
+      sacrificePoints: BEAST_SACRIFICE_POINTS,
+      sacrificeLimit: BEAST_SACRIFICE_LIMIT,
       rates: BEAST_BASE_RATES,
       ssrGuarantee: BEAST_SSR_GUARANTEE_RATES,
       urGuarantee: BEAST_UR_GUARANTEE_RATES,
@@ -184,6 +235,8 @@ export async function handleBeasts(
           'count',
           'role',
           'beastId',
+          'beastIds',
+          'isProtected',
           'runVersion',
           'card',
           'targets',
@@ -198,6 +251,8 @@ export async function handleBeasts(
     Number(input.version) < 0 ||
     ![
       'exchange',
+      'protect',
+      'sacrifice',
       'summon',
       'choose_summon',
       'choose_draw',

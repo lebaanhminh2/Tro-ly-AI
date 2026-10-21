@@ -124,8 +124,8 @@ export const TOWER_REWARDS: readonly TowerReward[] = Object.freeze([
   Object.freeze({ tickets: 0, summonTickets: 0 }),
   Object.freeze({ tickets: 2, summonTickets: 0 }),
   Object.freeze({ tickets: 3, summonTickets: 0 }),
+  Object.freeze({ tickets: 5, summonTickets: 0 }),
   Object.freeze({ tickets: 0, summonTickets: 1 }),
-  Object.freeze({ tickets: 0, summonTickets: 2 }),
 ]);
 
 export function towerReward(clearedFloor: number): TowerReward {

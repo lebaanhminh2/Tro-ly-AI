@@ -1007,7 +1007,31 @@ dialog {
 dialog::backdrop {
   background: #1a122c66;
 }
+/* Shared sheets scroll inside their frame so the handle and close control stay reachable. */
+#sheet[open] {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#sheet-content {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+}
+#sheet:is(
+    .task-sheet-open,
+    .schedule-sheet-open,
+    .settings-sheet-open,
+    .reward-sheet-open,
+    .draw-sheet-open
+  )
+  #sheet-content {
+  scrollbar-gutter: auto;
+}
 .sheet-handle {
+  flex: 0 0 auto;
   height: 4px;
   width: 36px;
   border-radius: 10px;
@@ -1015,6 +1039,11 @@ dialog::backdrop {
   margin: 0 auto 22px;
 }
 .sheet-title-row {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  background: var(--sheet-header-background, var(--surface));
+  box-shadow: 0 -24px 0 var(--sheet-header-background, var(--surface));
   display: flex;
   align-items: center;
   justify-content: space-between;

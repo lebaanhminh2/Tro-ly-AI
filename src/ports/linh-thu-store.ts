@@ -48,6 +48,8 @@ export type BeastMutation<T> = {
   healthy: HealthyState;
   result: T;
   newBeasts?: readonly { id: string; speciesId: string; attemptId: string }[];
+  protection?: { beastId: string; isProtected: boolean };
+  sacrifice?: readonly string[];
   newAttempts?: readonly { id: string; beastId: string; speciesId: string }[];
   updateAttempts?: readonly {
     id: string;
@@ -83,6 +85,12 @@ export type BeastMutation<T> = {
 export interface BeastStore {
   read(owner: string): Promise<BeastSnapshot>;
   individual(owner: string, id: string, attemptId?: string): Promise<OwnedBeast | null>;
+  sacrificeSelection(
+    owner: string,
+    ids: readonly string[],
+    day: number,
+    now: number,
+  ): Promise<OwnedBeast[]>;
   roles(
     owner: string,
     day: number,

@@ -1,4 +1,9 @@
-import { exchangeBeastTickets, summonBeasts } from '../domain/linh-thu-account.ts';
+import {
+  exchangeBeastTickets,
+  summonBeasts,
+  sacrificeBeastTickets,
+  BEAST_SACRIFICE_LIMIT,
+} from '../domain/linh-thu-account.ts';
 import { craftBeastElixir } from '../domain/linh-thu-training.ts';
 import type { BeastStore } from '../ports/linh-thu-store.ts';
 import { beastCalendarWeek } from '../domain/linh-thu-ultimates.ts';
@@ -6,12 +11,15 @@ import { beastSpecies, rollPyroCandidates, rollBeast } from '../domain/linh-thu-
 import { advanceSummonPity } from '../domain/linh-thu.ts';
 
 export type BeastCommand = {
-  operation: 'exchange' | 'summon' | 'craft' | 'choose_summon';
+  operation: 'exchange' | 'summon' | 'craft' | 'choose_summon' | 'protect' | 'sacrifice';
   version: number;
   count?: number;
   day?: number;
   option?: number;
   choiceId?: string;
+  beastId?: string;
+  isProtected?: boolean;
+  beastIds?: string[];
 };
 
 export class BeastService {
@@ -32,20 +40,46 @@ export class BeastService {
   ) {
     const { operation } = command;
     if (
-      !['exchange', 'summon', 'craft', 'choose_summon'].includes(operation) ||
+      !['exchange', 'summon', 'craft', 'choose_summon', 'protect', 'sacrifice'].includes(
+        operation,
+      ) ||
       Object.keys(command).some(
         (key) =>
           ![
             'operation',
             'version',
-            'count',
+            ...(['exchange', 'summon', 'choose_summon'].includes(operation) ? ['count'] : []),
             'day',
             ...(operation === 'choose_summon' ? ['option', 'choiceId'] : []),
+            ...(operation === 'protect' ? ['beastId', 'isProtected'] : []),
+            ...(operation === 'sacrifice' ? ['beastIds'] : []),
           ].includes(key),
       )
     )
       throw Error('INVALID_BEAST_COMMAND');
     if (operation === 'craft' && command.count !== undefined) throw Error('INVALID_BEAST_COMMAND');
+    if (
+      operation === 'protect' &&
+      (typeof command.isProtected !== 'boolean' ||
+        typeof command.beastId !== 'string' ||
+        !/^[a-zA-Z0-9_-]{8,120}$/.test(command.beastId))
+    )
+      throw Error('INVALID_BEAST_COMMAND');
+    if (
+      operation === 'sacrifice' &&
+      (!Array.isArray(command.beastIds) ||
+        !command.beastIds.length ||
+        command.beastIds.length > BEAST_SACRIFICE_LIMIT ||
+        new Set(command.beastIds).size !== command.beastIds.length ||
+        command.beastIds.some((id) => typeof id !== 'string' || !/^[a-zA-Z0-9_-]{8,120}$/.test(id)))
+    )
+      throw Error('INVALID_BEAST_SACRIFICE');
+    const protectedBeast =
+      operation === 'protect' ? await this.store.individual(owner, command.beastId!) : null;
+    const sacrifices =
+      operation === 'sacrifice'
+        ? await this.store.sacrificeSelection(owner, command.beastIds!, day, now)
+        : [];
     const [ultimate, pending] =
       operation === 'summon' || operation === 'choose_summon'
         ? await Promise.all([
@@ -64,6 +98,30 @@ export class BeastService {
       (snapshot, healthy) => {
         if (command.day !== undefined && command.day !== day) throw Error('BEAST_DAY_CLOSED');
         if (healthy.suspended) throw Error('ACCOUNT_SUSPENDED');
+        if (operation === 'protect') {
+          if (!protectedBeast) throw Error('BEAST_NOT_FOUND');
+          return {
+            state: snapshot.state,
+            healthy,
+            protection: { beastId: protectedBeast.id, isProtected: command.isProtected! },
+            result: { beastId: protectedBeast.id, isProtected: command.isProtected },
+          };
+        }
+        if (operation === 'sacrifice') {
+          if (sacrifices.length !== command.beastIds!.length) throw Error('BEAST_NOT_FOUND');
+          const outcome = sacrificeBeastTickets(snapshot.state, sacrifices);
+          return {
+            state: outcome.state,
+            healthy,
+            sacrifice: command.beastIds,
+            result: {
+              sacrificedIds: command.beastIds,
+              points: outcome.points,
+              tickets: outcome.tickets,
+              remainder: outcome.remainder,
+            },
+          };
+        }
         if (operation === 'choose_summon') {
           if (!pending || pending.id !== command.choiceId) throw Error('BEAST_CHOICE_CLOSED');
           if (

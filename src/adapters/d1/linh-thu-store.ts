@@ -6,7 +6,7 @@ import type { BeastMutation, BeastSnapshot, BeastStore } from '../../ports/linh-
 import { query } from './database.ts';
 import { HealthyStore } from './healthy-store.ts';
 import { D1HabitStore } from './habit-store.ts';
-import { D1BeastReader } from './linh-thu-reader.ts';
+import { D1BeastReader, BEAST_SACRIFICE_BLOCK_SQL } from './linh-thu-reader.ts';
 
 /** Coordinates assessed habit state and guarded, receipt-backed mutations. */
 export class D1BeastStore extends D1BeastReader implements BeastStore {
@@ -144,6 +144,47 @@ export class D1BeastStore extends D1BeastReader implements BeastStore {
               ),
             );
           }
+          if (outcome.protection) {
+            const protection = outcome.protection;
+            statements.push(
+              query(
+                this.db,
+                'INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM beasts WHERE owner=? AND id=? AND sacrificed_at IS NULL) THEN 1 ELSE 0 END',
+                owner,
+                protection.beastId,
+              ),
+              query(
+                this.db,
+                'UPDATE beasts SET is_protected=? WHERE owner=? AND id=? AND sacrificed_at IS NULL',
+                protection.isProtected ? 1 : 0,
+                owner,
+                protection.beastId,
+              ),
+            );
+          }
+          if (outcome.sacrifice) {
+            const ids = JSON.stringify(outcome.sacrifice);
+            statements.push(
+              query(
+                this.db,
+                `INSERT INTO transaction_guard SELECT CASE WHEN
+                (SELECT COUNT(*) FROM beasts b CROSS JOIN (SELECT ? AS day) ctx
+                  WHERE b.owner=? AND b.sacrificed_at IS NULL AND b.id IN(SELECT value FROM json_each(?))
+                  AND (${BEAST_SACRIFICE_BLOCK_SQL}) IS NULL)=? THEN 1 ELSE 0 END`,
+                day,
+                owner,
+                ids,
+                outcome.sacrifice.length,
+              ),
+              query(
+                this.db,
+                'UPDATE beasts SET sacrificed_at=? WHERE owner=? AND id IN(SELECT value FROM json_each(?)) AND sacrificed_at IS NULL',
+                now,
+                owner,
+                ids,
+              ),
+            );
+          }
           if ((outcome.newBeasts?.length ?? 0) > 10) throw Error('INVALID_BEAST_BATCH');
           for (const beast of outcome.newBeasts ?? []) {
             const entry = beastSpecies(beast.speciesId);
@@ -153,13 +194,23 @@ export class D1BeastStore extends D1BeastReader implements BeastStore {
             statements.push(
               query(
                 this.db,
-                'INSERT INTO beasts(owner,id,species_id,current_attempt_id,acquired_at,acquired_receipt) VALUES(?,?,?,?,?,?)',
+                `INSERT INTO beast_number_counters(owner,species_id,next_number) VALUES(?,?,2)
+             ON CONFLICT(owner,species_id) DO UPDATE SET next_number=beast_number_counters.next_number+1`,
+                owner,
+                entry.id,
+              ),
+              query(
+                this.db,
+                `INSERT INTO beasts(owner,id,species_id,current_attempt_id,acquired_at,acquired_receipt,individual_number)
+             VALUES(?,?,?,?,?,?,(SELECT next_number-1 FROM beast_number_counters WHERE owner=? AND species_id=?))`,
                 owner,
                 beast.id,
                 entry.id,
                 beast.attemptId,
                 now,
                 requestId,
+                owner,
+                entry.id,
               ),
               query(
                 this.db,
@@ -180,7 +231,7 @@ export class D1BeastStore extends D1BeastReader implements BeastStore {
             statements.push(
               query(
                 this.db,
-                'INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM beasts WHERE owner=? AND id=? AND species_id=?) THEN 1 ELSE 0 END',
+                'INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM beasts WHERE owner=? AND id=? AND species_id=? AND sacrificed_at IS NULL) THEN 1 ELSE 0 END',
                 owner,
                 attempt.beastId,
                 entry.id,

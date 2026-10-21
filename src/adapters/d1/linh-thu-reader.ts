@@ -22,6 +22,9 @@ type CollectionRow = {
   species_id: string;
   current_attempt_id: string;
   acquired_at: number;
+  individual_number: number;
+  is_protected: number;
+  sacrifice_blocked_reason?: string | null;
   rule_version: 1;
   status: BeastAttempt['status'];
   earned: number;
@@ -36,6 +39,11 @@ function owned(row: CollectionRow): OwnedBeast {
     speciesId: row.species_id,
     attemptId: row.current_attempt_id,
     acquiredAt: row.acquired_at,
+    individualNumber: row.individual_number,
+    isProtected: !!row.is_protected,
+    ...(row.sacrifice_blocked_reason !== undefined
+      ? { sacrificeBlockedReason: row.sacrifice_blocked_reason }
+      : {}),
     counters: JSON.parse(row.counters_json),
     attempt: {
       speciesId: row.species_id,
@@ -47,6 +55,31 @@ function owned(row: CollectionRow): OwnedBeast {
     },
   };
 }
+
+/** Shared by previews and the commit guard; b is a beast, ctx contains its operating day. */
+export const BEAST_SACRIFICE_BLOCK_SQL = `CASE
+  WHEN b.is_protected=1 THEN 'Đã đánh dấu bảo vệ'
+  WHEN EXISTS(SELECT 1 FROM beast_roles r WHERE r.owner=b.owner AND r.beast_id=b.id AND
+    (r.effective_day>ctx.day OR r.effective_day=(SELECT MAX(effective_day) FROM beast_roles
+      WHERE owner=r.owner AND role=r.role AND effective_day<=ctx.day))) THEN 'Đang giữ vai trò hoặc chờ đổi vai trò'
+  WHEN EXISTS(SELECT 1 FROM beast_ultimates u WHERE u.owner=b.owner AND u.beast_id=b.id
+    AND COALESCE(json_extract(u.state_json,'$.cancelled'),0)=0
+    AND COALESCE(json_extract(u.state_json,'$.settled'),0)=0) THEN 'Hiệu ứng chưa kết thúc hoặc chưa quyết toán'
+  WHEN EXISTS(SELECT 1 FROM beast_tower_runs t WHERE t.owner=b.owner
+    AND json_extract(t.eligibility_json,'$.rescueBeastId')=b.id
+    AND json_extract(t.state_json,'$.status') IN('choosing','decision')) THEN 'Đang liên quan đến lượt tháp'
+  WHEN EXISTS(SELECT 1 FROM beast_choices c JOIN beast_ultimates u ON u.owner=c.owner
+    AND u.beast_id=b.id AND c.created>=u.activated_at AND c.created<=u.expires_at
+    WHERE c.owner=b.owner AND c.resolved_at IS NULL) THEN 'Còn lựa chọn thưởng chưa hoàn tất'
+  WHEN EXISTS(SELECT 1 FROM schedule_days d JOIN beast_accounts ba ON ba.owner=d.owner
+    WHERE d.owner=b.owner AND d.day>=ba.activated_day AND d.day<ctx.day
+    AND (NOT EXISTS(SELECT 1 FROM beast_day_settlements s WHERE s.owner=d.owner AND s.day=d.day)
+      OR NOT EXISTS(SELECT 1 FROM sleep_assessments s WHERE s.owner=d.owner AND s.day=d.day)
+      OR NOT EXISTS(SELECT 1 FROM beast_skill_events e WHERE e.owner=d.owner AND e.kind='combined' AND e.source_id=CAST(d.day AS TEXT)))
+    AND EXISTS(SELECT 1 FROM beast_roles r WHERE r.owner=b.owner AND r.beast_id=b.id
+      AND r.effective_day=(SELECT MAX(effective_day) FROM beast_roles WHERE owner=r.owner AND role=r.role AND effective_day<=d.day)))
+    THEN 'Còn ngày chưa quyết toán'
+  ELSE NULL END`;
 
 /** SQL reads shared by effect preparation and the transactional store. */
 export class D1BeastReader {
@@ -73,6 +106,7 @@ export class D1BeastReader {
     cursor: string | null = null,
     limit = 24,
     speciesId: string | null = null,
+    sacrifice?: { day: number; now: number },
   ) {
     if (!Number.isInteger(limit) || limit < 1 || limit > 50) throw Error('INVALID_BEAST_PAGE');
     if (speciesId !== null) beastSpecies(speciesId);
@@ -89,11 +123,14 @@ export class D1BeastReader {
     const rows = (
       await query(
         this.db,
-        `SELECT b.id,b.species_id,b.current_attempt_id,b.acquired_at,a.rule_version,a.status,a.earned,a.gray,a.form,a.counters_json
+        `SELECT b.id,b.species_id,b.current_attempt_id,b.acquired_at,b.individual_number,b.is_protected,a.rule_version,a.status,a.earned,a.gray,a.form,a.counters_json
+       ${sacrifice ? `,${BEAST_SACRIFICE_BLOCK_SQL} AS sacrifice_blocked_reason` : ''}
        FROM beasts b JOIN beast_attempts a ON a.owner=b.owner AND a.id=b.current_attempt_id
-       WHERE b.owner=? ${speciesId === null ? '' : 'AND b.species_id=?'}
+       ${sacrifice ? 'CROSS JOIN (SELECT ? AS day) ctx' : ''}
+       WHERE b.owner=? AND b.sacrificed_at IS NULL ${speciesId === null ? '' : 'AND b.species_id=?'}
        AND (b.acquired_at,b.id)<(?,?)
        ORDER BY b.acquired_at DESC,b.id DESC LIMIT ?`,
+        ...(sacrifice ? [sacrifice.day] : []),
         owner,
         ...(speciesId === null ? [] : [speciesId]),
         at,
@@ -118,7 +155,7 @@ export class D1BeastReader {
         this.db,
         `
       SELECT * FROM (
-        SELECT b.id,b.species_id,b.current_attempt_id,b.acquired_at,
+        SELECT b.id,b.species_id,b.current_attempt_id,b.acquired_at,b.individual_number,b.is_protected,
           a.rule_version,a.status,a.earned,a.gray,a.form,a.counters_json,
           COUNT(*) OVER (PARTITION BY b.species_id) AS total,
           ROW_NUMBER() OVER (PARTITION BY b.species_id ORDER BY a.form DESC,
@@ -126,7 +163,7 @@ export class D1BeastReader {
             COALESCE(1.0*a.earned/NULLIF(a.earned+a.gray,0),0) DESC,
             b.acquired_at DESC,b.id DESC) AS position
         FROM beasts b JOIN beast_attempts a ON a.owner=b.owner AND a.id=b.current_attempt_id
-        WHERE b.owner=?
+        WHERE b.owner=? AND b.sacrificed_at IS NULL
       ) WHERE position=1`,
         owner,
       ).all<CollectionRow & { total: number }>()
@@ -139,14 +176,50 @@ export class D1BeastReader {
   async individual(owner: string, id: string, attemptId?: string): Promise<OwnedBeast | null> {
     const row = await query(
       this.db,
-      `SELECT b.id,b.species_id,a.id AS current_attempt_id,b.acquired_at,a.rule_version,a.status,a.earned,a.gray,a.form,a.counters_json
+      `SELECT b.id,b.species_id,a.id AS current_attempt_id,b.acquired_at,b.individual_number,b.is_protected,a.rule_version,a.status,a.earned,a.gray,a.form,a.counters_json
        FROM beasts b JOIN beast_attempts a ON a.owner=b.owner AND a.beast_id=b.id AND a.id=COALESCE(?,b.current_attempt_id)
-       WHERE b.owner=? AND b.id=?`,
+       WHERE b.owner=? AND b.id=? AND (b.sacrificed_at IS NULL OR ? IS NOT NULL)`,
       attemptId ?? null,
       owner,
       id,
+      attemptId ?? null,
     ).first<CollectionRow>();
     return row ? owned(row) : null;
+  }
+
+  async sacrificeSelection(
+    owner: string,
+    ids: readonly string[],
+    day: number,
+    _now: number,
+  ): Promise<OwnedBeast[]> {
+    const rows = (
+      await query(
+        this.db,
+        `SELECT b.id,b.species_id,b.current_attempt_id,b.acquired_at,b.individual_number,b.is_protected,
+      a.rule_version,a.status,a.earned,a.gray,a.form,a.counters_json,${BEAST_SACRIFICE_BLOCK_SQL} AS sacrifice_blocked_reason
+      FROM beasts b JOIN beast_attempts a ON a.owner=b.owner AND a.id=b.current_attempt_id
+      CROSS JOIN (SELECT ? AS day) ctx
+      WHERE b.owner=? AND b.sacrificed_at IS NULL AND b.id IN(SELECT value FROM json_each(?))`,
+        day,
+        owner,
+        JSON.stringify(ids),
+      ).all<CollectionRow>()
+    ).results;
+    return rows.map(owned);
+  }
+
+  async sacrificeOverview(owner: string, day: number) {
+    const rows = (
+      await query(
+        this.db,
+        `SELECT b.species_id,SUM(CASE WHEN (${BEAST_SACRIFICE_BLOCK_SQL}) IS NULL THEN 1 ELSE 0 END) AS available
+      FROM beasts b CROSS JOIN (SELECT ? AS day) ctx WHERE b.owner=? AND b.sacrificed_at IS NULL GROUP BY b.species_id`,
+        day,
+        owner,
+      ).all<{ species_id: string; available: number }>()
+    ).results;
+    return Object.fromEntries(rows.map((row) => [row.species_id, row.available]));
   }
 
   async discoveries(owner: string) {
