@@ -17,7 +17,7 @@ import { beastCalendarWeek } from '../../domain/linh-thu-ultimates.ts';
 import {
   settleOneCombinedBeastDay,
   settleOneExpiredBeastUltimate,
-} from '../../adapters/d1/linh-thu-effects.ts';
+} from '../../adapters/d1/linh-thu-maintenance.ts';
 import { chooseBeastDraw } from '../../adapters/d1/linh-thu-draw.ts';
 import {
   BEAST_BASE_RATES,
@@ -55,6 +55,7 @@ export async function readBeasts(
         owner,
         url.searchParams.get('cursor'),
         limit === null ? 24 : Number(limit),
+        url.searchParams.get('species'),
       ),
     );
   }
@@ -128,9 +129,9 @@ export async function readBeasts(
     createdAt: row.created,
     result: JSON.parse(row.result_json),
   }));
-  const [speciesCounts, discoveries, ultimate, choices, summonChoice, drawChoices] =
+  const [collectionOverview, discoveries, ultimate, choices, summonChoice, drawChoices] =
     await Promise.all([
-      store.speciesCounts(owner),
+      store.collectionOverview(owner),
       store.discoveries(owner),
       store.ultimate(owner, beastCalendarWeek(now)),
       store.pendingRewards(owner),
@@ -142,7 +143,10 @@ export async function readBeasts(
     day: day ? { day: day.day, endAt: day.end_at } : null,
     account,
     wallet,
-    speciesCounts,
+    speciesCounts: Object.fromEntries(
+      Object.entries(collectionOverview).map(([id, entry]) => [id, entry.count]),
+    ),
+    collectionOverview,
     discoveries,
     ultimate,
     choices,

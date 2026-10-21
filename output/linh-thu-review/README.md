@@ -4,7 +4,7 @@ Mở [index.html](index.html) trực tiếp trong trình duyệt. Đây là tran
 
 - [108 ảnh linh thú](../imagegen/catalog-v3/index.html): đủ T1–T4, 95% và100%, lọc rank/nền.
 - [Hồ sơ nghiệm thu](../../docs/LINH_THU_ACCEPTANCE.md): cách chạy ứng dụng, các kiểm tra, scope và giới hạn.
-- [Đối chiếu goal](../../docs/LINH_THU_GOAL_AUDIT.md): bằng chứng theo từng nhóm yêu cầu và kết luận nghiệm thu.
+- [Vận hành hiện hành](../../docs/LINH_THU_OPERATIONS.md): vị trí triển khai, phân trang, giao dịch và bảo trì. Các screenshot trong trang này giữ trạng thái ngày chụp.
 - [Ứng dụng staging](https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev/app/) · [Hồ sơ phát hành](../../docs/LINH_THU_RELEASE.md) · [STAGING_RELEASE.json](STAGING_RELEASE.json).
 - [PROVENANCE.json](PROVENANCE.json): nguồn và hash chín screenshot.
 

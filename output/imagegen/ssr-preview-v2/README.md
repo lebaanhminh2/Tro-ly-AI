@@ -1,6 +1,8 @@
 # Stormlion T4 — chỉnh nhẹ v2
 
-Mẫu đối chiếu sau phản hồi bộ v1 mất vẻ tinh gọn của nguồn. Giữ tỷ lệ chibi, dáng lao tới, bờm sét và nét viền dày; chỉ chỉnh nhẹ ánh mắt và các chân chồng nhau. Người dùng đã duyệt hướng chỉnh nhẹ của mẫu T4 v2. Người dùng cũng đã duyệt hai mẫu Thức tỉnh 95% và Hoàn mỹ 100% trong bảng đối chiếu. Bộ nguồn bảo quản tại docs/assets/linh-thu/art/approved-v2/zappur; chưa tích hợp runtime.
+Cập nhật trạng thái 21/10/2026; hồ sơ tạo ảnh gốc ngày 19/10/2026. Ba ảnh Stormlion T4 thường, Thức tỉnh 95% và Hoàn mỹ 100% đã được tái sử dụng trong bộ v3 hiện hành. [REUSED.json](../catalog-v3/REUSED.json), [manifest nguồn](../../../docs/assets/linh-thu/art/MANIFEST.json) và [quyết định mỹ thuật](../../../docs/LINH_THU_ART_APPROVALS.md) xác định nguồn và trạng thái hiện tại.
+
+Mẫu đối chiếu sau phản hồi bộ v1 mất vẻ tinh gọn của nguồn. Giữ tỷ lệ chibi, dáng lao tới, bờm sét và nét viền dày; chỉ chỉnh nhẹ ánh mắt và các chân chồng nhau. Người dùng đã duyệt hướng chỉnh nhẹ của mẫu T4 v2. Người dùng cũng đã duyệt hai mẫu Thức tỉnh 95% và Hoàn mỹ 100% trong bảng đối chiếu. Bộ nguồn gốc bảo quản tại `docs/assets/linh-thu/art/approved-v2/zappur`.
 
 - `stormlion-original-vs-v2.png`: nguồn bên trái, v2 bên phải, căn theo cùng vùng hiển thị.
 - `stormlion-t4-preview.png`: bản alpha chuẩn hóa 1024px, chừa lề 82px trở lên.
@@ -8,7 +10,7 @@ Mẫu đối chiếu sau phản hồi bộ v1 mất vẻ tinh gọn của nguồ
 - `stormlion-t4.prompt.txt`: prompt đầy đủ.
 - `IMAGE_CHECKS.json`: kích thước, alpha và hash phục vụ đối chiếu nguồn.
 
-Tạo bằng CLI chính thức của skill imagegen qua gateway Cockpit local đã được chỉ định, dùng model ảnh theo cấu hình hiện có. Không sửa cấu hình gateway. Bộ v1 không dùng làm tham chiếu. Nguồn gốc giữ nguyên. Không sửa code hoặc đăng ký asset runtime.
+Tạo bằng CLI chính thức của skill imagegen qua gateway Cockpit local đã được chỉ định, dùng model ảnh theo cấu hình lúc tạo. Khi tạo bản thử này chưa sửa code hoặc đăng ký asset runtime; việc tích hợp vào v3 diễn ra sau đó. Không sửa cấu hình gateway. Bộ v1 không dùng làm tham chiếu. Nguồn gốc giữ nguyên.
 
 ## Đối chiếu độ thuần Stormlion
 
@@ -23,4 +25,4 @@ Kỹ năng theo LINH_THU_SKILLS.md, không thay luật gameplay:
 - Từ 95%: Tam Lôi, task hợp lệ thứ ba trong ngày +2 vé thường, tối đa một lần/ngày.
 - 100% giữ Tam Lôi và mở Lôi Vương Bảo Khố: sau kích hoạt, hoàn thành 5 task hợp lệ trong tuần, chọn 2 vé triệu hồi hoặc 40 tu vi. Toàn tài khoản dùng một tuyệt kỹ/tuần.
 
-Các biến thể độ thuần đã được người dùng duyệt trong cuộc trò chuyện 19/10/2026; chưa đăng ký vào runtime. Xem docs/LINH_THU_ART_APPROVALS.md để lấy quyết định mới nhất.
+Các biến thể độ thuần đã được người dùng duyệt trong cuộc trò chuyện 19/10/2026 và hiện thuộc bộ ảnh v3. Việc tái sử dụng ảnh không thay luật kỹ năng hoặc ngưỡng gameplay. Xem quyết định mỹ thuật được liên kết phía trên để lấy trạng thái mới nhất.

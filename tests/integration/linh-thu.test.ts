@@ -4,6 +4,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { Miniflare } from 'miniflare';
 import type { Database } from '../../src/adapters/d1/database.ts';
 import { D1BeastStore } from '../../src/adapters/d1/linh-thu-store.ts';
+import { D1BeastReader } from '../../src/adapters/d1/linh-thu-reader.ts';
 import { HealthyStore } from '../../src/adapters/d1/healthy-store.ts';
 import { BeastService } from '../../src/application/linh-thu-service.ts';
 import { initialBeastAccount } from '../../src/domain/linh-thu-account.ts';
@@ -23,7 +24,7 @@ import { prepareBeastDraw, chooseBeastDraw } from '../../src/adapters/d1/linh-th
 import {
   settleOneCombinedBeastDay,
   settleOneExpiredBeastUltimate,
-} from '../../src/adapters/d1/linh-thu-effects.ts';
+} from '../../src/adapters/d1/linh-thu-maintenance.ts';
 import { handleCultivation } from '../../src/entrypoints/mini-app/cultivation.ts';
 import { handleBeasts } from '../../src/entrypoints/mini-app/linh-thu.ts';
 
@@ -1107,6 +1108,113 @@ test('exchange and ten summons atomically share the real wallet, retain duplicat
   }
 });
 
+test('collection overview ranks current owned attempts and species pages isolate owners with tied timestamps', async () => {
+  const { mf, db, store } = await fixture();
+  const reader = new D1BeastReader({
+    prepare(sql) {
+      assert.match(sql, /^\s*SELECT\b/i, 'The reader must not prepare database mutations');
+      return db.prepare(sql);
+    },
+    batch() {
+      throw Error('The reader must not commit a transaction');
+    },
+  });
+  try {
+    for (const owner of ['123', '456']) {
+      for (let batch = 0; batch < 3; batch++) {
+        await store.transact(
+          owner,
+          'overview_seed_00' + batch,
+          'fixture',
+          {},
+          day,
+          now,
+          batch,
+          (snapshot, healthy) => ({
+            state: snapshot.state,
+            healthy,
+            result: {},
+            newBeasts: Array.from({ length: 10 }, (_, index) => {
+              const i = batch * 10 + index;
+              return {
+                id: 'overview_beast_' + String(i).padStart(3, '0'),
+                attemptId: 'overview_attempt_' + String(i).padStart(3, '0'),
+                speciesId: i < 28 ? 'gibber' : 'frostnip',
+              };
+            }),
+          }),
+        );
+      }
+    }
+    await db
+      .prepare(
+        "UPDATE beast_attempts SET form=4,earned=550,gray=50 WHERE owner='123' AND id='overview_attempt_000'",
+      )
+      .run();
+    await db
+      .prepare(
+        "UPDATE beast_attempts SET form=4,earned=600,gray=0 WHERE owner='123' AND id='overview_attempt_001'",
+      )
+      .run();
+    await db
+      .prepare(
+        "UPDATE beast_attempts SET form=3,earned=600,gray=0 WHERE owner='123' AND id='overview_attempt_002'",
+      )
+      .run();
+    // An old perfect attempt must not become the representative after a reset.
+    await db
+      .prepare(
+        "INSERT INTO beast_attempts(owner,id,beast_id,rule_version,skill_version,status,capacity,thresholds_json,earned,gray,form,created) VALUES('123','overview_old_attempt','overview_beast_029',1,1,'completed',1200,'[200,500,800]',1200,0,4,?)",
+      )
+      .bind(now - 1)
+      .run();
+    assert.deepEqual(await reader.read('123'), await store.read('123'));
+    assert.equal((await reader.read('789')).activatedDay, null);
+    assert.deepEqual(await reader.collection('123'), await store.collection('123'));
+    const overview = await reader.collectionOverview('123');
+    assert.equal(overview.gibber!.count, 28);
+    assert.equal(overview.gibber!.best.id, 'overview_beast_001');
+    assert.equal(overview.frostnip!.count, 2);
+    assert.equal(overview.frostnip!.best.attempt.form, 1);
+    await db
+      .prepare("UPDATE beast_attempts SET form=3 WHERE owner='123' AND id='overview_attempt_001'")
+      .run();
+    assert.equal(
+      (await reader.collectionOverview('123')).gibber!.best.id,
+      'overview_beast_000',
+      'Higher attained form wins over purity',
+    );
+    await db
+      .prepare(
+        "UPDATE beast_attempts SET form=4,earned=580,gray=20 WHERE owner='123' AND id='overview_attempt_003'",
+      )
+      .run();
+    assert.equal(
+      (await reader.collectionOverview('123')).gibber!.best.id,
+      'overview_beast_003',
+      'Equal forms rank by purity',
+    );
+    assert.equal((await reader.discoveries('123')).frostnip!.form, 4);
+    assert.equal((await reader.collectionOverview('456')).gibber!.best.attempt.form, 1);
+    assert.deepEqual(await reader.collectionOverview('789'), {});
+    const first = await reader.collection('123', null, 24, 'gibber');
+    const second = await reader.collection('123', first.nextCursor, 24, 'gibber');
+    assert.equal(first.beasts.length, 24);
+    assert.equal(second.beasts.length, 4);
+    assert.equal(second.nextCursor, null);
+    assert.equal(new Set([...first.beasts, ...second.beasts].map((beast) => beast.id)).size, 28);
+    assert.ok([...first.beasts, ...second.beasts].every((beast) => beast.speciesId === 'gibber'));
+    assert.deepEqual(await reader.collection('789', null, 24, 'gibber'), {
+      beasts: [],
+      nextCursor: null,
+    });
+    await assert.rejects(reader.collection('123', null, 24, 'unknown'), /INVALID_BEAST_SPECIES/);
+    await assert.rejects(reader.collection('123', null, 24, ''), /INVALID_BEAST_SPECIES/);
+  } finally {
+    await mf.dispose();
+  }
+});
+
 test('concurrent stale exchanges spend once; insufficient ten draw never spends partially', async () => {
   const { mf, healthy, store, service } = await fixture();
   try {
@@ -1315,10 +1423,12 @@ test('real API enforces auth, origin, server day and owner, exposes receipts and
     assert.equal(initial.status, 200);
     const view = (await initial.json()) as {
       config: { catalog: unknown[] };
+      collectionOverview: Record<string, unknown>;
       day: { day: number };
       account: { version: number };
     };
     assert.equal(view.config.catalog.length, 18);
+    assert.deepEqual(view.collectionOverview, {});
     assert.equal(view.day.day, active.day);
     const input = {
       id: 'beast_api_0001',
@@ -1343,6 +1453,9 @@ test('real API enforces auth, origin, server day and owner, exposes receipts and
     assert.equal((await get('linh-thu/receipt?id=not_exists_001&operation=exchange')).status, 404);
     assert.equal((await get('linh-thu/collection?limit=51')).status, 400);
     assert.equal((await get('linh-thu/collection?cursor=invalid')).status, 400);
+    assert.equal((await get('linh-thu/collection?species=unknown')).status, 400);
+    assert.equal((await get('linh-thu/collection?species=')).status, 400);
+    assert.equal((await get('linh-thu/collection?species=frostnip')).status, 200);
     assert.equal((await post({ ...input, day: active.day + 1 })).status, 409);
     assert.equal((await store.read('123')).state.summonTickets, 1);
   } finally {

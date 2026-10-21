@@ -55,7 +55,6 @@ const runs = [];
 for (let sample = 1; sample <= samples; sample++) {
   for (const art of ['reference-baseline', 'production-v3']) {
     const control = beastFixture(),
-      original = control.beastApi,
       template = clone(control.beastData.selected[0]);
     const beasts = Array.from({ length: 2400 }, (_, index) => {
       const species = BEAST_CATALOG[index % BEAST_CATALOG.length];
@@ -80,20 +79,12 @@ for (let sample = 1; sample <= samples; sample++) {
         beasts.filter((b) => b.speciesId === species.id).length,
       ]),
     );
-    control.beastApi = (request, endpoint) => {
-      if (endpoint === 'linh-thu/collection') {
-        const start = Number(
-          new URL(request.url, 'http://localhost').searchParams.get('cursor') ?? 0,
-        );
-        return {
-          body: {
-            beasts: beasts.slice(start, start + 24),
-            nextCursor: start + 24 < beasts.length ? String(start + 24) : null,
-          },
-        };
-      }
-      return original(request, endpoint);
-    };
+    control.ownedBeasts = beasts;
+    const inventoryMetrics = () => ({
+      requests: control.collectionRequests.length,
+      bytes: control.collectionRequests.reduce((sum, request) => sum + request.bytes, 0),
+      overviewBytes: Buffer.byteLength(JSON.stringify(control.collectionOverview())),
+    });
     if (art === 'reference-baseline')
       control.staticFiles = new Map([
         [
@@ -125,8 +116,21 @@ for (let sample = 1; sample <= samples; sample++) {
         'performance.clearResourceTimings();globalThis.__phaseStart=performance.now()',
       );
       await browser.click('Bộ sưu tập');
+      await browser.wait("document.querySelectorAll('.beast-atlas-entry img').length===18");
+      const atlas = { ...(await phase(browser, '.beast-page img')), inventory: inventoryMetrics() };
+      assert.equal(atlas.inventory.requests, 1, 'Atlas uses the overview without draining pages');
+      assert.equal(
+        await browser.evaluate("document.querySelectorAll('.beast-collection-card').length"),
+        0,
+      );
+      await browser.evaluate(
+        "performance.clearResourceTimings();globalThis.__phaseStart=performance.now();document.querySelector('[data-species=frostnip]').click()",
+      );
       await browser.wait("document.querySelectorAll('.beast-collection-card').length===24");
-      const collection = await phase(browser, '.beast-page img');
+      const collection = {
+        ...(await phase(browser, '.beast-page img')),
+        inventory: inventoryMetrics(),
+      };
       assert.ok(
         collection.visibleImageWidths.every((width) => width === 128),
         'Collection uses thumbnails',
@@ -138,13 +142,30 @@ for (let sample = 1; sample <= samples; sample++) {
         lazyImages: document.querySelectorAll('.beast-page img[loading=lazy]').length
       })`);
       assert.equal(collectionPage.renderedIndividuals, 24);
-      assert.equal(collectionPage.atlasSpecies, 18);
+      assert.equal(collectionPage.atlasSpecies, 0);
       assert.equal(collectionPage.lazyImages, collectionPage.images);
       assert.ok(collection.imageRequests <= 42, 'Never load 2,400 individuals at once');
-      assert.equal(control.calls.filter((call) => call === 'GET linh-thu/collection').length, 1);
+      assert.equal(collection.inventory.requests, 2);
+      assert.equal(control.collectionRequests.at(-1).species, 'frostnip');
+      await browser.evaluate(
+        'performance.clearResourceTimings();globalThis.__phaseStart=performance.now()',
+      );
+      await browser.click('Tải tiếp các cá thể');
+      await browser.wait("document.querySelectorAll('.beast-collection-card').length===48");
+      const collectionMore = {
+        ...(await phase(browser, '.beast-page img')),
+        inventory: inventoryMetrics(),
+      };
+      assert.equal(collectionMore.inventory.requests, 3);
+      assert.equal(control.collectionRequests.at(-1).species, 'frostnip');
+      assert.ok(
+        collectionMore.inventory.bytes < 40000,
+        'Three pages stay bounded independently of 2,400 owned beasts',
+      );
       assert.equal(control.posts.length, 0, 'Benchmark must not mutate product state');
       assert.deepEqual(browser.errors, []);
-      for (const value of [today, training, collection]) assert.equal(value.overflow, false);
+      for (const value of [today, training, atlas, collection, collectionMore])
+        assert.equal(value.overflow, false);
       if (capture && sample === 1 && art === 'production-v3') {
         await browser.screenshot('trial-results/linh-thu/review-v3/collection-390.png');
         for (const [label, name] of [
@@ -164,7 +185,9 @@ for (let sample = 1; sample <= samples; sample++) {
         ownedIndividuals: 2400,
         today,
         training,
+        atlas,
         collection,
+        collectionMore,
         collectionPage,
         apiCalls: control.calls,
       });
@@ -180,7 +203,7 @@ const summary = Object.fromEntries(
   ['reference-baseline', 'production-v3'].map((art) => [
     art,
     Object.fromEntries(
-      ['today', 'training', 'collection'].map((name) => [
+      ['today', 'training', 'atlas', 'collection', 'collectionMore'].map((name) => [
         name,
         Object.fromEntries(
           ['readyMs', 'decodedBodyBytes', 'transferBytes', 'imageRequests', 'imageBodyBytes'].map(

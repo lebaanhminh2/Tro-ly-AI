@@ -15,7 +15,7 @@ import { BeastSettlementService } from '../src/application/linh-thu-settlement.t
 import { BeastUltimateService } from '../src/application/linh-thu-ultimates.ts';
 import { beginBeastTower } from '../src/domain/linh-thu-tower.ts';
 import { beastCalendarWeek } from '../src/domain/linh-thu-ultimates.ts';
-import { settleOneCombinedBeastDay } from '../src/adapters/d1/linh-thu-effects.ts';
+import { settleOneCombinedBeastDay } from '../src/adapters/d1/linh-thu-maintenance.ts';
 
 const now = Date.parse('2026-10-19T10:00:00+07:00');
 const metrics: unknown[] = [];
@@ -39,12 +39,12 @@ for (const individuals of [24, 2400]) {
     for (let i = 0; i < individuals; i++) {
       raw
         .prepare("INSERT INTO beasts VALUES('123',?,'frostnip',?,?,?)")
-        .run('b_' + i, 'a_' + i, now + i, 'fixture');
+        .run('beast_perf_' + i, 'a_' + i, now + i, 'fixture');
       raw
         .prepare(
           "INSERT INTO beast_attempts(owner,id,beast_id,rule_version,skill_version,status,capacity,thresholds_json,created) VALUES('123',?,?,1,1,'ready',1200,'[200,500,800]',?)",
         )
-        .run('a_' + i, 'b_' + i, now + i);
+        .run('a_' + i, 'beast_perf_' + i, now + i);
     }
     raw.exec('COMMIT');
     const context = {
@@ -61,6 +61,7 @@ for (const individuals of [24, 2400]) {
     for (const path of [
       'linh-thu',
       'linh-thu/collection',
+      'linh-thu/collection?species=frostnip',
       'linh-thu/tower',
       'linh-thu-backlog',
       'linh-thu-combined',
@@ -70,7 +71,7 @@ for (const individuals of [24, 2400]) {
         context.now += 86400000;
         await new ScheduleStore(db).ensureDay('123', context.now);
         raw
-          .prepare("INSERT INTO beast_roles VALUES('123','companion',20745,'b_0','a_0',?)")
+          .prepare("INSERT INTO beast_roles VALUES('123','companion',20745,'beast_perf_0','a_0',?)")
           .run(now);
         raw
           .prepare(
@@ -96,7 +97,37 @@ for (const individuals of [24, 2400]) {
       assert.equal(response.status, 200);
       assert.ok(queries <= 50, JSON.stringify(metric));
       assert.ok(metric.bytes < 40000, JSON.stringify(metric));
-      if (path.endsWith('collection')) assert.equal(JSON.parse(body).beasts.length, 24);
+      if (path.includes('/collection')) assert.equal(JSON.parse(body).beasts.length, 24);
+      if (path === 'linh-thu') {
+        assert.equal(JSON.parse(body).collectionOverview.frostnip.count, individuals);
+        assert.equal(Object.keys(JSON.parse(body).collectionOverview).length, 1);
+      }
+    }
+    for (const path of ['overview', 'species-next-page']) {
+      const first = await store.collection('123', null, 24, 'frostnip');
+      queries = 0;
+      const start = performance.now();
+      const result =
+        path === 'overview'
+          ? await store.collectionOverview('123')
+          : await store.collection('123', first.nextCursor, 24, 'frostnip');
+      const metric = {
+        individuals,
+        path,
+        queries,
+        bytes: Buffer.byteLength(JSON.stringify(result)),
+        localWallMs: Number((performance.now() - start).toFixed(3)),
+      };
+      metrics.push(metric);
+      assert.equal(queries, 1);
+      assert.ok(metric.bytes < 40000);
+      if (path === 'species-next-page' && individuals > 24) {
+        assert.ok(Array.isArray(result.beasts));
+        assert.equal(
+          new Set([...first.beasts, ...result.beasts].map((beast) => beast.id)).size,
+          48,
+        );
+      }
     }
     assert.deepEqual((await store.read('123')).state, initialBeastAccount());
     const firstMinute = Math.floor(context.now / 60000);

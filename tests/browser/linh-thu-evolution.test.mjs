@@ -4,7 +4,7 @@ import { mkdir } from 'node:fs/promises';
 import { beastFixture } from './linh-thu-fixture.mjs';
 import { serve, chrome, browserBin, clone } from './app-harness.mjs';
 
-const captures = `output/linh-thu-evolution-cinematic-20261021/run-${process.pid}`;
+const captures = `trial-results/linh-thu/evolution/run-${process.pid}`;
 function evolutionFixture(earned = 100, gray = 0, form = 1) {
   const control = beastFixture(),
     beast = control.ownedBeasts[0];

@@ -9,7 +9,7 @@ Ngày 19/10/2026, Asia/Saigon. Người dùng cho phép làm liên tục đến 
 - T4 thường /95%/100%: [UR](ur-purity-review.png), [SSR](ssr-purity-review.png), [SR](sr-purity-review.png), [R](r-purity-review.png).
 - 64/128px trên hai nền: [UR](ur-thumbnail-review.png), [SSR](ssr-thumbnail-review.png), [SR](sr-thumbnail-review.png), [R](r-thumbnail-review.png).
 
-Đã đủ **108 ảnh nguồn và runtime: 72 thường  +18 thức tỉnh  +18 hoàn mỹ**. Không lấy ảnh tham chiếu để giả là thành phẩm. Số lượng và trạng thái từng ảnh nằm trong manifest nguồn và [tiến độ](../../../docs/LINH_THU_ART_PROGRESS.md).
+Đã đủ **108 ảnh nguồn và runtime: 72 thường  +18 thức tỉnh  +18 hoàn mỹ**. Không lấy ảnh tham chiếu để giả là thành phẩm. Số lượng và trạng thái từng ảnh nằm trong manifest nguồn và [trạng thái duyệt](../../../docs/LINH_THU_ART_APPROVALS.md).
 
 ## Nguồn, prompt và phiên bản
 

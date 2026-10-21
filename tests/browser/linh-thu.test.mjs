@@ -143,13 +143,23 @@ test(
       attempt: { ...first.attempt, speciesId: 'pyropup' },
     };
     control.beastData.speciesCounts = { frostnip: 2, pyropup: 1 };
-    const pages = [[first], [other], [highest]];
+    control.ownedBeasts = [first, other, highest];
+    const requests = [];
     control.beastApi = (request, endpoint) => {
       if (endpoint === 'linh-thu/collection') {
-        const index = Number(
-          new URL(request.url, 'http://localhost').searchParams.get('cursor') ?? 0,
+        const params = new URL(request.url, 'http://localhost').searchParams;
+        const species = params.get('species'),
+          index = Number(params.get('cursor') ?? 0);
+        requests.push({ species, index });
+        const beasts = control.ownedBeasts.filter(
+          (beast) => !species || beast.speciesId === species,
         );
-        return { body: { beasts: pages[index], nextCursor: index < 2 ? String(index + 1) : null } };
+        return {
+          body: {
+            beasts: beasts.slice(index, index + 1),
+            nextCursor: index + 1 < beasts.length ? String(index + 1) : null,
+          },
+        };
       }
       return original(request, endpoint);
     };
@@ -175,10 +185,19 @@ test(
       })`),
         { slots: 18, individuals: 0, unknown: 16, leaked: false, count: 'SSR · 2 cá thể' },
       );
+      assert.deepEqual(
+        requests,
+        [{ species: null, index: 0 }],
+        'Atlas never drains inventory pages',
+      );
       await browser.evaluate(
         "scrollTo({top:120,behavior:'instant'});document.querySelector('[data-species=frostnip]').click()",
       );
+      await browser.wait("document.querySelectorAll('.beast-collection-card').length===1");
+      assert.deepEqual(requests.at(-1), { species: 'frostnip', index: 0 });
+      await browser.click('Tải tiếp các cá thể');
       await browser.wait("document.querySelectorAll('.beast-collection-card').length===2");
+      assert.deepEqual(requests.at(-1), { species: 'frostnip', index: 1 });
       assert.deepEqual(
         await browser.evaluate(
           "[...document.querySelectorAll('.beast-collection-card img')].map(e=>e.alt)",
@@ -312,6 +331,120 @@ test(
       assert.deepEqual(browser.errors, []);
     } finally {
       reply.resolve();
+      await browser?.close();
+      await server.close();
+    }
+  },
+);
+
+test(
+  'species pages ignore late navigation and refresh responses while role pickers keep independent inventory pages',
+  { skip: !browserBin, timeout: 60000 },
+  async () => {
+    const control = beastFixture(),
+      original = control.beastApi;
+    const frost = control.beastData.selected[0];
+    const other = {
+      ...clone(frost),
+      id: 'other_pyro',
+      attemptId: 'other_attempt',
+      speciesId: 'pyropup',
+      attempt: { ...frost.attempt, speciesId: 'pyropup' },
+    };
+    control.ownedBeasts = [
+      frost,
+      ...Array.from({ length: 29 }, (_, i) => ({
+        ...clone(frost),
+        id: 'frost_page_' + i,
+        attemptId: 'frost_attempt_' + i,
+      })),
+      other,
+    ];
+    control.beastData.speciesCounts = { frostnip: 30, pyropup: 1 };
+    let pending;
+    control.beastApi = async (request, endpoint) => {
+      const result = await original(request, endpoint);
+      const species = new URL(request.url, 'http://localhost').searchParams.get('species');
+      if (endpoint === 'linh-thu/collection' && species === 'frostnip' && pending) {
+        const held = pending;
+        pending = null;
+        held.started.resolve();
+        await held.reply.promise;
+      }
+      return result;
+    };
+    const hold = () =>
+      (pending = { started: Promise.withResolvers(), reply: Promise.withResolvers() });
+    const server = await serve(control);
+    let browser, held;
+    try {
+      browser = await chrome();
+      await browser.navigate(server.url, 390);
+      await browser.wait("!!document.querySelector('.focus-flip-card')");
+      await browser.evaluate("document.querySelector('[data-tab=beasts]').click()");
+      await browser.wait("!!document.querySelector('.beast-hero')");
+      await browser.click('Bộ sưu tập');
+      held = hold();
+      await browser.evaluate("document.querySelector('[data-species=frostnip]').click()");
+      await held.started.promise;
+      await browser.click('‹ Bộ sưu tập');
+      await browser.evaluate("document.querySelector('[data-species=pyropup]').click()");
+      await browser.wait(
+        "document.querySelector('.beast-collection-card')?.dataset.beastId==='other_pyro'",
+      );
+      const before = control.collectionRequests.length;
+      held.reply.resolve();
+      await finishRead(browser, 'linh-thu/collection', before - 1);
+      assert.equal(
+        await browser.evaluate("document.querySelectorAll('.beast-collection-card').length"),
+        1,
+      );
+      assert.equal(
+        await browser.evaluate("document.querySelector('.beast-collection-card').dataset.beastId"),
+        other.id,
+      );
+      await browser.click('‹ Bộ sưu tập');
+      await browser.evaluate("document.querySelector('[data-species=frostnip]').click()");
+      await browser.wait("document.querySelectorAll('.beast-collection-card').length===24");
+      held = hold();
+      await browser.click('Tải tiếp các cá thể');
+      await held.started.promise;
+      const reads = await browser.evaluate(
+        "performance.getEntriesByType('resource').filter(r=>new URL(r.name).pathname==='/api/linh-thu').length",
+      );
+      control.beastData.account.version++;
+      await browser.evaluate("window.dispatchEvent(new Event('focus'))");
+      await finishRead(browser, 'linh-thu', reads);
+      await browser.wait(
+        "document.querySelectorAll('.beast-collection-card').length===24 && document.querySelector('.beast-updating')?.textContent===''",
+      );
+      const finished = control.collectionRequests.length;
+      held.reply.resolve();
+      await finishRead(browser, 'linh-thu/collection', finished - 1);
+      assert.equal(
+        await browser.evaluate("document.querySelectorAll('.beast-collection-card').length"),
+        24,
+        'Old load-more cannot append into a refreshed page',
+      );
+      await browser.click('Đồng hành');
+      await browser.click('Đổi đồng hành');
+      assert.equal(
+        await browser.evaluate("document.querySelectorAll('.beast-picker-item').length"),
+        24,
+      );
+      await browser.click('Tải thêm linh thú');
+      await browser.wait("document.querySelectorAll('.beast-picker-item').length===31");
+      assert.equal(
+        control.collectionRequests.at(-1).species,
+        null,
+        'Picker never inherits the species filter',
+      );
+      assert.equal(control.collectionRequests.at(-1).start, 24);
+      assert.equal(control.posts.length, 0);
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      held?.reply.resolve();
+      pending?.reply.resolve();
       await browser?.close();
       await server.close();
     }

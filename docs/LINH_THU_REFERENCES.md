@@ -2,7 +2,7 @@
 
 ## Trạng thái và phạm vi
 
-- Giai đoạn nghiên cứu ban đầu chỉ duyệt ý tưởng. Goal19/10/2026 đã cho phép triển khai; bản hiện tại đã được người dùng duyệt, kiểm thử và phát hành staging. Ảnh95%/100% dùng tạm; không suy thành duyệt thị giác cuối từng ảnh. Xem [tiến độ](LINH_THU_IMPLEMENTATION.md) và [phát hành](LINH_THU_RELEASE.md).
+- Giai đoạn nghiên cứu ban đầu chỉ duyệt ý tưởng. Goal19/10/2026 đã cho phép triển khai; bản hiện tại đã được người dùng duyệt, kiểm thử và phát hành staging. Ảnh95%/100% dùng tạm; không suy thành duyệt thị giác cuối từng ảnh. Xem [vận hành](LINH_THU_OPERATIONS.md) và [phát hành](LINH_THU_RELEASE.md).
 - Người dùng sẽ cung cấp dần ảnh mẫu của các linh thú theo rank.
 - Tổng bộ sưu tập dự kiến: **2 UR, 4 SSR, 6 SR, 6 R**.
 - Đã đủ **18 loài: 2 UR, 4 SSR, 6 SR, 6 R**. Mười bốn loài do người dùng chọn; bốn loài R còn lại được trợ lý chọn theo yêu cầu người dùng.
@@ -340,7 +340,7 @@ Người dùng đã chuyển chuỗi **Hootlet** xuống rank **R**, chiếm m�
 
 - Tên Việt hóa và tên loài hiển thị trong sản phẩm.
 - Thiết kế cuối cùng cho từng dạng và biến thể hoàn mỹ.
-- Cân chỉnh [bộ kỹ năng của 18 loài](LINH_THU_SKILLS.md) sau khi hoàn thiện hệ thống: thiên phú cố định, Thức tỉnh 95% và tuyệt kỹ hoàn mỹ 100%. Bản ban đầu đang được triển khai; xem [tiến độ](LINH_THU_IMPLEMENTATION.md).
+- Cân chỉnh [bộ kỹ năng của 18 loài](LINH_THU_SKILLS.md) sau khi hoàn thiện hệ thống: thiên phú cố định, Thức tỉnh 95% và tuyệt kỹ hoàn mỹ 100%. Bản ban đầu đã được tích hợp; xem [phạm vi kiểm chứng](LINH_THU_ACCEPTANCE.md).
 - Bộ ảnh mới thiết kế lại để đưa vào ứng dụng; 72 ảnh đã tải hiện là bộ tham chiếu nguồn.
 
 ## Cách cập nhật tiếp

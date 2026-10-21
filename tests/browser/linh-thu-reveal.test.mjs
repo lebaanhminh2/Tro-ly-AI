@@ -7,7 +7,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { chrome, serve, browserBin } from './app-harness.mjs';
 import { beastFixture } from './linh-thu-fixture.mjs';
 
-const out = new URL('../../output/linh-thu-reveal-integration/', import.meta.url);
+const out = new URL(`../../trial-results/linh-thu/reveal/run-${process.pid}/`, import.meta.url);
 const sizes = [
   [320, 568],
   [375, 667],

@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { serve, chrome, browserBin, clone } from './app-harness.mjs';
 import { beastFixture } from './linh-thu-fixture.mjs';
 
-const out = new URL('../../output/linh-thu-reveal-integration/', import.meta.url);
+const out = new URL(`../../trial-results/linh-thu/summon/run-${process.pid}/`, import.meta.url);
 async function openSummon(browser, url) {
   await browser.navigate(url, 390);
   await browser.wait('!!document.querySelector(".focus-flip-card")');

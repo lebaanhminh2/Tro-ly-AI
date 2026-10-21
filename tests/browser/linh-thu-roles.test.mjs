@@ -6,7 +6,7 @@ import { beastFixture } from './linh-thu-fixture.mjs';
 import { displayedRole, roleBeast } from '../../web/models/linh-thu.js';
 
 const options = { skip: !browserBin, timeout: 60000 };
-const output = 'output/linh-thu-roles-20261021';
+const output = `trial-results/linh-thu/roles/run-${process.pid}`;
 function addBeast(control, id, speciesId = 'pyropup', earned = 0, gray = 0, status = 'ready') {
   const beast = {
     ...clone(control.beastData.selected[0] ?? control.ownedBeasts[0]),

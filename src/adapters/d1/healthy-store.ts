@@ -258,7 +258,9 @@ export class HealthyStore {
     });
   }
   async syncTaskTickets(owner: string, now: number) {
-    if ((await this.read(owner)).state.suspended) return;
+    if (!/^\d+$/.test(owner)) throw Error('INVALID_LEDGER_REQUEST');
+    const current = await this.read(owner);
+    if (current.state.suspended) return;
     const setup = await query(
       this.db,
       'SELECT owner FROM schedule_settings WHERE owner=? AND sleep_minutes IS NOT NULL',
@@ -268,10 +270,118 @@ export class HealthyStore {
     const tasks = (
       await query(
         this.db,
-        "SELECT t.id FROM tasks t WHERE t.owner=? AND t.status='completed' AND t.deleted_at IS NULL AND NOT EXISTS(SELECT 1 FROM task_ticket_awards a WHERE a.owner=t.owner AND a.task_id=t.id) ORDER BY t.created LIMIT 25",
+        `SELECT t.id,t.version,r.operation,r.request_json FROM tasks t
+         LEFT JOIN cultivation_receipts r ON r.owner=t.owner AND r.request_id='ticket:'||t.id
+         WHERE t.owner=? AND t.status='completed' AND t.deleted_at IS NULL
+         AND NOT EXISTS(SELECT 1 FROM task_ticket_awards a WHERE a.owner=t.owner AND a.task_id=t.id)
+         ORDER BY t.created,t.id LIMIT 25`,
         owner,
-      ).all<{ id: string }>()
+      ).all<{
+        id: string;
+        version: number;
+        operation: string | null;
+        request_json: string | null;
+      }>()
     ).results;
-    for (const task of tasks) await this.awardTask(owner, task.id, now);
+    const pending = tasks.filter((task) => {
+      if (!task.id || ('ticket:' + task.id).length > 120) throw Error('INVALID_LEDGER_REQUEST');
+      if (task.operation === null) return true;
+      if (
+        task.operation !== 'task-ticket' ||
+        task.request_json !== JSON.stringify({ taskId: task.id })
+      )
+        throw Error('REQUEST_ID_REUSED');
+      return false;
+    });
+    if (!pending.length) return;
+    const rows = JSON.stringify(
+      pending.map((task) => ({
+        id: task.id,
+        version: task.version,
+        request: JSON.stringify({ taskId: task.id }),
+      })),
+    );
+    const state = JSON.stringify({
+      ...current.state,
+      tickets: current.state.tickets + pending.length,
+    });
+    if (state.length > 12000) throw Error('INVALID_LEDGER_RESULT');
+    // A bounded batch keeps the same individual receipts and version increments
+    // as awardTask. All selected tasks, balance and receipts commit together.
+    const statements = [
+      query(
+        this.db,
+        `INSERT INTO transaction_guard SELECT CASE WHEN
+         COALESCE((SELECT version FROM cultivation_accounts WHERE owner=?),0)=?
+         AND EXISTS(SELECT 1 FROM schedule_settings WHERE owner=? AND sleep_minutes IS NOT NULL)
+         AND (SELECT COUNT(*) FROM tasks t JOIN json_each(?) j ON t.id=json_extract(j.value,'$.id')
+              WHERE t.owner=? AND t.version=json_extract(j.value,'$.version')
+              AND t.status='completed' AND t.deleted_at IS NULL)=?
+         THEN 1 ELSE 0 END`,
+        owner,
+        current.version,
+        owner,
+        rows,
+        owner,
+        pending.length,
+      ),
+      query(
+        this.db,
+        `INSERT INTO cultivation_accounts(owner,state_json,version,updated) VALUES(?,?,?,?)
+         ON CONFLICT(owner) DO UPDATE SET state_json=excluded.state_json,version=excluded.version,updated=excluded.updated`,
+        owner,
+        state,
+        current.version + pending.length,
+        now,
+      ),
+      query(
+        this.db,
+        `INSERT INTO cultivation_receipts(owner,request_id,operation,request_json,result_json,created)
+         SELECT ?,'ticket:'||json_extract(value,'$.id'),'task-ticket',json_extract(value,'$.request'),?,?
+         FROM json_each(?)`,
+        owner,
+        JSON.stringify({ ticket: 1 }),
+        now,
+        rows,
+      ),
+      query(
+        this.db,
+        "INSERT INTO task_ticket_awards(owner,task_id,created) SELECT ?,json_extract(value,'$.id'),? FROM json_each(?)",
+        owner,
+        now,
+        rows,
+      ),
+      query(this.db, 'DELETE FROM transaction_guard'),
+    ];
+    if (this.defer) this.defer(statements);
+    else {
+      try {
+        await this.db.batch(statements);
+      } catch (error) {
+        // A concurrent recovery may have committed this same selection. Other
+        // conflicts stay pending for the next invocation; never overwrite them.
+        const saved = (
+          await query(
+            this.db,
+            `SELECT request_id,operation,request_json FROM cultivation_receipts
+             WHERE owner=? AND request_id IN (SELECT 'ticket:'||json_extract(value,'$.id') FROM json_each(?))`,
+            owner,
+            rows,
+          ).all<{ request_id: string; operation: string; request_json: string }>()
+        ).results;
+        if (
+          pending.every((task) =>
+            saved.some(
+              (receipt) =>
+                receipt.request_id === 'ticket:' + task.id &&
+                receipt.operation === 'task-ticket' &&
+                receipt.request_json === JSON.stringify({ taskId: task.id }),
+            ),
+          )
+        )
+          return;
+        throw error;
+      }
+    }
   }
 }

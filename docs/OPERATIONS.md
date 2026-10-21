@@ -1,12 +1,28 @@
 # Vận hành và phục hồi
 
-> Cập nhật19/10/2026: người dùng đã duyệt bản hiện tại và phát hành staging. Migration 0041 đã áp vào `assistant-staging`; Worker `personal-assistant-staging` chạy version `ff342cb0-4a7c-4b6b-b43c-bc3297a7a559` với100% lưu lượng. Đã backup, restore rehearsal và kiểm sau deploy; [hồ sơ phát hành](LINH_THU_RELEASE.md), [vận hành Linh thú](LINH_THU_OPERATIONS.md), [kiểm tra](LINH_THU_ACCEPTANCE.md). Các mốc môi trường bên dưới là lịch sử bản nền18/10;0040 và0041 hiện đã áp remote. Phải đối chiếu lại trước lần phát hành tiếp theo.
+Cập nhật 21/10/2026. Stack hiện hành: Node 24, TypeScript strict với `erasableSyntaxOnly`, Cloudflare Workers/D1/Cron, Telegram, web ES modules và adapter Gemini. Hợp đồng sản phẩm ở [PRODUCT_BRIEF](PRODUCT_BRIEF.md), habit ở [HABITS](HABITS.md), Linh thú ở [đặc tả](LINH_THU_SPEC.md).
 
-Cập nhật 18/10/2026. Stack: TypeScript strict, Cloudflare Workers/D1/Cron, Telegram, web ES modules và adapter Gemini. Domain/application/ports giữ ranh giới; adapters triển khai SQL/provider. Có 40 migrations local: 0001–0039 giữ nguyên, 0040 bổ sung sổ nhận vé habit và chỉ mục tuần. Lần đối chiếu staging gần nhất đã đủ 39 migration của bản hardening; 0040 chưa áp remote. Trạng thái môi trường đích phải kiểm tra riêng trước phát hành.
+## Tìm đúng nơi sửa
 
-## Kiểm tra local
+| Thư mục                                              | Trách nhiệm                                                                |
+| ---------------------------------------------------- | -------------------------------------------------------------------------- |
+| `src/entrypoints/`                                   | HTTP/Telegram, auth context, router và scheduler của Worker                |
+| `src/application/`                                   | Điều phối use case, nhận lệnh và hợp đồng nghiệp vụ                        |
+| `src/domain/`                                        | Luật và phép tính nghiệp vụ                                                |
+| `src/ports/`                                         | Hợp đồng lưu trữ/provider                                                  |
+| `src/adapters/`                                      | SQL/D1, provider, delivery và guards giao dịch                             |
+| `web/core/`, `features/`, `models/`, `views/`, `ui/` | Trạng thái/hạ tầng, luồng tương tác, mô hình, trình bày và dialog/hiệu ứng |
+| `tests/unit/`, `integration/`, `browser/`            | Luật, giao dịch/API và hành vi trình duyệt                                 |
+| `scripts/`                                           | Build/verify tài nguyên, benchmark, kiểm tra và diễn tập offline           |
+| `experiments/ai-trial/`                              | Fixture/harness offline còn được tests dùng; không thuộc runtime Worker    |
 
-PowerShell tại `D:\Tro-ly-AI`, Node >=24, dependencies theo lockfile:
+Linh thú tách reader SQL, store giao dịch, chuẩn bị hiệu ứng và job bảo trì; [bản đồ chi tiết](LINH_THU_OPERATIONS.md). Không gom lại vào một module hoặc dùng store ghi khi chỉ cần đọc dữ liệu.
+
+## Chạy và kiểm tra local
+
+PowerShell tại thư mục dự án, Node >=24 và dependencies theo lockfile. Trên Windows dùng `npm.cmd`/`npx.cmd`; bản cấu hình mẫu ở `.dev.vars.example` và `.env.example`, không chép khóa thật vào tài liệu/Git.
+
+`npm.cmd run dev` chạy Wrangler local. DB dùng thử phải riêng với dữ liệu người dùng; các integration tests tự dựng Miniflare và áp migrations vào DB tạm. Không chạy `db:local` vào state đang dùng chỉ để QA.
 
 ```powershell
 npm.cmd run typecheck
@@ -14,69 +30,97 @@ npm.cmd run typecheck:web
 npm.cmd run lint
 npm.cmd run format:check
 npm.cmd run check:web
+node scripts/build-linh-thu-assets.ts --require-complete
 npm.cmd run test:all
-npm.cmd run test:browser
-npm.cmd run build:check -- --outdir .wrangler/cleanup-validation-20261018-956b03c/build
-npm.cmd run staging:check -- --outdir .wrangler/cleanup-validation-20261018-956b03c/staging-build
+node --test --test-concurrency=1 tests/browser/*.test.mjs
+npm.cmd run build:check
+npm.cmd run staging:check
 ```
 
-Hai lệnh build là dry-run, không publish. `test:all` dùng DB/provider fixture và gồm experiments; không chứng minh dịch vụ thật. Browser cần Chrome/Edge với profile tạm riêng. Sandbox Windows có thể chặn tiến trình GPU/CDP; khi xảy ra, dùng quyền chạy local ngoài sandbox theo cơ chế môi trường, không sửa hoặc skip test để che lỗi.
+Hai lệnh build chỉ dry-run, không publish. `test:all` gồm suite chính và experiments offline; không chứng minh dịch vụ thật. Browser cần Chrome/Edge và profile tạm; không skip hoặc nới assert khi thiếu môi trường. Chạy tuần tự giúp tránh nhiều profile Chrome cạnh tranh trên máy Windows; CI hiện gọi `npm run test:browser` theo cấu hình repository.
 
-Đợt dọn đặt TEMP/TMP và log/output trong `.wrangler/cleanup-validation-20261018-956b03c/`, tách khỏi `.wrangler/state`. Không chạy `db:local` vào DB người dùng để kiểm migration.
+Formatter chỉ áp các tệp khai báo trong `scripts/format.mjs`, không tự chuẩn hóa toàn bộ source lịch sử. CI kiểm lint, format baseline, typecheck hai phía, cú pháp web, đủ ảnh, tests/browser và hai build dry-run; không deploy.
 
-Benchmark offline, chỉ SQLite memory và synthetic data:
+Log và báo cáo rà soát ở `.wrangler/goal-audit-20261021/`, tách khỏi `.wrangler/state`. Artifact local bị Git bỏ qua, không mặc định có khi clone mới. PowerShell có thể ghi log UTF-16LE; đọc bằng `Get-Content`.
+
+Ảnh và báo cáo browser cho tiến hóa, triệu hồi, reveal, vai trò và tháp ghi vào `trial-results/linh-thu/<nhóm>/run-<PID>/`; Git đã bỏ qua `trial-results/`. Mỗi tiến trình có thư mục riêng, không ghi đè ảnh/báo cáo QA trong `output/`. Thư mục theo PID có thể được dùng lại nếu hệ điều hành tái sử dụng PID; chuyển kết quả cần giữ lâu dài sang nơi có tên riêng trước khi chạy lại.
+
+`output/` vẫn có nguồn/prompt/provenance được tái sử dụng, hồ sơ phát hành và tư liệu có chủ đích. `output/linh-thu-reveal-preview/demo.html` là fixture v12 được browser test mở trực tiếp, không phải bản xuất thừa. Review v22 còn phục vụ công cụ nghiệm thu local chưa theo dõi. Các ảnh/video review triệu hồi v1–v12, v11-white và v18–v21 đã được dọn theo danh sách duyệt; tra bản cũ trong lịch sử Git. Không áp quy tắc bỏ qua hoặc xóa toàn bộ `output/`, không đưa các run QA mới vào source.
+
+## Scheduler và đồng bộ thưởng
+
+Scheduler có ASSETS chia việc theo bốn pha mỗi phút; pha bảo trì tiếp tục xoay ba slot cho công việc nền, habit và Linh thú. Chốt ngày ngủ vẫn xử lý tối đa một ngày mỗi lượt trước các job khác; phản hồi hành động trực tiếp và quy tắc hoãn thông báo chủ động giữ nguyên.
+
+Trong slot công việc nền, nếu có lệnh inbox chờ, scheduler xử lý tối đa một lệnh, gửi phản hồi và kết thúc lượt. Archive, đồng bộ vé, hết hạn bộ nhớ và thành tựu chờ slot công việc nền tiếp theo không có lệnh, thông thường cách 12 phút. Hàng đợi liên tục có lệnh có thể kéo dài thời gian chờ bảo trì. Nhánh tự kích hoạt lịch dùng lại kế hoạch vừa tạo, tránh gọi `ensure` lần thứ hai trong cùng lượt.
+
+`HealthyStore.syncTaskTickets` phục hồi tối đa 25 vé trong một giao dịch, giữ receipt `ticket:<taskId>` cho từng việc và tăng version tài khoản theo số vé. Guard kiểm version tài khoản, cấu hình ngủ và trạng thái/version từng task; lỗi giữa batch hoàn tác cả số dư, receipt và dấu đã thưởng. Tranh chấp chưa được receipt xác nhận sẽ để lại backlog cho lượt sau. Migration 0015 đã đánh dấu việc lịch sử để không thưởng hồi tố; không xóa các dấu này. Webhook vẫn gọi đồng bộ sau khi gửi phản hồi.
+
+`unlockAchievements` dùng hai truy vấn thống kê và ba statement ghi cho toàn bộ thành tựu đủ điều kiện. Mỗi thành tựu vẫn có khóa outbox riêng `achievement:<owner>:<code>`; mở khóa, tạo thông báo và đánh dấu notified cùng commit, chạy lại hoặc đồng thời không tạo thông báo trùng. Notified nghĩa là đã đưa vào outbox, không xác nhận Telegram đã nhận.
+
+Ngân sách kiểm thử của dự án là 50 truy vấn cho một lượt trong các fixture được kiểm. Đo cả scheduler cùng tin chờ, backlog, thành tựu và archive; không chỉ đo store riêng lẻ. Dữ liệu chẩn đoán và giới hạn nằm trong `.wrangler/goal-audit-20261021/`.
+
+## Benchmark và tài nguyên
 
 ```powershell
-node scripts/benchmark-habit-runtime.ts --report .wrangler/cleanup-validation-20261018-956b03c/habit-benchmark.json
+node scripts/benchmark-habit-runtime.ts --report .wrangler/habit-benchmark.json
+node scripts/benchmark-linh-thu.ts
+node scripts/benchmark-linh-thu-web.mjs --samples=3
+node scripts/benchmark-linh-thu-web.mjs --throttled --samples=3
 ```
 
-Fixture 6/30 habit ×1095 ngày, backlog 7/365 ngày; query/payload bounded, pagination/report/replay và tài khoản điểm không đổi. Đo Node+SQLite, không phải CPU/network D1 cloud hoặc trải nghiệm điện thoại.
+Benchmark habit dùng SQLite memory, 6/30 habit ×1095 ngày và backlog 7/365 ngày; kiểm số truy vấn, phân trang/report/replay và tài khoản điểm không đổi. Benchmark Linh thú kiểm service/store/API thật trên SQLite, số truy vấn thông thường/backlog; benchmark web dùng API fixture và bytes ảnh/module thật. Kết quả và giới hạn trong [kiểm chứng](LINH_THU_ACCEPTANCE.md), [phân trang và số đo trước/sau](LINH_THU_OPERATIONS.md).
 
-## Môi trường và quyền
+Không suy thời gian local thành latency D1 remote, CPU Worker, CDN/cache hoặc độ mượt trên thiết bị người dùng. Kiểm hash/alpha/manifest không thay duyệt thị giác. Raw, prompt và các nguồn được tái sử dụng có vai trò tái lập; không xóa mọi thứ trong `output/` chỉ vì không được Worker phục vụ.
 
-Config thật từ `wrangler.jsonc`; owner allowlist và auth từ source/config, không hardcode từ tài liệu. Staging được tài liệu lịch sử ghi:
+## Migrations và dữ liệu
 
-- Worker `personal-assistant-staging`, DB `assistant-staging`.
-- URL: https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev/app/
-- API cùng origin, Telegram initData HMAC/TTL hoặc browser login `/dangnhap MÃ` và cookie session.
-- Secrets, .env/private vars, DPAPI và SQL/SQLite backups không đọc/in ra hoặc đưa vào Git.
+Source có **42 migrations, 0001–0042**. Giữ nguyên lịch sử, kể cả bảng game đã ngừng dùng; không đổi tên/xóa migration đã áp. Trạng thái remote phải đối chiếu riêng trước phát hành, không suy từ số file local.
 
-Đợt dọn ban đầu chỉ local; sau đó người dùng yêu cầu deploy staging và commit/push bản cleanup lên nhánh `review/p1-p3`. Bản cleanup là version `4469dfad-7311-486c-b856-7c68e0fc12ad` ngày 18/10/2026; xem [HANDOFF](HANDOFF.md) để đối chiếu kiểm chứng. Sau khi người dùng duyệt hardening và yêu cầu tiếp tục, đã áp migration 0039 rồi phát hành staging version `a659e5d1-5cc7-403a-8592-d97d31c0ca48` cùng ngày. Mốc Time Travel trước migration: `0000091f-00000000-00005108-a7af28c207d13b45f5410c6206fd49e0`. Không reset DB, đổi webhook hoặc gửi tin thử/gọi AI trả phí trong lần kiểm tra phát hành. Quyền trong goal/tài liệu cũ không có hiệu lực cho nhiệm vụ mới; thay đổi schema/dữ liệu cần chỉ dẫn riêng.
+| Migration gần đây        | Vai trò                                                               |
+| ------------------------ | --------------------------------------------------------------------- |
+| 0039 runtime hardening   | Số dư thời gian có dấu, con trỏ quét nhắc và chỉ mục                  |
+| 0040 habit ticket awards | Sổ nhận vé habit và chỉ mục tuần, không backfill thưởng cũ            |
+| 0041 Linh thú            | Cá thể/lượt luyện, vai trò, ngày, kỹ năng, tuyệt kỹ, tháp và lựa chọn |
+| 0042 tiến hóa Linh thú   | Dạng đạt được và bảo toàn khám phá theo luật chuyển dạng              |
 
-## Dữ liệu và tương thích
+Habit hợp lệ nhận vé trong cùng transaction với log/receipt, có version guard cho habit và tài khoản vé. Quay thường ×10 dùng đúng mười vé và một receipt; client cũ không có `count` vẫn quay một lần. Retry trả kết quả cũ kể cả khi ngày, thiết lập hoặc trạng thái đã đổi.
 
-Tính năng vé habit và quay ×10 hiện ở local, chưa phát hành. Cần áp `0040_habit_ticket_awards.sql` trên môi trường đích trước runtime mới. Migration chỉ thêm bảng sổ nhận vé và chỉ mục, không backfill log lịch sử hoặc sửa số dư hiện tại. Hoàn thành habit hợp lệ cấp một vé trong cùng transaction với log và receipt; giữ version fencing cho cả habit và tài khoản vé. Quay ×10 dùng đúng mười vé, mười lần lấy mẫu server độc lập và một receipt; retry trả lại kết quả cũ kể cả khi thiết lập/ngày hoặc trạng thái tài khoản đã đổi. Các client cũ gửi draw không có `count` vẫn quay một lần. Xem quy tắc giới hạn/ngày, tuần và hoàn tác tại [HABITS](HABITS.md).
+Kế hoạch, đổi thứ tự và work log kiểm receipt trước điều kiện có thể thay đổi. Request ghi thời gian giữ ID xuyên ngày, không tạo tác dụng mới vào ngày khác. Refresh/bootstrap lấy trạng thái hiện hành; kết quả receipt không có nghĩa mọi màn đang hiển thị dữ liệu mới nhất.
 
-Đợt hardening thêm migration `0039_runtime_hardening.sql`; đã áp thành công trên `assistant-staging` trước khi deploy runtime mới. Migration thêm số dư thời gian có dấu, con trỏ quét nhắc việc và chỉ mục, không sửa migration cũ hay xóa bảng. Đối chiếu sau migration: vẫn có 19 bản ghi kế hoạch, tất cả số dư khởi tạo khớp thời gian còn lại, bảng con trỏ và bốn chỉ mục mới đã tồn tại. Số phút vượt ước lượng từng bị bản cũ làm mất không thể phục hồi chắc chắn; số dư ban đầu giữ đúng thời gian còn lại hiện có. Cần áp 0039 trên từng môi trường đích trước khi chạy runtime mới.
+Ngủ, điểm/ví, check-in, đột phá, fencing và atomic receipts vẫn thuộc hệ nền. Game chiến đấu cũ không được đọc để khóa hoặc kết toán các luồng này. Không DROP/reset DB, sửa migration cũ, hoàn tiền hoặc phân phối lại thưởng khi dọn code. Cleanup schema/data cần kế hoạch và xác nhận riêng.
 
-Kiểm chứng hardening local: 258 test chính, 25 fixture AI và 26 browser test đều đạt; chạy lại 37 test bị ảnh hưởng sau các chỉnh sửa cuối. Lint, format, TypeScript backend/frontend, cú pháp web và hai build dry-run đạt. Sau deploy, `/app/` và 34 tài nguyên CSS/JS khớp SHA-256 với local; GET bootstrap, habits, reminders và history không có phiên đều trả 401. Kiểm tra live chưa bao gồm luồng ghi dữ liệu sau đăng nhập.
+## Scheduler và dữ liệu lớn
 
-Nhắc việc xử lý tối đa 20 quy tắc hợp lệ mỗi lượt phase 1 (bốn phút), tiếp tục bằng con trỏ lưu bền; dữ liệu lớn có thể tăng độ trễ qua nhiều lượt. Mỗi trang danh sách có tối đa 100 quy tắc và `nextCursor`. Thói quen trả đủ tối đa 30 mục hoạt động cùng 50 mục lưu trữ mỗi trang. Bootstrap/AI nhận 10 completion và 10 milestone gần nhất cùng thống kê tổng hợp toàn lịch sử; xem dữ liệu cũ qua history có phân trang.
+Cron staging chạy mỗi phút theo `wrangler.jsonc`. Các nhóm độc lập chia bốn phase; delivery có nhịp riêng. Phase bảo trì chia tiếp ba slot; slot Linh thú xoay bốn job, mỗi loại có nhịp 48 phút khi không bị backlog ngủ trì hoãn. GET liên quan cũng tiến bảo trì. Không xếp mọi job nặng vào cùng invocation.
 
-Yêu cầu sửa kế hoạch, đổi thứ tự và ghi thời gian được kiểm receipt trước trạng thái có thể đổi. Ghi thời gian dùng request ID xuyên ngày để trả lại kết quả cũ, không tự ghi thêm vào ngày mới. API schedule trả lại cùng kết quả đã ghi receipt; refresh/bootstrap cung cấp kế hoạch hiện hành.
+Mỗi invocation chỉ chốt tối đa một ngày ngủ; trả lời trực tiếp được ưu tiên, thông báo chủ động chờ chốt vắng mặt. Tách lượt giữ ngày gốc và receipt, không bỏ quyết toán. Chi tiết/query budget ở vận hành Linh thú và benchmark.
 
-Lỗi runtime được log bằng event/code định sẵn, không kèm error thô, stack, tài khoản, payload hay nội dung AI. Thao tác quên xóa nội dung inbox/tool journal đã hoàn tất và vô hiệu nháp AI, giữ ID/trạng thái chống thực thi lại; không xóa task hay log nghiệp vụ. CI kiểm lint, format trong phạm vi đã chuẩn hóa, TypeScript, JavaScript, test, browser và build dry-run; không deploy. Formatter chỉ áp các file khai báo trong `scripts/format.mjs`, tránh viết lại toàn bộ mã lịch sử trong một đợt sửa.
+Nhắc định kỳ quét tối đa 20 quy tắc hợp lệ ở phase 1, tiếp tục bằng con trỏ lưu bền; dữ liệu lớn có thể tăng độ trễ qua nhiều lượt. Danh sách tối đa 100 quy tắc/trang. Habit tối đa 30 mục hoạt động, archive 50/trang. Bootstrap/AI dùng 10 completion và 10 milestone gần nhất cùng tổng hợp toàn lịch sử; history có phân trang. Bộ sưu tập thú dùng overview theo loài và trang cá thể riêng, không vét kho để mở atlas.
 
-Giữ nguyên toàn bộ migrations đã áp, account, logs, receipts, outbox và bảng game cũ. Runtime mới không đọc/kết toán trận hay luyện cũ. Habit vẫn kết toán cho history/report; slot maintenance game được để trống để giữ nhịp các job nền. Check-in, thưởng/ngủ/đột phá và fencing/atomic receipts giữ nguyên, riêng khóa chiến đấu đã được tháo.
+## Môi trường và phát hành
 
-Không DROP/reset DB, sửa migration cũ, hoàn tiền hoặc chuyển thưởng. Schema/data cleanup nếu cần là nhiệm vụ có phê duyệt riêng. Bản cleanup giữ bảng cũ không có nghĩa binary cũ an toàn với dữ liệu mới.
+Config thực thi từ `wrangler.jsonc`; owner và auth từ source/config, không hardcode theo tài liệu. Staging được cấu hình là Worker `personal-assistant-staging`, DB `assistant-staging`, API cùng origin; đăng nhập Telegram initData có HMAC/TTL hoặc ghép trình duyệt qua `/dangnhap MÃ` và cookie session.
 
-Utility restore offline được giữ:
+[Phát hành Linh thú 19/10](LINH_THU_RELEASE.md) và [HANDOFF](HANDOFF.md) giữ ghi nhận lịch sử mới hơn. Đợt rà soát hiện tại chỉ local: không deploy, áp migration remote, đổi webhook hoặc gọi provider thật. Quyền sửa code/deploy/push trong các đợt cũ không áp dụng cho nhiệm vụ mới.
+
+Trước một lần phát hành được duyệt: đối chiếu Worker/DB đích, migrations đã áp, version/schema và diff; backup mới; diễn tập restore/nâng cấp trên bản sao; chạy gates và dry-run. Sau phát hành đối chiếu version/assets/auth và luồng đã được phép kiểm. GET/auth/hash không chứng minh mutation có đăng nhập hoặc latency thực tế.
+
+Secrets, private vars, DPAPI và SQL/SQLite backups không in nội dung hoặc đưa vào Git. Không tự dispatch outbox hoặc gửi Telegram trong QA.
+
+## Phục hồi và điều tra lỗi
+
+Utility offline:
 
 ```powershell
 node scripts/rehearse-staging-upgrade.ts --backup <trusted-new.sql> --restore <new-copy.sqlite> --through <verified-baseline> --report <new-proof.json>
 ```
 
-Chọn đường dẫn mới, backup tin cậy và baseline đúng với backup/listing đã xác minh. Utility tạo file bằng exclusive create, kiểm integrity/FK, áp migration trong transaction và đối chiếu count/hash các cột cũ. Không remote apply hoặc chạy Worker/cron/outbox. `d1_migrations` của copy vẫn là listing cũ; không dùng copy này thay DB thật.
+Dùng backup tin cậy, đường dẫn mới và baseline đúng với backup/listing đã xác minh. Utility exclusive-create, kiểm integrity/FK, áp migrations trong transaction và so count/hash các cột cũ; không gọi remote, Worker, cron hoặc outbox. Listing `d1_migrations` trong copy vẫn là lịch sử cũ, không dùng copy thay DB thật.
 
-Backup lịch sử được bảo vệ gồm `.wrangler/cultivation-qa/staging/before-redesign-20261013.sql` và SQL/SQLite trong `.wrangler/cultivation-v2-final-qa/`. Chúng không chứa writes phát sinh sau thời điểm backup. Không tự import backup cũ đè dữ liệu thật hoặc dispatch outbox được restore.
+Backup lịch sử trong `.wrangler/cultivation-qa/staging/`, `.wrangler/cultivation-v2-final-qa/` và checkpoint ở HANDOFF được bảo toàn; chúng không chứa writes phát sinh sau lúc tạo. Không import backup cũ đè dữ liệu mới. Trích từng file nguồn ra vùng riêng, kiểm hash và diff; không reset/clean hoặc giải nén đè cả workspace.
 
-## Phục hồi mã và xử lý lỗi
+Ưu tiên sửa tiến tới. Worker rollback phải hiểu toàn bộ schema/state/rules đã lưu; không đưa binary pre-v2 trở lại sau writes v2 hoặc rollback schema để chạy code cũ. Backup/restore phải gồm ví, receipts và outbox liên quan.
 
-Checkpoint trước dọn ở [HANDOFF](HANDOFF.md). Dùng manifest SHA256 để trích đúng file cần vào vùng riêng rồi đối chiếu diff; không giải nén đè cả workspace đang có thay đổi mới. ZIP có tracked, untracked và output simulation đã duyệt xóa; lịch sử commit tra từ Git.
+Điều tra theo inbound/auth → application → DB/receipt → job/outbox → provider. Phân biệt chưa commit/đã commit và sent/failed/uncertain; không reset uncertain rồi gửi lại hàng loạt. Replay kết quả không phải thực thi lại. Repair dữ liệu cần đối chiếu delta/receipt và kế hoạch riêng.
 
-Nếu phát hành sau này cần phục hồi, ưu tiên sửa tiến tới. Candidate phải tương thích toàn bộ schema/state/rules đang lưu và kiểm trên bản sao trước release. Không đưa Worker pre-v2 trở lại sau writes v2, rollback schema hoặc làm mất dữ liệu để chạy binary cũ.
-
-Điều tra inbound/auth → application → DB/receipt → job/outbox → provider. Phân biệt chưa commit/đã commit, sent/failed/uncertain. Không reset uncertain rồi gửi lại hàng loạt; replay kết quả không phải thực thi lại. Cần repair dữ liệu: bảo toàn trạng thái hiện tại, đối chiếu delta/receipt, lập kế hoạch riêng.
-
-Giữ owner từ auth context, payload cap, bind SQL, version/day, lease/fencing/dedupe. Prompt không là security boundary. Không log token/initData/raw provider errors; không cho model arbitrary SQL/code/network.
+Lỗi vận hành chỉ log event/code/số đo định sẵn, không log stack/error thô, tài khoản, payload, token/initData hoặc nội dung AI. Quên nội dung xóa inbox/tool journal đã hoàn tất và vô hiệu nháp AI, giữ ID/trạng thái chống chạy lại; không xóa task/log nghiệp vụ. Owner, payload cap, SQL bind, version/day, lease/fencing/dedupe là các guard thực thi; prompt không phải security boundary.

@@ -2,7 +2,7 @@
 
 **Cập nhật 21/10/2026:** đã triển khai cục bộ cơ chế tiến hóa chủ động, khám phá ngoại hình và thanh tiến độ theo từng T; chưa phát hành thay đổi này. Khi phát hành cần áp dụng migration `0042_linh_thu_evolution.sql` trước runtime mới. Các ghi nhận phát hành ngày 19/10 bên dưới chỉ nói về phiên bản trước.
 
-Cập nhật 19/10/2026. Tài liệu tổng hợp quyết định sản phẩm về luyện linh thú, triệu hồi, tháp và kỹ năng. Runtime đã tích hợp và kiểm thử, đủ18loài/108ảnh; người dùng đã duyệt bản hiện tại và cho phép phát hành staging. Migration 0041 và deploy đã hoàn tất, kiểm tra sau phát hành đạt; xem [hồ sơ phát hành](LINH_THU_RELEASE.md) và [tiến độ](LINH_THU_IMPLEMENTATION.md). Ảnh95%/100% dùng tạm theo yêu cầu, có thể chỉnh riêng sau.
+Cập nhật 21/10/2026. Đặc tả các quyết định còn hiệu lực về luyện linh thú, triệu hồi, tháp và kỹ năng. Runtime có 18 loài/108 ảnh; mã nguồn hiện có migrations đến 0042. Lần phát hành đầu ngày 19/10 được ghi riêng trong [hồ sơ lịch sử](LINH_THU_RELEASE.md); trạng thái mã nguồn và giới hạn kiểm chứng ở [nghiệm thu](LINH_THU_ACCEPTANCE.md). Ảnh 95%/100% dùng tạm theo yêu cầu, có thể chỉnh riêng sau.
 
 Giữ bộ kỹ năng hiện tại làm **bản ban đầu**, cân chỉnh từng loài sau. Goal cho phép triển khai trong phạm vi tính năng, không cần hỏi lại từng file; xác nhận riêng cho đợt staging hiện tại đã nhận và thực hiện. Các lần phát hành tương lai cần quyền tương ứng.
 
@@ -120,7 +120,9 @@ Ngày cuối chỉ dùng dung lượng còn lại. Chia thực/xám theo tỷ l�
 - Dấu ấn nỗ lực hiển thị chặng hiện tại: T1→T2, T2→T3, T3→T4, hoặc T4→luyện đầy. Thanh là đoạn tương ứng của hành trình tổng: điểm thực đi từ trái, tạp chất lấn ngược từ cuối tổng dung lượng. Tạp chất chỉ xuất hiện trên thanh chặng khi đã lấn vào chặng đó; phần Chi tiết luôn hiển thị tổng thực/xám/độ thuần.
 - Hành trình gồm bốn ô. Dạng chưa khám phá dùng dấu chân, không tải ảnh hoặc hiện tên dạng tương lai. Dạng từng đạt bằng cá thể khác cùng loài hiện xám; dạng cá thể này đã đạt hiện màu. Xem thông tin kỹ năng không được tính là khám phá ngoại hình.
 - Khám phá thuộc tài khoản và loài, lấy từ các lượt luyện đã lưu, giữ qua luyện lại. Migration bảo toàn dạng từng đạt theo luật cũ, kể cả khi điểm xám từng góp phần chuyển dạng.
-- Trước khi tiến hóa hiển thị chính xác xác suất hiện tại → xác suất mới và thiên phú sắp mở. Sau khi server xác nhận, hiệu ứng tụ năng lượng → chuyển hình → hiện kết quả kéo dài khoảng 3,8 giây; có Bỏ qua hiệu ứng và tự rút gọn khi người dùng bật giảm chuyển động. Mất kết nối phải kiểm tra cùng biên nhận, không tự thực hiện thêm lần tiến hóa.
+- Trước khi tiến hóa hiển thị chính xác xác suất hiện tại → xác suất mới và thiên phú sắp mở. Chỉ hiện nút khi đủ điểm; nếu tạp chất chặn mốc kế thì nêu điểm thực tối đa so với mốc cần đạt. Sau khi server lưu kết quả, khóa thao tác và mở sân khấu toàn màn hình: tích lực → nén lực → phá ngưỡng → hiện dạng mới và từng năng lực tăng thêm. T2 dùng 5,6 giây, T3 dùng 6 giây, T4 dùng 6,6 giây; không có âm thanh. Dạng đổi bên trong lớp năng lượng che phủ, không hòa mờ hai ảnh; kết quả T4 không tự nhận đã luyện đầy hoặc mở 95%/100%.
+- Luôn có Bỏ qua hiệu ứng. Escape trong cảnh chuyển đến kết quả, Escape ở kết quả đóng màn; Xem lại chỉ phát trình diễn, không gửi giao dịch. Giảm chuyển động hiện ngay kết quả và ẩn Xem lại; đổi tùy chọn giữa cảnh cũng dừng hiệu ứng. Canvas dừng khi hoàn thành/đóng và tạm dừng khi ẩn ứng dụng. Lỗi ảnh/canvas vẫn giữ kết quả và cho tiếp tục.
+- Bỏ qua/đóng không hoàn tác tiến hóa đã lưu. Đóng khi đang chờ mạng không bị ép mở lại cảnh. Mất kết nối phải kiểm tra cùng biên nhận, không tự thực hiện thêm lần tiến hóa.
 - Cơ chế tăng thiên phú theo T giữ nguyên bảng trong [bộ kỹ năng](LINH_THU_SKILLS.md). Đợt này chưa thay đổi cách nhận thưởng kỹ năng sang kho chờ nhận.
 
 ## 5. Lịch habit, thêm và sửa
@@ -329,7 +331,7 @@ Số trong bảng là thưởng thêm ngoài phần thưởng gốc. Mốc tích
 - Mục tiêu vẽ lại: giữ nhận diện, nâng hình thể/tư thế/vật liệu/ánh sáng, càng lên rank và dạng càng có uy thế. T4 phải khác về cấu trúc, không chỉ phóng lớn T1.
 - Hoàn mỹ là biến thể riêng của T4: dấu ấn bản mệnh, hiệu ứng/hoạt ảnh và tuyệt kỹ gắn cùng bản sắc loài. Không tự lấy skin `color_1` của nguồn làm bản hoàn mỹ.
 - Đề xuất ảnh gốc mới tối thiểu 1024×1024, nền trong suốt, toàn thân; đọc rõ ở 128 px và kiểm thêm 64 px. Duy trì góc nhìn và điểm neo nhất quán khi tiến hóa.
-- Đã nghiên cứu và lưu hướng mỹ thuật; **chưa sinh/vẽ bộ ảnh mới, chưa huấn luyện hoặc tinh chỉnh mô hình**. Tên Việt hóa và thành phẩm từng dạng cần duyệt khi có bản cụ thể.
+- Đã tích hợp 108 ảnh nguồn v3: 72 dạng thường, 18 Thức tỉnh, 18 Hoàn mỹ; 72 ảnh tham chiếu giữ riêng. Stormlion T4 thường/95%/100% đã được duyệt cụ thể; các biến thể độ thuần khác dùng tạm, không tự suy thành duyệt thị giác từng ảnh. Nguồn, prompt và quy trình thay ảnh ở [hướng dẫn assets](assets/linh-thu/art/README.md), trạng thái duyệt ở [quyết định mỹ thuật](LINH_THU_ART_APPROVALS.md). Không có bước huấn luyện hoặc tinh chỉnh mô hình trong quy trình này.
 
 ## 12. Thiết kế để chỉnh kỹ năng sau
 
@@ -361,7 +363,7 @@ Số trong bảng là thưởng thêm ngoài phần thưởng gốc. Mốc tích
 
 ## 14. Kiểm chứng và nghiệm thu
 
-Các luật điểm, ngày cuối, đan, thú trùng và tháp đã được duyệt. Không hỏi lại các quyết định này. Checklist triển khai dưới đây đã có bằng chứng trong [hồ sơ nghiệm thu](LINH_THU_ACCEPTANCE.md); bản hiện tại đã được duyệt và phát hành staging. Ảnh95%/100% dùng tạm, cân bằng skill có thể điều chỉnh ở đợt sau:
+Các luật điểm, ngày cuối, đan, thú trùng và tháp đã được duyệt. Phạm vi kiểm tra tự động và giới hạn nằm trong [hồ sơ nghiệm thu](LINH_THU_ACCEPTANCE.md). Lần phát hành lịch sử không chứng minh thay đổi local mới đã được deploy. Ảnh 95%/100% dùng tạm; cân bằng skill có thể điều chỉnh ở đợt sau:
 
 - Hoàn thiện và kiểm chứng mọi đường UI → API → DB → receipt → UI, toàn bộ 18 bộ kỹ năng và tác dụng kết hợp.
 - Kiểm lịch quota tuần, sửa/khôi phục habit, các ranh giới ngày/tuần, quyết toán trễ, replay, auth, concurrency, rollback và nâng cấp/khôi phục DB.
@@ -369,7 +371,17 @@ Các luật điểm, ngày cuối, đan, thú trùng và tháp đã được duy
 - Cân bằng toàn bộ nguồn vé/tu vi và tốc độ nhận thú sau khi vòng chơi chạy được; bộ skill hiện tại là baseline để bắt đầu.
 - Ảnh vẽ lại/hoạt ảnh, tên Việt hóa và các biến thể hoàn mỹ cần bản mẫu thực tế để duyệt.
 
-## 15. Tài liệu và phạm vi đã làm
+## 15. Giao diện và tài liệu hiện hành
+
+Linh thú là một điểm vào trong điều hướng chính, giữ Hôm nay, Thói quen, Lời nhắc và Thành tích. Bên trong có đúng bốn tab: Đang luyện / Đồng hành / Bộ sưu tập / Triệu hồi. Lò đan là nút tiêu đề, không chiếm tab; tháp chỉ ở Habit. Không sao chép danh sách ghi habit sang màn Linh thú.
+
+Đang luyện và Đồng hành có tên/hạng/trạng thái phía trên, ảnh ở giữa, Chi tiết và Đổi riêng cho từng vai trò. Màn luyện đặt hành trình bốn T, điểm chặng và nút tiến hóa trước năng lực; màn đồng hành ưu tiên năng lực có hiệu lực, tiến độ tích lũy và tuyệt kỹ. Nhãn ngày mai phân biệt lựa chọn đang chờ với cá thể thực sự hỗ trợ hôm nay. Đổi luyện cảnh báo khóa lượt cũ sau chốt ngày; đổi đồng hành không khóa luyện.
+
+Toàn bộ năng lực được đọc theo thứ tự T1, T2, T3, T4, luyện đầy T4, từ 95%, chính xác 100%; mỗi mục nêu hành động được đếm, xác suất/lợi ích và giới hạn. T sau chỉ rõ phần tăng và thiên phú mới; luyện đầy T4 không phải T mới. Bộ đếm lấy từ dữ liệu đã lưu, gồm hạn mức tuần Hootlet và trạng thái đã nhận; Funglet hoàn mỹ không thêm điều kiện ngủ ngoài yêu cầu habit. Xem kỹ năng không làm lộ hình dạng chưa khám phá.
+
+Bộ sưu tập mở atlas theo loài, số lượng và đại diện lấy từ toàn kho/lượt hiện tại. Mở loài tải trang cá thể riêng; có tải thêm, không tự vét toàn kho. Các hộp chọn luyện/đồng hành/reset có phân trang toàn kho độc lập. Chi tiết phân biệt từng cá thể bằng mã ngắn, dạng, độ thuần, điểm thực/xám, vai trò và trạng thái khóa.
+
+Triệu hồi ×1/×10, phần thưởng tự chọn và luyện đan đều giữ kết quả/receipt trên server trước trình diễn. Đóng, tải lại, bỏ qua hoặc xem lại không cấp quà hay tiêu vé lần hai. Lò đan xác nhận đúng cá thể trước reset; tháp hiển thị tổng quà đang mạo hiểm, tổng quà tầng tiếp và lựa chọn Dừng/Tiếp tục. Không khởi tạo tài khoản thật từ dữ liệu demo; bộ nhớ trình duyệt không có quyền cấp thưởng.
 
 | Tài liệu | Vai trò |
 | --- | --- |
@@ -377,7 +389,10 @@ Các luật điểm, ngày cuối, đan, thú trùng và tháp đã được duy
 | [LINH_THU_SKILLS.md](LINH_THU_SKILLS.md) | Toàn bộ kỹ năng với tên, con số, tương tác và phép tính cân bằng sơ bộ. |
 | [LINH_THU_REFERENCES.md](LINH_THU_REFERENCES.md) | Nhận diện 18 loài, nguồn mẫu và quyết định phân rank/thứ tự dạng. |
 | [LINH_THU_ART_DIRECTION.md](LINH_THU_ART_DIRECTION.md) | Hướng vẽ lại và bản hoàn mỹ theo từng loài. |
+| [LINH_THU_ART_APPROVALS.md](LINH_THU_ART_APPROVALS.md) | Trạng thái duyệt, hướng nét vẽ còn hiệu lực và các bộ đã loại. |
+| [LINH_THU_OPERATIONS.md](LINH_THU_OPERATIONS.md) | Giao dịch, phân trang, bảo trì, version và phục hồi. |
+| [LINH_THU_ACCEPTANCE.md](LINH_THU_ACCEPTANCE.md) | Phạm vi kiểm tra, cách chạy và giới hạn bằng chứng. |
 | [Asset tham chiếu](assets/linh-thu/reference/README.md) | 72 ảnh nguồn, bảng ảnh và thông tin truy xuất. |
 | [HABITS.md](HABITS.md) | Hành vi habit đang có; không đồng nhất thiết kế mới với runtime. |
 
-Đã có runtime mới, đủ72dạng thường  +18thức tỉnh  +18hoàn mỹ, migration 0041 đã áp và Worker staging đã phát hành sau xác nhận riêng. Tham chiếu giữ nguyên; ảnh95%/100% dùng tạm. Quyền triển khai theo goal là ngoại lệ có phạm vi cho quy tắc xác nhận từng file; xem [kế hoạch và tiến độ](LINH_THU_IMPLEMENTATION.md), [bằng chứng phát hành](LINH_THU_RELEASE.md).
+Lịch sử prototype, checkpoint triển khai và các bản thử đã loại tra qua Git. Thay đổi code tiếp theo vẫn phải trình file/thay đổi và chờ xác nhận theo AGENTS.md người dùng cung cấp; quyền trong các goal hoặc đợt phát hành cũ không thay thế yêu cầu này.

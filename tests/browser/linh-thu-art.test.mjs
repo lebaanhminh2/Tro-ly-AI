@@ -11,8 +11,7 @@ test(
   'all 108 production images load through species collection and owned individuals with correct purity variants',
   { skip: !browserBin, timeout: 120000 },
   async () => {
-    const control = beastFixture(),
-      original = control.beastApi;
+    const control = beastFixture();
     const sample = clone(control.beastData.selected[0]);
     // Ownership and progress are fixtures; image bytes and registry are the real build.
     const beasts = BEAST_CATALOG.flatMap((species) => {
@@ -36,27 +35,12 @@ test(
         };
       });
     });
+    control.ownedBeasts = beasts;
     control.beastData.selected = [beasts[0]];
     control.beastData.roles.current.forEach((role) =>
       Object.assign(role, { beastId: beasts[0].id, attemptId: beasts[0].attemptId }),
     );
     control.beastData.speciesCounts = Object.fromEntries(BEAST_CATALOG.map((s) => [s.id, 3]));
-    const pagesRead = new Set();
-    control.beastApi = (request, endpoint) => {
-      if (endpoint === 'linh-thu/collection') {
-        const start = Number(
-          new URL(request.url, 'http://localhost').searchParams.get('cursor') ?? 0,
-        );
-        pagesRead.add(start);
-        return {
-          body: {
-            beasts: beasts.slice(start, start + 24),
-            nextCursor: start + 24 < beasts.length ? String(start + 24) : null,
-          },
-        };
-      }
-      return original(request, endpoint);
-    };
     const server = await serve(control);
     let browser;
     try {
@@ -69,8 +53,9 @@ test(
       await browser.click('Bộ sưu tập');
       await browser.wait("document.querySelectorAll('.beast-atlas-entry img').length===18");
       assert.deepEqual(
-        [...pagesRead].sort((a, b) => a - b),
-        [0, 24, 48],
+        control.collectionRequests.map(({ species, start }) => ({ species, start })),
+        [{ species: null, start: 0 }],
+        'The atlas uses the overview without draining individual pages',
       );
       assert.equal(
         await browser.evaluate("document.querySelectorAll('.beast-collection-card').length"),
@@ -93,6 +78,8 @@ test(
         assert.ok(representative.src.endsWith(BEAST_ART[`${species.id}:4:perfect`].thumb));
         await browser.evaluate(`document.querySelector('[data-species="${species.id}"]').click()`);
         await browser.wait("document.querySelectorAll('.beast-collection-card').length===3");
+        assert.equal(control.collectionRequests.at(-1).species, species.id);
+        assert.equal(control.collectionRequests.at(-1).start, 0);
         assert.equal(await browser.evaluate("document.querySelector('#sheet').open"), false);
         const cards = await browser.evaluate(`(async () => {
           const images = [...document.querySelectorAll('.beast-collection-card img')];
@@ -145,6 +132,8 @@ test(
       }
       assert.equal(checkedThumbnails, 54);
       assert.equal(checkedForms.size, 108);
+      assert.equal(control.collectionRequests.length, 1 + BEAST_CATALOG.length);
+      assert.equal(control.collectionRequests.filter(({ species }) => species === null).length, 1);
       assert.equal(control.posts.length, 0, 'Reviewing art does not change the account');
       assert.deepEqual(browser.errors, []);
     } finally {

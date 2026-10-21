@@ -84,7 +84,7 @@
       "local dry-runs and SQLite benchmarks do not establish remote D1 latency or Worker CPU under peak load"
     ]
   },
-  "goalAudit": "docs/LINH_THU_GOAL_AUDIT.md",
+  "goalAudit": "docs/LINH_THU_ACCEPTANCE.md",
   "reviewPage": "output/linh-thu-review/index.html",
   "webPerformance": {
     "local": "trial-results/linh-thu/web-performance.json",

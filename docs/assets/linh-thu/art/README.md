@@ -1,6 +1,6 @@
 # Nguồn mỹ thuật Linh thú
 
-`MANIFEST.json` đang đăng ký bộ **artVersion 3**, nguồn ở `v3/`; số lượng xem [tiến độ](../../../LINH_THU_ART_PROGRESS.md). Stormlion T4 thường/95%/100% đã được duyệt và bảo quản trong [approved-v2/zappur](approved-v2/zappur/README.md). Các ảnh 95%/100% khác được phép dùng tạm và sửa riêng sau; quyền sản xuất không đồng nghĩa người dùng đã nghiệm thu từng ảnh. 72 ảnh tham chiếu ở thư mục bên cạnh được giữ nguyên.
+`MANIFEST.json` đang đăng ký bộ **artVersion 3**, nguồn ở `v3/`; đủ **108 nguồn: 72 thường, 18 Thức tỉnh, 18 Hoàn mỹ**. Trạng thái duyệt ở [quyết định mỹ thuật](../../../LINH_THU_ART_APPROVALS.md). Stormlion T4 thường/95%/100% đã được duyệt và bảo quản trong [approved-v2/zappur](approved-v2/zappur/README.md). Các ảnh 95%/100% khác được phép dùng tạm và sửa riêng sau; quyền sản xuất không đồng nghĩa người dùng đã nghiệm thu từng ảnh. 72 ảnh tham chiếu ở thư mục bên cạnh được giữ nguyên.
 
 Lưu bản nguồn có phiên bản, rồi thêm entry đúng loài/dạng/biến thể và nguồn tạo thật. Ví dụ cấu trúc:
 

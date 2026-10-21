@@ -1,60 +1,34 @@
-> Cập nhật mới nhất 19/10/2026: theo yêu cầu người dùng, chỉ xem [tám dạng UR T1–T4](ur-t1-t4-only.png). Các ảnh 95%/100% UR của v2/v3/v4 bị loại khỏi phương án hiện tại; nội dung về chúng bên dưới chỉ là lịch sử. Không dùng các ảnh đó để tích hợp.
+# Hai dòng UR — nguồn thường v2 và bản thử độ thuần lịch sử
 
-# Hai dòng UR — bộ hình theo hướng v2
+Cập nhật trạng thái 21/10/2026; hồ sơ tạo ảnh gốc ngày 19/10/2026. Tám dạng thường T1–T4 của hai dòng UR đã được tái sử dụng trong bộ nguồn v3. Các ảnh 95%/100% UR v2 trong thư mục này đã bị loại, chỉ giữ để đối chiếu lịch sử; không dùng làm nguồn hoặc ứng viên tích hợp.
 
-## Phản hồi về hai bản Hoàn mỹ
+[REUSED.json](../catalog-v3/REUSED.json) ghi tám entry thường còn dùng. [Manifest nguồn](../../../docs/assets/linh-thu/art/MANIFEST.json) và [quyết định mỹ thuật](../../../docs/LINH_THU_ART_APPROVALS.md) xác định bộ hiện hành: Pyrodaemon độ thuần dùng v5 có điều kiện, Meteorax độ thuần lấy từ catalog v3. Các bản thử UR v3/v4 đã được dọn khỏi cây làm việc; tra lịch sử ở commit `2493aad63a3ea60b38808a10c13363969294cb1c`.
 
-Người dùng nhận xét hai dạng Hoàn mỹ UR chưa đẹp và yêu cầu sửa lại. Hai ảnh t4-perfect trong bộ v2 này chưa được duyệt; bảng 12 trạng thái bên dưới giữ để đối chiếu lịch sử. Bản chỉnh tiếp theo được lưu riêng ở [ur-perfect-v3](../ur-perfect-v3/README.md), làm từ T4 thường với hướng thử giữ màu lửa đỏ/cam và tinh thể tím/lam. Không lấy nhận xét này để đổi các mốc gameplay.
-
-Ngày 19/10/2026, Asia/Saigon. Làm tiếp sau khi người dùng duyệt Stormlion T4 v2 và hai trạng thái độ thuần. Quyết định chuẩn nằm tại [LINH_THU_ART_APPROVALS.md](../../../docs/LINH_THU_ART_APPROVALS.md).
-
-## Phạm vi
+## Phạm vi gốc
 
 - Pyropup → Pyrohound → Hellhound → Pyrodaemon.
 - Rubblet → Cobbledon → Rockzilla → Meteorax.
-- Mỗi dòng: bốn dạng T1–T4, thêm Thức tỉnh 95% và Hoàn mỹ 100% của T4; không có T5/T6.
-- Đây là bộ ảnh UR mới để xem xét theo hướng đã chốt, chưa được duyệt từng ảnh hoặc tích hợp runtime.
+- Mỗi dòng đã tạo bốn dạng T1–T4 và hai đề xuất độ thuần ở T4, tổng 12 ảnh. Không có T5/T6.
+- Khi tạo, đây là bộ đề xuất chưa tích hợp; việc tái sử dụng tám ảnh thường diễn ra sau đó. Không tự coi từng ảnh đã được người dùng duyệt thị giác.
 
-## Cách tạo
+## Nguồn và cách tạo
 
-Dùng CLI chính thức của skill imagegen qua gateway Cockpit local đã được người dùng chỉ định, model ảnh gpt-image-2.5 theo cấu hình hiện có. Không dùng tool built-in image_gen và không khai báo nhầm provenance. Không sửa cấu hình gateway hoặc dùng khóa OpenAI mới.
+Dùng CLI chính thức của skill imagegen qua gateway Cockpit local theo cấu hình lúc tạo, model `gpt-image-2.5`; không khai báo thành built-in image_gen. Không có bước huấn luyện mô hình.
 
-T4 thường lấy đúng ảnh tham chiếu loài/dạng làm nguồn nhận diện và nét vẽ. T1–T3 lấy đúng mẫu từng dạng, thêm T4 mới cùng loài để giữ nét viền và cách chia mảng; T4 mới không được dùng để thay cấu trúc dạng con. Hai trạng thái độ thuần chỉnh từ T4 mới.
+T4 thường lấy đúng ảnh tham chiếu loài/dạng làm nguồn nhận diện. T1–T3 dùng đúng mẫu từng dạng, thêm T4 mới cùng loài làm hướng nét vẽ; không lấy cấu trúc T4 thay dạng con. Hai đề xuất độ thuần chỉnh từ T4 thường. Nguồn tham chiếu ở `docs/assets/linh-thu/reference/ur/`, hash đối chiếu `SOURCES.csv`.
 
-Giữ raw nguyên gốc, prompt đầy đủ và bản chuẩn hóa riêng. Không ghi đè ảnh nguồn. Nguồn nằm ở docs/assets/linh-thu/reference/ur; hash nguồn đối chiếu SOURCES.csv.
+Mỗi thư mục loài chứa raw, prompt và preview chuẩn hóa riêng. T4 thường dùng tên tiến hóa, ảnh độ thuần dùng `t4-95`/`t4-perfect`. Giữ raw nguyên gốc, không ghi đè bằng ảnh chuẩn hóa.
 
-## Hai bản hoàn mỹ đề xuất
+`IMAGE_CHECKS.json` và `PROVENANCE.csv` ghi hash raw/preview/pixel/prompt, vai trò ảnh đầu vào và chuẩn hóa. Tám nguồn UR khớp hash tham chiếu. Raw Rubblet T1 là 1380×1140; raw còn lại 1254×1254. Preview 1024px RGBA, có alpha và lề ít nhất 82px; không mô tả kích thước preview là kích thước đầu ra gốc.
 
-- Pyrodaemon — Nhật Thực Tam Diệm: giữ ba đầu và ba biểu cảm, bạch diệm có bóng tím nhạt/viền đỏ, thân tối, một ấn nhật thực gọn trên vòng cổ.
-- Meteorax — Tinh Vẫn Đế Giáp: giữ giáp và hình quạt tinh thể, đổi sang giáp xanh đá tối, tinh thể ngọc tím sáng và một ấn tinh vẫn gọn trong phiến tinh thể lớn.
+## Xem tư liệu
 
-95% chỉ nhấn mắt, giữ bảng màu và hình thái T4 thường. Hai mốc chỉ mở sau khi luyện đầy 160 điểm của UR; T4 bắt đầu ở 110 điểm chưa mở. 152 thực +8 xám đạt 95%; 160 thực +0 xám đạt 100%.
-
-## Gameplay giữ nguyên
-
-Theo docs/LINH_THU_SKILLS.md:
-- Pyrodaemon 95%: 20 task hợp lệ tích lũy nhận 1 vé triệu hồi. 100%: lần triệu hồi tiếp theo sau kích hoạt trong tuần hiện 3 ứng viên, chọn 1; vẫn tiêu 1 vé, bảo hiểm cập nhật theo cá thể được chọn một lần.
-- Meteorax 95%: 5 ngày tích lũy vừa đủ habit vừa ngủ đúng giờ nhận 1 vé triệu hồi. 100%: 2 lượt bảo hộ ngủ và 1 lượt hoàn tu vi thực trừ khi đột phá thất bại; cuối tuần mỗi lượt dư đổi 5 tu vi, tối đa 15.
-- Toàn tài khoản một tuyệt kỹ/tuần lịch. Task không tham gia điểm luyện; habit quyết định luyện và tạp chất.
-
-## Đầu ra
-
-Mỗi thư mục loài chứa `*-raw.png`, `*.prompt.txt` và `*-preview.png`. T4 thường dùng tên tiến hóa, hai bản độ thuần dùng t4-95 và t4-perfect. Đã xong 12 ảnh riêng: 8 dạng thường, 2 bản Thức tỉnh 95% và 2 bản Hoàn mỹ. Đây là kết quả tạo ảnh/kiểm kỹ thuật, chưa thay người dùng duyệt từng bản.
-
-Không sửa code, HTML, CSS, registry runtime hoặc dữ liệu thật trong lượt làm mỹ thuật này.
-
-## Xem nhanh bộ đầy đủ
-
-- [Cả hai dòng UR, đủ 12 trạng thái](ur-full-states.png).
-- [Pyropup → Pyrodaemon, đủ sáu trạng thái](pyropup-full-states.png).
-- [Rubblet → Meteorax, đủ sáu trạng thái](rubblet-full-states.png).
+- [Tám dạng UR thường còn được tái sử dụng](ur-t1-t4-only.png).
 - [T4 gốc và T4 mới, kèm thumbnail](ur-t4-source-and-thumbnail-review.png).
-- [Kiểm alpha và độ rõ ở 64/128px trên nền sáng/tối](alpha-and-thumbnail-review.png).
+- [Bảng 12 trạng thái lịch sử, có ảnh độ thuần đã loại](ur-full-states.png).
+- [Pyropup lịch sử](pyropup-full-states.png) · [Rubblet lịch sử](rubblet-full-states.png).
+- [Kiểm alpha/thumbnail lịch sử](alpha-and-thumbnail-review.png).
 
-## Kết quả kiểm
+Hai đề xuất Hoàn mỹ v2 từng thử bạch diệm tím nhạt cho Pyrodaemon và giáp xanh đá tối/tinh thể ngọc tím cho Meteorax; người dùng chưa duyệt và yêu cầu sửa. Việc loại ảnh không thay các ngưỡng gameplay: luyện đầy 160 điểm mới xét 95%/100%, không mở biến thể chỉ vì đạt T4 ở 110 điểm. Luật và kỹ năng hiện hành ở [đặc tả](../../../docs/LINH_THU_SPEC.md) và [bộ kỹ năng](../../../docs/LINH_THU_SKILLS.md).
 
-Đã xem trực tiếp 12 ảnh và hai bảng toàn chuỗi/thumbnail. Kiểm đạt: 12 ảnh khác nhau theo hash pixel, 1024px RGBA có alpha thật, lề trong suốt tối thiểu 82px, toàn thân không cắt đầu/chân/đuôi. Tám nguồn tham chiếu UR khớp hash trong SOURCES.csv. Raw đầu ra giữ nguyên; riêng Rubblet T1 trả về 1380×1140, các raw còn lại 1254×1254 dù yêu cầu 1024×1024; kích thước thực được ghi lại, không mô tả nhầm là đầu ra gốc 1024.
-
-`IMAGE_CHECKS.json` và `PROVENANCE.csv` lưu hash raw, preview, pixel và prompt; vai trò từng ảnh đầu vào và cách chuẩn hóa được ghi rõ. Mốc 95% cố ý thay đổi nhỏ ở mắt; ở thumbnail nhỏ cần đọc cùng nhãn trạng thái, không dùng thay đổi hình thái lớn.
-
-Bộ này chưa đăng ký manifest hoặc thay ảnh ứng dụng. Sau UR, thứ tự sản xuất tiếp theo là SSR → SR → R; theo dõi trong [bảng tiến độ mỹ thuật](../../../docs/LINH_THU_ART_PROGRESS.md).
+Ảnh/bảng có nguồn gốc và kiểm kỹ thuật rõ ràng không tự chứng minh chất lượng thiết kế hoặc duyệt thị giác. Khi sửa ảnh dùng [quy trình nguồn v3](../../../docs/assets/linh-thu/art/README.md), giữ ID, tiến độ, luật và dữ liệu người dùng.

@@ -11,7 +11,7 @@ import {
 import { beastFixture } from './linh-thu-fixture.mjs';
 import { serve, chrome, browserBin } from './app-harness.mjs';
 
-const evidence = 'output/tower-implementation-20261020';
+const evidence = `trial-results/linh-thu/tower/run-${process.pid}`;
 const pendingKey = 'minh-anh-beast-pending-v1';
 const options = { skip: !browserBin, timeout: 60000 };
 const choosing = "!!document.querySelector('.tower-card:not(:disabled)')";

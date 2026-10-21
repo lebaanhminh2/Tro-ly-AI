@@ -9,8 +9,6 @@ import { trialChat } from '../../experiments/ai-trial/chat.ts';
 import { GeminiTrial } from '../../experiments/ai-trial/gemini.ts';
 import type { Env } from '../../src/config/env.ts';
 import type { Database } from '../../src/adapters/d1/database.ts';
-import { getTask, listTasks } from '../../src/adapters/d1/tasks.ts';
-import { propose, resolveProposal } from '../../src/adapters/d1/proposals.ts';
 
 test('Telegram webhook and D1: complete flow, duplicate, owner, stale, expiry, rollback', async () => {
   const mf = new Miniflare({ modules: true, script: 'export default { fetch() { return new Response("test"); } }', d1Databases: ['DB'] });
@@ -18,6 +16,25 @@ test('Telegram webhook and D1: complete flow, duplicate, owner, stale, expiry, r
     const d1 = await mf.getD1Database('DB');
     for(const file of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort()) await d1.exec(readFileSync('migrations/'+file,'utf8').replace(/\r?\n/g,' '));
     const db = d1 as unknown as Database;
+    type TaskRow = { id: string; deadline: string | null; version: number };
+    const listTasks = async (db: Database, owner: string) =>
+      (await db.prepare('SELECT id,deadline,version FROM tasks WHERE owner=? ORDER BY created,id').bind(owner).all<TaskRow>()).results;
+    const getTask = (db: Database, owner: string, id: string) =>
+      db.prepare('SELECT id,deadline,version FROM tasks WHERE owner=? AND id=?').bind(owner, id).first<TaskRow>();
+    // Seed proposals directly to exercise the SQL trigger contract, independently of webhook parsing.
+    const propose = async (db: Database, owner: string, updateId: number, taskId: string | null,
+      value: string, version: number, now: number) => {
+      const id = `p${updateId}`;
+      await db.prepare(`INSERT INTO proposals(id,owner,task_id,operation,value,expected_version,expires)
+        VALUES(?,?,?,?,?,?,?)`).bind(id, owner, taskId ?? `t${updateId}`, taskId ? 'deadline' : 'capture', value, version, now + 300000).run();
+      return id;
+    };
+    const resolveProposal = async (db: Database, owner: string, id: string, accept: boolean, now: number) => {
+      const result = await db.prepare(`UPDATE proposals SET status=? WHERE id=? AND owner=? AND status='pending'
+        AND expires>? AND (operation='capture' OR julianday(value)>julianday(? / 1000.0,'unixepoch'))`)
+        .bind(accept ? 'accepted' : 'rejected', id, owner, now, now).run();
+      return result.meta.changes > 0;
+    };
     const secret = 'synthetic-webhook-secret-12345678';
     const env: Env = { DB: db, TELEGRAM_USER_ID: '123456', TELEGRAM_WEBHOOK_SECRET: secret, AI_MODE: 'off' };
     let seq = 0;

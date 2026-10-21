@@ -9,7 +9,7 @@ import {
   continueBeastTower,
   pickBeastTower,
 } from '../../src/domain/linh-thu-tower.ts';
-import { evolveBeast } from '../../src/domain/linh-thu-training.ts';
+import { evolveBeast, trainingView } from '../../src/domain/linh-thu-training.ts';
 import { fixture, serve, chrome, browserBin, now, clone } from './app-harness.mjs';
 
 export function beastFixture() {
@@ -45,6 +45,23 @@ export function beastFixture() {
   };
   control.beastData = data;
   control.ownedBeasts = [beast];
+  control.collectionRequests = [];
+  control.collectionOverview = () =>
+    Object.fromEntries(
+      BEAST_CATALOG.flatMap((species) => {
+        const owned = control.ownedBeasts.filter((entry) => entry.speciesId === species.id);
+        owned.sort((a, b) => {
+          const av = trainingView(a.attempt),
+            bv = trainingView(b.attempt);
+          return (
+            bv.form - av.form ||
+            Number(bv.perfect) - Number(av.perfect) ||
+            (bv.ratio ?? 0) - (av.ratio ?? 0)
+          );
+        });
+        return owned.length ? [[species.id, { count: owned.length, best: owned[0] }]] : [];
+      }),
+    );
   // Test-only oracle: runtime receives public state, never the hidden trap.
   control.setTowerState = (state, version = 1) => {
     control.towerState = state;
@@ -52,8 +69,25 @@ export function beastFixture() {
   };
   control.beastApi = async (request, endpoint) => {
     if (request.method === 'GET') {
-      if (endpoint === 'linh-thu/collection')
-        return { body: { beasts: control.ownedBeasts, nextCursor: null } };
+      if (endpoint === 'linh-thu/collection') {
+        const params = new URL(request.url, 'http://localhost').searchParams;
+        const species = params.get('species'),
+          start = Number(params.get('cursor') ?? 0),
+          limit = Number(params.get('limit') ?? 24);
+        const owned = control.ownedBeasts.filter(
+          (beast) => !species || beast.speciesId === species,
+        );
+        const body = {
+          beasts: owned.slice(start, start + limit),
+          nextCursor: start + limit < owned.length ? String(start + limit) : null,
+        };
+        control.collectionRequests.push({
+          species,
+          start,
+          bytes: Buffer.byteLength(JSON.stringify(body)),
+        });
+        return { body };
+      }
       if (endpoint === 'linh-thu/tower')
         return {
           body: {
@@ -76,7 +110,7 @@ export function beastFixture() {
           ? { body: { result: control.receipts.get(id).result } }
           : { status: 404, body: { error: 'NOT_FOUND' } };
       }
-      return { body: data };
+      return { body: { ...data, collectionOverview: control.collectionOverview() } };
     }
     let raw = '';
     for await (const part of request) raw += part;

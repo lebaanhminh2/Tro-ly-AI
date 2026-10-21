@@ -26,6 +26,8 @@ export function createBeastActions(context) {
   const { state, runtime, render, toast, openSheet, closeSheet, sheetContent, confirm } = context;
   let activeReveal, activeEvolution;
   let generation = 0,
+    speciesGeneration = 0,
+    speciesLoading,
     loading,
     loadingRevision,
     towerLoading,
@@ -82,26 +84,68 @@ export function createBeastActions(context) {
       }),
     );
   }
-  async function readCollection(cursor = null, isCurrent = () => true) {
-    const seen = new Set();
-    let result = { beasts: [], nextCursor: null };
-    do {
-      if (seen.has(cursor)) throw Error('Không thể tải tiếp bộ sưu tập. Cậu thử lại nhé.');
-      seen.add(cursor);
-      const page = await liveRequest(
-        'linh-thu/collection' + (cursor ? '?cursor=' + encodeURIComponent(cursor) : ''),
-      );
-      result = {
-        ...page,
-        beasts: [
-          ...new Map([...(result?.beasts ?? []), ...page.beasts].map((b) => [b.id, b])).values(),
-        ],
-      };
-      cursor = page.nextCursor;
-    } while (cursor && state.beastPanel === 'collection' && isCurrent());
-    return result;
+  async function readCollection(cursor = null, species = null) {
+    const params = new URLSearchParams();
+    if (cursor) params.set('cursor', cursor);
+    if (species) params.set('species', species);
+    const page = await liveRequest('linh-thu/collection' + (params.size ? '?' + params : ''));
+    if (cursor && page.nextCursor === cursor)
+      throw Error('Không thể tải tiếp bộ sưu tập. Cậu thử lại nhé.');
+    return page;
   }
-  async function loadBeasts(more = false) {
+  function mergeCollection(previous, page) {
+    return {
+      ...page,
+      beasts: [
+        ...new Map([...(previous?.beasts ?? []), ...page.beasts].map((b) => [b.id, b])).values(),
+      ],
+    };
+  }
+  function invalidateSpeciesPage() {
+    speciesGeneration++;
+    speciesLoading = null;
+    state.beastSpeciesPage = null;
+    state.beastSpeciesLoading = false;
+    state.beastSpeciesError = null;
+  }
+  async function loadBeastSpecies(more = false) {
+    const species = state.beastCollectionSpecies;
+    if (!state.live || !state.loaded || !species || state.beastPanel !== 'collection') return;
+    const revision = runtime.revision;
+    if (speciesLoading?.revision === revision) return speciesLoading.promise;
+    const cursor = more ? state.beastSpeciesPage?.nextCursor : null;
+    if (more && !cursor) return;
+    const requestGeneration = ++speciesGeneration;
+    const isCurrent = () =>
+      requestGeneration === speciesGeneration &&
+      revision === runtime.revision &&
+      state.live &&
+      state.loaded &&
+      state.beastPanel === 'collection' &&
+      state.beastCollectionSpecies === species;
+    state.beastSpeciesLoading = true;
+    state.beastSpeciesError = null;
+    render();
+    const promise = (async () => {
+      try {
+        const page = await readCollection(cursor, species);
+        if (!isCurrent()) return;
+        state.beastSpeciesPage = mergeCollection(more ? state.beastSpeciesPage : null, page);
+      } catch (error) {
+        if (isCurrent()) state.beastSpeciesError = error.message;
+      } finally {
+        if (requestGeneration === speciesGeneration) {
+          speciesLoading = null;
+          state.beastSpeciesLoading = false;
+          render();
+        }
+      }
+    })();
+    speciesLoading = { revision, promise };
+    return promise;
+  }
+  async function loadBeasts(more = false, scope = 'inventory') {
+    if (scope === 'species') return loadBeastSpecies(more);
     if (!state.live || !state.loaded) return;
     if (loading && loadingRevision === runtime.revision) return loading;
     loadingRevision = runtime.revision;
@@ -117,22 +161,12 @@ export function createBeastActions(context) {
         if (more) {
           const cursor = state.beastCollection?.nextCursor;
           if (!cursor) return;
-          const page = await readCollection(cursor, isCurrent);
+          const page = await readCollection(cursor);
           if (requestGeneration !== generation || revision !== runtime.revision || !state.loaded)
             return;
-          state.beastCollection = {
-            ...page,
-            beasts: [
-              ...new Map(
-                [...state.beastCollection.beasts, ...page.beasts].map((b) => [b.id, b]),
-              ).values(),
-            ],
-          };
+          state.beastCollection = mergeCollection(state.beastCollection, page);
         } else {
-          const [data, page] = await Promise.all([
-            liveRequest('linh-thu'),
-            readCollection(null, isCurrent),
-          ]);
+          const [data, page] = await Promise.all([liveRequest('linh-thu'), readCollection()]);
           if (!isCurrent()) return;
           await prepareRoleImages(data);
           if (requestGeneration !== generation || revision !== runtime.revision || !state.loaded)
@@ -141,6 +175,8 @@ export function createBeastActions(context) {
           state.beastData = data;
           state.beastCollection = page;
           state.cultivation = mapAccount(data.wallet, state.day?.day);
+          invalidateSpeciesPage();
+          loadBeastSpecies();
         }
       } catch (error) {
         if (requestGeneration === generation && revision === runtime.revision)
@@ -200,9 +236,11 @@ export function createBeastActions(context) {
     const input = runtime.pendingBeast?.input ?? { ...fields, day, version: data.account.version };
     const roleCandidate =
       input.operation === 'select'
-        ? [...(state.beastCollection?.beasts ?? []), ...(state.beastData?.selected ?? [])].find(
-            (beast) => beast.id === input.beastId,
-          )
+        ? [
+            ...(state.beastCollection?.beasts ?? []),
+            ...(state.beastSpeciesPage?.beasts ?? []),
+            ...(state.beastData?.selected ?? []),
+          ].find((beast) => beast.id === input.beastId)
         : null;
     if (
       runtime.pendingBeast &&
@@ -354,19 +392,16 @@ export function createBeastActions(context) {
   function setBeastPanel(panel) {
     if (state.beastPanel === panel) return;
     state.beastPanel = panel;
+    invalidateSpeciesPage();
     render();
-    if (panel === 'collection') completeCollection();
-  }
-  async function completeCollection() {
-    if (loading) await loading;
-    if (state.beastPanel === 'collection' && state.beastCollection?.nextCursor)
-      await loadBeasts(true);
+    if (panel === 'collection') loadBeastSpecies();
   }
   function openBeastSpecies(speciesId) {
     if (speciesId && !(state.beastData?.speciesCounts?.[speciesId] > 0)) return;
     state.beastCollectionSpecies = speciesId;
+    invalidateSpeciesPage();
     render();
-    completeCollection();
+    loadBeastSpecies();
   }
   function currentSheet() {
     const title = sheetContent.firstElementChild;
@@ -538,7 +573,11 @@ export function createBeastActions(context) {
   function applyEvolution(result) {
     const data = state.beastData;
     if (!data || !result.attempt) return;
-    for (const entry of [...data.selected, ...(state.beastCollection?.beasts ?? [])])
+    for (const entry of [
+      ...data.selected,
+      ...(state.beastCollection?.beasts ?? []),
+      ...(state.beastSpeciesPage?.beasts ?? []),
+    ])
       if (entry.id === result.beastId && entry.attemptId === result.attemptId)
         entry.attempt = result.attempt;
     data.discoveries ??= {};
@@ -578,9 +617,11 @@ export function createBeastActions(context) {
   function showEvolutionResult(result) {
     applyEvolution(result);
     const data = state.beastData;
-    const beast = [...(data?.selected ?? []), ...(state.beastCollection?.beasts ?? [])].find(
-      (entry) => entry.id === result.beastId && entry.attemptId === result.attemptId,
-    );
+    const beast = [
+      ...(data?.selected ?? []),
+      ...(state.beastCollection?.beasts ?? []),
+      ...(state.beastSpeciesPage?.beasts ?? []),
+    ].find((entry) => entry.id === result.beastId && entry.attemptId === result.attemptId);
     if (!beast) {
       toast(`Đã tiến hóa lên T${result.form}.`);
       return;

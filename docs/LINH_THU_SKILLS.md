@@ -2,7 +2,7 @@
 
 Viết cho đúng **18 loài: 2 UR, 4 SSR, 6 SR, 6 R** trong [hồ sơ tham chiếu](LINH_THU_REFERENCES.md). Tên dưới đây dùng tên nguồn để đối chiếu ảnh; tên Việt hóa có thể duyệt riêng. Hình thức hoàn mỹ đi cùng [định hướng mỹ thuật](LINH_THU_ART_DIRECTION.md).
 
-**Trạng thái:** bộ kỹ năng và giới hạn dưới đây là bản ban đầu đã duyệt, đã nối vào runtime và kiểm thử theo goal. Bản hiện tại đã được người dùng duyệt và phát hành staging ngày19/10/2026; xem [hồ sơ phát hành](LINH_THU_RELEASE.md), [tiến độ thực thi](LINH_THU_IMPLEMENTATION.md), [đối chiếu từng nhóm hook](LINH_THU_GOAL_AUDIT.md) và [đặc tả toàn hệ thống](LINH_THU_SPEC.md). Đây là kỹ năng cho ứng dụng quản lý công việc/thói quen, không phải chỉ số chiến đấu của game nguồn.
+**Trạng thái:** bộ kỹ năng và giới hạn dưới đây là bản ban đầu đã duyệt, đã nối vào runtime và kiểm thử theo goal. Bản hiện tại đã được người dùng duyệt và phát hành staging ngày19/10/2026; xem [hồ sơ phát hành](LINH_THU_RELEASE.md), [vận hành](LINH_THU_OPERATIONS.md), [phạm vi kiểm tra từng nhóm hook](LINH_THU_ACCEPTANCE.md) và [đặc tả toàn hệ thống](LINH_THU_SPEC.md). Đây là kỹ năng cho ứng dụng quản lý công việc/thói quen, không phải chỉ số chiến đấu của game nguồn.
 
 ## 1. Cơ sở từ hệ thống hiện tại
 

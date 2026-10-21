@@ -1,6 +1,6 @@
 # Minh Anh — trợ lý cá nhân
 
-Cập nhật 18/10/2026. Phạm vi hiện tại: task, thói quen, kế hoạch/lịch, focus, nhắc việc, ngủ/thức và tiến trình nền. Tu luyện/Thần Lộ, công pháp và chiến đấu đã ngừng hoạt động; không có game thay thế trong đợt dọn.
+Cập nhật 21/10/2026. Phạm vi hiện tại: task, thói quen, kế hoạch/lịch, focus, nhắc việc, ngủ/thức, tiến trình nền và Linh thú hỗ trợ các hoạt động đó. Tu luyện/Thần Lộ, công pháp và chiến đấu cũ đã ngừng hoạt động; Linh thú không khôi phục các hệ này.
 
 ## Trải nghiệm
 
@@ -22,9 +22,19 @@ Trợ lý tiếng Việt giúp bắt đầu sớm và quản lý sức tải th�
 - Ngày sinh hoạt do server chốt từ lịch cài đặt; check-in theo ngày lịch Việt Nam. Đổi giờ không mở lại kỳ đã đóng.
 - Khóa rank/trận đang dở của game cũ không chặn đột phá hoặc chức năng nền. Dữ liệu game lịch sử được giữ nguyên trong DB, không hoàn tiền, phân phối lại thưởng hay kết toán tiếp.
 
+## Linh thú gắn với hoạt động hằng ngày
+
+- 18 loài, mỗi loài bốn dạng; các cá thể trùng loài và lượt luyện có ID riêng. Điểm thực/tạp chất từ kết quả habit theo ngày, không từ task hoặc giấc ngủ. Đủ điểm thực mới tiến hóa chủ động; luyện đầy mới xét Thức tỉnh từ 95% và Hoàn mỹ đúng 100%.
+- Đang luyện và Đồng hành là hai vai trò độc lập. Lựa chọn mới có thể hiển thị với nhãn ngày mai, nhưng server quyết định cá thể có hiệu lực hôm nay. Kỹ năng tác động vào task, habit/ngủ, quay/ghép/đột phá theo điều kiện và giới hạn.
+- Bộ sưu tập mở theo loài, số lượng/đại diện lấy toàn kho; danh sách cá thể có phân trang theo yêu cầu. Triệu hồi dùng vé và bảo hiểm; Lò đan dùng chuỗi habit để luyện đan và xác nhận luyện lại đúng cá thể.
+- Tháp giao ước nằm trong Thói quen, snapshot điều kiện habit +task và giữ phiên ở server. Chi phí, phần thưởng và receipts commit trước hiệu ứng; skip/replay/đóng không tạo giao dịch mới.
+- Tài khoản mới bắt đầu trống, không lấy dữ liệu demo để cấp thú/vé. Nguồn hiện có 108 ảnh; trạng thái dùng tạm không thay duyệt thị giác từng ảnh.
+
+Luật, công thức và các điều kiện chi tiết ở [đặc tả Linh thú](LINH_THU_SPEC.md), [kỹ năng](LINH_THU_SKILLS.md); bằng chứng và giới hạn ở [kiểm chứng](LINH_THU_ACCEPTANCE.md).
+
 ## Yêu cầu giao diện và AI
 
-Bốn tab: Hôm nay, Thói quen, Lời nhắc, Thành tích. Giữ sáng/tối, giảm chuyển động, safe-area, touch target, keyboard, label và sheet có nút đóng/lưu tiếp cận được. Danh sách/tên dài/chữ lớn không tràn ngang.
+Năm mục điều hướng chính theo thứ tự: Hôm nay, Thói quen, Lời nhắc, Linh thú, Thành tích. Linh thú có bốn tab con Đang luyện / Đồng hành / Bộ sưu tập / Triệu hồi; Lò đan là nút tiêu đề. Giữ sáng/tối, giảm chuyển động, safe-area, touch target, keyboard, label và sheet có nút đóng/lưu tiếp cận được. Danh sách/tên dài/chữ lớn không tràn ngang.
 
 Loading, lỗi, hết phiên, read-only, đang lưu và conflict có cách xử lý. Chỉ báo thành công sau commit; POST đã lưu nhưng tải lại lỗi phải đối chiếu trạng thái trước thao tác tiếp, không tạo request mới để nhân tác dụng.
 

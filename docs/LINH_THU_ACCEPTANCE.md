@@ -1,119 +1,94 @@
-# Hồ sơ kiểm tra Linh thú
+# Kiểm chứng Linh thú
 
-Cập nhật 19/10/2026. Đã tích hợp đầy đủ hệ thống và **108 ảnh của 18 loài: 72 dạng T1–T4, 18 Thức tỉnh 95%, 18 Hoàn mỹ 100%**. Người dùng đã duyệt bản hiện tại và cho phép phát hành staging; migration 0041 và deploy đã hoàn tất, kiểm tra sau phát hành đạt. [Hồ sơ phát hành](LINH_THU_RELEASE.md). Ảnh 95%/100% tiếp tục dùng tạm và chỉnh riêng sau; Stormlion là chuẩn nét đã duyệt.
+Cập nhật 21/10/2026. Hệ thống có 18 loài và 108 ảnh: 72 dạng T1–T4, 18 Thức tỉnh, 18 Hoàn mỹ. Đây là phạm vi kiểm tra tự động và giới hạn bằng chứng; duyệt dùng tạm ảnh không thay duyệt thị giác từng ảnh. [Đặc tả](LINH_THU_SPEC.md) · [Vận hành](LINH_THU_OPERATIONS.md) · [Mỹ thuật](LINH_THU_ART_APPROVALS.md).
 
-Checkpoint mới nhất: `npm.cmd run test:all` đạt **330 main/unit/integration +25 experiments**, 0 fail/skip/cancel, exit 0. Typecheck backend/frontend, syntax **37 web modules**, lint, format **109 files**, build local/staging dry-run và asset verify đều đạt. Worker **607,70 KiB / gzip 136,37 KiB**, **505 web files**. Cổng `--require-complete` đạt **72/72 thường  +18/18 thức tỉnh  +18/18 hoàn mỹ**. Kết quả browser cuối được ghi ở mục kiểm chứng bên dưới.
+## Kết quả đã chạy
 
-Log lần xác nhận đầy đủ: `trial-results/linh-thu/test-all-art-v3.log` (UTF-16LE, Git bỏ qua); main khoảng 312 giây, experiments khoảng 1 giây. Không cộng thêm test vào kết quả suite cũ. Xem [chi tiết và giới hạn](LINH_THU_IMPLEMENTATION.md), [trang xem 108 ảnh](../output/imagegen/catalog-v3/index.html) và [hồ sơ kiểm chứng](../output/imagegen/catalog-v3/VERIFICATION.json).
+Checkpoint sau tối ưu phân trang, dọn tệp cũ và tách module D1 ngày 21/10/2026:
 
-[Xem giao diện các luồng chính](../output/linh-thu-review/index.html) · [Đối chiếu từng mục goal](LINH_THU_GOAL_AUDIT.md). Trang review có ảnh chụp UI thật, dữ liệu fixture, liên kết gallery và hướng dẫn thử; không phải ứng dụng tương tác hoặc quyền cấp quà.
+| Kiểm tra                 | Kết quả và phạm vi                                                                                                     |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| Backend/unit/integration | 354 đạt, 0 fail/skip/cancel                                                                                            |
+| Experiments              | 25 đạt, 0 fail/skip/cancel                                                                                             |
+| Chrome browser toàn bộ   | 84 đạt, 0 fail/skip/cancel; chạy tuần tự                                                                               |
+| Artwork trong UI         | Giải mã đúng 54 thumbnail/biến thể và đủ 108 ảnh full; atlas chỉ đọc một trang toàn kho, mỗi loài đọc trang riêng      |
+| Code                     | Typecheck backend/frontend, lint, syntax 43 web modules, format baseline 111 tệp và diff whitespace đạt                |
+| Build                    | Local và staging dry-run đạt; không deploy                                                                             |
+| Hiệu năng                | Benchmark D1 và ba mẫu cho mỗi registry ảnh trên localhost/mạng 100 ms, 256 KiB/s đạt; cách đo và trước/sau ở vận hành |
 
-## Kết quả kiểm chứng cuối
+Log local được Git bỏ qua: `.wrangler/goal-audit-20261021/batch3-main-tests.log`, `batch3-browser-tests.log`; bản tổng hợp `batch3-results.json` trong cùng thư mục. Số đo trước/sau phân trang giữ ở `batch1-results.json`; không chạy lại benchmark web để quy thay đổi thời gian cho việc tách module backend. Log PowerShell có thể là UTF-16LE; dùng `Get-Content` để đọc.
 
-| Kiểm tra | Kết quả |
-| --- | --- |
-| Backend/unit/integration | 330 đạt, 0 fail/skip/cancel |
-| Experiments | 25 đạt, 0 fail/skip/cancel |
-| Chrome browser | 41 đạt, 0 fail/skip/cancel; log `trial-results/linh-thu/browser-art-v3.log` |
-| Catalog trong UI | Phân trang 24 → 48 → 54 cá thể fixture; giải mã thumbnail thật và mở đủ 108 ảnh full đúng loài/dạng/độ thuần |
-| Kiểm ảnh | 108 nguồn không lỗi import; 72 ảnh tham chiếu giữ nguyên; cổng 72 +18 +18 đạt |
-| Code | Typecheck backend/frontend, lint, syntax 37 modules, format 109 files đạt |
-| Build local/staging | Cả hai dry-run đạt, không phát hành; 607,70 KiB / gzip 136,37 KiB; 505 web files |
+Lần browser trước khi cập nhật bài artwork đạt 83/84 vì fixture cũ yêu cầu vét ba trang và không hỗ trợ overview/lọc loài. Sau phê duyệt bổ sung, bài kiểm dùng fixture chung, giữ toàn bộ 108 assert ảnh và suite đầy đủ đạt 84/84. Hai ca từng dao động trong baseline cũng đạt ở lần chạy tuần tự này; kết quả đó không chứng minh đã sửa nguyên nhân dao động.
 
-Lần browser đầu đạt 40/41 vì bài task tuyệt kỹ đợi dialog đóng thay vì đợi mutation hoàn tất. Dialog xác nhận đóng trước khi gửi xong; đã sửa bài kiểm để đợi thông báo thành công. Suite đầy đủ chạy lại đạt 41/41; không thay hành vi sản phẩm để né lỗi kiểm thử. Ảnh chụp bộ mới ở `trial-results/linh-thu/art-v3/`, gallery mobile ở `art-gallery-390-dark.png`/`art-gallery-390-light.png`, các luồng API/D1 ở `live-summon-390.png`, `live-tower-390.png`, `live-ultimate-390.png`.
+Sau đợt dọn được duyệt: cả bảy bài trong `tests/integration/telegram.test.ts` đạt, giữ nguyên mọi assertion giao dịch; typecheck hai phía, lint, syntax, format baseline và diff whitespace đạt. Asset verifier vẫn đủ 72 tham chiếu +108 ảnh v3; 552 tệp tài nguyên được bảo vệ và 1.789 tệp chưa theo dõi giữ nguyên hash. Đợt 3 sửa liên kết `MODEL_VERDICT.md` đã hỏng từ trước; kiểm lại toàn bộ liên kết Markdown local không còn đích thiếu hoặc chỉ có trong file chưa theo dõi.
 
-## Chạy và kiểm tra
+Build local/staging dry-run sau dọn đều đạt: Worker 620,01 KiB / gzip 139,34 KiB, 512 tệp assets. Không deploy. Kết quả riêng trong `.wrangler/goal-audit-20261021/batch2-results.json`; không cộng bảy bài chạy riêng vào tổng suite ở checkpoint trên.
 
-1. Dùng DB local/tạm, áp migrations theo thứ tự đến 0041. Không dùng bản sao chứa dữ liệu riêng tư để tạo ảnh review.
-2. Chạy `npm.cmd run dev`, mở địa chỉ Wrangler hiển thị. Tài khoản thật phải đăng nhập theo luồng Telegram/trình duyệt hiện có.
-3. Tài khoản chưa có linh thú bắt đầu trống; không có nút cấp thú/vé thử trong sản phẩm. Bộ fixture trình duyệt ở `tests/browser/linh-thu-fixture.mjs` chỉ chạy trong harness kiểm thử.
-4. Xem demo độc lập đã duyệt ở `docs/prototypes/linh-thu/index.html`; số dư và dữ liệu mẫu ở đó không phải dữ liệu runtime.
+Sau tách D1: toàn bộ 354 backend, 25 experiments và 84 browser tuần tự đều đạt, không fail/skip/cancel. Đồ thị import thực thi từ Worker có 84 module, không có vòng hoặc import không resolve; trước đó một cụm vòng gồm tám module trong 82 module reachable. Phân tích tính cả hai module mới, export-from và dynamic import chuỗi literal; không gặp dynamic import chưa xác định trong `src`.
 
-## Checklist nghiệm thu bằng hành vi
+Đối chiếu AST trước/sau xác nhận 16 phương thức đọc, bốn phương thức ghi/điều phối và ánh xạ hàng giữ nguyên nội dung; hai hàm bảo trì chỉ chuyển nơi khai báo. Các hàm chuẩn bị hiệu ứng chỉ đổi Store sang Reader, tiếp tục trả statement cho giao dịch có guard. Giữ đủ 247 assertion tích hợp cũ và thêm bốn assertion cho reader chỉ đọc; không bỏ hoặc nới kỳ vọng. Cả 33 ca benchmark D1 giữ nguyên số truy vấn và byte trả về so với đợt 1: API chính 22, các ca backlog tối đa 40, gate 50. Bộ đọc thuần không thực thi batch trong ca kiểm riêng.
 
-| Luồng | Điều cần thấy | Bằng chứng tự động hiện có |
-| --- | --- | --- |
-| Điều hướng | Linh thú có đúng bốn tab, Lò đan là nút; tháp nằm trong Habit | Browser nhiều viewport, không lặp danh sách habit |
-| Luyện | 4 habit đạt 3: +1,2 thực, +0,4 xám; xám từ phải; nghỉ +0/+0 | Unit công thức/ngày cuối, integration quyết toán |
-| Thuần | Chưa đầy chỉ tạm tính; đầy ≥95% mở Thức tỉnh, chính xác 100% mở tuyệt kỹ | Unit ngưỡng và rounding, UI dùng số gốc |
-| Ảnh theo độ thuần | T4 hoàn tất đủ điều kiện dùng đúng ảnh 95%/100%; T1–T3 và triệu hồi T1 dùng thường | 7 unit art; browser chọn ảnh qua các màn; bài catalog tải/giải mã 108 ảnh runtime thật qua bộ sưu tập phân trang và chi tiết |
-| Chuyển thú | Có hiệu lực ngày kế tiếp, ngày cũ vẫn tính con cũ rồi khóa đúng tiến độ | Integration chọn/hủy/đổi muộn, không làm mất xám |
-| Đồng hành | Độc lập luyện; thưởng thuộc cá thể của ngày gốc | Integration task/ngủ/habit/kết hợp, vai trò theo ngày |
-| Tuyệt kỹ | Một lần/tài khoản/tuần; mục tiêu và giao ước khóa trước; có tiến độ và hạn | Domain 18 bộ, integration các hook thực, browser tiến độ |
-| Reset | Tiêu đúng một đan; lượt T1 mới; giữ lịch sử; hủy hiệu ứng và không trả hạn mức tuần | Integration reset, companion chờ và quyền cứu bẫy |
-| Triệu hồi | 20 vé đổi 1; ×10 nguyên tử, cá thể trùng riêng, SSR/UR đúng bảo hiểm | Unit ranh giới, integration cạnh tranh/rollback/replay |
-| Pyrodaemon | Trả vé trước, giữ ba ứng viên; chọn một mới cập nhật bảo hiểm | Integration ×10 và lựa chọn lưu trên DB |
-| Quay thường | Hychroma 3 chọn 2, Cheerstella 2 chọn 1; chỉ nhận ô đã chọn | Integration giới hạn 10 lượt/ngày, không trừ lại vé |
-| Tháp | 4→4→3→2; dừng nhận tổng 2/3 vé thường hoặc 1/2 vé triệu hồi | Integration từng tầng/dừng/bẫy/race/qua ngày; browser luồng nhận |
-| Điều kiện tháp | Habit và task phân biệt; snapshot một lần, sửa log không thu hồi lượt/quà | Integration snapshot, task hoàn chỉnh, log undo |
-| Lò đan | 30 ngày đủ, neutral dừng, miss reset; 40%, mẻ thứ ba bảo hiểm sau hai fail | Domain và integration receipt crafting/reset |
-| Mất phản hồi | Reload vẫn giữ request; kiểm tra receipt trước thao tác tiếp | Browser triệu hồi lỗi phản hồi sau commit và reload; DB lost ack |
-| Phản hồi muộn | Đóng bảng hoặc mở bảng khác không bị tải cũ chiếm lại; đan vẫn vào kho | Browser chặn tải collection/task/quay thường/tháp và phản hồi luyện đan |
-| Tài khoản trống/thiếu vé | Không cấp dữ liệu mẫu; triệu hồi khóa, đổi vé chỉ nhận số nguyên trong số dư | Browser bộ sưu tập trống, 19 vé không đổi được, số lẻ/vượt số dư bị chặn |
-| Nhiều cửa sổ | Version cũ bị từ chối, số dư tải lại, không hiện kết quả hoặc tiêu vé lần hai | Hai Chrome clients với API fixture có version guard; atomicity D1 kiểm riêng |
-| Quota thay đổi | 4→1 giữ ID, có hiệu lực từ thứ Hai sau; không viết lại tạp chất tuần cũ | Integration D1 hai tuần với log, sửa quota và quyết toán luyện/đan thật |
-| Nâng cấp | Không thay dữ liệu nền, không cấp thưởng/thú mẫu | Fixture nâng cấp 0041 so hash mọi bảng cũ; restore rehearsal |
-| Cá thể trùng loài | Thấy mã ngắn, độ thuần, điểm thực/xám, vai trò và trạng thái khóa trước khi chọn/reset | Browser ba cá thể cùng loài, 100%/95%/đã khóa; chữ gấp đôi ở 360px |
-| Xuyên suốt API/D1 | Giao diện dùng production API và D1 tạm; ví/lượt luyện/quà/receipt khớp sau từng bước | `tests/browser/linh-thu-live.test.mjs`, gồm cả tuyệt kỹ và báo ngủ qua UI |
-| Cron có backlog ngủ | Chốt từng ngày, giữ thông báo chủ động chờ xác định vắng mặt; vẫn gửi trả lời và xử lý tiếp luyện | Benchmark 30 habit/bốn job, hồi quy nhiều lượt cron và hai tin đã xếp hàng |
+Build sau tách đạt 620,20 KiB / gzip 139,56 KiB, vẫn 512 assets; đây không phải đợt giảm bundle. Không deploy hoặc đổi schema. Bằng chứng cấu trúc, đối chiếu và bảo toàn ở `batch3-import-actual.json`, `batch3-extraction-check.json`, `batch3-benchmark-comparison.json`, `batch3-integrity.json` trong thư mục audit. Các kết quả local này không xác minh latency D1 remote hoặc nghiệm thu trên thiết bị thật.
 
-Đánh dấu ở bảng là **phạm vi kiểm tra tự động**, không thay thế duyệt của người dùng hoặc kiểm tra sản phẩm trên dữ liệu thật.
+Đối chiếu cuối đợt 3: mọi tệp tracked ngoài 14 tệp được duyệt giữ hash. Trong 1.789 tệp untracked có sẵn, 1.771 giữ hash; suite browser đã tạo lại 18 ảnh/báo cáo QA tại `output/linh-thu-reveal-integration/` và `output/tower-implementation-20261020/screenshots/`. Không được báo toàn bộ output giữ nguyên. Snapshot chỉ có hash, tìm bản trùng trong output và `.wrangler` không thấy nên chưa khôi phục được nội dung 18 bản QA trước lần chạy. Đây là lý do cần chuyển nơi ghi bằng chứng kiểm thử sang thư mục kết quả riêng cho từng lần chạy.
 
-## Luồng chạy production API và D1 tạm
+## Chạy local và kiểm lại
 
-Chạy `node --test tests/browser/linh-thu-live.test.mjs`. Bài này dùng Chrome thật, router `miniAppApi`, xác minh chữ ký credential giả lập, services/stores sản phẩm và D1 Miniflare áp đủ migrations. Phần ghép đôi đăng nhập vẫn là handshake của harness; đây không phải phép kiểm đăng nhập Telegram ngoài mạng. Không gửi tin hoặc dùng dữ liệu thật.
+1. Dùng Node 24 trở lên và dependency từ lockfile. Trên PowerShell gọi `npm.cmd`/`npx.cmd`.
+2. Dùng DB local/tạm, áp **toàn bộ** migrations theo thứ tự (mã nguồn hiện đến 0042). Các integration tests dựng Miniflare riêng; không trỏ vào DB hoặc bản sao có dữ liệu riêng tư.
+3. `npm.cmd run dev` mở ứng dụng thật; đăng nhập theo luồng Telegram/trình duyệt hiện có. Tài khoản mới bắt đầu trống, không có nút cấp thú/vé thử.
+4. Dữ liệu điều khiển thuộc `tests/browser/linh-thu-fixture.mjs`; prototype HTML và playground cũ đã được gỡ.
+5. Chạy `npm.cmd run test:all`, `node --test --test-concurrency=1 tests/browser/*.test.mjs`, các scripts typecheck/check/lint/format và dry-run được liệt kê trong vận hành.
+6. `node scripts/build-linh-thu-assets.ts --require-complete` xác minh nguồn/hash/registry mà không ghi. Thêm `--write` mới dựng lại tài nguyên, cần đúng phạm vi thay đổi đã duyệt.
 
-Luồng kiểm: tài khoản trống → đổi 40 vé thường thành 2 vé triệu hồi → triệu hồi hai cá thể → mất phản hồi sau commit, reload và đọc receipt, không POST lại → chọn luyện hiệu lực ngày sau → log habit qua UI → qua ba tầng tháp và nhận đúng 1 vé triệu hồi → đổi luyện rồi khóa con cũ đúng 1 điểm → luyện đan bảo hiểm → reset giữ lượt cũ trong lịch sử → chọn đồng hành hoàn mỹ qua ngày → kích hoạt tuyệt kỹ Frostluna → báo ngủ trên UI tiêu đúng một lượt và nhận đúng thưởng.
+## Phủ hành vi
 
-Giới hạn fixture được khai báo trong bài: ví 40 vé ban đầu, task hoàn chỉnh được tạo/hoàn tất bằng task store thật, lò đan được đưa tới 30 ngày/hai lần thất bại, một Frostnip được đưa tới hoàn tất 100%. Test đọc lá an toàn từ DB để đi hết tháp; vị trí bẫy không đi qua API cho client. Các fixture này không phải quyền cấp quà trong sản phẩm, không thay bằng chứng domain/integration cho 30 ngày tích đan hoặc 18 bộ kỹ năng.
+| Luồng                   | Bằng chứng và điều kiện cần giữ                                                                                                                              |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Luyện và quota habit    | Domain/tích hợp: điểm thực/xám theo ngày; neutral không phạt; quota 4→1 giữ ID, hiệu lực thứ Hai sau; clipping ngày cuối giữ tối thiểu 0,1 xám khi còn thiếu |
+| Vai trò và quyết toán   | Chọn/hủy/đổi muộn; ngày cũ tính con cũ rồi khóa đúng tiến độ; đồng hành độc lập luyện; thưởng gắn đúng cá thể/ngày gốc                                       |
+| Hiển thị lựa chọn chờ   | Browser: cá thể mới hiện sau server xác nhận, nhãn ngày mai; vẫn truy cập con hôm nay; refresh/qua ngày, lỗi và sheet mới không bị phản hồi cũ chiếm         |
+| Tiến hóa và khám phá    | Domain/integration/browser: đủ điểm thực mới tăng từng T; dạng hiện tại tách lịch sử; reset giữ khám phá; không tải/lộ dạng tương lai                        |
+| Năng lực theo T         | Browser đủ 18 lộ trình, nêu đơn vị đếm và mức tăng từng T; luyện đầy T4 tách 95%/100%; tiến độ lưu và rollover Hootlet                                       |
+| Hiệu ứng tiến hóa       | Browser đủ 18 loài, nhịp T2/T3/T4, commit trước cảnh, skip/replay/Escape, kết thúc tự động, giảm chuyển động, ẩn trang và lỗi ảnh/canvas                     |
+| Kỹ năng task            | Pyropup, Zappur, Flameow, Manteeny, Voltfawn: hook hoàn thành hợp lệ, hạn mức, mục tiêu, combo, lựa chọn thưởng và rollback                                  |
+| Habit/ngủ/kết hợp       | Rubblet, Frostnip, Punchimp, Shardsnail, Fluffle, Goonbug, Hootlet, Funglet: hook thật, cùng ngày gốc, bảo hộ trước phạt, tiến độ tuần/tích lũy và reset     |
+| Quay/ghép/đột phá       | Skinklet, Maskfry, Humbug, Gibber, Cheerling: hook API/D1 thật, giới hạn 10 lượt, lựa chọn và hoàn đúng tổn thất                                             |
+| Tuyệt kỹ                | 18 loại ở domain/integration; một lần/tài khoản/tuần, mục tiêu/giao ước khóa trước, hạn và budget tuần gốc; reset không trả khóa tuần                        |
+| Triệu hồi               | Tỷ lệ/bảo hiểm và UR ưu tiên, đổi 20:1, ×10 nguyên tử, cá thể trùng, Pyro ba ứng viên lưu server và cập nhật bảo hiểm đúng con nhận                          |
+| Reset và đan            | Chuỗi 30 ngày, neutral dừng/miss đứt, 40% và bảo hiểm mẻ ba; tiêu một đan, T1 mới, giữ lịch sử, hủy hiệu ứng và companion chờ đúng lượt                      |
+| Tháp                    | 4→4→3→2, snapshot habit +task, race/replay/qua ngày, dừng/claim tổng quà, bảo hộ một lần tầng 1–3, không cứu tầng bốn; API không lộ bẫy                      |
+| Phục hồi mutation       | Browser/API/D1: mất phản hồi sau commit rồi reload đọc receipt, không POST lại hoặc tiêu vé lần hai; nút phục hồi khóa khi request còn chạy                  |
+| Phản hồi đọc đến muộn   | Collection, picker task 405 mục, lựa chọn quay và tháp không mở lại sheet đã đóng hoặc thay sheet mới; chọn task giữ ID qua phân trang                       |
+| Luyện đan đến muộn      | Cập nhật kho và thông báo kết quả mà không chiếm sheet mới                                                                                                   |
+| Hai cửa sổ              | API fixture có version guard kiểm UI không tiêu/hiện kết quả lần hai; atomicity/rollback D1 được kiểm riêng                                                  |
+| Bộ sưu tập lớn          | 2.400 cá thể/18 loài: overview theo lượt hiện tại, owner isolation, form/purity/tie, cursor trùng thời điểm, trang loài và picker toàn kho độc lập           |
+| Ảnh                     | Manifest đủ 108 nguồn và 216 đầu ra full/thumbnail, 72 nguồn tham chiếu giữ hash; browser chọn đúng thường/95%/100%, không mutation khi xem                  |
+| Cron/backlog            | Benchmark bốn job, 30 habit; giới hạn truy vấn, mỗi invocation tối đa một ngày ngủ, gửi trả lời nhưng hoãn thông báo chủ động khi chưa chốt vắng mặt         |
+| Nâng cấp và hồi quy nền | Migration giữ bảng/dữ liệu nền, restore rehearsal, task/habit/lịch/nhắc/ngủ/check-in/quay/vật phẩm/đột phá/auth và guards giao dịch                          |
 
-Muốn ghi ảnh và bằng chứng DB, đặt biến môi trường `LINH_THU_CAPTURE=1` trước cùng lệnh. Đã chạy chế độ này và xem trực tiếp `trial-results/linh-thu/live-summon-390.png`, `live-tower-390.png`, `live-ultimate-390.png`. `live-flow-proof.json` lưu loại fixture, danh sách request/receipt đã đối chiếu, hai POST triệu hồi kể cả lúc phục hồi, ID lượt trước/sau reset và tuyệt kỹ còn hai lượt sau báo ngủ. Các file review này nằm trong thư mục được Git bỏ qua.
+Các bảng này mô tả điều đã được assert, không suy từ việc chỉ có tên kỹ năng trong catalog. Bộ luật domain nằm trong `tests/unit/linh-thu*.test.ts`; giao dịch/hook trong `tests/integration/linh-thu*.test.ts`; UI trong `tests/browser/linh-thu*.test.mjs`.
 
-## Bằng chứng giao diện và hiệu năng
+## Luồng UI → API sản phẩm → D1 tạm
 
-- 360/390/768/1024/1440px: bốn tab, touch target, ảnh tải được, thanh xám neo phải, không tràn ngang.
-- Chữ gấp đôi: nhãn từng tab ở trong đúng nút; tên/nhãn nhân vật không chồng ảnh. Sáng/tối được kiểm qua `data-theme` của ứng dụng.
-- Bàn phím, Escape, reduced motion và luồng tháp được kiểm trong Chrome thật.
-- Phân trang task tuyệt kỹ kiểm 405 task, giữ mục tiêu đã chọn khi tải thêm và gửi đúng ID từ hai trang. Đóng trong lúc tải không mở lại bảng; mở Lò đan trong lúc tải collection không bị bảng cũ thay thế.
-- Đã xem `duplicate-picker-large-dark-360.png` và `duplicate-collection-dark-360.png` trong cùng thư mục review: các cá thể cùng loài vẫn phân biệt được, nội dung không che ảnh hoặc tràn khi chữ gấp đôi. Lượt khóa không còn được ghi là độ thuần tạm tính.
-- Ảnh đã xem trực tiếp ở `trial-results/linh-thu/training-current-390.png`, `training-large-dark-390.png`, `companion-current-390.png`, `companion-current-1440.png`; thư mục này được Git bỏ qua.
-- `node scripts/benchmark-linh-thu.ts`: 24 và 2.400 cá thể; GET chính 21 truy vấn/~9,7 KB; collection 24 con 1 truy vấn/~4,5 KB; tháp 10 truy vấn/~720 B. Có backlog và đồng hành: bước chốt ngày 39, bước kết hợp 37, sau đó 19 truy vấn; giữ dưới mức 50. Bốn slot cron yên tải 11–13 truy vấn. Với 30 habit và công việc thật: chốt tháp 25, luyện 40, kết hợp 28, hết hạn 23. Khi có chốt ngủ, hoãn bảo trì rồi xử lý tiếp: 24/32/40, không mất tiến độ. Benchmark và hồi quy gửi tin/chốt ngủ nằm trong `tests/integration/linh-thu-cron.test.ts`, tự chạy với suite chính. Thông báo chủ động được giữ chờ đánh giá xong vắng mặt; hồi quy cũ đã chuyển sang kiểm nhiều lượt cron với điều kiện không gửi sai ở mọi lượt. Đây là đo Node/SQLite local, **không phải latency D1 remote, CPU Worker hoặc kiểm tải cực đại của mọi cron job**.
-- `node scripts/build-linh-thu-assets.ts --require-complete` đạt: 72 thường, 18 thức tỉnh, 18 hoàn mỹ. Kiểm nguồn/đầu ra, kích thước, alpha, hash, registry và provenance. Thêm `--write` khi chủ động dựng lại bản web từ nguồn. CI có cùng cổng kiểm đủ ảnh.
-- Log hiện hành: `trial-results/linh-thu/test-all-art-v3.log`, `browser-art-v3.log`, `build-art-v3.log`, `staging-art-v3.log`. Browser catalog dùng ảnh thật, nhưng dữ liệu sở hữu là fixture; không thay duyệt thị giác của người dùng.
+Chạy `node --test tests/browser/linh-thu-live.test.mjs`. Bài dùng Chrome, router sản phẩm, credential giả lập, services/stores thật và Miniflare áp toàn bộ migrations. Phần handshake đăng nhập do harness cung cấp; không kiểm đăng nhập Telegram ngoài mạng.
 
-### Tải web sau thay ảnh
+Luồng: tài khoản trống → đổi vé → triệu hồi → mất phản hồi sau commit/reload/receipt → chọn luyện qua ngày → log habit → tháp/nhận quà → chuyển luyện/khóa lượt cũ → đan/reset giữ lịch sử → đồng hành hoàn mỹ/tuyệt kỹ/báo ngủ. Test đối chiếu ví, lượt luyện, quà và receipts sau các bước.
 
-Đã chạy `node scripts/benchmark-linh-thu-web.mjs --capture` và `node scripts/benchmark-linh-thu-web.mjs --throttled --samples=3`. Mỗi biến thể dùng ba profile Chrome mới ở390px, cùng runtime/API fixture và kho2.400 cá thể. Baseline dùng registry ảnh tham chiếu; candidate dùng artv3. So sánh này đo chi phí thay ảnh, **không phải bản remote trước tính năng**.
+Fixture cấp 40 vé ban đầu, tạo/hoàn tất task bằng store thật, đưa đan tới 30 ngày/hai fail và một Frostnip tới 100%. Test đọc bẫy trực tiếp từ DB để đi hết tháp; API không trả bẫy cho client. Đây không phải quyền cấp quà trong sản phẩm hoặc thay kiểm tra 30 ngày/18 kỹ năng ở domain/integration.
 
-| Mạng mô phỏng 100ms/256KiB mỗi giây, trung vị3mẫu | Tham chiếu | Artv3 |
-| --- | --- | --- |
-| Mở Hôm nay từ navigation | 2.562,6ms | 2.615,1ms |
-| Chuyển sang Đang luyện, ảnh trong viewport giải mã xong | 580,5ms | 564,0ms |
-| Mở Bộ sưu tập, ảnh trong viewport giải mã xong | 298,7ms | 315,9ms |
-| Body ảnh khi mở màn luyện | 57.630byte | 56.578byte |
-| Body ảnh khi mở trang collection đầu | 38.886byte | 39.240byte |
+Đặt `LINH_THU_CAPTURE=1` khi cần ghi ảnh và `live-flow-proof.json` trong `trial-results/linh-thu/`. Tệp có dữ liệu thử, request/receipt và ID trước/sau reset, không có dữ liệu tài khoản thật.
 
-Hôm nay tải **0 ảnh linh thú**. Collection chỉ dựng24/2.400 cá thể và18 loài trong atlas, mọi ảnh collection là thumbnail128px, tải lười; tại checkpoint mạng mô phỏng chỉ6request ảnh đã hoàn tất. Khi vào màn luyện, ảnh lớn512px và preview tải theo màn. Registry mới làm phần body tải ban đầu tăng10.411byte trong server không nén. Không kết luận chênh lệch vài chục ms là cải thiện/tụt hiệu năng có ý nghĩa thống kê; benchmark gồm polling/khung render và không mô phỏng CDN, cache hoặc latency D1 remote.
+## Giao diện, ảnh và giới hạn đo
 
-Báo cáo chi tiết: `trial-results/linh-thu/web-performance.json`, `web-performance-throttled.json`; có từng sample, URL ảnh, decoded/transfer bytes và API calls. Benchmark kiểm không tràn, chỉ một GET collection, không mutation. Tùy chọn `--capture` ghi ảnh UI để review. Đo backend/service/store thật trên SQLite được giữ riêng ở `performance.json`.
+Đã kiểm Chromium ở các viewport 320–1440px, sáng/tối, chữ lớn, bàn phím/Escape, focus, giảm chuyển động, offline/khôi phục và phản hồi muộn. Safe area/visibility dùng mô phỏng; chưa thay nghiệm thu iPhone/Telegram thật. Ảnh chụp tại [trang review lịch sử](../output/linh-thu-review/index.html) phản ánh ngày chụp, không phải mọi chỉnh sửa UI sau đó.
 
-## Mỹ thuật hiện hành
+[Gallery 108 ảnh](../output/imagegen/catalog-v3/index.html), [quyết định mỹ thuật](LINH_THU_ART_APPROVALS.md) và [hướng dẫn nguồn](assets/linh-thu/art/README.md) xác định bộ hiện hành. Full WebP 512px tổng 3.871.966 byte, thumbnail 128px tổng 651.000 byte. Kiểm hash/alpha không thay xem trực tiếp hình thể, độ rõ, điểm neo hoặc duyệt thị giác.
 
-Đã hoàn tất và tích hợp 108 ảnh nguồn PNG 1024px alpha. Có 95 ảnh tạo mới trong đợt catalog v3, 13 ảnh tái sử dụng có hồ sơ gốc: tám dạng UR, ba bản Stormlion đã duyệt và hai bản Pyrodaemon v5 dùng tạm. Không dùng lại SSR v1 hoặc các bản độ thuần UR v2/v3/v4 đã bị loại. Toàn bộ 72 ảnh tham chiếu giữ nguyên hash; đây là dữ liệu đối chiếu, không được đếm thành ảnh thiết kế mới.
+Benchmark web so cùng runtime/API fixture với registry tham chiếu và registry v3, profile Chrome mới; đo ảnh/module thật, atlas/trang loài/tải tiếp. Backend benchmark dùng service/store thật trên SQLite local. Báo cáo ở `trial-results/linh-thu/performance.json`, `web-performance.json`, `web-performance-throttled.json`; dữ liệu trước/sau và giới hạn truy vấn được giữ trong vận hành. Không suy chênh lệch thời gian local thành cải thiện latency D1 remote, CDN/cache, CPU Worker hoặc thiết bị người dùng.
 
-Nguồn, prompt, model và trạng thái từng ảnh nằm trong `docs/assets/linh-thu/art/MANIFEST.json`; bộ dựng xuất registry `web/assets/linh-thu/art.js` và `ART.json`. Bộ mới có full 512px và thumbnail 128px WebP, tổng lần lượt 3.871.966 và 651.000 byte. Tên có hash tránh cache cũ. Bản thường/95%/100% có URL riêng; preview T1–T3 không dùng ảnh độ thuần. Xem [quy trình thay từng ảnh](assets/linh-thu/art/README.md).
+## Phát hành lịch sử
 
-Ảnh thực tế được tạo bằng CLI chính thức của skill imagegen qua gateway Cockpit local, model `gpt-image-2.5`; provenance ghi `imagegen_cli_cockpit`, không ghi nhầm thành công cụ tích hợp `image_gen`. Giữ cấu hình gateway hiện có, không dùng khóa OpenAI mới hoặc huấn luyện trọng số mô hình.
+[Hồ sơ phát hành 19/10](LINH_THU_RELEASE.md) và [VERIFICATION.json của catalog](../output/imagegen/catalog-v3/VERIFICATION.json) giữ các số liệu đúng tại thời điểm đó (330 main, 25 experiments, 41 browser; migration 0041). Chúng không được ghi đè bằng kết quả suite mới. Trạng thái mã nguồn và ghi nhận phát hành mới hơn nằm trong [HANDOFF](HANDOFF.md).
 
-Đã xem các bảng T1–T4 và độ thuần từng rank ở 64/128px, nền sáng/tối; kiểm ảnh trong giao diện mobile. 95% cố ý khác nhẹ; một số bản 100% như Rockong vẫn thay đổi ít. Các bản này được dùng tạm theo yêu cầu, không tự ghi là người dùng đã duyệt thị giác từng con. [Trang review hiện hành](../output/imagegen/catalog-v3/index.html) lọc rank, đổi nền và mở nguồn 1024px. Bộ SSR v1 chỉ còn là lịch sử đã loại.
-
-Bộ ảnh không thay đổi luật luyện, độ thuần hoặc kỹ năng. Có thể sửa một ảnh sau này bằng entry manifest và phiên bản mới rồi dựng lại; không cần reset cá thể hay sửa dữ liệu người chơi.
-
-## Quy trình duyệt phát hành đã hoàn tất
-
-- Người dùng review bản local, bộ ảnh và luồng sản phẩm; chỉnh góp ý nếu có. 95%/100% được phép tiếp tục dùng tạm.
-- Đối chiếu kết quả kiểm chứng và môi trường phát hành; kiểm local không chứng minh latency hoặc CPU Worker trên D1 remote.
-- Review toàn bộ diff, nguồn assets, migration 0041, backup/restore và rủi ro còn lại.
-- Chỉ sau khi bản review đủ mới xin xác nhận riêng cho deploy/migration remote. Quyền deploy của đợt cleanup trước không có hiệu lực cho tính năng này.
-
-Checkpoint trước release chỉ còn0041 chưa áp; báo cáo lịch sử ở `trial-results/linh-thu/staging-readiness.json`. Sau xác nhận **“Duyệt bản hiện tại và cho phép phát hành staging”**, đã backup mới, diễn tập restore/nâng cấp giữ nguyên102 bảng cũ, áp0041 và deploy version `ff342cb0-4a7c-4b6b-b43c-bc3297a7a559`. Kiểm sau deploy: 402/402 file khớp hash, tám API chưa đăng nhập trả401, Chrome 390/1440px không lỗi JS/tràn ngang. Các luồng ghi có đăng nhập chỉ được kiểm local qua API/D1 tạm; không ghi dữ liệu tài khoản thật để QA. [Chi tiết và bằng chứng phát hành](LINH_THU_RELEASE.md).
+Các lần kiểm staging trước chỉ đối chiếu GET/auth/hash và màn đăng nhập; không ghi tài khoản thật hoặc gửi tin Telegram để QA. Các thay đổi local trong goal rà soát chưa được deploy. Phát hành/migration remote cần xác nhận riêng và quy trình backup/restore; không dùng lịch sử phê duyệt để cấp quyền cho lần sau.

@@ -147,43 +147,48 @@ export async function achievementStatistics(db: Database, owner: string, now: nu
 export async function unlockAchievements(db: Database, owner: string, now: number) {
   const stats = await achievementStatistics(db, owner, now);
   const earned = achievementRules.filter((r) => stats[r.kind] >= r.target);
-  if (earned.length)
-    await db.batch(
-      earned.map((r) =>
-        query(
-          db,
-          'INSERT OR IGNORE INTO achievements(owner,code,unlocked_at) VALUES(?,?,?)',
-          owner,
-          r.code,
-          now,
-        ),
-      ),
-    );
+  if (!earned.length) return;
+  const rows = JSON.stringify(
+    earned.map((rule) => ({
+      code: rule.code,
+      id: 'achievement:' + owner + ':' + rule.code,
+      payload: JSON.stringify({
+        method: 'sendMessage',
+        chat_id: Number(owner),
+        text: '🏅 Mở khóa: ' + rule.label + '\nUi giỏi thế :> tớ tự hào về cậu đấy.',
+      }),
+    })),
+  );
   // One deterministic delivery key per achievement prevents concurrent cron/webhook
-  // unlockers from sending overlapping groups twice.
-  for (const rule of earned)
-    await db.batch([
-      query(
-        db,
-        'INSERT OR IGNORE INTO outbox(id,payload,available) SELECT ?,?,? FROM achievements WHERE owner=? AND code=? AND notified=0',
-        'achievement:' + owner + ':' + rule.code,
-        JSON.stringify({
-          method: 'sendMessage',
-          chat_id: Number(owner),
-          text: '🏅 Mở khóa: ' + rule.label + '\nUi giỏi thế :> tớ tự hào về cậu đấy.',
-        }),
-        now,
-        owner,
-        rule.code,
-      ),
-      query(
-        db,
-        'UPDATE achievements SET notified=1 WHERE owner=? AND code=? AND EXISTS(SELECT 1 FROM outbox WHERE id=?)',
-        owner,
-        rule.code,
-        'achievement:' + owner + ':' + rule.code,
-      ),
-    ]);
+  // unlockers from sending overlapping groups twice. Three statements cover all
+  // earned rules, and the unlock/outbox/notified transition is one transaction.
+  await db.batch([
+    query(
+      db,
+      "INSERT OR IGNORE INTO achievements(owner,code,unlocked_at) SELECT ?,json_extract(value,'$.code'),? FROM json_each(?)",
+      owner,
+      now,
+      rows,
+    ),
+    query(
+      db,
+      `INSERT OR IGNORE INTO outbox(id,payload,available)
+       SELECT json_extract(j.value,'$.id'),json_extract(j.value,'$.payload'),?
+       FROM json_each(?) j JOIN achievements a ON a.owner=? AND a.code=json_extract(j.value,'$.code')
+       WHERE a.notified=0`,
+      now,
+      rows,
+      owner,
+    ),
+    query(
+      db,
+      `UPDATE achievements SET notified=1 WHERE owner=? AND notified=0
+       AND code IN (SELECT json_extract(value,'$.code') FROM json_each(?))
+       AND EXISTS(SELECT 1 FROM outbox WHERE id='achievement:'||achievements.owner||':'||achievements.code)`,
+      owner,
+      rows,
+    ),
+  ]);
 }
 export async function boardSelection(db: Database, owner: string): Promise<BoardSelection> {
   const row = await query(

@@ -1,6 +1,6 @@
 # Pyrodaemon — thiết kế lại độ thuần v5
 
-Ngày 19/10/2026. Bộ thử mới theo yêu cầu suy nghĩ lại thiết kế 95% và 100% của riêng Pyrodaemon; các bản UR độ thuần v2/v3/v4 đã bị loại vẫn giữ trạng thái đó. Đây là đề xuất, chưa được duyệt. Không đổi gameplay.
+Ngày 19/10/2026. Hồ sơ gốc của lần thiết kế lại 95% và 100% cho riêng Pyrodaemon ngày 19/10. Sau lần tạo, hai bản v5 đã được tái sử dụng có điều kiện trong catalog v3 và manifest hiện hành; xem [REUSED.json](../catalog-v3/REUSED.json) và [trạng thái duyệt](../../../docs/LINH_THU_ART_APPROVALS.md). Không suy thành duyệt thị giác cuối từng ảnh. Các bản UR độ thuần v2/v3/v4 vẫn bị loại; gameplay không đổi.
 
 ## Vấn đề của các bản trước
 
@@ -37,4 +37,4 @@ Giữ đúng thân, tư thế và ba biểu cảm. Tổ chức bờm lửa thàn
 
 Đã xem trực tiếp raw, bảng so sánh và thumbnail. Raw đều RGBA 1254×1254 có alpha thật; bản chuẩn hóa 1024×1024 có lề trong suốt tối thiểu 82px. Ba mặt, chân, tai và đuôi đủ trong khung. 95% cố ý khác nhẹ: ở 64px cần nhãn trạng thái. 100% đọc được các ngọn lửa và lõi ngà trên cả hai nền; hình lửa cao hơn T4, không coi điều này là đã được duyệt. Ảnh mắt 100% vẫn gần T4 hơn mắt hổ phách 95%; đây là giới hạn của đầu ra hiện tại, không tuyên bố giữ chính xác mọi chi tiết prompt.
 
-Đây là bộ thử mới, chưa được duyệt, chưa đưa vào sản phẩm. Các bộ UR 95%/100% v2/v3/v4 vẫn bị loại. Nguồn tạo ảnh thực tế là CLI qua Cockpit, không phải built-in image_gen.
+Trạng thái lúc tạo là bộ thử chưa tích hợp; sau đó hai ảnh v5 đã được đưa vào bộ nguồn v3 để dùng tạm theo yêu cầu. Các bộ UR 95%/100% v2/v3/v4 vẫn bị loại. Nguồn tạo ảnh thực tế là CLI qua Cockpit, không phải built-in image_gen.

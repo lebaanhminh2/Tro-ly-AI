@@ -17,6 +17,7 @@ export type BeastSummonChoice = {
 };
 
 export type BeastSnapshot = { state: BeastAccount; version: number; activatedDay: number | null };
+export type BeastCollectionOverview = Record<string, { count: number; best: OwnedBeast }>;
 export type BeastRole = 'training' | 'companion';
 export type BeastRoleSelection = {
   role: BeastRole;
@@ -104,6 +105,7 @@ export interface BeastStore {
     owner: string,
     cursor?: string | null,
     limit?: number,
+    speciesId?: string | null,
   ): Promise<{ beasts: OwnedBeast[]; nextCursor: string | null }>;
   transact<T>(
     owner: string,

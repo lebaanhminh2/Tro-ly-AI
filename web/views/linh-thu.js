@@ -709,7 +709,7 @@ export function renderBeasts(ui, state) {
 function collection(ui, state, root) {
   const { el, button } = ui,
     data = state.beastData;
-  const beasts = state.beastCollection?.beasts ?? [];
+  const beasts = state.beastSpeciesPage?.beasts ?? [];
   const selectedSpecies = beastSpecies(data, state.beastCollectionSpecies);
   if (!selectedSpecies) return speciesCollection(ui, state, root);
   const label = el('div', undefined, 'beast-collection-heading');
@@ -751,14 +751,22 @@ function collection(ui, state, root) {
     grid.append(b);
   }
   root.append(grid);
-  if (state.beastCollection?.nextCursor)
+  if (state.beastSpeciesError)
     root.append(
-      button(
-        state.beastLoading ? 'Đang tải các cá thể…' : 'Tải tiếp các cá thể',
-        () => ui.loadBeasts(true),
-        'secondary',
-      ),
+      el('p', state.beastSpeciesError, 'hint'),
+      button('Thử lại', () => ui.loadBeasts(!!state.beastSpeciesPage, 'species'), 'secondary'),
     );
+  if (state.beastSpeciesLoading && !beasts.length)
+    root.append(el('p', 'Đang tải các cá thể…', 'hint'));
+  if (state.beastSpeciesPage?.nextCursor) {
+    const more = button(
+      state.beastSpeciesLoading ? 'Đang tải các cá thể…' : 'Tải tiếp các cá thể',
+      () => ui.loadBeasts(true, 'species'),
+      'secondary',
+    );
+    more.disabled = state.beastSpeciesLoading;
+    root.append(more);
+  }
   return root;
 }
 function speciesCollection(ui, state, root) {
@@ -772,7 +780,6 @@ function speciesCollection(ui, state, root) {
   );
   root.append(label);
   const atlas = el('div', undefined, 'beast-atlas');
-  const complete = !!state.beastCollection && !state.beastCollection.nextCursor;
   for (const species of catalog) {
     const count = data.speciesCounts?.[species.id] ?? 0;
     const entry = button(
@@ -784,16 +791,9 @@ function speciesCollection(ui, state, root) {
     if (count) {
       entry.dataset.rank = species.rank;
       entry.dataset.species = species.id;
-      const best = (state.beastCollection?.beasts ?? [])
-        .filter((beast) => beast.speciesId === species.id)
-        .map((beast) => beastProgress(data, beast))
-        .sort(
-          (a, b) =>
-            b.form - a.form ||
-            Number(b.perfect) - Number(a.perfect) ||
-            (b.purity ?? 0) - (a.purity ?? 0),
-        )[0];
-      if (complete && best) {
+      const representative = data.collectionOverview?.[species.id]?.best;
+      const best = representative && beastProgress(data, representative);
+      if (best) {
         entry.append(
           image(ui, species, best.form, true, best.perfect, best.awakened),
           el('strong', species.forms[best.form - 1]),
@@ -809,8 +809,6 @@ function speciesCollection(ui, state, root) {
     atlas.append(entry);
   }
   root.append(atlas);
-  if (state.beastCollection?.nextCursor && !state.beastLoading)
-    root.append(button('Tải tiếp bộ sưu tập', () => ui.loadBeasts(true), 'secondary'));
   return root;
 }
 function paw(el) {

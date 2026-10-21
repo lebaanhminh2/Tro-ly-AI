@@ -23,7 +23,7 @@ import { BeastTowerService } from '../application/linh-thu-tower.ts';
 import {
   settleOneCombinedBeastDay,
   settleOneExpiredBeastUltimate,
-} from '../adapters/d1/linh-thu-effects.ts';
+} from '../adapters/d1/linh-thu-maintenance.ts';
 
 export async function runScheduled(
   env: Env,
@@ -93,8 +93,8 @@ export async function runScheduled(
   if (phase === 0) {
     const taskDay = new TaskDayStore(env.DB);
     await taskDay.queuePrompt(env.TELEGRAM_USER_ID, clock.now());
-    await taskDay.activateAutomatic(env.TELEGRAM_USER_ID, clock.now());
-    await new DayPlanStore(env.DB).ensure(env.TELEGRAM_USER_ID, clock.now());
+    const activated = await taskDay.activateAutomatic(env.TELEGRAM_USER_ID, clock.now());
+    if (!activated) await new DayPlanStore(env.DB).ensure(env.TELEGRAM_USER_ID, clock.now());
   } else if (phase === 1) {
     await schedule.queueCheckIns(env.TELEGRAM_USER_ID, clock.now());
     await new RecurrenceStore(env.DB).queueDue(
@@ -133,8 +133,14 @@ export async function runScheduled(
     }
     // Keep the remaining maintenance cadence and per-invocation CPU budget.
     else if (maintenance === 0) {
-      for (const owner of await store.pendingOwners())
-        if (owner === env.TELEGRAM_USER_ID) await processInbox(store, owner, clock, chat, 1);
+      if ((await store.pendingOwners()).includes(env.TELEGRAM_USER_ID)) {
+        await processInbox(store, env.TELEGRAM_USER_ID, clock, chat, 1);
+        await flushOutbox(env, transport, clock.now(), () => clock.now(), undefined, 1);
+        await flushCards();
+        // A recovered command owns this invocation. Optional maintenance waits
+        // for a later slot instead of sharing its transaction/query budget.
+        return;
+      }
       await store.archiveCompleted(env.TELEGRAM_USER_ID, clock.now(), 90, 25);
       await new HealthyStore(env.DB).syncTaskTickets(env.TELEGRAM_USER_ID, clock.now());
       await expireMemory(env.DB, clock.now());

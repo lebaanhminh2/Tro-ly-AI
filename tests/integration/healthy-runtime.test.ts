@@ -8,6 +8,121 @@ import {drawReward} from '../../src/domain/healthy.ts';
 import type {Database} from '../../src/adapters/d1/database.ts';
 import {ScheduleStore} from '../../src/adapters/d1/schedule-store.ts';
 import {breakthrough} from '../../src/domain/healthy.ts';
+import {sqliteDatabase} from '../../scripts/benchmark-habit-runtime.ts';
+
+async function ticketRecoveryFixture() {
+ const raw=new DatabaseSync(':memory:');
+ for(const file of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())raw.exec(readFileSync('migrations/'+file,'utf8'));
+ raw.exec('PRAGMA foreign_keys=ON');
+ let queries=0;
+ const db=sqliteDatabase(raw,()=>queries++),now=Date.parse('2026-10-21T10:03:00+07:00');
+ await new ScheduleStore(db).configure('123','04:30','22:30',0,now);
+ const seed=(id:string,owner='123',status='completed',deleted:number|null=null)=>raw.prepare('INSERT INTO tasks(id,owner,title,status,created,deleted_at) VALUES(?,?,?,?,?,?)').run(id,owner,id,status,now,deleted);
+ return {raw,db,now,seed,reset:()=>{queries=0;},queries:()=>queries};
+}
+
+test('ticket recovery bounds a batch, preserves state and individual receipts, and drains without duplicates',async()=>{
+ const f=await ticketRecoveryFixture();
+ try{
+  const store=new HealthyStore(f.db),ids=Array.from({length:27},(_,i)=>'task-'+String(i).padStart(2,'0')+'"');
+  for(const id of ids)f.seed(id);
+  f.seed('foreign','999');f.seed('active','123','active');f.seed('deleted','123','completed',f.now);
+  await store.mutate('123','seed-balance','fixture',{},f.now,s=>({state:{...s,tickets:7,qi:42},result:{}}));
+  const before=await store.read('123');f.reset();
+  await store.syncTaskTickets('123',f.now);
+  assert.ok(f.queries()<=8,`25 awards used ${f.queries()} queries`);
+  let account=await store.read('123');
+  assert.deepEqual(account,{state:{...before.state,tickets:32},version:before.version+25});
+  const receipts=f.raw.prepare("SELECT * FROM cultivation_receipts WHERE operation='task-ticket' ORDER BY request_id").all();
+  assert.equal(receipts.length,25);
+  for(const receipt of receipts){
+   assert.equal(receipt.owner,'123');assert.equal(receipt.created,f.now);
+   const request=JSON.parse(String(receipt.request_json));
+   assert.equal(receipt.request_id,'ticket:'+request.taskId);
+   assert.deepEqual(JSON.parse(String(receipt.result_json)),{ticket:1});
+  }
+  assert.deepEqual(await store.awardTask('123',ids[0]!,f.now+1),{ticket:1});
+  assert.deepEqual(await store.read('123'),account);
+  await store.syncTaskTickets('123',f.now+2);
+  account=await store.read('123');
+  assert.deepEqual(account,{state:{...before.state,tickets:34},version:before.version+27});
+  await store.syncTaskTickets('123',f.now+3);
+  assert.deepEqual(await store.read('123'),account);
+  assert.equal(f.raw.prepare('SELECT COUNT(*) AS n FROM task_ticket_awards').get()!.n,27);
+  assert.deepEqual(f.raw.prepare('PRAGMA foreign_key_check').all(),[]);
+ }finally{f.raw.close();}
+});
+
+test('ticket recovery rolls back balance and every receipt when an award insert fails',async()=>{
+ const f=await ticketRecoveryFixture();
+ try{
+  for(const id of ['a','b','c'])f.seed(id);
+  const store=new HealthyStore(f.db),before=await store.read('123');
+  f.raw.exec("CREATE TRIGGER fail_ticket BEFORE INSERT ON task_ticket_awards WHEN NEW.task_id='b' BEGIN SELECT RAISE(ABORT,'injected ticket failure'); END");
+  await assert.rejects(store.syncTaskTickets('123',f.now),/injected ticket failure/);
+  assert.deepEqual(await store.read('123'),before);
+  for(const table of ['task_ticket_awards','cultivation_receipts','transaction_guard'])assert.equal(f.raw.prepare('SELECT COUNT(*) AS n FROM '+table).get()!.n,0);
+  f.raw.exec('DROP TRIGGER fail_ticket');
+  await store.syncTaskTickets('123',f.now);
+  assert.equal((await store.read('123')).state.tickets,3);
+ }finally{f.raw.close();}
+});
+
+test('ticket recovery guards suspension, task changes and setup changes between selection and commit',async()=>{
+ for(const change of [
+  "UPDATE cultivation_accounts SET state_json=json_set(state_json,'$.suspended',json('true')),version=version+1 WHERE owner='123'",
+  "UPDATE tasks SET status='active',version=version+1 WHERE id='a'",
+  "UPDATE tasks SET deleted_at=1,version=version+1 WHERE id='a'",
+  "UPDATE tasks SET title='edited',version=version+1 WHERE id='a'",
+  "UPDATE schedule_settings SET sleep_minutes=NULL WHERE owner='123'",
+ ]){
+  const f=await ticketRecoveryFixture();
+  try{
+   f.seed('a');f.seed('b');
+   await new HealthyStore(f.db).mutate('123','seed','fixture',{},f.now,s=>({state:{...s,qi:42},result:{}}));
+   let changed=false;
+   const guarded:Database={prepare:sql=>f.db.prepare(sql),batch:async statements=>{
+    if(!changed){changed=true;f.raw.exec(change);}
+    return f.db.batch(statements);
+   }};
+   await assert.rejects(new HealthyStore(guarded).syncTaskTickets('123',f.now));
+   const account=await new HealthyStore(f.db).read('123');
+   assert.equal(account.state.qi,42);assert.equal(account.state.tickets,0);
+   assert.equal(account.state.suspended,change.includes('suspended'));
+   assert.equal(f.raw.prepare('SELECT COUNT(*) AS n FROM task_ticket_awards').get()!.n,0);
+   assert.equal(f.raw.prepare("SELECT COUNT(*) AS n FROM cultivation_receipts WHERE operation='task-ticket'").get()!.n,0);
+  }finally{f.raw.close();}
+ }
+});
+
+test('concurrent D1 ticket recovery commits once and remains compatible with awardTask replay',async()=>{
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const file of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+file,'utf8').replace(/\r?\n/g,' '));
+  const now=Date.parse('2026-10-21T10:03:00+07:00');
+  await new ScheduleStore(db).configure('123','04:30','22:30',0,now);
+  await db.batch(Array.from({length:25},(_,i)=>db.prepare("INSERT INTO tasks(id,owner,title,status,created) VALUES(?,'123',?,'completed',?)").bind('t'+i,'Task '+i,now+i)));
+  await Promise.all([new HealthyStore(db).syncTaskTickets('123',now),new HealthyStore(db).syncTaskTickets('123',now)]);
+  const store=new HealthyStore(db),account=await store.read('123');
+  assert.equal(account.state.tickets,25);assert.equal(account.version,25);
+  assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM task_ticket_awards').first<{n:number}>())!.n,25);
+  assert.equal((await db.prepare("SELECT COUNT(*) AS n FROM cultivation_receipts WHERE operation='task-ticket'").first<{n:number}>())!.n,25);
+  assert.deepEqual(await store.awardTask('123','t0',now+1),{ticket:1});
+  assert.deepEqual(await store.read('123'),account);
+ }finally{await mf.dispose();}
+});
+
+test('ticket recovery rejects reused receipt IDs before awarding any selected task',async()=>{
+ const f=await ticketRecoveryFixture();
+ try{
+  f.seed('a');f.seed('b');
+  await new HealthyStore(f.db).mutate('123','ticket:b','different-operation',{},f.now,s=>({state:s,result:{}}));
+  await assert.rejects(new HealthyStore(f.db).syncTaskTickets('123',f.now),/REQUEST_ID_REUSED/);
+  assert.equal((await new HealthyStore(f.db).read('123')).state.tickets,0);
+  assert.equal(f.raw.prepare('SELECT COUNT(*) AS n FROM task_ticket_awards').get()!.n,0);
+ }finally{f.raw.close();}
+});
 
 test('rest snapshots use one read, preserve precedence and immediately reflect sleep, undo and wake',async()=>{
  const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});

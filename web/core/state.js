@@ -5,6 +5,10 @@ export function createAppState(live) {
   state.habitHistory = null;
   state.beastData = null;
   state.beastCollection = null;
+  state.beastCollectionSpecies = null;
+  state.beastSpeciesPage = null;
+  state.beastSpeciesLoading = false;
+  state.beastSpeciesError = null;
   state.beastTower = null;
   state.beastPanel = 'training';
   state.live = live;

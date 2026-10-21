@@ -8,6 +8,61 @@ import {unlockAchievements} from '../../src/adapters/d1/progress-store.ts';
 import type {Database,Statement} from '../../src/adapters/d1/database.ts';
 import {buildContext} from '../../src/application/context-builder.ts';
 import type {WorkReader} from '../../src/ports/work-store.ts';
+import {DatabaseSync} from 'node:sqlite';
+import {sqliteDatabase} from '../../scripts/benchmark-habit-runtime.ts';
+
+test('all achievement unlocks and individual notifications use five queries and concurrent runs do not duplicate them',async()=>{
+ const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});
+ try{
+  const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  for(const file of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(readFileSync('migrations/'+file,'utf8').replace(/\r?\n/g,' '));
+  const now=Date.parse('2026-10-21T10:03:00+07:00');
+  const seed:Statement[]=[];
+  for(let i=0;i<30;i++){
+   seed.push(db.prepare("INSERT INTO tasks(id,owner,title,status,created) VALUES(?,'123',?,'completed',?)").bind('t'+i,'Task '+i,now-i*86400000));
+   seed.push(db.prepare("INSERT INTO task_completions(owner,task_id,completed_at) VALUES('123',?,?)").bind('t'+i,now-i*86400000));
+  }
+  seed.push(db.prepare("INSERT INTO achievements(owner,code,unlocked_at,notified) VALUES('999','tasks_1',0,0)"));
+  await db.batch(seed);
+  let queries=0;
+  const counted:Database={prepare:sql=>{queries++;return db.prepare(sql);},batch:statements=>db.batch(statements)};
+  await unlockAchievements(counted,'123',now);
+  assert.equal(queries,5);
+  const before=(await db.prepare("SELECT * FROM outbox WHERE id LIKE 'achievement:123:%' ORDER BY id").all()).results;
+  assert.equal(before.length,7);
+  await Promise.all([unlockAchievements(db,'123',now+1),unlockAchievements(db,'123',now+2)]);
+  assert.deepEqual((await db.prepare("SELECT * FROM outbox WHERE id LIKE 'achievement:123:%' ORDER BY id").all()).results,before);
+  const achievements=(await db.prepare("SELECT * FROM achievements WHERE owner='123' ORDER BY code").all<{code:string;unlocked_at:number;notified:number}>()).results;
+  assert.deepEqual(achievements.map(a=>a.code),['streak_14','streak_3','streak_30','streak_7','tasks_1','tasks_10','tasks_30']);
+  for(const achievement of achievements){assert.equal(achievement.unlocked_at,now);assert.equal(achievement.notified,1);}
+  assert.equal((await db.prepare("SELECT notified FROM achievements WHERE owner='999'").first<{notified:number}>())!.notified,0);
+ }finally{await mf.dispose();}
+});
+
+test('achievement notification failure rolls back unlocks and flags and retries with unchanged delivery keys',async()=>{
+ const raw=new DatabaseSync(':memory:');
+ try{
+  for(const file of readdirSync('migrations').filter(f=>f.endsWith('.sql')).sort())raw.exec(readFileSync('migrations/'+file,'utf8'));
+  const db=sqliteDatabase(raw),now=Date.parse('2026-10-21T10:03:00+07:00');
+  for(let i=0;i<30;i++){
+   raw.prepare("INSERT INTO tasks(id,owner,title,status,created) VALUES(?,'123',?,'completed',?)").run('t'+i,'Task '+i,now-i*86400000);
+   raw.prepare("INSERT INTO task_completions(owner,task_id,completed_at) VALUES('123',?,?)").run('t'+i,now-i*86400000);
+  }
+  raw.exec("INSERT INTO achievements(owner,code,unlocked_at,notified) VALUES('123','tasks_1',1,0)");
+  raw.exec("CREATE TRIGGER fail_achievement BEFORE INSERT ON outbox WHEN NEW.id='achievement:123:tasks_10' BEGIN SELECT RAISE(ABORT,'injected achievement failure'); END");
+  await assert.rejects(unlockAchievements(db,'123',now),/injected achievement failure/);
+  assert.equal(raw.prepare('SELECT COUNT(*) AS n FROM achievements').get()!.n,1);
+  assert.equal(raw.prepare('SELECT notified FROM achievements').get()!.notified,0);
+  assert.equal(raw.prepare('SELECT COUNT(*) AS n FROM outbox').get()!.n,0);
+  raw.exec('DROP TRIGGER fail_achievement');
+  await unlockAchievements(db,'123',now+1);
+  assert.equal(raw.prepare("SELECT unlocked_at FROM achievements WHERE code='tasks_1'").get()!.unlocked_at,1);
+  const deliveries=raw.prepare('SELECT * FROM outbox ORDER BY id').all();
+  assert.equal(deliveries.length,7);
+  await unlockAchievements(db,'123',now+2);
+  assert.deepEqual(raw.prepare('SELECT * FROM outbox ORDER BY id').all(),deliveries);
+ }finally{raw.close();}
+});
 
 test('conversation progress keeps exactly the previous facts with three read-only queries at scale',async()=>{
  const mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("ok")}}',d1Databases:['DB']});

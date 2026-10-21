@@ -16,6 +16,8 @@ const paths = [
   'src/adapters/d1/linh-thu-draw.ts',
   'src/adapters/d1/linh-thu-effects.ts',
   'src/adapters/d1/linh-thu-store.ts',
+  'src/adapters/d1/linh-thu-reader.ts',
+  'src/adapters/d1/linh-thu-maintenance.ts',
   'src/application/linh-thu-roles.ts',
   'src/application/linh-thu-service.ts',
   'src/application/linh-thu-settlement.ts',

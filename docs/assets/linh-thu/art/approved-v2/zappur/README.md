@@ -14,4 +14,4 @@ Thực thi bằng CLI chính thức của skill imagegen qua gateway Cockpit loc
 
 Các bản `t4-*.png` chuẩn hóa RGBA 1024px, giữ alpha, thu trong vùng 860px. Ngưỡng alpha <8 về 0, >=250 về 255; giá trị trung gian giữ lại. Tham chiếu gốc ở docs/assets/linh-thu/reference/ssr/zappur/t4-stormlion.webp giữ nguyên.
 
-Đã duyệt mỹ thuật không đồng nghĩa đã tích hợp runtime. Manifest sản phẩm chưa đăng ký các bản này. Cần trình rõ tệp code/registry thay đổi và nhận xác nhận trước bước tích hợp theo AGENTS.md người dùng cung cấp.
+Ba ảnh T4 thường/95%/100% trong thư mục này đã được tái sử dụng làm nguồn của bộ hiện hành `v3/zappur/`. [Manifest sản phẩm](../../MANIFEST.json) đăng ký ba biến thể này; registry web trỏ tới các bản WebP v3 đã build. Thư mục này giữ nguồn đã duyệt, raw, prompt và provenance để đối chiếu; không phải bộ ảnh đang chờ tích hợp. Trạng thái chung ở [README tài nguyên](../../README.md).
