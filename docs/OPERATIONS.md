@@ -45,7 +45,9 @@ Log và báo cáo rà soát ở `.wrangler/goal-audit-20261021/`, tách khỏi `
 
 Ảnh và báo cáo browser cho tiến hóa, triệu hồi, reveal, vai trò và tháp ghi vào `trial-results/linh-thu/<nhóm>/run-<PID>/`; Git đã bỏ qua `trial-results/`. Mỗi tiến trình có thư mục riêng, không ghi đè ảnh/báo cáo QA trong `output/`. Thư mục theo PID có thể được dùng lại nếu hệ điều hành tái sử dụng PID; chuyển kết quả cần giữ lâu dài sang nơi có tên riêng trước khi chạy lại.
 
-`output/` vẫn có nguồn/prompt/provenance được tái sử dụng, hồ sơ phát hành và tư liệu có chủ đích. `output/linh-thu-reveal-preview/demo.html` là fixture v12 được browser test mở trực tiếp, không phải bản xuất thừa. Review v22 còn phục vụ công cụ nghiệm thu local chưa theo dõi. Các ảnh/video review triệu hồi v1–v12, v11-white và v18–v21 đã được dọn theo danh sách duyệt; tra bản cũ trong lịch sử Git. Không áp quy tắc bỏ qua hoặc xóa toàn bộ `output/`, không đưa các run QA mới vào source.
+`output/` giữ nguồn/prompt/provenance được tái sử dụng, hồ sơ phát hành và tư liệu có chủ đích đã được Git theo dõi. `output/linh-thu-reveal-preview/demo.html` là fixture v12 được browser test mở trực tiếp; giữ nguyên fixture, nguồn ảnh và review v22. Không bỏ qua hoặc xóa toàn bộ `output/`.
+
+Đợt dọn 21/10/2026 lưu 1.837 tệp QA/demo/bản sao chưa theo dõi và 69 log cũ trong `.wrangler/output-cleanup-20261021/output-local-20261021.zip`, kèm `manifest.json` và SHA-256 từng tệp, rồi dọn bản gốc khỏi 45 thư mục đã rà soát. Bản nguyên tệp cũng được chuyển vào `.wrangler/output-cleanup-20261021/files/` với cùng cấu trúc đường dẫn để có thể hoàn tác. Cả hai bản lưu chỉ có trên máy thực hiện, không có khi clone repository. Các công cụ nghiệm thu v12/v22 cũ nằm trong bản lưu; muốn dùng lại, khôi phục đúng đường dẫn trong manifest và đối chiếu với mã hiện hành trước khi chạy. `.gitignore` chỉ bỏ qua đầu ra tại 45 thư mục QA/demo này, có ngoại lệ cho 19 tệp đã theo dõi cùng thư mục; nguồn tái sử dụng khác vẫn hiện trong Git. Mọi bằng chứng QA mới ghi vào `trial-results/`, không đưa run thử hoặc bản sao source vào commit.
 
 ## Scheduler và đồng bộ thưởng
 
