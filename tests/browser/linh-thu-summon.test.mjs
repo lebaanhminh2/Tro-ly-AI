@@ -20,6 +20,121 @@ async function shot(browser, name) {
   await browser.screenshot(fileURLToPath(new URL(name + '.png', out)));
 }
 
+test(
+  'Vietnamese summon pool aligns complete names, portraits and ranks without clipping at every text size',
+  { skip: !browserBin, timeout: 90000 },
+  async () => {
+    const control = beastFixture(),
+      server = await serve(control);
+    let browser;
+    const measurements = [];
+    try {
+      browser = await chrome();
+      await openSummon(browser, server.url);
+      await browser.evaluate("document.querySelector('.beast-summon-pool-link').click()");
+      await browser.wait("document.querySelectorAll('.beast-pool-card').length===18");
+      await browser.evaluate(
+        "document.querySelectorAll('.beast-pool-card img').forEach(img=>img.loading='eager')",
+      );
+      await browser.wait(
+        "[...document.querySelectorAll('.beast-pool-card img')].every(img=>img.complete&&img.naturalWidth>0)",
+      );
+      for (const [width, height, scale] of [
+        [320, 568, 1],
+        [375, 667, 1],
+        [390, 844, 1],
+        [430, 932, 1],
+        [740, 360, 1],
+        [1440, 1000, 1],
+        [320, 568, 1.3],
+        [390, 844, 2],
+        [1440, 1000, 2],
+      ]) {
+        await browser.resize(width, height);
+        for (const theme of ['light', 'dark']) {
+          await browser.evaluate(
+            `document.documentElement.dataset.theme='${theme}';document.querySelector('#sheet-content').scrollTop=0`,
+          );
+          await browser.scaleText(scale);
+          const layout = await browser.evaluate(`(() => {
+            const content=document.querySelector('#sheet-content'), viewport=content.getBoundingClientRect();
+            const right=viewport.left+content.clientWidth;
+            const cards=[...document.querySelectorAll('.beast-pool-card')].map(card=>{
+              const name=card.querySelector('strong'),image=card.querySelector('img'),rank=card.querySelector('small');
+              const box=card.getBoundingClientRect(),n=name.getBoundingClientRect(),i=image.getBoundingClientRect(),r=rank.getBoundingClientRect();
+              const splitWords=[];
+              for(const match of name.firstChild.textContent.matchAll(/\\S+/gu)){
+                const range=document.createRange();range.setStart(name.firstChild,match.index);range.setEnd(name.firstChild,match.index+match[0].length);
+                if(new Set([...range.getClientRects()].map(rect=>Math.round(rect.top))).size>1)splitWords.push(match[0]);
+              }
+              return {name:name.textContent,top:box.top,bottom:box.bottom,imageTop:i.top,imageBottom:i.bottom,nameTop:n.top,nameBottom:n.bottom,
+                centered:Math.abs((n.left+n.right-i.left-i.right)/2)<1 && getComputedStyle(name).textAlign==='center',
+                inside:box.left>=viewport.left-1&&box.right<=right+1,
+                ordered:r.bottom<=i.top+1 && i.bottom<=n.top+1 && n.bottom<=box.bottom+1,
+                clipped:name.scrollWidth>name.clientWidth+1 || name.scrollHeight>name.clientHeight+1,splitWords};
+            });
+            const description=content.querySelector(':scope>.hint'),range=document.createRange();range.selectNodeContents(description);
+            return {cards,overflow:content.scrollWidth>content.clientWidth+1,
+              descriptionInside:[...range.getClientRects()].every(rect=>rect.left>=viewport.left-1&&rect.right<=right+1),
+              closeVisible:(()=>{const n=content.querySelector('[data-sheet-close]'),r=n.getBoundingClientRect();return document.elementFromPoint(r.left+r.width/2,r.top+r.height/2)?.closest('button')===n})()};
+          })()`);
+          const label = `${width}x${height} text${scale} ${theme}`;
+          assert.deepEqual(
+            layout.cards.map((card) => card.name),
+            control.beastData.config.catalog.map((species) => species.forms[0]),
+          );
+          assert.equal(layout.overflow, false, label);
+          assert.equal(layout.descriptionInside, true, label + ' description');
+          assert.equal(layout.closeVisible, true, label + ' close');
+          for (const card of layout.cards) {
+            assert.ok(
+              card.centered && card.inside && card.ordered && !card.clipped,
+              label + ' ' + JSON.stringify(card),
+            );
+            assert.deepEqual(card.splitWords, [], label + ' ' + card.name);
+          }
+          const rows = Map.groupBy(layout.cards, (card) => Math.round(card.top));
+          for (const row of rows.values())
+            for (const key of ['bottom', 'imageTop', 'imageBottom', 'nameTop', 'nameBottom'])
+              assert.ok(
+                Math.max(...row.map((card) => card[key])) -
+                  Math.min(...row.map((card) => card[key])) <=
+                  1,
+                label + ' misaligned ' + key,
+              );
+          measurements.push({
+            width,
+            height,
+            scale,
+            theme,
+            columns: [...rows.values()][0].length,
+            ...layout,
+          });
+          await shot(browser, `vietnamese-pool-${width}-${height}-${theme}-text${scale}`);
+          await browser.evaluate("document.querySelector('#sheet-content').scrollTop=100000");
+          assert.equal(
+            await browser.evaluate(
+              `(()=>{const content=document.querySelector('#sheet-content'),last=content.querySelector('.beast-pool-card:last-child'),r=last.getBoundingClientRect(),v=content.getBoundingClientRect();return r.bottom<=v.bottom+1})()`,
+            ),
+            true,
+            label + ' last card reachable',
+          );
+          await browser.scaleText(1);
+        }
+      }
+      assert.equal(control.posts.length, 0);
+      assert.deepEqual(browser.errors, []);
+      await writeFile(
+        new URL('vietnamese-pool-layouts.json', out),
+        JSON.stringify(measurements, null, 2) + '\n',
+      );
+    } finally {
+      await browser?.close();
+      await server.close();
+    }
+  },
+);
+
 function sacrificeInventory(control) {
   const template = clone(control.ownedBeasts[0]);
   const individual = (speciesId, id) => ({
@@ -891,6 +1006,46 @@ test(
         await browser.evaluate('document.querySelectorAll(".beast-picker-item").length'),
         3,
       );
+      for (const [width, scale] of [
+        [320, 1],
+        [320, 2],
+        [390, 1.3],
+        [1440, 1],
+      ]) {
+        await browser.resize(width, 844);
+        for (const theme of ['light', 'dark']) {
+          await browser.evaluate(`document.documentElement.dataset.theme='${theme}'`);
+          await browser.scaleText(scale);
+          const candidates = await browser.evaluate(`(() => {
+            const content=document.querySelector('#sheet-content'),v=content.getBoundingClientRect();
+            return [...content.querySelectorAll('.beast-picker-item')].map(button=>{
+              const copy=button.querySelector('.beast-picker-copy'),name=copy.querySelector('strong'),rank=copy.querySelector('small');
+              const image=button.querySelector('img').getBoundingClientRect(),n=name.getBoundingClientRect(),r=rank.getBoundingClientRect();
+              return {name:name.textContent,rank:rank.textContent,
+                aligned:n.left>=image.right+8 && Math.abs(n.left-r.left)<1 && n.bottom<=r.top+1,
+                inside:n.right<=v.left+content.clientWidth+1,
+                clipped:name.scrollWidth>name.clientWidth+1 || name.scrollHeight>name.clientHeight+1};
+            });
+          })()`);
+          assert.deepEqual(
+            candidates.map(({ name, rank }) => ({ name, rank })),
+            control.beastData.summonChoice.candidates.map((id) => {
+              const species = control.beastData.config.catalog.find((s) => s.id === id);
+              return { name: species.forms[0], rank: species.rank };
+            }),
+          );
+          assert.ok(
+            candidates.every(
+              (candidate) => candidate.aligned && candidate.inside && !candidate.clipped,
+            ),
+            JSON.stringify({ width, scale, theme, candidates }),
+          );
+          await browser.evaluate("document.querySelector('#sheet-content').scrollTop=0");
+          await shot(browser, `vietnamese-candidates-${width}-${theme}-text${scale}`);
+          await browser.scaleText(1);
+        }
+      }
+      await browser.resize(390, 844);
       assert.equal(control.posts.length, 0);
       await browser.press('Escape');
       assert.ok(control.beastData.summonChoice);
@@ -901,7 +1056,7 @@ test(
       await browser.wait('!!document.querySelector(".beast-reveal.is-revealed")');
       assert.equal(
         await browser.evaluate('document.querySelector(".beast-reveal-identity h2").textContent'),
-        'Fluffle',
+        'Tiểu Miên Dương',
       );
       assert.equal(
         await browser.evaluate('document.querySelector(".beast-reveal").dataset.rank'),
@@ -1112,7 +1267,7 @@ test(
       await browser.wait('!!document.querySelector(".beast-reveal.is-revealed")');
       assert.equal(
         await browser.evaluate('document.querySelector(".beast-reveal-identity h2").textContent'),
-        'Pyropup',
+        'Hỏa Khuyển Con',
       );
       await browser.click('Hoàn tất');
       await browser.evaluate(`(()=>{

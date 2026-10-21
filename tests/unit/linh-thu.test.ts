@@ -64,7 +64,7 @@ test('sacrifice converts all four ranks, carries remainders, and rejects protect
   );
 });
 
-test('catalog matches all 18 approved species, exact ranks, evolution order and 72 reference images', () => {
+test('Vietnamese catalog preserves all 18 species IDs, ranks, evolution order and 72 reference paths', () => {
   const catalog = JSON.parse(
     readFileSync('docs/assets/linh-thu/reference/REFERENCE_CATALOG.json', 'utf8'),
   );
@@ -76,22 +76,37 @@ test('catalog matches all 18 approved species, exact ranks, evolution order and 
     ),
     [6, 6, 4, 2],
   );
+  const names = new Set<string>();
   for (const entry of BEAST_CATALOG) {
     const reference = catalog.selection.find(
       (row: { forms: { name: string }[] }) => row.forms[0]!.name.toLowerCase() === entry.id,
     );
     assert.ok(reference, entry.id);
     assert.equal(entry.rank, reference.project_rank);
-    assert.deepEqual(
-      entry.forms,
-      reference.forms.map((form: { name: string }) => form.name),
-    );
-    for (const form of [1, 2, 3, 4] as const)
-      assert.ok(existsSync(beastReferencePath(entry.id, form)), entry.id + ':' + form);
+    assert.equal(entry.forms.length, 4);
+    assert.ok(Object.isFrozen(entry.forms));
+    for (const form of [1, 2, 3, 4] as const) {
+      const name = entry.forms[form - 1]!;
+      assert.match(name, /[^\x00-\x7f]/, 'Display name must be Vietnamese: ' + entry.id);
+      assert.equal(name, name.normalize('NFC'));
+      assert.ok(!names.has(name), 'Duplicate display name: ' + name);
+      names.add(name);
+      const path = beastReferencePath(entry.id, form);
+      assert.equal(
+        path,
+        `docs/assets/linh-thu/reference/${entry.rank.toLowerCase()}/${entry.id}/t${form}-${reference.forms[form - 1].name.toLowerCase()}.webp`,
+      );
+      assert.ok(existsSync(path), entry.id + ':' + form);
+    }
   }
-  assert.deepEqual(beastSpecies('punchimp').forms.slice(2), ['Rockwu', 'Rockong']);
-  assert.equal(beastSpecies('flameow').forms[3], 'Cinderclaw');
+  assert.equal(names.size, 72);
+  assert.deepEqual(beastSpecies('punchimp').forms.slice(2), [
+    'Võ Đạo Linh Hầu',
+    'Đấu Chiến Linh Hầu',
+  ]);
+  assert.equal(beastSpecies('flameow').forms[3], 'Tẫn Hỏa Linh Miêu');
   assert.throws(() => beastSpecies('unknown'));
+  assert.throws(() => beastReferencePath('pyropup', 5 as never), /INVALID_BEAST_FORM/);
 });
 
 test('daily training excludes neutral and preserves the full attainable budget in earned + gray', () => {

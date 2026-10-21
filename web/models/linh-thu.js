@@ -271,7 +271,7 @@ export function beastUltimateProgress(active, skill, now = Date.now()) {
   if (['task_bounty', 'habit_bounty', 'sleep_bounty', 'dream_bounty'].includes(active.kind))
     return `Tiến độ ${active.count}/${p.target}. ${active.count >= p.target ? 'Đã đạt mục tiêu.' : 'Tiếp tục thực hiện trong thời hạn.'}`;
   if (['marked_tasks', 'magnet_tasks'].includes(active.kind))
-    return `Đã hoàn thành ${active.completedTargets.length}/${active.targets.length} task đã chọn.`;
+    return `Đã hoàn thành ${active.completedTargets.length}/${active.targets.length} công việc đã chọn.`;
   if (active.kind === 'task_combo') return `Đã nhận ${active.count}/3 mốc thưởng trong ngày.`;
   if (active.kind === 'tower_rescue')
     return 'Mỗi lượt tháp mới trong thời hạn được cứu một bẫy tầng 1–3.';

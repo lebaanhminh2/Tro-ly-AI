@@ -1561,7 +1561,10 @@ export function createBeastActions(context) {
     if (targetKind) {
       const max = skill.kind === 'marked_tasks' ? 2 : 3;
       sheetContent.append(
-        el('h3', skill.kind === 'marked_tasks' ? 'Chọn đúng 2 task' : 'Chọn từ 1 đến 3 task'),
+        el(
+          'h3',
+          skill.kind === 'marked_tasks' ? 'Chọn đúng 2 công việc' : 'Chọn từ 1 đến 3 công việc',
+        ),
       );
       const list = el('div', undefined, 'beast-target-picker');
       for (const task of state.tasks.filter((task) => !task.done)) {
@@ -1572,7 +1575,7 @@ export function createBeastActions(context) {
         input.addEventListener('change', () => {
           if (input.checked && selected.size >= max) {
             input.checked = false;
-            toast('Chỉ chọn tối đa ' + max + ' task.');
+            toast('Chỉ chọn tối đa ' + max + ' công việc.');
             return;
           }
           if (input.checked) selected.add(task.id);
@@ -1585,7 +1588,7 @@ export function createBeastActions(context) {
       if (state.activeTasksHasMore)
         sheetContent.append(
           button(
-            'Tải thêm task để chọn',
+            'Tải thêm công việc để chọn',
             async () => {
               await context.loadActiveTasks();
               if (isCurrent() && state.beastData === data)
@@ -1622,7 +1625,7 @@ export function createBeastActions(context) {
             targetKind &&
             (skill.kind === 'marked_tasks' ? selected.size !== 2 : selected.size < 1)
           ) {
-            toast('Chọn đủ task mục tiêu trước nhé.');
+            toast('Chọn đủ công việc mục tiêu trước nhé.');
             return;
           }
           const fields = {
@@ -1704,6 +1707,7 @@ export function createBeastActions(context) {
   function openBeastSummonChoice(choice = state.beastData?.summonChoice) {
     if (!choice) return;
     openSheet('Tam Thủ Chiêu Hồn · Chọn một giao ước');
+    context.sheet.classList.add('beast-sheet-open');
     sheetContent.append(
       el(
         'p',
@@ -1715,7 +1719,7 @@ export function createBeastActions(context) {
     choice.candidates.forEach((id, option) => {
       const species = beastSpecies(state.beastData, id);
       const control = button(
-        species.rank + ' · ' + species.forms[0],
+        '',
         () =>
           confirm(
             'Chọn ' + species.forms[0] + '?',
@@ -1731,7 +1735,9 @@ export function createBeastActions(context) {
           ),
         'beast-picker-item',
       );
-      control.prepend(portrait(species, 1, true));
+      const copy = el('span', undefined, 'beast-picker-copy');
+      copy.append(el('strong', species.forms[0]), el('small', species.rank));
+      control.append(portrait(species, 1, true), copy);
       list.append(control);
     });
     sheetContent.append(list);
@@ -1834,7 +1840,7 @@ export function createBeastActions(context) {
     const copy = el('div');
     copy.append(
       el('p', 'TỊNH LINH ĐAN', 'beast-eyebrow'),
-      el('h3', ready ? 'Sẵn sàng luyện đan' : `Còn ${30 - alchemy.days} ngày đủ habit`),
+      el('h3', ready ? 'Sẵn sàng luyện đan' : `Còn ${30 - alchemy.days} ngày đủ thói quen`),
       el('p', `${alchemy.days}/30 ngày`, 'beast-alchemy-count'),
     );
     overview.append(furnaceArt(ready ? 'ready' : 'idle'), copy);
@@ -1880,7 +1886,7 @@ export function createBeastActions(context) {
       el('summary', 'Cách tích ngày & bảo hiểm'),
       el(
         'p',
-        'Mỗi ngày đủ habit tích 1 ngày. Ngày nghỉ giữ tiến độ; ngày thiếu bắt đầu lại từ 0. Đủ 30 ngày sẽ giữ đến khi luyện.',
+        'Mỗi ngày đủ thói quen tích 1 ngày. Ngày nghỉ giữ tiến độ; ngày thiếu bắt đầu lại từ 0. Đủ 30 ngày sẽ giữ đến khi luyện.',
         'hint',
       ),
       el(

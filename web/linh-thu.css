@@ -66,7 +66,7 @@
   color: var(--muted);
   background: none;
   white-space: normal;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
   min-width: 0;
   line-height: 1.4;
 }
@@ -193,6 +193,8 @@
   font-weight: 600;
   letter-spacing: -0.5px;
   overflow-wrap: anywhere;
+  max-width: 100%;
+  text-wrap: balance;
 }
 .beast-hero-meta {
   display: flex;
@@ -423,6 +425,9 @@
   overflow-wrap: anywhere;
   padding: 0 3px;
 }
+.beast-evolution-card strong {
+  text-wrap: balance;
+}
 .beast-evolution-card small {
   color: var(--muted);
   margin: 2px 0 5px;
@@ -461,7 +466,11 @@
 }
 .beast-collection-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  font-size: 14px;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(100%, max(8em, calc((100% - 36px) / 4))), 1fr)
+  );
   gap: 12px;
 }
 .beast-collection-item {
@@ -804,6 +813,8 @@ dialog#sheet.beast-exchange-sheet {
 }
 .beast-collection-card img {
   width: 100%;
+  max-width: 160px;
+  align-self: center;
   height: auto;
   aspect-ratio: 1;
   object-fit: contain;
@@ -817,7 +828,10 @@ dialog#sheet.beast-exchange-sheet {
   display: block;
   font-size: 14px;
   margin: 4px 0;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
+  line-height: 1.4;
+  min-height: 2.8em;
+  text-wrap: balance;
 }
 .beast-collection-card small {
   display: block;
@@ -836,7 +850,11 @@ dialog#sheet.beast-exchange-sheet {
 }
 .beast-atlas {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  font-size: 12px;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(100%, max(8em, calc((100% - 24px) / 4))), 1fr)
+  );
   gap: 8px;
   margin: 16px 0;
 }
@@ -878,6 +896,8 @@ dialog#sheet.beast-exchange-sheet {
 }
 .beast-atlas-entry img {
   width: 100%;
+  max-width: 160px;
+  align-self: center;
   aspect-ratio: 1;
   height: auto;
   object-fit: contain;
@@ -894,6 +914,16 @@ dialog#sheet.beast-exchange-sheet {
   display: block;
   font-size: 10px;
   overflow-wrap: anywhere;
+}
+.beast-atlas-entry strong {
+  display: grid;
+  place-items: center;
+  flex: 1;
+  font-size: 12px;
+  min-height: 4.5em;
+  line-height: 1.5;
+  overflow-wrap: normal;
+  text-wrap: balance;
 }
 .beast-atlas-entry small {
   color: var(--muted);
@@ -1208,34 +1238,48 @@ dialog#sheet.beast-exchange-sheet {
 }
 .beast-summon-pool {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 9px;
+  font-size: 13px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.5em), 1fr));
+  gap: 12px;
   margin-top: 18px;
 }
 .beast-pool-card {
+  display: grid;
+  grid-template-rows: auto 88px minmax(3em, auto);
+  align-content: start;
+  gap: 8px;
   min-width: 0;
-  padding: 10px 9px;
+  padding: 12px 8px;
   border: 1px solid color-mix(in srgb, var(--rank-color) 40%, var(--line));
   border-radius: 11px;
   background: var(--surface);
+  text-align: center;
 }
 .beast-pool-card small {
+  display: block;
+  justify-self: start;
   color: var(--rank-color);
   font-weight: 700;
   font-size: 10px;
+  line-height: 1.5;
 }
 .beast-pool-card img {
   display: block;
   width: 100%;
-  height: 75px;
+  height: 88px;
   object-fit: contain;
-  margin: 6px 0 3px;
+  margin: 0;
 }
 .beast-pool-card strong {
-  display: block;
-  font-size: 11px;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
   font-weight: 600;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
+  line-height: 1.5;
+  min-height: 3em;
+  text-align: center;
+  text-wrap: balance;
 }
 @media (min-width: 900px) {
   .beast-summon-panel {
@@ -1329,6 +1373,9 @@ dialog#sheet.beast-exchange-sheet {
 }
 /* Art keeps a useful size; a short viewport scrolls instead of shrinking the card. */
 @media (max-width: 899px) {
+  .beast-page {
+    container-type: inline-size;
+  }
   .beast-page > .heading h1 {
     font-size: var(--page-title-size);
     letter-spacing: -0.6px;
@@ -1356,7 +1403,7 @@ dialog#sheet.beast-exchange-sheet {
     font-weight: 600;
     line-height: 1.4;
     white-space: normal;
-    overflow-wrap: anywhere;
+    overflow-wrap: normal;
   }
   .beast-wallet {
     margin: 12px 20px 0;
@@ -1407,6 +1454,11 @@ dialog#sheet.beast-exchange-sheet {
   .beast-summon-footer {
     background: transparent;
   }
+  @container (max-width: 18em) {
+    .beast-page .beast-tabs {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
 }
 .beast-picker {
   display: grid;
@@ -1425,6 +1477,7 @@ dialog#sheet.beast-exchange-sheet {
   color: var(--text);
   font-size: 13px;
   min-height: 76px;
+  min-width: 0;
 }
 .beast-picker-item img {
   width: 66px;
@@ -1446,6 +1499,10 @@ dialog#sheet.beast-exchange-sheet {
   min-width: 0;
   padding: 8px 0;
   overflow-wrap: anywhere;
+}
+.beast-picker-copy strong {
+  line-height: 1.5;
+  overflow-wrap: normal;
 }
 .beast-picker-copy small {
   font-size: 11px;
@@ -1493,6 +1550,12 @@ dialog#sheet.beast-exchange-sheet {
 }
 .beast-sheet-open #sheet-content > .hint {
   margin: 12px 0;
+}
+/* Keep captions and card borders clear of overlay scrollbars in beast sheets. */
+dialog#sheet.beast-sheet-open:not(.beast-exchange-sheet):not(:has(.tower-experience))
+  #sheet-content {
+  min-width: 0;
+  padding-inline-end: 8px;
 }
 .beast-alchemy-overview {
   display: flex;
@@ -2129,14 +2192,16 @@ dialog.beast-reveal {
   background: color-mix(in srgb, var(--rank) 7%, #111b2a);
 }
 .beast-reveal .identity h2 {
-  flex: 1 0 auto;
+  flex: 1 1 180px;
+  min-width: 0;
   max-width: 100%;
   font-size: clamp(22px, calc(var(--card-width) * 0.088), 29px);
   font-weight: 650;
   letter-spacing: -0.6px;
-  line-height: 1.18;
+  line-height: 1.35;
   color: var(--title-color);
-  overflow-wrap: normal;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
 }
 .beast-reveal .identity p {
   font-size: 11px;
@@ -2237,6 +2302,9 @@ dialog.beast-reveal {
   color: #483a56;
   margin-top: 7px;
   overflow-wrap: anywhere;
+  line-height: 1.4;
+  min-height: 2.8em;
+  text-wrap: balance;
 }
 .beast-reveal .summary-card span {
   display: block;
@@ -3620,6 +3688,7 @@ dialog.beast-evolution {
   font-weight: 550;
   padding: 7px 0;
   overflow-wrap: anywhere;
+  text-wrap: balance;
 }
 .evolution-identity .evolution-title {
   color: #b6b4bd;

@@ -12,7 +12,7 @@ export function createBeastReveal({ data, result, portrait, isCurrent, onClose =
     return {
       ...beast,
       rank: species?.rank ?? '',
-      name: species?.forms[0] ?? beast.speciesId,
+      name: species?.forms[0] ?? 'Linh thú chưa xác định',
       title: species?.title ?? 'Linh thú',
       species,
     };

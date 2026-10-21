@@ -313,8 +313,8 @@ test(
           assert.ok(l.dock.bottom <= l.root.bottom + 1);
           assert.ok(l.art.bottom <= l.identity.y + 1);
           assert.ok(
-            l.nameHeight <= l.nameLine + 1,
-            'Name must stay whole at ' + width + ' ' + scale,
+            l.nameHeight <= l.nameLine * 2 + 1,
+            'Vietnamese name must fit within two complete lines at ' + width + ' ' + scale,
           );
           assert.equal(l.artLoaded, true);
           layouts.push({ width, height, scale, ...l });
@@ -343,7 +343,16 @@ test(
         await b.scaleText(1.3);
         await delay(30);
         const l = await layout(b);
-        assert.ok(l.nameHeight <= l.nameLine + 1, species.id + ' breaks its name');
+        assert.ok(l.nameHeight <= l.nameLine * 2 + 1, species.id + ' exceeds two name lines');
+        assert.equal(
+          await b.evaluate(`(() => {
+            const name=document.querySelector('[data-reveal=beast-name]');
+            return name.textContent===${JSON.stringify(species.forms[0])}
+              && name.scrollWidth<=name.clientWidth+1 && name.scrollHeight<=name.clientHeight+1;
+          })()`),
+          true,
+          species.id + ' must retain its complete, unclipped Vietnamese name',
+        );
         assert.ok(l.identity.bottom < l.dock.y);
         assert.ok(l.art.bottom <= l.identity.y + 1);
         layouts.push({ species: species.id, width: 320, height: 568, scale: 1.3, ...l });
@@ -643,7 +652,7 @@ test(
       await b.wait('!document.querySelector("[data-reveal=placeholder]").hidden');
       assert.equal(
         await b.evaluate('document.querySelector("[data-reveal=beast-name]").textContent'),
-        'Pyropup',
+        'Hỏa Khuyển Con',
       );
       await shot(b, 'missing-art-result');
       await b.press('Escape');

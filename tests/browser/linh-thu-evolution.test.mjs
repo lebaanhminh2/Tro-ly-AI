@@ -65,7 +65,7 @@ test(
       );
       assert.equal(
         await browser.evaluate(
-          "document.querySelector('#sheet-content').textContent.includes('Rockshell')",
+          "document.querySelector('#sheet-content').textContent.includes('Nham Giáp Linh Quy')",
         ),
         false,
       );
@@ -113,7 +113,7 @@ test(
         false,
       );
       await browser.click('Tiếp tục nuôi dưỡng');
-      await browser.wait("document.querySelector('.beast-hero img')?.alt==='Turtuff'");
+      await browser.wait("document.querySelector('.beast-hero img')?.alt==='Kiên Giáp Quy'");
       assert.equal(
         await browser.evaluate("document.querySelectorAll('#content .beast-journey img').length"),
         2,
@@ -270,7 +270,7 @@ test(
       await browser.wait("document.querySelector('.beast-evolution-final').hidden===false");
       assert.equal(
         await browser.evaluate(
-          "document.querySelector('.evolution-status').textContent.includes('Turtuff')",
+          "document.querySelector('.evolution-status').textContent.includes('Kiên Giáp Quy')",
         ),
         true,
       );

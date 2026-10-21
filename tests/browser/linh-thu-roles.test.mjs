@@ -275,7 +275,7 @@ test(
       await choose(browser, 'training', next);
       assert.match(
         await browser.evaluate("document.querySelector('#sheet-content').textContent"),
-        /lượt luyện của Frostique sẽ khóa tại tiến độ hiện có, giữ nguyên tạp chất/,
+        /lượt luyện của Hàn Sương Linh Miêu sẽ khóa tại tiến độ hiện có, giữ nguyên tạp chất/,
       );
       await browser.click('Xác nhận');
       await shown(browser, next);
@@ -283,7 +283,7 @@ test(
       assert.equal(roleBeast(control.beastData, 'training').id, old.id);
       assert.equal(
         await browser.evaluate("document.querySelector('.beast-hero img').alt"),
-        'Frostnip',
+        'Tiểu Tuyết Miêu',
       );
       assert.equal(
         await browser.evaluate("document.querySelector('.beast-stage-numbers strong').textContent"),
@@ -291,7 +291,7 @@ test(
       );
       assert.equal(
         await browser.evaluate("document.querySelector('.beast-role-today').textContent"),
-        'Habit hôm nay vẫn tính cho Frostique.',
+        'Thói quen hôm nay vẫn tính cho Hàn Sương Linh Miêu.',
       );
       await browser.evaluate("document.querySelector('.beast-role-previous').click()");
       assert.match(
@@ -380,7 +380,7 @@ test(
       await browser.evaluate("document.querySelector('.beast-role-previous').click()");
       assert.equal(
         await browser.evaluate("document.querySelector('#sheet-title').textContent"),
-        'Frostluna',
+        'Băng Nguyệt Linh Miêu',
       );
       await browser.click('Xem tuyệt kỹ hoàn mỹ', '#sheet button');
       assert.equal(
@@ -394,7 +394,7 @@ test(
       await browser.click('Chi tiết linh thú');
       assert.equal(
         await browser.evaluate("document.querySelector('#sheet-title').textContent"),
-        'Pyrodaemon',
+        'Tam Diệm Ma Khuyển',
       );
     });
   },

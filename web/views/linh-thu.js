@@ -687,7 +687,7 @@ export function renderBeasts(ui, state) {
       el(
         'p',
         panel === 'training'
-          ? 'Habit mỗi ngày nuôi dưỡng linh thú. Từng phần nỗ lực đều được ghi lại.'
+          ? 'Thói quen mỗi ngày nuôi dưỡng linh thú. Từng phần nỗ lực đều được ghi lại.'
           : 'Đồng hành hỗ trợ công việc và sinh hoạt. Có thể chọn khác linh thú đang luyện.',
         'hint',
       ),
@@ -765,7 +765,9 @@ export function renderBeasts(ui, state) {
     );
     name.dataset.beastId = current.id;
     note.append(
-      document.createTextNode(panel === 'training' ? 'Habit hôm nay vẫn tính cho ' : 'Hôm nay, '),
+      document.createTextNode(
+        panel === 'training' ? 'Thói quen hôm nay vẫn tính cho ' : 'Hôm nay, ',
+      ),
       name,
       document.createTextNode(panel === 'training' ? '.' : ' vẫn hỗ trợ bạn.'),
     );
@@ -1114,8 +1116,8 @@ export function renderBeastTowerEntry(ui, state) {
           : !data
             ? 'Mở tháp để xem điều kiện hôm nay.'
             : !data.eligibility.taskId
-              ? 'Còn thiếu task công việc hoàn tất hợp lệ hôm nay.'
-              : 'Hoàn thành đủ habit hôm nay để mở tháp.',
+              ? 'Còn thiếu công việc hoàn tất hợp lệ hôm nay.'
+              : 'Hoàn thành đủ thói quen hôm nay để mở tháp.',
       'hint',
     ),
   );

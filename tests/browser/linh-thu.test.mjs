@@ -7,6 +7,248 @@ import { serve, chrome, browserBin, clone } from './app-harness.mjs';
 import { beastFixture } from './linh-thu-fixture.mjs';
 
 test(
+  'all 72 Vietnamese forms retain loaded artwork and readable names in collection, details and role panels',
+  { skip: !browserBin, timeout: 120000 },
+  async () => {
+    const control = beastFixture(),
+      data = control.beastData,
+      catalog = data.config.catalog,
+      seed = clone(control.ownedBeasts[0]);
+    control.ownedBeasts = catalog.flatMap((species) =>
+      [1, 2, 3, 4].map((form) => ({
+        ...clone(seed),
+        id: `vietnamese_${species.id}_${form}`,
+        speciesId: species.id,
+        attemptId: `vietnamese_attempt_${species.id}_${form}`,
+        attempt: {
+          speciesId: species.id,
+          ruleVersion: 1,
+          form,
+          status: form === 4 ? 'completed' : 'training',
+          earned: form === 4 ? data.config.training[species.rank].capacity : 0,
+          gray: 0,
+        },
+      })),
+    );
+    data.speciesCounts = Object.fromEntries(catalog.map((species) => [species.id, 4]));
+    data.discoveries = Object.fromEntries(catalog.map((species) => [species.id, { form: 4 }]));
+    data.selected = [control.ownedBeasts[3]];
+    for (const role of data.roles.current) {
+      role.beastId = data.selected[0].id;
+      role.attemptId = data.selected[0].attemptId;
+    }
+    const server = await serve(control);
+    let browser;
+    const out = `trial-results/linh-thu/vietnamese/run-${process.pid}`;
+    const readable = async (selector) =>
+      browser.evaluate(`(() => {
+      return [...document.querySelectorAll(${JSON.stringify(selector)})].map(node => {
+        const r=node.getBoundingClientRect(), range=document.createRange();
+        range.selectNodeContents(node);
+        const splitWords=[],walker=document.createTreeWalker(node,NodeFilter.SHOW_TEXT);
+        let text;
+        while((text=walker.nextNode()))for(const match of text.textContent.matchAll(/\\S+/gu)){
+          const word=document.createRange();word.setStart(text,match.index);word.setEnd(text,match.index+match[0].length);
+          if(new Set([...word.getClientRects()].map(rect=>Math.round(rect.top))).size>1)splitWords.push(match[0]);
+        }
+        return {text:node.textContent,clipped:node.scrollWidth>node.clientWidth+1
+          || node.scrollHeight>node.clientHeight+1,
+          splitWords,
+          contained:[...range.getClientRects()].every(line=>line.left>=r.left-1 && line.right<=r.right+1)};
+      });
+    })()`);
+    try {
+      await mkdir(out, { recursive: true });
+      browser = await chrome();
+      await browser.navigate(server.url, 320);
+      await browser.wait("!!document.querySelector('.focus-flip-card')");
+      await browser.evaluate("document.querySelector('[data-tab=beasts]').click()");
+      await browser.wait("!!document.querySelector('.beast-hero')");
+      assert.equal(
+        await browser.evaluate("document.querySelector('.beast-hero h2').textContent"),
+        catalog[0].forms[3],
+      );
+      await browser.click('Bộ sưu tập');
+      await browser.wait("document.querySelectorAll('.beast-atlas-entry img').length===18");
+      for (const species of catalog) {
+        await browser.evaluate(`document.querySelector('[data-species=${species.id}]').click()`);
+        await browser.wait("document.querySelectorAll('.beast-collection-card').length===4");
+        await browser.wait(
+          "[...document.querySelectorAll('.beast-collection-card img')].every(img=>img.complete && img.naturalWidth>0)",
+        );
+        for (const scale of [1, 2]) {
+          await browser.scaleText(scale);
+          const names = await readable('.beast-collection-card strong');
+          assert.deepEqual(
+            names.map((entry) => entry.text),
+            species.forms,
+          );
+          assert.ok(
+            names.every((entry) => !entry.clipped && entry.contained && !entry.splitWords.length),
+            JSON.stringify({ species: species.id, names }),
+          );
+          assert.deepEqual(
+            await browser.evaluate(
+              "[...document.querySelectorAll('.beast-collection-card img')].map(img=>img.alt)",
+            ),
+            species.forms.map((name, index) => name + (index === 3 ? ' · Hoàn mỹ' : '')),
+          );
+          assert.equal(
+            await browser.evaluate('document.documentElement.scrollWidth>innerWidth+1'),
+            false,
+            species.id,
+          );
+          if (species.id === 'frostnip' && scale === 2) {
+            await browser.evaluate(
+              "document.querySelector('.beast-collection-card').scrollIntoView({block:'start'})",
+            );
+            await browser.screenshot(`${out}/four-forms-320-text2.png`);
+          }
+          await browser.scaleText(1);
+        }
+        for (let form = 0; form < 4; form++) {
+          await browser.evaluate(
+            `document.querySelectorAll('.beast-collection-card')[${form}].click()`,
+          );
+          await browser.wait("document.querySelector('#sheet').open");
+          assert.equal(
+            await browser.evaluate("document.querySelector('#sheet-title').textContent"),
+            species.forms[form],
+          );
+          await browser.wait("document.querySelector('.beast-detail-image')?.naturalWidth>0");
+          await browser.scaleText(2);
+          const names = await readable('#sheet-title');
+          assert.ok(
+            names.every((entry) => !entry.clipped && entry.contained && !entry.splitWords.length),
+            JSON.stringify({ species: species.id, form, names }),
+          );
+          assert.equal(
+            await browser.evaluate(
+              "document.querySelector('#sheet-content').scrollWidth>document.querySelector('#sheet-content').clientWidth+1",
+            ),
+            false,
+          );
+          await browser.scaleText(1);
+          await browser.press('Escape');
+          await browser.wait("!document.querySelector('#sheet').open");
+        }
+        await browser.click('‹ Bộ sưu tập');
+      }
+      for (const [width, scale] of [
+        [320, 1],
+        [320, 2],
+        [375, 1.3],
+        [375, 1],
+        [390, 1.5],
+        [430, 1],
+        [1440, 1],
+      ]) {
+        await browser.resize(width, 844);
+        for (const theme of ['light', 'dark']) {
+          await browser.evaluate(`document.documentElement.dataset.theme='${theme}'`);
+          await browser.scaleText(scale);
+          const tabRows = await browser.evaluate(
+            `(()=>{const rows=Map.groupBy([...document.querySelectorAll('.beast-tab')],n=>Math.round(n.getBoundingClientRect().top));return [...rows.values()].map(row=>row.length)})()`,
+          );
+          assert.ok(
+            JSON.stringify(tabRows) === '[4]' || JSON.stringify(tabRows) === '[2,2]',
+            `${width} text${scale}: ${tabRows}`,
+          );
+          const names = await readable('.beast-atlas-entry strong');
+          assert.ok(
+            names.every((entry) => !entry.clipped && entry.contained && !entry.splitWords.length),
+            JSON.stringify({ width, scale, names }),
+          );
+          assert.equal(
+            await browser.evaluate('document.documentElement.scrollWidth>innerWidth+1'),
+            false,
+          );
+          await browser.screenshot(`${out}/atlas-${width}-${theme}-text${scale}.png`);
+          await browser.scaleText(1);
+        }
+      }
+      for (const label of ['Đang luyện', 'Đồng hành']) {
+        await browser.click(label);
+        await browser.resize(320, 568);
+        await browser.scaleText(2);
+        const names = await readable('.beast-hero h2');
+        assert.deepEqual(
+          names.map((entry) => entry.text),
+          [catalog[0].forms[3]],
+        );
+        assert.ok(
+          names.every((entry) => !entry.clipped && entry.contained && !entry.splitWords.length),
+        );
+        const tabs = await readable('.beast-tab');
+        assert.ok(
+          tabs.every((entry) => !entry.clipped && entry.contained && !entry.splitWords.length),
+          JSON.stringify(tabs),
+        );
+        await browser.evaluate(
+          "document.querySelector('.beast-hero').scrollIntoView({block:'start'})",
+        );
+        await browser.screenshot(
+          `${out}/role-${label === 'Đang luyện' ? 'training' : 'companion'}-320-text2.png`,
+        );
+        await browser.scaleText(1);
+        await browser.resize(390, 844);
+        await browser.evaluate(
+          "document.querySelector('.beast-hero').scrollIntoView({block:'start'})",
+        );
+        await browser.screenshot(
+          `${out}/role-${label === 'Đang luyện' ? 'training' : 'companion'}-390.png`,
+        );
+      }
+      await browser.click('Đồng hành');
+      await browser.click('Đổi đồng hành');
+      await browser.wait("document.querySelectorAll('.beast-picker-copy').length>=24");
+      while (
+        await browser.evaluate(
+          "[...document.querySelectorAll('#sheet button')].some(b=>b.textContent==='Tải thêm linh thú'&&!b.disabled)",
+        )
+      ) {
+        const count = await browser.evaluate(
+          "document.querySelectorAll('.beast-picker-copy').length",
+        );
+        await browser.click('Tải thêm linh thú');
+        await browser.wait(`document.querySelectorAll('.beast-picker-copy').length>${count}`);
+      }
+      assert.equal(
+        await browser.evaluate("document.querySelectorAll('.beast-picker-copy').length"),
+        72,
+      );
+      for (const [width, scale] of [
+        [320, 1],
+        [320, 2],
+        [390, 1.5],
+        [1440, 1],
+      ]) {
+        await browser.resize(width, 844);
+        await browser.scaleText(scale);
+        const names = await readable('.beast-picker-copy strong');
+        assert.ok(
+          names.every((entry) => !entry.clipped && entry.contained && !entry.splitWords.length),
+          JSON.stringify({ width, scale, names }),
+        );
+        const layout = await browser.evaluate(
+          `(()=>{const content=document.querySelector('#sheet-content'),r=content.getBoundingClientRect();return{overflow:content.scrollWidth>content.clientWidth+1,items:[...content.querySelectorAll('.beast-picker-item')].every(n=>{const copy=n.querySelector('.beast-picker-copy').getBoundingClientRect(),img=n.querySelector('img').getBoundingClientRect();return copy.left>=img.right+8&&copy.right<=r.left+content.clientWidth+1})}})()`,
+        );
+        assert.deepEqual(layout, { overflow: false, items: true });
+        await browser.evaluate("document.querySelector('#sheet-content').scrollTop=0");
+        await browser.screenshot(`${out}/picker-72-names-${width}-text${scale}.png`);
+        await browser.scaleText(1);
+      }
+      await browser.press('Escape');
+      assert.equal(control.posts.length, 0, 'Reading translated names never changes a beast');
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      await browser?.close();
+      await server.close();
+    }
+  },
+);
+
+test(
   'protection SVG and detail identity row keep their geometry, artwork and focus across themes and enlarged text',
   { skip: !browserBin, timeout: 60000 },
   async () => {
@@ -230,7 +472,7 @@ test(
         await browser.evaluate(
           "({name:document.querySelector('.beast-hero img').alt,ready:document.querySelector('.beast-hero img').complete && document.querySelector('.beast-hero img').naturalWidth>0})",
         ),
-        { name: 'Pyropup', ready: true },
+        { name: 'Hỏa Khuyển Con', ready: true },
       );
       await browser.evaluate(`document.querySelectorAll('.beast-tab')[3].click();
         window.summonButton=document.querySelector('.beast-summon-actions .primary');
@@ -311,7 +553,7 @@ test(
       await browser.wait("!!document.querySelector('.beast-hero')");
       await browser.click('Bộ sưu tập');
       await browser.wait(
-        "document.querySelector('[data-species=frostnip] img')?.alt==='Frostique'",
+        "document.querySelector('[data-species=frostnip] img')?.alt==='Hàn Sương Linh Miêu'",
       );
       assert.deepEqual(
         await browser.evaluate(`({
@@ -340,7 +582,7 @@ test(
         await browser.evaluate(
           "[...document.querySelectorAll('.beast-collection-card img')].map(e=>e.alt)",
         ),
-        ['Frostnip', 'Frostique'],
+        ['Tiểu Tuyết Miêu', 'Hàn Sương Linh Miêu'],
       );
       assert.equal(await browser.evaluate("document.querySelector('#sheet').open"), false);
       await browser.evaluate(
@@ -786,7 +1028,7 @@ test(
         await browser.evaluate(
           "document.querySelector('.beast-reveal [data-reveal=beast-art]').alt",
         ),
-        'Pyropup',
+        'Hỏa Khuyển Con',
       );
       assert.deepEqual(browser.errors, []);
     } finally {
@@ -1071,7 +1313,7 @@ test(
       await browser.click('Đồng hành');
       await browser.click('Xem tuyệt kỹ hoàn mỹ');
       await browser.evaluate("document.querySelector('.beast-target-option input').click()");
-      await browser.click('Tải thêm task để chọn');
+      await browser.click('Tải thêm công việc để chọn');
       await browser.wait("document.querySelectorAll('.beast-target-option').length===202");
       assert.equal(
         await browser.evaluate(
@@ -1080,7 +1322,7 @@ test(
         1,
       );
       held = holdRead(control, 'tasks-page');
-      await browser.click('Tải thêm task để chọn');
+      await browser.click('Tải thêm công việc để chọn');
       await held.started;
       await browser.press('Escape');
       held.release();
