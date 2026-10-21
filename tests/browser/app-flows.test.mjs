@@ -20,6 +20,164 @@ import { ScheduleStore } from '../../src/adapters/d1/schedule-store.ts';
 import { D1BeastStore } from '../../src/adapters/d1/linh-thu-store.ts';
 
 test(
+  'browser navigation waits for the new document and deferred module, including same-document navigation',
+  { skip: !browserBin, timeout: 60000 },
+  async () => {
+    let releaseModule, moduleRequested;
+    const moduleGate = new Promise((resolve) => {
+      releaseModule = resolve;
+    });
+    const requested = new Promise((resolve) => {
+      moduleRequested = resolve;
+    });
+    const server = createServer(async (request, response) => {
+      if (request.url === '/startup.js') {
+        moduleRequested();
+        await moduleGate;
+        response.setHeader('Content-Type', 'text/javascript');
+        response.end('window.newDocumentReady = true;');
+        return;
+      }
+      response.setHeader('Content-Type', 'text/html');
+      response.end(
+        request.url === '/old'
+          ? '<html><body data-document="old"><script>window.oldDocument = true;</script></body></html>'
+          : '<html><body data-document="new"><script type="module" src="/startup.js"></script></body></html>',
+      );
+    });
+    await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const url = 'http://127.0.0.1:' + server.address().port;
+    let browser, navigation;
+    try {
+      browser = await chrome();
+      await browser.navigate(url + '/old', 390);
+      assert.equal(await browser.evaluate('window.oldDocument'), true);
+      let completed = false;
+      navigation = browser.navigate(url + '/new', 390).then(() => {
+        completed = true;
+      });
+      await Promise.race([
+        requested,
+        delay(5000).then(() => {
+          throw Error('Module was not requested');
+        }),
+      ]);
+      assert.equal(
+        completed,
+        false,
+        'Navigation must wait while the new document module is blocked',
+      );
+      releaseModule();
+      await navigation;
+      assert.deepEqual(
+        await browser.evaluate(`({
+        document: document.body.dataset.document,
+        ready: window.newDocumentReady,
+        old: 'oldDocument' in window
+      })`),
+        { document: 'new', ready: true, old: false },
+      );
+      await browser.navigate(url + '/new#section', 390);
+      assert.equal(await browser.evaluate('location.hash'), '#section');
+      assert.equal(await browser.evaluate('window.newDocumentReady'), true);
+      assert.deepEqual(browser.errors, []);
+      await browser.close();
+      await browser.close();
+      await assert.rejects(browser.evaluate('1'), /Browser connection is not open/);
+    } finally {
+      releaseModule();
+      if (navigation) await navigation.catch(() => {});
+      if (browser) await browser.close();
+      await new Promise((resolve) => server.close(resolve));
+    }
+  },
+);
+
+test(
+  'browser reloads fresh application documents and bootstraps after repeated offline and online transitions',
+  { skip: !browserBin, timeout: 60000 },
+  async () => {
+    const control = fixture(),
+      html = await readFile('web/index.html', 'utf8'),
+      server = await serve(control);
+    let browser;
+    try {
+      browser = await chrome();
+      for (let cycle = 0; cycle < 5; cycle++) {
+        if (cycle) {
+          await browser.networkConditions(true, 0);
+          await browser.navigate(server.url, 390);
+        }
+        control.staticFiles = new Map([
+          [
+            'index.html',
+            html.replace('<head>', `<head><script>window.reloadCycle = ${cycle};</script>`),
+          ],
+        ]);
+        const reads = control.calls.filter((call) => call === 'GET bootstrap').length;
+        await browser.networkConditions(false, 0, 10000000);
+        await browser.navigate(server.url, 390);
+        assert.equal(await browser.evaluate('window.reloadCycle'), cycle);
+        assert.equal(await browser.evaluate("'oldDocument' in window"), false);
+        await browser.wait("!!document.querySelector('.focus-flip-card')");
+        assert.equal(control.calls.filter((call) => call === 'GET bootstrap').length, reads + 1);
+        await browser.evaluate('window.oldDocument = true');
+        assert.deepEqual(browser.errors, []);
+      }
+      assert.equal(control.posts.length, 0, 'Reload recovery must not mutate personal data');
+    } finally {
+      if (browser) await browser.close();
+      await server.close();
+    }
+  },
+);
+
+test(
+  'browser timeout diagnostics include script and resource failures and reset after navigation',
+  { skip: !browserBin, timeout: 60000 },
+  async () => {
+    const control = fixture();
+    control.staticFiles = new Map([
+      [
+        'index.html',
+        `<!doctype html><html><head>
+      <script>console.error('controlled console failure');throw Error('controlled script failure');</script>
+      <script type="module" src="/app/controlled-missing-module.js"></script>
+      </head><body><main id="content">Controlled startup failure</main></body></html>`,
+      ],
+    ]);
+    const server = await serve(control);
+    let browser;
+    try {
+      browser = await chrome();
+      await browser.navigate(server.url, 390);
+      await assert.rejects(browser.wait('window.applicationStarted === true'), (error) => {
+        for (const text of [
+          'controlled script failure',
+          'controlled console failure',
+          'controlled-missing-module.js',
+          '404',
+          'resourceFailures',
+          'readyState',
+          'Controlled startup failure',
+          server.url,
+        ])
+          assert.ok(error.message.includes(text), 'Missing diagnostic: ' + text);
+        return true;
+      });
+      assert.equal(browser.errors.length, 1);
+      control.staticFiles.clear();
+      await browser.navigate(server.url, 390);
+      await browser.wait("!!document.querySelector('.focus-flip-card')");
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      if (browser) await browser.close();
+      await server.close();
+    }
+  },
+);
+
+test(
   'ordinary draws use the production API and real delayed D1, preserve waiting UX and recover a lost x10 response',
   { skip: !browserBin, timeout: 90000 },
   async () => {

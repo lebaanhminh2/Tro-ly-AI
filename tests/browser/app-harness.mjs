@@ -614,6 +614,15 @@ async function chrome() {
   );
   let startupError,
     diagnostics = '';
+  let processClosed = false;
+  const processExit = new Promise((resolve) => {
+    browserProcess.once('close', () => {
+      processClosed = true;
+      resolve();
+    });
+  });
+  const waitForExit = (ms) =>
+    Promise.race([processExit.then(() => true), delay(ms, false, { ref: false })]);
   browserProcess.on('error', (error) => {
     startupError = error;
   });
@@ -621,8 +630,14 @@ async function chrome() {
     diagnostics = (diagnostics + String(data)).slice(-2000);
   });
   const cleanup = async () => {
-    browserProcess.kill();
-    await delay(250);
+    if (!processClosed && !(await waitForExit(1000))) {
+      browserProcess.kill();
+      if (!(await waitForExit(5000))) {
+        browserProcess.kill('SIGKILL');
+        if (!(await waitForExit(5000)))
+          throw Error('Owned browser process did not exit: ' + diagnostics);
+      }
+    }
     const target = resolve(profile);
     assert.equal(dirname(target), resolve(tmpdir()));
     assert.ok(basename(target).startsWith('minh-anh-browser-'));
@@ -651,8 +666,19 @@ async function chrome() {
     ).find((t) => t.type === 'page');
     const socket = new WebSocket(target.webSocketDebuggerUrl),
       pending = new Map(),
-      errors = [];
-    let sequence = 0;
+      errors = [],
+      consoleErrors = [],
+      resourceFailures = [],
+      requests = new Map(),
+      lifecycle = new Map();
+    let sequence = 0,
+      documentFrame,
+      offline = false,
+      closing;
+    const record = (list, value) => {
+      list.push(value);
+      if (list.length > 30) list.shift();
+    };
     await new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         socket.close();
@@ -691,9 +717,51 @@ async function chrome() {
           message.params.exceptionDetails.exception?.description ||
             message.params.exceptionDetails.text,
         );
+      const params = message.params;
+      if (message.method === 'Runtime.consoleAPICalled' && params.type === 'error')
+        record(consoleErrors, params.args.map((arg) => arg.value ?? arg.description).join(' '));
+      if (message.method === 'Network.requestWillBeSent')
+        requests.set(params.requestId, {
+          url: params.request.url,
+          type: params.type,
+          loaderId: params.loaderId,
+        });
+      if (message.method === 'Network.responseReceived' && params.response.status >= 400)
+        record(resourceFailures, {
+          ...requests.get(params.requestId),
+          url: params.response.url,
+          status: params.response.status,
+        });
+      if (message.method === 'Network.loadingFailed')
+        record(resourceFailures, {
+          ...requests.get(params.requestId),
+          error: params.errorText,
+          canceled: params.canceled ?? false,
+          blockedReason: params.blockedReason,
+        });
+      if (['Network.loadingFinished', 'Network.loadingFailed'].includes(message.method))
+        requests.delete(params.requestId);
+      if (message.method === 'Page.frameNavigated' && !params.frame.parentId)
+        documentFrame = params.frame;
+      if (message.method === 'Page.lifecycleEvent') {
+        if (!lifecycle.has(params.loaderId)) lifecycle.set(params.loaderId, new Set());
+        lifecycle.get(params.loaderId).add(params.name);
+        if (lifecycle.size > 30) lifecycle.delete(lifecycle.keys().next().value);
+      }
+    });
+    socket.addEventListener('close', () => {
+      for (const request of pending.values()) {
+        clearTimeout(request.timer);
+        request.reject(Error('Browser connection closed'));
+      }
+      pending.clear();
     });
     const call = (method, params = {}) =>
       new Promise((resolve, reject) => {
+        if (socket.readyState !== WebSocket.OPEN) {
+          reject(Error('Browser connection is not open: ' + method));
+          return;
+        }
         const id = ++sequence,
           timer = setTimeout(() => {
             pending.delete(id);
@@ -704,6 +772,8 @@ async function chrome() {
       });
     await call('Runtime.enable');
     await call('Page.enable');
+    await call('Page.setLifecycleEventsEnabled', { enabled: true });
+    await call('Network.enable');
     const evaluate = async (expression) => {
       const result = await call('Runtime.evaluate', {
         expression,
@@ -714,19 +784,39 @@ async function chrome() {
         throw Error(result.exceptionDetails.exception?.description || result.exceptionDetails.text);
       return result.result.value;
     };
+    const describe = async () => {
+      let page;
+      try {
+        page = await evaluate(`({url:location.href,readyState:document.readyState,
+          contentChildren:document.querySelector('#content')?.childElementCount,
+          text:document.body?.innerText?.slice(0,8000)})`);
+      } catch (error) {
+        page = { error: error.message };
+      }
+      return JSON.stringify(
+        {
+          page,
+          frame: documentFrame && {
+            url: documentFrame.url,
+            loaderId: documentFrame.loaderId,
+            lifecycle: [...(lifecycle.get(documentFrame.loaderId) ?? [])],
+          },
+          errors,
+          consoleErrors,
+          resourceFailures,
+          pendingResources: [...requests.values()],
+          browserDiagnostics: diagnostics,
+        },
+        null,
+        2,
+      );
+    };
     const wait = async (expression) => {
       for (let i = 0; i < 150; i++) {
         if (await evaluate(expression)) return;
         await delay(80);
       }
-      throw Error(
-        'Timed out waiting for ' +
-          expression +
-          '\n' +
-          errors.join('\n') +
-          '\n' +
-          (await evaluate('document.body.innerText')),
-      );
+      throw Error('Timed out waiting for ' + expression + '\n' + (await describe()));
     };
     return {
       errors,
@@ -745,15 +835,16 @@ async function chrome() {
                     }
                 })()`);
       },
-      async networkConditions(offline = false, latency = 150, bytesPerSecond = 102400) {
-        await call('Network.enable');
+      async networkConditions(isOffline = false, latency = 150, bytesPerSecond = 102400) {
         await call('Network.emulateNetworkConditions', {
-          offline,
+          offline: isOffline,
           latency,
           downloadThroughput: bytesPerSecond,
           uploadThroughput: bytesPerSecond,
           connectionType: 'cellular3g',
         });
+        // Keep intentional offline navigations distinct from unexpected navigation errors.
+        offline = isOffline;
       },
       async press(key, code = key) {
         const windowsVirtualKeyCode = { Enter: 13, Escape: 27, Tab: 9 }[key];
@@ -828,13 +919,33 @@ async function chrome() {
       },
       async navigate(url, width = 1440) {
         errors.length = 0;
+        consoleErrors.length = 0;
+        resourceFailures.length = 0;
+        requests.clear();
         await call('Emulation.setDeviceMetricsOverride', {
           width,
           height: width < 900 ? 844 : 1000,
           deviceScaleFactor: 1,
           mobile: width < 900,
         });
-        await call('Page.navigate', { url });
+        const navigation = await call('Page.navigate', { url });
+        if (navigation.errorText && !offline)
+          throw Error('Navigation failed: ' + navigation.errorText + '\n' + (await describe()));
+        // Events may arrive before Page.navigate resolves. Match the returned loader,
+        // rather than accepting readiness or elements belonging to the old document.
+        if (navigation.loaderId) {
+          for (let i = 0; i < 150; i++) {
+            if (
+              documentFrame?.id === navigation.frameId &&
+              documentFrame.loaderId === navigation.loaderId &&
+              lifecycle.get(navigation.loaderId)?.has('DOMContentLoaded')
+            )
+              return navigation;
+            await delay(80);
+          }
+          throw Error('Timed out loading new document: ' + url + '\n' + (await describe()));
+        }
+        return navigation;
       },
       async click(label, selector = 'button') {
         const done = await evaluate(
@@ -843,8 +954,17 @@ async function chrome() {
         assert.equal(done, true, 'Missing enabled control: ' + label);
       },
       async close() {
-        socket.close();
-        await cleanup();
+        closing ??= (async () => {
+          try {
+            await call('Browser.close');
+          } catch {
+            // The connection can close before Chrome acknowledges Browser.close.
+          } finally {
+            socket.close();
+            await cleanup();
+          }
+        })();
+        await closing;
       },
     };
   } catch (error) {
