@@ -174,6 +174,9 @@ export function createBeastActions(context) {
           state.cultivation = mapAccount(data.wallet, state.day?.day);
           invalidateSpeciesPage();
           loadBeastSpecies();
+          // Coalesce data reads only, not portrait warming. A focus refresh
+          // must still fetch fresh data while an earlier portrait is pending.
+          loading = null;
           // Publish data and usable controls immediately. Keep the update
           // indicator until role portraits are warm so rapid tab switches
           // retain decoded art; image completion never reapplies old data.

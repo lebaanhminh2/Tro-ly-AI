@@ -91,14 +91,14 @@ test(
         control.beastData.selected[0].id,
       );
       await browser.evaluate(
-        "window.savedPortrait=document.querySelector('.beast-hero img');window.savedHero=document.querySelector('.beast-hero');window.releaseDecodes.forEach(resolve=>resolve());window.releaseDecodes=[]",
+        "window.savedPortrait=document.querySelector('.beast-hero img');window.savedHero=document.querySelector('.beast-hero')",
       );
-      await settled(browser);
       const progress = await browser.evaluate(
         "Number(document.querySelector('.beast-progress-track').getAttribute('aria-valuenow'))",
       );
       control.beastData.account.version++;
       control.beastData.selected[0].attempt.earned += 10;
+      // Refocusing during the first warm-up must start a fresh data read.
       await browser.evaluate("window.dispatchEvent(new Event('focus'))");
       await browser.wait(
         `window.releaseDecodes.length>0&&Number(document.querySelector('.beast-progress-track').getAttribute('aria-valuenow'))===${progress + 1}`,
