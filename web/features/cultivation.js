@@ -36,6 +36,13 @@ export function createCultivationActions(context) {
     render,
     toast,
   } = context;
+  let drawOpened = false;
+  sheet.addEventListener('close', () => {
+    if (sheet.open) return;
+    const refreshDraw = drawOpened;
+    drawOpened = false;
+    if (refreshDraw && state.live && state.baseDirty) context.refreshOnReturn();
+  });
   function openShare() {
     openSheet(state.live ? 'Thẻ thành tích' : 'Thẻ thành tích mẫu');
     const c = el('div', undefined, 'rank-card');
@@ -166,6 +173,7 @@ export function createCultivationActions(context) {
   function openDraw() {
     if (runtime.pendingDraw?.revision !== runtime.revision) runtime.pendingDraw = null;
     openSheet(state.live ? 'Quay thưởng' : 'Quay thưởng · Bản mẫu');
+    drawOpened = true;
     sheet.classList.add('draw-sheet-open');
     const balance = el('div', undefined, 'draw-balance');
     const ticketCount = el('strong', String(state.cultivation.tickets));
@@ -201,15 +209,17 @@ export function createCultivationActions(context) {
       const c = state.cultivation,
         pending = runtime.pendingDraw;
       ticketCount.textContent = String(c.tickets);
-      hint.textContent = pending
-        ? 'Chưa xác nhận kết quả. Kiểm tra lại đúng lượt quay; vé sẽ không bị trừ thêm.'
-        : c.suspended
-          ? 'Tạm ngưng vì lâu không chat. Nhắn Minh Anh để hoạt động lại.'
-          : c.tickets < 1
-            ? 'Hoàn thành task, thói quen hoặc điểm danh để nhận vé.'
-            : c.tickets < 10
-              ? 'Còn thiếu ' + (10 - c.tickets) + ' vé để quay ×10.'
-              : '10 vé · 10 phần thưởng · một lần mở.';
+      hint.textContent = busy
+        ? 'Đang xác nhận phần thưởng…'
+        : pending
+          ? 'Chưa xác nhận kết quả. Kiểm tra lại đúng lượt quay; vé sẽ không bị trừ thêm.'
+          : c.suspended
+            ? 'Tạm ngưng vì lâu không chat. Nhắn Minh Anh để hoạt động lại.'
+            : c.tickets < 1
+              ? 'Hoàn thành task, thói quen hoặc điểm danh để nhận vé.'
+              : c.tickets < 10
+                ? 'Còn thiếu ' + (10 - c.tickets) + ' vé để quay ×10.'
+                : '10 vé · 10 phần thưởng · một lần mở.';
       for (const [count, control] of controls) {
         const retry = pending?.count === count;
         control.disabled =

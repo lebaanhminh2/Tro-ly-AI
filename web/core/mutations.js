@@ -73,7 +73,7 @@ export function createMutations({
         includeHistory,
         activeOffset: state.activeTasksOffset ?? 0,
         includeHabits: path === 'habits' || state.tab === 'habits',
-        scope: featureWrite ? path : 'all',
+        scope: drawWrite ? 'draw' : featureWrite ? path : 'all',
       };
       if (drawWrite) {
         drawAttempt = runtime.pendingDraw ?? {
@@ -121,7 +121,13 @@ export function createMutations({
         );
         return result;
       }
-      applySnapshot(state, data);
+      if (data.accountOnly) {
+        state.cultivation = mapAccount(data.result.account, state.day?.day);
+        const now = (state.serverNow ?? Date.now()) + Date.now() - (state.loadedAt ?? Date.now());
+        state.checkin = checkinProgress(state.cultivation, now, state.checkin?.rewards);
+        // Reconcile the other screens later without blocking the confirmed draw.
+        state.baseDirty = true;
+      } else applySnapshot(state, data);
       if (featureWrite) ui?.loadTower?.();
       if (featureWrite && data.result?.account) {
         state.cultivation = mapAccount(data.result.account, state.day?.day);
@@ -181,6 +187,7 @@ export function createMutations({
       });
       render();
       if (featureWrite && (state.tab !== path || authChanged)) refreshOnReturn();
+      if (drawWrite && !authChanged && !sheet.open && state.baseDirty) refreshOnReturn?.();
     }
   }
   return { performLive };

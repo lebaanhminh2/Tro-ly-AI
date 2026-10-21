@@ -277,6 +277,220 @@ test(
   },
 );
 test(
+  'x1 and x10 draw receipts update rewards and wallet without waiting for unrelated refreshes',
+  { skip: !browserBin, timeout: 60000 },
+  async () => {
+    const control = fixture();
+    control.state.account.state.tickets = 30;
+    const initialBasic = control.state.account.state.inventory.basic;
+    const server = await serve(control);
+    let browser;
+    try {
+      browser = await chrome();
+      await browser.navigate(server.url, 390);
+      await browser.wait("!!document.querySelector('.focus-flip-card')");
+      await browser.evaluate("document.querySelector('[data-tab=achievements]').click()");
+      await browser.click('Quay thưởng · 30 vé');
+      control.calls.length = 0;
+      control.readDelays = { bootstrap: 3000 };
+      control.failBootstrap = true;
+      let balance = 30;
+      for (const count of [1, 10, 1]) {
+        balance -= count;
+        await browser.evaluate(`document.querySelector('[data-draw-count="${count}"]').click()`);
+        await browser.wait(
+          `document.querySelector('[data-ticket-balance]').textContent==='${balance}'&&document.querySelector('.draw-result').getAttribute('aria-busy')==='false'`,
+        );
+        assert.equal(
+          await browser.evaluate("document.querySelector('.draw-result h3').textContent"),
+          `Đã nhận ${count} phần thưởng`,
+        );
+        assert.equal(control.state.account.state.tickets, balance);
+        assert.equal(control.calls.filter((call) => call.startsWith('GET ')).length, 0);
+      }
+      assert.equal(new Set(control.posts.map((post) => post.input.id)).size, 3);
+      assert.equal(control.state.account.state.inventory.basic, initialBasic + 12);
+      await browser.evaluate("document.querySelector('[data-sheet-close]').click()");
+      await browser.wait("document.querySelector('#toast').textContent.length>0");
+      assert.equal(control.calls.filter((call) => call === 'GET bootstrap').length, 1);
+      // A failed optional refresh must not turn a confirmed draw into a retry.
+      await browser.click('Quay thưởng · 18 vé');
+      await browser.evaluate('document.querySelector(\'[data-draw-count="1"]\').click()');
+      await browser.wait("document.querySelector('[data-ticket-balance]').textContent==='17'");
+      assert.equal(control.posts.length, 4);
+      assert.equal(new Set(control.posts.map((post) => post.input.id)).size, 4);
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      await browser?.close();
+      await server.close();
+    }
+  },
+);
+
+test(
+  'a refresh started after closing a draw cannot replace the wallet from a newer draw',
+  { skip: !browserBin, timeout: 60000 },
+  async () => {
+    const control = fixture();
+    control.state.account.state.tickets = 30;
+    const server = await serve(control);
+    let browser;
+    try {
+      browser = await chrome();
+      await browser.navigate(server.url, 390);
+      await browser.wait("!!document.querySelector('.focus-flip-card')");
+      await browser.evaluate("document.querySelector('[data-tab=achievements]').click()");
+      await browser.click('Quay thưởng · 30 vé');
+      await browser.evaluate('document.querySelector(\'[data-draw-count="1"]\').click()');
+      await browser.wait("document.querySelector('[data-ticket-balance]').textContent==='29'");
+      await browser.evaluate(`(() => {
+        const original=window.fetch;
+        window.fetch=async(...args)=>{
+          const response=await original(...args);
+          if(String(args[0]).endsWith('/api/bootstrap')){
+            const saved=new Response(await response.text(),{status:response.status,headers:response.headers});
+            window.drawRefreshHeld=true;
+            await new Promise(resolve=>window.releaseDrawRefresh=resolve);
+            window.drawRefreshReleased=true;
+            return saved;
+          }
+          return response;
+        };
+        document.querySelector('[data-sheet-close]').click();
+      })()`);
+      await browser.wait('window.drawRefreshHeld===true');
+      await browser.click('Quay thưởng · 29 vé');
+      await browser.evaluate('document.querySelector(\'[data-draw-count="10"]\').click()');
+      await browser.wait("document.querySelector('[data-ticket-balance]').textContent==='19'");
+      await browser.evaluate('window.releaseDrawRefresh()');
+      await browser.wait('window.drawRefreshReleased===true');
+      await delay(200);
+      assert.equal(
+        await browser.evaluate("document.querySelector('[data-ticket-balance]').textContent"),
+        '19',
+      );
+      assert.equal(
+        await browser.evaluate(
+          "[...document.querySelectorAll('#content button')].some(b=>b.textContent==='Quay thưởng · 19 vé')",
+        ),
+        true,
+      );
+      assert.equal(control.posts.length, 2);
+      assert.equal(control.state.account.state.tickets, 19);
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      await browser?.close();
+      await server.close();
+    }
+  },
+);
+
+test(
+  'a slow draw POST keeps its waiting status and a closed sheet never receives a late reveal',
+  { skip: !browserBin, timeout: 60000 },
+  async () => {
+    const control = fixture();
+    control.state.account.state.tickets = 12;
+    const server = await serve(control);
+    let browser;
+    try {
+      browser = await chrome();
+      await browser.navigate(server.url, 390);
+      await browser.wait("!!document.querySelector('.focus-flip-card')");
+      await browser.evaluate("document.querySelector('[data-tab=achievements]').click()");
+      await browser.click('Quay thưởng · 12 vé');
+      await browser.evaluate(`(() => {
+        const original=window.fetch;
+        window.fetch=async(...args)=>{
+          const response=await original(...args);
+          if(String(args[0]).endsWith('/api/cultivation')&&args[1]?.method==='POST'){
+            window.drawPostHeld=true;
+            await new Promise(resolve=>window.releaseDrawPost=resolve);
+          }
+          return response;
+        };
+        document.querySelector('[data-draw-count="10"]').click();
+      })()`);
+      await browser.wait('window.drawPostHeld===true');
+      await delay(650);
+      assert.equal(await browser.evaluate("!!document.querySelector('.mystery-revealed')"), false);
+      assert.equal(
+        await browser.evaluate("document.querySelector('.draw-hint').textContent"),
+        'Đang xác nhận phần thưởng…',
+      );
+      assert.equal(control.posts.length, 1);
+      assert.equal(control.state.account.state.tickets, 2);
+      await browser.press('Escape');
+      await browser.wait("!document.querySelector('#sheet').open");
+      await browser.evaluate('window.releaseDrawPost()');
+      await browser.wait(
+        "!document.querySelector('#sheet').open&&[...document.querySelectorAll('#content button')].some(b=>b.textContent==='Quay thưởng · 2 vé'&&!b.disabled)",
+      );
+      await browser.click('Quay thưởng · 2 vé');
+      assert.equal(
+        await browser.evaluate("document.querySelector('[data-ticket-balance]').textContent"),
+        '2',
+      );
+      assert.equal(await browser.evaluate("!!document.querySelector('.mystery-revealed')"), false);
+      assert.equal(control.posts.length, 1);
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      await browser?.close();
+      await server.close();
+    }
+  },
+);
+
+test(
+  'a late confirmed draw cannot restore rewards after the session changes',
+  { skip: !browserBin, timeout: 60000 },
+  async () => {
+    const control = fixture();
+    control.state.account.state.tickets = 12;
+    const server = await serve(control);
+    let browser;
+    try {
+      browser = await chrome();
+      await browser.navigate(server.url, 390);
+      await browser.wait("!!document.querySelector('.focus-flip-card')");
+      await browser.evaluate("document.querySelector('[data-tab=achievements]').click()");
+      await browser.click('Quay thưởng · 12 vé');
+      await browser.evaluate(`(() => {
+        const original=window.fetch;
+        window.fetch=async(...args)=>{
+          const response=await original(...args);
+          if(String(args[0]).endsWith('/api/cultivation')&&args[1]?.method==='POST'){
+            window.drawPostHeld=true;
+            await new Promise(resolve=>window.releaseDrawPost=resolve);
+            window.drawPostReleased=true;
+          }
+          return response;
+        };
+        document.querySelector('[data-draw-count="10"]').click();
+      })()`);
+      await browser.wait('window.drawPostHeld===true');
+      // Model an external authentication change while the control is disabled.
+      await browser.evaluate(
+        "document.querySelector('#logout').disabled=false;document.querySelector('#logout').click()",
+      );
+      await browser.wait("!!document.querySelector('.login-card')");
+      await browser.evaluate('window.releaseDrawPost()');
+      await browser.wait('window.drawPostReleased===true');
+      await delay(550);
+      assert.equal(await browser.evaluate("!!document.querySelector('.login-card')"), true);
+      assert.equal(await browser.evaluate("document.querySelector('#sheet').open"), false);
+      assert.equal(await browser.evaluate("!!document.querySelector('.mystery-revealed')"), false);
+      assert.equal(control.posts.length, 1);
+      assert.equal(control.state.account.state.tickets, 2);
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      await browser?.close();
+      await server.close();
+    }
+  },
+);
+
+test(
   'mobile frame prioritizes content, shares heading geometry and follows stable Telegram viewport and safe areas',
   { skip: !browserBin, timeout: 60000 },
   async () => {

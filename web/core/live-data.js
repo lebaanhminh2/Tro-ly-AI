@@ -200,6 +200,17 @@ export async function refreshLive({
 }
 export async function liveMutation(path, input, options = {}) {
   const result = await liveRequest(path, input);
+  // A draw receipt includes the complete wallet. Showing its confirmed rewards
+  // does not depend on reading the schedule, task pages or habit reports again.
+  if (
+    path === 'cultivation' &&
+    input.operation === 'draw' &&
+    options.scope === 'draw' &&
+    result.account?.state
+  ) {
+    settleRequest(path, input);
+    return { result, committed: true, accountOnly: true };
+  }
   try {
     const refreshed = await refreshLive(options);
     settleRequest(path, input);
