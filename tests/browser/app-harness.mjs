@@ -836,13 +836,20 @@ async function chrome() {
                 })()`);
       },
       async networkConditions(isOffline = false, latency = 150, bytesPerSecond = 102400) {
-        await call('Network.emulateNetworkConditions', {
+        const conditions = {
           offline: isOffline,
           latency,
           downloadThroughput: bytesPerSecond,
           uploadThroughput: bytesPerSecond,
           connectionType: 'cellular3g',
+        };
+        // Replace the request rule on each transition. Keep transport emulation
+        // separate from navigator state instead of using the deprecated combined API.
+        await call('Network.emulateNetworkConditionsByRule', {
+          offline: isOffline,
+          matchedNetworkConditions: [{ urlPattern: '', ...conditions }],
         });
+        await call('Network.overrideNetworkState', conditions);
         // Keep intentional offline navigations distinct from unexpected navigation errors.
         offline = isOffline;
       },

@@ -106,7 +106,16 @@ test(
       for (let cycle = 0; cycle < 5; cycle++) {
         if (cycle) {
           await browser.networkConditions(true, 0);
-          await browser.navigate(server.url, 390);
+          assert.equal(await browser.evaluate('navigator.onLine'), false);
+          assert.equal(
+            await browser.evaluate(`fetch('/api/cultivation', {
+              method: 'POST', headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({id:'harness_offline_${cycle}',operation:'draw',count:1})
+            }).then(() => false, () => true)`),
+            true,
+            'The transport must reject an offline mutation before reloading',
+          );
+          if (cycle % 2) await browser.navigate(server.url, 390);
         }
         control.staticFiles = new Map([
           [
@@ -116,6 +125,7 @@ test(
         ]);
         const reads = control.calls.filter((call) => call === 'GET bootstrap').length;
         await browser.networkConditions(false, 0, 10000000);
+        assert.equal(await browser.evaluate('navigator.onLine'), true);
         await browser.navigate(server.url, 390);
         assert.equal(await browser.evaluate('window.reloadCycle'), cycle);
         assert.equal(await browser.evaluate("'oldDocument' in window"), false);
