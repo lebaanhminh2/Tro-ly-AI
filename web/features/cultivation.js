@@ -10,6 +10,7 @@ import {
 } from '../models/cultivation.js';
 import { button, el } from '../ui/dom.js';
 import { playEffect } from '../ui/effects.js';
+import { prefersReducedMotion } from '../core/experience.js';
 import { renderRewardCalendar } from '../views/achievements.js';
 export function summarizeDrawRewards(rewards) {
   const groups = new Map();
@@ -185,11 +186,15 @@ export function createCultivationActions(context) {
     const reveal = el('div', undefined, 'loot-result mystery-card draw-result');
     reveal.setAttribute('role', 'status');
     reveal.setAttribute('aria-live', 'polite');
-    reveal.append(
-      el('span', '✦', 'draw-seal'),
-      el('h3', 'Một món quà cho nỗ lực của cậu'),
-      el('p', 'Quay 1 lần hoặc mở nhanh 10 phần thưởng.', 'hint'),
-    );
+    function resetReveal() {
+      reveal.classList.remove('mystery-revealed');
+      reveal.replaceChildren(
+        el('span', '✦', 'draw-seal'),
+        el('h3', 'Một món quà cho nỗ lực của cậu'),
+        el('p', 'Quay 1 lần hoặc mở nhanh 10 phần thưởng.', 'hint'),
+      );
+    }
+    resetReveal();
     const probabilities = el('details', undefined, 'draw-probabilities');
     probabilities.append(el('summary', 'Tỷ lệ phần thưởng'));
     for (const item of loot) {
@@ -203,14 +208,29 @@ export function createCultivationActions(context) {
     body.append(reveal, probabilities);
     const actions = el('div', undefined, 'draw-actions');
     const controls = new Map();
-    let busy = false;
+    let busy = false,
+      opening = false;
+    function flipHalf(open) {
+      if (prefersReducedMotion()) return Promise.resolve();
+      reveal.classList.remove('draw-closing', 'draw-opening');
+      reveal.classList.add(open ? 'draw-opening' : 'draw-closing');
+      const name = open ? 'draw-open' : 'draw-close';
+      const animation = reveal
+        .getAnimations()
+        .find((animation) => 'animationName' in animation && animation.animationName === name);
+      // CSS owns the duration. Cancellation (closing the sheet or reducing
+      // motion) must release the controller just like a completed half flip.
+      return animation?.finished.catch(() => {}) ?? Promise.resolve();
+    }
     function sync() {
       if (!actions.isConnected) return;
       const c = state.cultivation,
         pending = runtime.pendingDraw;
       ticketCount.textContent = String(c.tickets);
       hint.textContent = busy
-        ? 'Đang xác nhận phần thưởng…'
+        ? opening
+          ? 'Đang mở phần thưởng…'
+          : 'Đang xác nhận phần thưởng…'
         : pending
           ? 'Chưa xác nhận kết quả. Kiểm tra lại đúng lượt quay; vé sẽ không bị trừ thêm.'
           : c.suspended
@@ -241,19 +261,24 @@ export function createCultivationActions(context) {
         async () => {
           if (control.disabled || busy || runtime.saving) return;
           busy = true;
+          resetReveal();
           sync();
           try {
-            const saved = state.live
-              ? await performLive(
+            const request = state.live
+              ? performLive(
                   'cultivation',
                   { operation: 'draw', count },
-                  { keepSheet: true, silent: true, effect: () => playEffect(reveal, 'draw', 420) },
+                  { keepSheet: true, silent: true },
                 )
-              : demoDrawBatch(state.cultivation, count);
-            if (!saved || !reveal.isConnected) return;
+              : Promise.resolve(demoDrawBatch(state.cultivation, count));
+            const closing = flipHalf(false);
+            const saved = await request,
+              revision = runtime.revision;
+            if (!saved) return;
             const rewards = saved.rewards ?? [saved.reward];
             const pendingChoices = saved.choices?.length ?? 0;
-            reveal.replaceChildren(
+            const content = document.createDocumentFragment();
+            content.append(
               el(
                 'h3',
                 'Đã nhận ' +
@@ -262,7 +287,6 @@ export function createCultivationActions(context) {
                   (pendingChoices ? ' · ' + pendingChoices + ' lượt chờ chọn' : ''),
               ),
             );
-            reveal.classList.add('mystery-revealed');
             const { qi, items } = summarizeDrawRewards(rewards);
             const list = el('ul', undefined, 'draw-rewards');
             if (qi) list.append(el('li', '+' + qi + ' tu vi', 'draw-qi'));
@@ -271,7 +295,7 @@ export function createCultivationActions(context) {
               row.append(el('span', label), el('strong', '×' + amount));
               list.append(row);
             }
-            reveal.append(
+            content.append(
               list,
               el(
                 'p',
@@ -283,16 +307,27 @@ export function createCultivationActions(context) {
               ),
             );
             if (pendingChoices)
-              reveal.append(
+              content.append(
                 button(
                   'Chọn phần thưởng từ linh thú',
                   () => context.openBeastDrawChoices(),
                   'primary',
                 ),
               );
+            // The request overlaps the first half. Keep the card edge-on if
+            // it is late; the entire confirmed result is ready before opening.
+            await closing;
+            if (!reveal.isConnected || !sheet.open || runtime.revision !== revision) return;
+            reveal.replaceChildren(content);
+            reveal.classList.add('mystery-revealed');
+            opening = true;
+            sync();
+            await flipHalf(true);
             if (!state.live) render();
           } finally {
+            reveal.classList.remove('draw-closing', 'draw-opening');
             busy = false;
+            opening = false;
             sync();
           }
         },

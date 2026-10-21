@@ -1,7 +1,7 @@
 import { query } from '../../adapters/d1/database.ts';
 import { ScheduleStore } from '../../adapters/d1/schedule-store.ts';
 import { prepareBeastEffect } from '../../adapters/d1/linh-thu-effects.ts';
-import { prepareBeastDraw } from '../../adapters/d1/linh-thu-draw.ts';
+import { prepareCultivationDraw } from '../../adapters/d1/linh-thu-draw.ts';
 import type { MiniAppTiming } from '../../adapters/observability.ts';
 import {
   breakthrough,
@@ -41,29 +41,22 @@ export async function handleCultivation(
       input,
       now,
       async (state) => {
-        const day = await measure('draw_context', async () => {
-          const settings = await query(
-            env.DB,
-            `SELECT s.start_minutes,s.sleep_minutes,
-             (SELECT day FROM schedule_days WHERE owner=s.owner AND start_at<=? AND end_at>? ORDER BY start_at DESC LIMIT 1) AS day
-           FROM schedule_settings s WHERE s.owner=?`,
-            now,
-            now,
-            owner,
-          ).first<{ start_minutes: number; sleep_minutes: number | null; day: number | null }>();
-          if (!settings || settings.sleep_minutes === null) throw Error('SETUP_REQUIRED');
-          // Only a new/changed operating day needs the general day creation path.
-          const activeDay =
-            settings.day ?? (await new ScheduleStore(env.DB).ensureDay(owner, now))?.day;
-          return activeDay ?? operatingDay(now, settings.start_minutes);
-        });
+        const random = () => crypto.getRandomValues(new Uint32Array(1))[0]! / 4294967296;
+        let beastDraw = await measure('draw_prepare', () =>
+          prepareCultivationDraw(env.DB, owner, input.id, undefined, now, count as 1 | 10, random),
+        );
+        if (beastDraw.day === null) {
+          const day = await measure('draw_context', async () => {
+            const activeDay = await new ScheduleStore(env.DB).ensureDay(owner, now);
+            return activeDay?.day ?? operatingDay(now, beastDraw.startMinutes);
+          });
+          beastDraw = await measure('draw_prepare', () =>
+            prepareCultivationDraw(env.DB, owner, input.id, day, now, count as 1 | 10, random),
+          );
+        }
         if (state.suspended) throw Error('ACCOUNT_SUSPENDED');
         if (state.tickets < Number(count)) throw Error('NO_TICKETS');
-        const random = () => crypto.getRandomValues(new Uint32Array(1))[0]! / 4294967296;
-        const beastDraw = await measure('draw_prepare', () =>
-          prepareBeastDraw(env.DB, owner, input.id, day, now, count as 1 | 10, random),
-        );
-        if (beastDraw) return beastDraw(state);
+        if (beastDraw.apply) return beastDraw.apply(state);
         const result = drawRewards(state, count as 1 | 10, random);
         return {
           state: result.state,

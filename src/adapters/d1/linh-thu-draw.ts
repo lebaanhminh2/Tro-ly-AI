@@ -28,6 +28,28 @@ export function drawLootReward(loot: readonly DrawLoot[]): SkillReward {
   return reward;
 }
 
+export async function prepareCultivationDraw(
+  db: Database,
+  owner: string,
+  requestId: string,
+  requestedDay: number | undefined,
+  now: number,
+  count: 1 | 10,
+  random: () => number,
+) {
+  const row = await readDrawContext(db, owner, requestedDay, now);
+  if (!row || row.start_minutes === null || row.sleep_minutes === null)
+    throw Error('SETUP_REQUIRED');
+  return {
+    day: row.day,
+    startMinutes: row.start_minutes,
+    apply:
+      row.day === null
+        ? null
+        : prepareDrawEffects(db, owner, requestId, row.day, now, count, random, row),
+  };
+}
+
 export async function prepareBeastDraw(
   db: Database,
   owner: string,
@@ -37,29 +59,55 @@ export async function prepareBeastDraw(
   count: 1 | 10,
   random: () => number,
 ) {
-  // A single read keeps account, effective companion, ultimate and daily
-  // ordinal coherent without five sequential database round trips.
-  const row = await query(
+  return prepareDrawEffects(
     db,
-    `SELECT ba.state_json AS account_json,ba.version,ba.activated_day,
+    owner,
+    requestId,
+    day,
+    now,
+    count,
+    random,
+    await readDrawContext(db, owner, day, now),
+  );
+}
+
+async function readDrawContext(
+  db: Database,
+  owner: string,
+  requestedDay: number | undefined,
+  now: number,
+) {
+  // Read the operating day with the companion context. A missing day is
+  // returned to the caller for the normal day-creation path before any roll.
+  return query(
+    db,
+    `WITH context AS (
+      SELECT o.owner,s.start_minutes,s.sleep_minutes,
+        COALESCE(?,(SELECT day FROM schedule_days WHERE owner=o.owner AND start_at<=? AND end_at>? ORDER BY start_at DESC LIMIT 1)) AS day
+      FROM (SELECT ? AS owner) o LEFT JOIN schedule_settings s ON s.owner=o.owner
+    )
+    SELECT c.day,c.start_minutes,c.sleep_minutes,ba.state_json AS account_json,ba.version,ba.activated_day,
       u.state_json AS ultimate_json,
       b.id,b.species_id,b.acquired_at,a.id AS attempt_id,a.rule_version,a.status,a.earned,a.gray,a.form,a.counters_json,
       (SELECT COALESCE(SUM(COALESCE(json_extract(cr.request_json,'$.count'),1)),0)
-       FROM cultivation_receipts cr JOIN schedule_days d ON d.owner=cr.owner AND d.day=?
+       FROM cultivation_receipts cr JOIN schedule_days d ON d.owner=cr.owner AND d.day=c.day
        WHERE cr.owner=ba.owner AND cr.operation='draw' AND cr.created>=d.start_at AND cr.created<d.end_at) AS ordinal
-     FROM beast_accounts ba
+     FROM context c LEFT JOIN beast_accounts ba ON ba.owner=c.owner
      LEFT JOIN beast_roles r ON r.owner=ba.owner AND r.role='companion'
-       AND r.effective_day=(SELECT MAX(effective_day) FROM beast_roles WHERE owner=ba.owner AND role='companion' AND effective_day<=?)
+       AND r.effective_day=(SELECT MAX(effective_day) FROM beast_roles WHERE owner=ba.owner AND role='companion' AND effective_day<=c.day)
      LEFT JOIN beasts b ON b.owner=ba.owner AND b.id=r.beast_id
      LEFT JOIN beast_attempts a ON a.owner=b.owner AND a.beast_id=b.id AND a.id=COALESCE(r.attempt_id,b.current_attempt_id)
-     LEFT JOIN beast_ultimates u ON u.owner=ba.owner AND u.week_start=?
-     WHERE ba.owner=?`,
-    day,
-    day,
-    beastCalendarWeek(now),
+     LEFT JOIN beast_ultimates u ON u.owner=ba.owner AND u.week_start=?`,
+    requestedDay ?? null,
+    now,
+    now,
     owner,
+    beastCalendarWeek(now),
   ).first<{
-    account_json: string;
+    day: number | null;
+    start_minutes: number | null;
+    sleep_minutes: number | null;
+    account_json: string | null;
     version: number;
     activated_day: number | null;
     ultimate_json: string | null;
@@ -75,7 +123,19 @@ export async function prepareBeastDraw(
     counters_json: string;
     ordinal: number;
   }>();
-  if (!row || row.activated_day === null) return null;
+}
+
+function prepareDrawEffects(
+  db: Database,
+  owner: string,
+  requestId: string,
+  day: number,
+  now: number,
+  count: 1 | 10,
+  random: () => number,
+  row: Awaited<ReturnType<typeof readDrawContext>>,
+) {
+  if (!row || row.account_json === null || row.activated_day === null) return null;
   const account = { state: JSON.parse(row.account_json) as BeastAccount, version: row.version };
   validBeastAccount(account.state);
   const beast: OwnedBeast | null =

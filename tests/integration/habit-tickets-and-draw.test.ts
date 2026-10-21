@@ -97,11 +97,12 @@ function drawContext(db: Database, now = monday) {
   };
 }
 
-test('real draw handler uses four database round trips with a companion under binding latency, including repeated x1/x10 and day rollover', async (t) => {
+test('real draw handler uses three database round trips with a companion under binding latency, including repeated x1/x10 and day rollover', async (t) => {
   const { mf, db, healthy } = await fixture();
   try {
     const { day } = await drawCompanion(db);
-    let calls: string[] = [];
+    let calls: string[] = [],
+      bindingLatencyMs = 25;
     const native = new WeakMap<ReturnType<Database['prepare']>, ReturnType<Database['prepare']>>();
     const slow = {
       prepare(sql: string) {
@@ -112,17 +113,17 @@ test('real draw handler uses four database round trips with a companion under bi
             bind: (...values) => wrap(statement.bind(...values)),
             first: async <T>() => {
               calls.push('read');
-              await delay(25);
+              await delay(bindingLatencyMs);
               return statement.first<T>();
             },
             all: async <T>() => {
               calls.push('read');
-              await delay(25);
+              await delay(bindingLatencyMs);
               return statement.all<T>();
             },
             run: async () => {
               calls.push('write');
-              await delay(25);
+              await delay(bindingLatencyMs);
               return statement.run();
             },
           };
@@ -133,29 +134,31 @@ test('real draw handler uses four database round trips with a companion under bi
       },
       batch: async (statements) => {
         calls.push('batch');
-        await delay(25);
+        await delay(bindingLatencyMs);
         return db.batch(statements.map((statement) => native.get(statement)!));
       },
     } satisfies Database;
     const context = drawContext(slow);
     let balance = 40;
     for (const [index, count] of [1, 10, 1].entries()) {
+      bindingLatencyMs = [25, 100, 250][index]!;
       calls = [];
       const input = { id: 'slow_draw_000' + index, operation: 'draw', count };
       const started = performance.now();
       const response = await handleCultivation(context, input),
         body = (await response.json()) as any;
+      const elapsedMs = Math.round(performance.now() - started);
       assert.equal(response.status, 200);
       assert.equal(body.result.rewards.length, count);
       assert.equal(body.account.state.tickets, (balance -= count));
       assert.deepEqual(body.account, await healthy.read('123'));
-      assert.deepEqual(calls, ['read', 'read', 'read', 'batch']);
+      assert.deepEqual(calls, ['read', 'read', 'batch']);
       t.diagnostic(
         JSON.stringify({
           count,
-          bindingLatencyMs: 25,
+          bindingLatencyMs,
           dbCalls: calls.length,
-          elapsedMs: Math.round(performance.now() - started),
+          elapsedMs,
         }),
       );
       calls = [];
@@ -190,6 +193,61 @@ test('real draw handler uses four database round trips with a companion under bi
       1,
     );
     assert.equal((await healthy.read('456')).state.tickets, 0);
+  } finally {
+    await mf.dispose();
+  }
+});
+
+test('combined draw context respects the existing day, missing setup and accounts without beasts', async () => {
+  const { mf, db, healthy } = await fixture();
+  try {
+    const { day } = await drawCompanion(db);
+    // Editing wake-up time must not change the day of an already open window.
+    await db.prepare("UPDATE schedule_settings SET start_minutes=720 WHERE owner='123'").run();
+    const first = await handleCultivation(drawContext(db), {
+      id: 'draw_existing_day',
+      operation: 'draw',
+    });
+    assert.equal(first.status, 200);
+    const event = await db
+      .prepare(
+        "SELECT day,result_json FROM beast_skill_events WHERE source_id='draw_existing_day:0'",
+      )
+      .first<{ day: number; result_json: string }>();
+    assert.equal(event!.day, day);
+    assert.equal(JSON.parse(event!.result_json).ordinal, 1);
+
+    await new ScheduleStore(db).configure('456', '05:30', '23:15', 0, monday);
+    await healthy.mutate('456', 'draw_plain_seed', 'fixture', {}, monday, (state) => ({
+      state: { ...state, tickets: 11 },
+      result: {},
+    }));
+    const context = { ...drawContext(db), owner: '456' };
+    const plain = (await (
+      await handleCultivation(context, { id: 'draw_plain_001', operation: 'draw', count: 10 })
+    ).json()) as any;
+    assert.equal(plain.result.rewards.length, 10);
+    assert.equal(plain.account.state.tickets, 1);
+    assert.equal(await db.prepare("SELECT 1 FROM beast_accounts WHERE owner='456'").first(), null);
+    assert.equal((await healthy.read('123')).state.tickets, 39);
+
+    const before = await healthy.read('456');
+    await db.prepare("UPDATE schedule_settings SET sleep_minutes=NULL WHERE owner='456'").run();
+    await assert.rejects(
+      handleCultivation(context, { id: 'draw_setup_001', operation: 'draw' }),
+      /SETUP_REQUIRED/,
+    );
+    await assert.rejects(
+      handleCultivation({ ...context, owner: '789' }, { id: 'draw_setup_002', operation: 'draw' }),
+      /SETUP_REQUIRED/,
+    );
+    assert.deepEqual(await healthy.read('456'), before);
+    assert.equal(
+      await db
+        .prepare("SELECT 1 FROM cultivation_receipts WHERE request_id LIKE 'draw_setup_%'")
+        .first(),
+      null,
+    );
   } finally {
     await mf.dispose();
   }

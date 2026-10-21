@@ -2634,8 +2634,11 @@ body:has(.time-task.dragging) {
     transform 0.18s ease,
     background 0.18s ease;
 }
-.mystery-card.effect-spin {
-  animation: mystery-flip 0.62s ease-in-out both;
+.mystery-card.draw-closing {
+  animation: draw-close 0.35s ease-in forwards;
+}
+.mystery-card.draw-opening {
+  animation: draw-open 0.35s ease-out both;
 }
 .mystery-card.mystery-revealed {
   font-size: 16px;
@@ -2652,20 +2655,22 @@ body:has(.time-task.dragging) {
   color: #8a5b19;
   animation: stamp-in 0.28s ease-out both;
 }
-@keyframes mystery-flip {
-  0% {
+@keyframes draw-close {
+  from {
     transform: perspective(500px) rotateY(0) scale(1);
     opacity: 1;
   }
-  45% {
+  to {
     transform: perspective(500px) rotateY(90deg) scale(0.96);
     opacity: 0.45;
   }
-  55% {
+}
+@keyframes draw-open {
+  from {
     transform: perspective(500px) rotateY(-90deg) scale(0.96);
     opacity: 0.45;
   }
-  100% {
+  to {
     transform: perspective(500px) rotateY(0) scale(1);
     opacity: 1;
   }
@@ -2684,7 +2689,8 @@ body:has(.time-task.dragging) {
   .mystery-card {
     transition: none;
   }
-  .mystery-card.effect-spin,
+  .mystery-card.draw-closing,
+  .mystery-card.draw-opening,
   .effect-success,
   .effect-failure {
     animation: none;
@@ -6298,6 +6304,7 @@ dialog.draw-sheet-open .sheet-title-row {
 .draw-body {
   flex: 1 1 auto;
   min-height: 0;
+  overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 4px 3px 16px;

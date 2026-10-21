@@ -325,7 +325,18 @@ test(
         committed = false;
         holdResponse = index === 0;
         loseResponse = index === 1;
-        await browser.evaluate(`document.querySelector('[data-draw-count="${count}"]').click()`);
+        await browser.evaluate(`(() => {
+          const node=document.querySelector('.draw-result');
+          const frames=window.realDrawFrames=[];
+          function sample(){
+            const reward=!!node.querySelector('.draw-rewards');
+            const animation=node.getAnimations().find(animation=>'animationName' in animation&&animation.animationName==='draw-open');
+            frames.push({reward,opening:animation?.playState==='running',time:animation?.currentTime??null});
+            if(node.getAttribute('aria-busy')==='true'||!reward)requestAnimationFrame(sample);
+          }
+          document.querySelector('[data-draw-count="${count}"]').click();
+          requestAnimationFrame(sample);
+        })()`);
         if (holdResponse) {
           const deadline = Date.now() + 10000;
           while ((!committed || !releaseResponse) && Date.now() < deadline) await delay(20);
@@ -358,11 +369,15 @@ test(
           `document.querySelector('[data-ticket-balance]').textContent==='${balance}'&&document.querySelector('.draw-result').getAttribute('aria-busy')==='false'`,
         );
         assert.equal((await healthy.read('123')).state.tickets, balance);
+        const frames = await browser.evaluate('window.realDrawFrames');
+        assert.equal(
+          frames.find((frame) => frame.reward)?.opening,
+          true,
+          'The production API result must first appear during the opening half',
+        );
         assert.deepEqual(
           calls,
-          index === 1
-            ? ['read', 'read', 'read', 'batch', 'read']
-            : ['read', 'read', 'read', 'batch'],
+          index === 1 ? ['read', 'read', 'batch', 'read'] : ['read', 'read', 'batch'],
         );
         assert.match(timings.at(-1), /total;dur=\d/);
       }
@@ -387,6 +402,133 @@ test(
       await browser?.close();
       await server?.close();
       await mf.dispose();
+    }
+  },
+);
+
+test(
+  'draw rewards appear during the opening half with fast or slow x1/x10 responses and reduced motion',
+  { skip: !browserBin, timeout: 60000 },
+  async (t) => {
+    const control = fixture();
+    control.state.account.state.tickets = 60;
+    const server = await serve(control);
+    let browser;
+    try {
+      browser = await chrome();
+      await browser.navigate(server.url, 390);
+      await browser.wait("!!document.querySelector('.focus-flip-card')");
+      await browser.evaluate("document.querySelector('[data-tab=achievements]').click()");
+      await browser.click('Quay thưởng · 60 vé');
+      const cases = [
+        { count: 1, latency: 0 },
+        { count: 10, latency: 250 },
+        { count: 1, latency: 1800 },
+        { count: 10, latency: 1800 },
+        { count: 1, latency: 0, motion: 'system' },
+        { count: 10, latency: 250, motion: 'app' },
+      ];
+      let balance = 60;
+      for (const { count, latency, motion } of cases) {
+        await browser.reducedMotion(motion === 'system');
+        await browser.evaluate(
+          `import('/app/core/experience.js').then(module=>module.setExperiencePreferences({motion:'${motion === 'app' ? 'reduce' : 'system'}'}))`,
+        );
+        await browser.evaluate(`(() => {
+          const native=window.drawNativeFetch??=window.fetch.bind(window);
+          const probe=window.drawProbe={start:performance.now(),samples:[],done:false};
+          window.fetch=async(...args)=>{
+            if(String(args[0]).endsWith('/api/cultivation')&&args[1]?.method==='POST'){
+              probe.request=performance.now()-probe.start;
+              const response=await native(...args);
+              const buffered=new Response(await response.text(),{status:response.status,headers:response.headers});
+              probe.held=true;
+              await new Promise(resolve=>setTimeout(resolve,${latency}));
+              probe.response=performance.now()-probe.start;
+              return buffered;
+            }
+            return native(...args);
+          };
+          const node=document.querySelector('.draw-result');
+          const observe=()=>{
+            const reward=!!node.querySelector('.draw-rewards');
+            const animation=node.getAnimations().find(animation=>'animationName' in animation&&animation.animationName==='draw-open');
+            const style=getComputedStyle(node);
+            probe.samples.push({at:performance.now()-probe.start,reward,opening:animation?.playState==='running',time:animation?.currentTime??null,opacity:Number(style.opacity),transform:style.transform});
+            if(node.getAttribute('aria-busy')==='false'&&reward)probe.done=true;
+            else if(window.drawProbe===probe)requestAnimationFrame(observe);
+          };
+          document.querySelector('[data-draw-count="${count}"]').click();
+          requestAnimationFrame(observe);
+        })()`);
+        if (latency === 1800) {
+          await browser.wait('window.drawProbe.held===true');
+          await delay(450);
+          assert.deepEqual(
+            await browser.evaluate(`({
+              reward:!!document.querySelector('.draw-rewards'),
+              busy:document.querySelector('.draw-result').getAttribute('aria-busy'),
+              opening:document.querySelector('.draw-result').classList.contains('draw-opening'),
+              closing:document.querySelector('.draw-result').classList.contains('draw-closing')
+            })`),
+            { reward: false, busy: 'true', opening: false, closing: true },
+            'An unconfirmed result must never open an empty reward face',
+          );
+        }
+        await browser.wait('window.drawProbe.done===true');
+        const probe = await browser.evaluate('window.drawProbe');
+        const first = probe.samples.find((sample) => sample.reward);
+        assert.ok(first.at >= probe.response, 'Reward content must follow the confirmed response');
+        if (motion) {
+          assert.equal(first.opening, false, 'Reduced motion must skip both halves');
+          assert.equal(first.transform, 'none');
+        } else {
+          assert.equal(
+            first.opening,
+            true,
+            'The first reward frame must be inside the opening half',
+          );
+          assert.ok(
+            probe.samples.some(
+              (sample) =>
+                sample.reward &&
+                sample.opening &&
+                sample.time > 0 &&
+                sample.time < 350 &&
+                sample.opacity > 0.45 &&
+                sample.transform !== 'none',
+            ),
+            'Confirmed content must become visible while the card is still turning',
+          );
+        }
+        balance -= count;
+        assert.equal(
+          await browser.evaluate("document.querySelector('[data-ticket-balance]').textContent"),
+          String(balance),
+        );
+        assert.equal(control.state.account.state.tickets, balance);
+        assert.equal(
+          await browser.evaluate("document.querySelector('.draw-rewards strong').textContent"),
+          '×' + count,
+        );
+        t.diagnostic(
+          JSON.stringify({
+            count,
+            responseLatencyMs: latency,
+            reducedMotion: motion ?? false,
+            requestMs: Math.round(probe.request),
+            responseMs: Math.round(probe.response),
+            firstRewardMs: Math.round(first.at),
+            rewardDuringOpening: first.opening,
+          }),
+        );
+      }
+      assert.equal(control.posts.length, cases.length);
+      assert.equal(new Set(control.posts.map((post) => post.input.id)).size, cases.length);
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      await browser?.close();
+      await server.close();
     }
   },
 );
@@ -560,7 +702,7 @@ test(
         "[...document.querySelectorAll('button')].find(b=>b.textContent.startsWith('Quay thưởng ·')).click()",
       );
       await browser.evaluate('document.querySelector(\'[data-draw-count="10"]\').click()');
-      await browser.wait("!!document.querySelector('.mystery-revealed')");
+      await browser.wait('!!document.querySelector(\'.mystery-revealed[aria-busy="false"]\')');
       assert.equal(control.state.account.state.tickets, 1);
       assert.equal(
         control.posts.filter((p) => p.path === 'cultivation' && p.input.operation === 'draw')
