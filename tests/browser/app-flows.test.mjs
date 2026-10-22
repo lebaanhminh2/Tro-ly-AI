@@ -20,6 +20,283 @@ import { ScheduleStore } from '../../src/adapters/d1/schedule-store.ts';
 import { D1BeastStore } from '../../src/adapters/d1/linh-thu-store.ts';
 
 test(
+  'fusion requires three inputs per selected attempt, disables unfunded batches, and stays open',
+  { skip: !browserBin, timeout: 60000 },
+  async () => {
+    const control = fixture();
+    control.state.account.state.inventory.basic = 306;
+    control.state.account.state.inventory.supreme = 6;
+    control.state.account.state.inventory.keepsake = 6;
+    const server = await serve(control);
+    let browser;
+    try {
+      browser = await chrome();
+      await browser.navigate(server.url, 390);
+      await browser.wait("!!document.querySelector('.focus-flip-card')");
+      await browser.evaluate("document.querySelector('[data-tab=achievements]').click()");
+      await browser.click('Túi vật phẩm');
+      assert.equal(
+        await browser.evaluate(`(() => {
+        const item = document.querySelector('[data-inventory-item=immortal]').closest('section');
+        const heading = [...document.querySelectorAll('.inventory-group')].filter(node => node.compareDocumentPosition(item) & Node.DOCUMENT_POSITION_FOLLOWING).at(-1);
+        return heading.textContent === 'TÍN VẬT & VẬT PHẨM ĐẶC BIỆT' && !!item.querySelector('[data-fuse-item=supreme]') && item.querySelector('button').textContent.includes('20%');
+      })()`),
+        true,
+      );
+      await browser.evaluate(
+        "document.querySelector('[data-fusion-count]').value='100';document.querySelector('[data-fusion-count]').dispatchEvent(new Event('change'));document.querySelector('[data-fuse-item=basic]').click()",
+      );
+      await browser.wait(
+        "document.querySelector('[data-fusion-result=basic]').textContent.includes('100 thành công')",
+      );
+      assert.equal(await browser.evaluate("document.querySelector('#sheet').open"), true);
+      assert.equal(
+        await browser.evaluate("document.querySelector('[data-inventory-item=basic]').textContent"),
+        '×6',
+      );
+      assert.equal(
+        await browser.evaluate(
+          "document.querySelector('[data-inventory-item=middle]').textContent",
+        ),
+        '×100',
+      );
+      assert.equal(
+        await browser.evaluate("document.querySelector('#sheet-title').textContent"),
+        'Túi vật phẩm',
+      );
+      await browser.evaluate(
+        "document.querySelector('[data-fusion-count]').value='1';document.querySelector('[data-fusion-count]').dispatchEvent(new Event('change'));document.querySelector('[data-fuse-item=basic]').click()",
+      );
+      await browser.wait(
+        "document.querySelector('[data-inventory-item=middle]').textContent==='×101'",
+      );
+      await browser.evaluate("document.querySelector('[data-fuse-item=basic]').click()");
+      await browser.wait(
+        "document.querySelector('[data-inventory-item=middle]').textContent==='×102'",
+      );
+      assert.equal(
+        await browser.evaluate("document.querySelector('[data-fuse-item=basic]').disabled"),
+        true,
+      );
+      await browser.evaluate(
+        "document.querySelector('[data-fusion-count]').value='10';document.querySelector('[data-fusion-count]').dispatchEvent(new Event('change'));document.querySelector('[data-fuse-item=supreme]').click()",
+      );
+      assert.equal(
+        await browser.evaluate("document.querySelector('[data-fuse-item=supreme]').disabled"),
+        true,
+      );
+      assert.equal(
+        await browser.evaluate("document.querySelector('[data-fusion-cost]') === null"),
+        true,
+      );
+      assert.equal(
+        control.posts.filter((post) => post.input.operation === 'fuse').length,
+        3,
+        'insufficient batch sends no request',
+      );
+      await browser.evaluate(
+        "document.querySelector('[data-fusion-count]').value='1';document.querySelector('[data-fusion-count]').dispatchEvent(new Event('change'));document.querySelector('[data-fuse-item=supreme]').click()",
+      );
+      await browser.wait(
+        "document.querySelector('[data-inventory-item=immortal]').textContent==='×1'",
+      );
+      await browser.evaluate("document.querySelector('[data-fuse-item=supreme]').click()");
+      await browser.wait(
+        "document.querySelector('[data-inventory-item=immortal]').textContent==='×2'",
+      );
+      assert.doesNotMatch(
+        await browser.evaluate(
+          "document.querySelector('[data-fusion-result=supreme]').textContent",
+        ),
+        /Đã dừng vì thiếu nguyên liệu/,
+      );
+      assert.equal(
+        await browser.evaluate(
+          "document.querySelector('[data-inventory-item=immortal]').textContent",
+        ),
+        '×2',
+      );
+      assert.equal(control.posts.filter((post) => post.input.operation === 'fuse').length, 5);
+      assert.equal(
+        await browser.evaluate('document.documentElement.scrollWidth <= innerWidth'),
+        true,
+      );
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      await browser?.close();
+      await server.close();
+    }
+  },
+);
+
+test(
+  'failed fusion x10 burns all thirty inputs and leaves the original item description uncluttered',
+  { skip: !browserBin, timeout: 60000 },
+  async () => {
+    const control = fixture();
+    control.state.account.state.inventory.basic = 30;
+    control.fusionRoll = 0.999999;
+    const server = await serve(control);
+    let browser;
+    try {
+      browser = await chrome();
+      await browser.navigate(server.url, 390);
+      await browser.wait("!!document.querySelector('.focus-flip-card')");
+      await browser.evaluate("document.querySelector('[data-tab=achievements]').click()");
+      await browser.click('Túi vật phẩm');
+      assert.equal(
+        await browser.evaluate(
+          "document.querySelector('[data-fusion-count]').closest('label').nextElementSibling.hidden",
+        ),
+        true,
+      );
+      const description = await browser.evaluate(
+        "document.querySelector('[data-inventory-item=basic]').closest('section').textContent",
+      );
+      assert.doesNotMatch(description, /chỉ mất 1 phù|trả lại 2|Mỗi lượt cần/);
+      await browser.evaluate(
+        "document.querySelector('[data-fusion-count]').value='10';document.querySelector('[data-fusion-count]').dispatchEvent(new Event('change'));document.querySelector('[data-fuse-item=basic]').click()",
+      );
+      await browser.wait(
+        "document.querySelector('[data-fusion-result=basic]').textContent.includes('10 thất bại')",
+      );
+      assert.equal(
+        await browser.evaluate("document.querySelector('[data-inventory-item=basic]').textContent"),
+        '×0',
+      );
+      assert.equal(
+        await browser.evaluate(
+          "document.querySelector('[data-inventory-item=middle]').textContent",
+        ),
+        '×0',
+      );
+      assert.equal(
+        await browser.evaluate("document.querySelector('[data-fuse-item=basic]').disabled"),
+        true,
+      );
+      assert.equal(await browser.evaluate("document.querySelector('#sheet').open"), true);
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      await browser?.close();
+      await server.close();
+    }
+  },
+);
+
+test(
+  'lost fusion response blocks other recipes and recovers the same batch after reopening without spending twice',
+  { skip: !browserBin, timeout: 60000 },
+  async () => {
+    const control = fixture();
+    control.state.account.state.inventory.basic = 30;
+    const server = await serve(control);
+    let browser;
+    try {
+      browser = await chrome();
+      await browser.navigate(server.url, 390);
+      await browser.wait("!!document.querySelector('.focus-flip-card')");
+      await browser.evaluate("document.querySelector('[data-tab=achievements]').click()");
+      await browser.click('Túi vật phẩm');
+      await browser.evaluate(`(() => {
+        const original = window.fetch; let lost = true;
+        window.fetch = async (...args) => {
+          const response = await original(...args);
+          if (lost && String(args[0]).endsWith('/api/cultivation') && args[1]?.method === 'POST') { lost = false; throw Error('LOST_RESPONSE'); }
+          return response;
+        };
+        document.querySelector('[data-fusion-count]').value = '10';
+        document.querySelector('[data-fusion-count]').dispatchEvent(new Event('change'));
+        document.querySelector('[data-fuse-item=basic]').click();
+      })()`);
+      await browser.wait(
+        "document.querySelector('[data-fuse-item=basic]').textContent.includes('Kiểm tra lại')",
+      );
+      assert.equal(control.state.account.state.inventory.basic, 0);
+      assert.equal(control.state.account.state.inventory.middle, 10);
+      assert.equal(
+        await browser.evaluate(
+          "document.querySelector('[data-fusion-count]').disabled && document.querySelector('[data-fuse-item=middle]').disabled",
+        ),
+        true,
+      );
+      await browser.evaluate("document.querySelector('[data-sheet-close]').click()");
+      await browser.click('Túi vật phẩm');
+      await browser.wait(
+        "document.querySelector('[data-fuse-item=basic]').textContent.includes('Kiểm tra lại')",
+      );
+      await browser.evaluate("document.querySelector('[data-fuse-item=basic]').click()");
+      await browser.wait(
+        "document.querySelector('[data-fusion-result=basic]').textContent.includes('10 thành công')",
+      );
+      assert.equal(
+        await browser.evaluate("document.querySelector('[data-inventory-item=basic]').textContent"),
+        '×0',
+      );
+      assert.equal(
+        await browser.evaluate(
+          "document.querySelector('[data-inventory-item=middle]').textContent",
+        ),
+        '×10',
+      );
+      assert.equal(control.posts.filter((post) => post.input.operation === 'fuse').length, 1);
+      assert.equal(await browser.evaluate("document.querySelector('#sheet').open"), true);
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      await browser?.close();
+      await server.close();
+    }
+  },
+);
+
+test(
+  'immortal breakthrough preview applies the triple penalty and keeps its description concise',
+  { skip: !browserBin, timeout: 60000 },
+  async () => {
+    const control = fixture(),
+      bootstrap = control.bootstrap;
+    control.state.account.state.qi = 50;
+    control.state.account.state.inventory.immortal = 1;
+    control.state.account.state.immortalPity = true;
+    control.bootstrap = () => ({
+      ...bootstrap(),
+      beastV2: {
+        active: true,
+        breakthrough: { chancePoints: 0, preventLoss: false, penaltyMultiplier: 3 },
+      },
+    });
+    const server = await serve(control);
+    let browser;
+    try {
+      browser = await chrome();
+      await browser.navigate(server.url, 390);
+      await browser.wait("!!document.querySelector('.focus-flip-card')");
+      await browser.evaluate("document.querySelector('[data-tab=achievements]').click()");
+      await browser.click('Đột phá');
+      await browser.wait("!!document.querySelector('#sheet select')");
+      await browser.evaluate(
+        "document.querySelector('#sheet select').value='immortal';document.querySelector('#sheet select').dispatchEvent(new Event('change'))",
+      );
+      const info = await browser.evaluate(
+        "[...document.querySelectorAll('#sheet .hint')].find(node=>node.textContent.startsWith('Lần này có ')).textContent",
+      );
+      assert.match(info, /Thất bại −3 tu vi/);
+      assert.match(info, /Hộ Đạo Tiên Phù/);
+      assert.match(info, /Lần này có 90%/);
+      assert.match(info, /1 Hộ Tâm Phù \+ 1 An Tâm Phù/);
+      assert.match(info, /bỏ qua tích lũy/);
+      assert.doesNotMatch(info, /dù thành công|hay thất bại|phạt ×3|nhân 3|giữ mức phạt/);
+      assert.doesNotMatch(info, /vĩnh viễn/);
+      assert.doesNotMatch(info, /Thất bại −24 tu vi/);
+      assert.equal(control.posts.length, 0);
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      await browser?.close();
+      await server.close();
+    }
+  },
+);
+
+test(
   'browser navigation waits for the new document and deferred module, including same-document navigation',
   { skip: !browserBin, timeout: 60000 },
   async () => {
@@ -2635,7 +2912,7 @@ test(
   { skip: !browserBin, timeout: 120000 },
   async () => {
     const control = fixture();
-    Object.assign(control.state.account.state, { qi: 3000, streak: 45 });
+    Object.assign(control.state.account.state, { qi: 10000, streak: 60 });
     Object.assign(control.state.account.state.inventory, {
       basic: 1,
       middle: 1,
@@ -2646,7 +2923,7 @@ test(
     let browser;
     try {
       browser = await chrome();
-      const cases = [65, 60, 55, 50, 45, 40, 35, 30, 25, 20, 15].map((base, rank) => ({
+      const cases = [65, 60, 55, 50, 45, 40, 35, 30, 25, 20, 15, 12, 9, 7, 5].map((base, rank) => ({
         rank,
         failures: 0,
         base,
@@ -2654,7 +2931,11 @@ test(
       cases.push(
         ...[60, 60, 65, 70, 75, 75, 75].map((base, failures) => ({ rank: 1, failures, base })),
       );
-      cases.push({ rank: 0, failures: 4, base: 80 }, { rank: 10, failures: 4, base: 30 });
+      cases.push(
+        { rank: 0, failures: 4, base: 80 },
+        { rank: 10, failures: 4, base: 30 },
+        { rank: 14, failures: 4, base: 20 },
+      );
       for (const { rank, failures, base } of cases) {
         Object.assign(control.state.account.state, { rank, highestRank: rank, failures });
         await browser.navigate(server.url, 390);
@@ -2679,7 +2960,7 @@ test(
         assert.ok((await description()).startsWith('Lần này có ' + base + '%'));
         assert.match(
           await description(),
-          /Tỷ lệ cơ bản lên .+: (65|60|55|50|45|40|35|30|25|20|15)%/,
+          /Tỷ lệ cơ bản lên .+: (65|60|55|50|45|40|35|30|25|20|15|12|9|7|5)%/,
         );
         assert.match(
           await description(),
@@ -2703,6 +2984,13 @@ test(
         assert.equal((await snapshot(browser)).overflow, false);
         assert.deepEqual(browser.errors, []);
       }
+      Object.assign(control.state.account.state, { rank: 15, highestRank: 15 });
+      await browser.navigate(server.url, 390);
+      await browser.wait("!!document.querySelector('.focus-flip-card')");
+      await browser.evaluate("document.querySelector('[data-tab=achievements]').click()");
+      await browser.wait("document.querySelector('.companion-rank h2')?.textContent==='Vô Cực'");
+      assert.equal((await snapshot(browser)).overflow, false);
+      assert.deepEqual(browser.errors, []);
       assert.deepEqual(control.posts, [], 'Reading odds must not attempt a breakthrough');
     } finally {
       if (browser) await browser.close();
@@ -3332,6 +3620,7 @@ test(
       await t.test(
         'draw, fusion, protection and breakthrough remain usable through feature controllers',
         async () => {
+          control.state.account.state.qi = 50;
           await browser.navigate(server.url);
           await browser.wait("!!document.querySelector('.focus-flip-card')");
           await browser.evaluate("document.querySelector('[data-tab=achievements]').click()");
@@ -3345,13 +3634,12 @@ test(
           assert.equal(control.state.account.state.tickets, tickets - 1);
           await browser.evaluate("document.querySelector('[data-sheet-close]').click()");
           await browser.click('Túi vật phẩm');
-          await browser.click('Ghép 3 lá · 80%');
-          await browser.click('Xác nhận');
+          await browser.evaluate("document.querySelector('[data-fuse-item=basic]').click()");
           await browser.wait(
-            "!document.querySelector('#sheet').open&&!document.querySelector('[data-tab=achievements]').disabled",
+            "document.querySelector('[data-fusion-result=basic]').textContent.includes('1 thành công')",
           );
           assert.equal(control.state.account.state.inventory.middle, 1);
-          await browser.click('Túi vật phẩm');
+          assert.equal(await browser.evaluate("document.querySelector('#sheet').open"), true);
           await browser.evaluate(
             "[...document.querySelectorAll('#sheet button')].find(b=>b.textContent==='Dùng hôm nay').click()",
           );

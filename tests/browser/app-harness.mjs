@@ -9,6 +9,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { createDemo } from '../../web/demo/state.js';
 import { checkinProgress } from '../../web/models/cultivation.js';
 import { assessHabitDay, newHabitPeriod } from '../../src/domain/habits.ts';
+import { runFusionBatch } from '../../src/adapters/d1/cultivation-fusion.ts';
 // Real-browser smoke tests. Only localhost fixtures are used; no .env or cloud data.
 const browserBin =
   process.env.BROWSER_BIN ||
@@ -353,9 +354,12 @@ function fixture() {
           ...(count === 1 ? { reward: 'basic' } : {}),
         };
       } else if (input.operation === 'fuse') {
-        c.inventory.basic -= 3;
-        c.inventory.middle++;
-        result = { success: true };
+        const batch = runFusionBatch(
+          { state: c, item: input.item, count: input.count ?? 1 },
+          () => control.fusionRoll ?? 0,
+        );
+        state.account.state = batch.state;
+        result = batch.result;
       } else if (input.operation === 'protect') {
         c.inventory[input.item]--;
         c[input.item + 'Day'] = operatingDay;

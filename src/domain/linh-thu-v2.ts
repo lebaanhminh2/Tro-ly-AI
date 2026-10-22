@@ -491,7 +491,7 @@ export type BeastV2Event =
       settleSleep?: boolean;
     }
   | { kind: 'draw'; day: number; count: number }
-  | { kind: 'fusion'; day: number; success: boolean; from: 'basic' | 'middle' | 'high' }
+  | { kind: 'fusion'; day: number; success: boolean; from: 'basic' | 'middle' | 'high' | 'supreme' }
   | { kind: 'breakthrough'; day: number; success: boolean; lostQi: number };
 export type BeastV2Result = {
   state: BeastV2State;

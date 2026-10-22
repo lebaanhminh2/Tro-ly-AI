@@ -1205,7 +1205,7 @@ test('fusion and breakthrough ultimates join real API transactions and never cou
       ).result;
       const after = (await healthy.read('123')).state;
       if (species === 'humbug') {
-        assert.equal(after.inventory.basic, result.success ? 0 : 3);
+        assert.equal(after.inventory.basic, result.success ? 0 : 1);
         assert.equal(after.inventory.middle, result.success ? 2 : 0);
         assert.equal((await store.ultimate('123', day))!.remaining, 0);
       } else {

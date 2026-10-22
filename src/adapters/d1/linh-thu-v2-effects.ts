@@ -1,5 +1,6 @@
 import type { HealthyState } from '../../domain/healthy.ts';
 import type { SkillReward } from '../../domain/linh-thu-skills.ts';
+import { runFusionBatch, type FusionBatchInput } from './cultivation-fusion.ts';
 import {
   reduceBeastV2,
   emptyBeastV2Reward,
@@ -23,6 +24,7 @@ export type BeastV2EffectOptions = {
   extraEarned?: SkillReward;
   runtimeUpdate?: { lastDay: number; sleepStreak: number };
   settleDay?: boolean;
+  fusionBatch?: FusionBatchInput;
 };
 
 /** Return writes to join the original guarded wallet transaction, never commit them here. */
@@ -55,12 +57,43 @@ export async function prepareBeastV2Effect(
       multiplier,
       protectQi: false,
       protectStreak: false,
+      batch: undefined as ReturnType<typeof runFusionBatch> | undefined,
       apply: (state: HealthyState) => state,
     };
 
   let outcome: BeastV2Result | null = null;
   let dayState = context.dayState;
-  if (context.beast && event.kind !== 'source_sleep' && event.kind !== 'reward') {
+  let batch: ReturnType<typeof runFusionBatch> | undefined;
+  if (event.kind === 'fusion' && options.fusionBatch) {
+    const beast = context.beast;
+    let previous = beast ? { ...beast.state, daily: dayState } : null;
+    let extraMiddle = 0,
+      refundBasic = 0;
+    const activated = new Set<string>();
+    batch = runFusionBatch(options.fusionBatch, random, (state, success) => {
+      if (!beast || !previous) return state;
+      const current = reduceBeastV2(previous, beast.skills, { ...event, success }, random);
+      previous = current.state;
+      outcome = current;
+      extraMiddle += current.fusion?.extraMiddle ?? 0;
+      refundBasic += current.fusion?.refundBasic ?? 0;
+      current.activated.forEach((name) => activated.add(name));
+      const next = { ...state, inventory: { ...state.inventory } };
+      next.inventory.middle += current.fusion?.extraMiddle ?? 0;
+      next.inventory.basic += current.fusion?.refundBasic ?? 0;
+      return next;
+    });
+    if (previous && outcome) {
+      dayState = previous.daily;
+      outcome = {
+        ...(outcome as BeastV2Result),
+        state: previous,
+        fusion: { extraMiddle, refundBasic },
+        activated: [...activated],
+      };
+      if (beast!.state.daily.day > event.day) outcome.state.daily = beast!.state.daily;
+    }
+  } else if (context.beast && event.kind !== 'source_sleep' && event.kind !== 'reward') {
     const previous = context.beast.state;
     outcome = reduceBeastV2(
       event.kind === 'day' ? previous : { ...previous, daily: dayState },
@@ -206,6 +239,7 @@ export async function prepareBeastV2Effect(
     multiplier,
     protectQi: false,
     protectStreak: false,
+    batch,
     apply: (state: HealthyState) => {
       const next = creditBeastV2Reward(state, reward, refundQi, burn);
       // Extra fusion output and failed-input refund are products/refunds, not

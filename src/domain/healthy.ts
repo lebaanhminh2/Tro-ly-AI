@@ -3,17 +3,21 @@
 export const DAY_MS = 86400000;
 export const REALMS = [
   { name: 'Phàm Nhân', qi: 0, days: 0, chance: 0 },
-  { name: 'Luyện Khí', qi: 6, days: 2, chance: 65 },
-  { name: 'Trúc Cơ', qi: 18, days: 3, chance: 60 },
-  { name: 'Kết Đan', qi: 40, days: 5, chance: 55 },
-  { name: 'Nguyên Anh', qi: 75, days: 7, chance: 50 },
-  { name: 'Hóa Thần', qi: 120, days: 8, chance: 45 },
-  { name: 'Luyện Hư', qi: 180, days: 11, chance: 40 },
-  { name: 'Hợp Thể', qi: 260, days: 14, chance: 35 },
-  { name: 'Đại Thừa', qi: 360, days: 17, chance: 30 },
-  { name: 'Độ Kiếp', qi: 500, days: 24, chance: 25 },
-  { name: 'Chân Tiên', qi: 1000, days: 35, chance: 20 },
-  { name: 'Kim Tiên', qi: 2000, days: 45, chance: 15 },
+  { name: 'Luyện Khí', qi: 15, days: 2, chance: 65 },
+  { name: 'Trúc Cơ', qi: 50, days: 3, chance: 60 },
+  { name: 'Kết Đan', qi: 120, days: 5, chance: 55 },
+  { name: 'Nguyên Anh', qi: 250, days: 7, chance: 50 },
+  { name: 'Hóa Thần', qi: 500, days: 10, chance: 45 },
+  { name: 'Luyện Hư', qi: 800, days: 14, chance: 40 },
+  { name: 'Hợp Thể', qi: 1300, days: 18, chance: 35 },
+  { name: 'Đại Thừa', qi: 2000, days: 23, chance: 30 },
+  { name: 'Độ Kiếp', qi: 3000, days: 28, chance: 25 },
+  { name: 'Chân Tiên', qi: 4000, days: 36, chance: 20 },
+  { name: 'Kim Tiên', qi: 5000, days: 45, chance: 15 },
+  { name: 'Thái Ất', qi: 6200, days: 49, chance: 12 },
+  { name: 'Đại La', qi: 7400, days: 53, chance: 9 },
+  { name: 'Hỗn Nguyên', qi: 8600, days: 57, chance: 7 },
+  { name: 'Vô Cực', qi: 10000, days: 60, chance: 5 },
 ] as const;
 export const LOOT = [
   { key: 'qi1', weight: 40 },
@@ -27,11 +31,14 @@ export const CHARMS = {
   basic: { boost: 5, next: 'middle', chance: 80 },
   middle: { boost: 10, next: 'high', chance: 60 },
   high: { boost: 20, next: 'supreme', chance: 40 },
-  supreme: { boost: 25, next: null, chance: 0 },
+  supreme: { boost: 25, next: 'immortal', chance: 20 },
+  immortal: { boost: 25, next: null, chance: 0 },
 } as const;
 export type Charm = keyof typeof CHARMS;
 export type Item = Charm | 'heart' | 'peace' | 'keepsake';
-export const BREAKTHROUGH_PENALTIES = [3, 5, 8, 10, 12, 15, 18, 20, 22, 25, 30] as const;
+export const BREAKTHROUGH_PENALTIES = [
+  3, 5, 8, 12, 18, 25, 35, 50, 70, 95, 125, 160, 200, 250, 300,
+] as const;
 export const CHECKIN_CYCLE_DAYS = 32;
 export type DailyCheckinState = { cycleStartDay: number; count: number; lastDay: number };
 export type DailyReward = {
@@ -91,6 +98,7 @@ export type HealthyState = {
   protectedUntil: number;
   attemptDay: number | null;
   failures: number;
+  immortalPity?: boolean;
   tickets: number;
   inventory: Record<Item, number>;
   heartDay: number | null;
@@ -111,8 +119,18 @@ export function initialHealthy(): HealthyState {
     protectedUntil: 0,
     attemptDay: null,
     failures: 0,
+    immortalPity: false,
     tickets: 0,
-    inventory: { basic: 0, middle: 0, high: 0, supreme: 0, heart: 0, peace: 0, keepsake: 0 },
+    inventory: {
+      basic: 0,
+      middle: 0,
+      high: 0,
+      supreme: 0,
+      immortal: 0,
+      heart: 0,
+      peace: 0,
+      keepsake: 0,
+    },
     heartDay: null,
     peaceDay: null,
     lastScoredDay: null,
@@ -256,6 +274,7 @@ export function assessSleep(state: HealthyState, input: SleepAssessment) {
   ) {
     next.rank--;
     next.failures = 0;
+    next.immortalPity = false;
     demoted = true;
   }
   next.lastScoredDay = input.day;
@@ -275,6 +294,7 @@ export function undoSleepAssessment(
   const fields = [
     'rank',
     'failures',
+    'immortalPity',
     'streak',
     'bestStreak',
     'heartDay',
@@ -293,6 +313,7 @@ export function undoSleepAssessment(
     earned,
     rank: before.rank,
     failures: before.failures,
+    immortalPity: before.immortalPity ?? false,
     streak: before.streak,
     bestStreak: before.bestStreak,
     heartDay: before.heartDay,
@@ -359,13 +380,24 @@ export function useProtection(state: HealthyState, item: 'heart' | 'peace', day:
   next[key] = day;
   return next;
 }
+export function canFuseCharm(state: HealthyState, item: Charm, count = 1) {
+  return (
+    Number.isInteger(count) &&
+    count > 0 &&
+    !state.suspended &&
+    !!CHARMS[item]?.next &&
+    state.inventory[item] >= 3 * count &&
+    (item !== 'supreme' || state.inventory.keepsake >= 3 * count)
+  );
+}
 export function fuseCharm(state: HealthyState, item: Charm, random: number) {
   const rule = CHARMS[item];
-  if (state.suspended || !rule.next || state.inventory[item] < 3) throw Error('FUSION_UNAVAILABLE');
+  if (!canFuseCharm(state, item) || !rule.next) throw Error('FUSION_UNAVAILABLE');
   const success = roll(random) < rule.chance,
     next = copy(state);
-  next.inventory[item] -= success ? 3 : 1;
-  if (success) next.inventory[rule.next]++;
+  next.inventory[item] -= 3;
+  if (item === 'supreme') next.inventory.keepsake -= 3;
+  if (success) next.inventory[rule.next] = (next.inventory[rule.next] ?? 0) + 1;
   return { state: next, success };
 }
 export function breakthrough(
@@ -390,7 +422,7 @@ export function breakthrough(
   const chance = Math.min(
     100,
     target.chance +
-      5 * Math.min(Math.max(state.failures - 1, 0), 3) +
+      Math.max(state.immortalPity ? 5 : 0, 5 * Math.min(Math.max(state.failures - 1, 0), 3)) +
       (charm?.boost ?? 0) +
       (modifier?.chancePoints ?? 0),
   );
@@ -398,17 +430,25 @@ export function breakthrough(
     next = copy(state);
   next.attemptDay = day;
   if (item) next.inventory[item]--;
+  if (item === 'immortal') {
+    next.inventory.heart++;
+    next.inventory.peace++;
+  }
   if (success) {
     next.rank++;
     next.highestRank = Math.max(next.highestRank, next.rank);
     next.failures = 0;
+    next.immortalPity = false;
     next.protectedUntil = now + 3 * DAY_MS;
   } else {
     next.failures++;
+    if (item === 'immortal') next.immortalPity = true;
     if (!modifier?.preventLoss)
       next.qi = Math.max(
         0,
-        next.qi - BREAKTHROUGH_PENALTIES[state.rank]! * (modifier?.penaltyMultiplier === 3 ? 3 : 1),
+        next.qi -
+          (item === 'immortal' ? 1 : BREAKTHROUGH_PENALTIES[state.rank]!) *
+            (modifier?.penaltyMultiplier === 3 ? 3 : 1),
       );
   }
   return { state: next, success, chance, penalty: state.qi - next.qi };

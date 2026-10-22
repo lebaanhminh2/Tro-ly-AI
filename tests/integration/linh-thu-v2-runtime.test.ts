@@ -1046,7 +1046,7 @@ test('humbug real fusion API applies three daily uses to success and failure wit
         assert.equal(after.inventory.basic - before.inventory.basic, -3);
         assert.equal(after.inventory.middle - before.inventory.middle, use <= 3 ? 2 : 1);
       } else {
-        assert.equal(after.inventory.basic - before.inventory.basic, use <= 3 ? 0 : -1);
+        assert.equal(after.inventory.basic - before.inventory.basic, use <= 3 ? -2 : -3);
         assert.equal(after.inventory.middle, before.inventory.middle);
       }
     }
@@ -1073,6 +1073,345 @@ test('humbug real fusion API applies three daily uses to success and failure wit
       /FUSION_UNAVAILABLE/,
     );
     assert.equal(state().daily.fusionUses, 1, 'insufficient input does not consume a daily use');
+  } finally {
+    f.raw.close();
+  }
+});
+
+test('fusion batch requires the full recipe, preserves refunds, and replays wallet and skill quota once', async (t) => {
+  const f = await fixture('humbug');
+  try {
+    const rolls = [4294967295, 4294967295, ...Array(8).fill(0)];
+    let samples = 0;
+    t.mock.method(crypto, 'getRandomValues', ((array: Uint32Array) => {
+      array.fill(rolls[samples++]!);
+      return array;
+    }) as typeof crypto.getRandomValues);
+    await f.healthy.mutate(owner, 'batch_refund_seed', 'fixture', {}, now, (state) => ({
+      state: { ...state, inventory: { ...state.inventory, basic: 30 } },
+      result: {},
+    }));
+    const input = { id: 'batch_refund_request', operation: 'fuse', item: 'basic', count: 10 };
+    const first = await handleCultivation(f.context, input);
+    const body = (await first.json()) as any;
+    assert.equal(first.status, 200);
+    assert.deepEqual(
+      { ...body.result, beastEffect: undefined },
+      {
+        requested: 10,
+        count: 10,
+        successes: 8,
+        failures: 2,
+        success: true,
+        output: 'middle',
+        received: 9,
+        consumed: { basic: 28 },
+        stoppedEarly: false,
+        beastEffect: undefined,
+      },
+    );
+    assert.equal(body.account.state.inventory.basic, 2);
+    assert.equal(body.account.state.inventory.middle, 9);
+    const replay = await handleCultivation(f.context, input);
+    assert.deepEqual(await replay.json(), body);
+    assert.equal(samples, 10);
+    const skills = JSON.parse(
+      String(f.raw.prepare('SELECT state_json FROM beast_v2_states').get()!.state_json),
+    );
+    assert.equal(skills.daily.fusionUses, 3);
+    assert.equal(
+      f.raw.prepare("SELECT COUNT(*) n FROM beast_skill_events WHERE kind='v2:fusion'").get()!.n,
+      1,
+    );
+    await assert.rejects(
+      handleCultivation(f.context, { ...input, count: 100 }),
+      /REQUEST_ID_REUSED/,
+    );
+  } finally {
+    f.raw.close();
+  }
+});
+
+test('unfunded fusion batches reject before RNG, receipts, wallet changes or skill consumption', async (t) => {
+  const f = await fixture('humbug');
+  try {
+    t.mock.method(crypto, 'getRandomValues', () => {
+      throw Error('MUST_NOT_ROLL');
+    });
+    for (const [item, count, ingredient, amount] of [
+      ['basic', 10, 'basic', 9],
+      ['basic', 10, 'basic', 29],
+      ['basic', 100, 'basic', 299],
+      ['supreme', 10, 'supreme', 29],
+      ['supreme', 10, 'keepsake', 29],
+    ] as const) {
+      const id = `unfunded_${item}_${count}_${ingredient}_${amount}`;
+      await f.healthy.mutate(owner, id + '_seed', 'fixture', {}, now, (state) => ({
+        state: {
+          ...state,
+          inventory: {
+            ...state.inventory,
+            basic: 300,
+            supreme: 300,
+            keepsake: 300,
+            [ingredient]: amount,
+          },
+        },
+        result: {},
+      }));
+      const before = await f.healthy.read(owner);
+      const input = { id, operation: 'fuse', item, count };
+      await assert.rejects(handleCultivation(f.context, input), /FUSION_UNAVAILABLE/);
+      assert.deepEqual(await f.healthy.read(owner), before);
+      assert.equal(await f.healthy.receipt(owner, id, 'fuse', input), null);
+      assert.equal(f.raw.prepare('SELECT COUNT(*) n FROM beast_v2_states').get()!.n, 0);
+    }
+  } finally {
+    f.raw.close();
+  }
+});
+
+test('fusion API commits 100 independent attempts once and validates batch sizes without consuming resources', async (t) => {
+  const f = await fixture('humbug');
+  try {
+    let samples = 0;
+    t.mock.method(crypto, 'getRandomValues', ((array: Uint32Array) => {
+      samples++;
+      array.fill(0);
+      return array;
+    }) as typeof crypto.getRandomValues);
+    await f.healthy.mutate(owner, 'batch_100_seed', 'fixture', {}, now, (state) => ({
+      state: { ...state, inventory: { ...state.inventory, middle: 300 } },
+      result: {},
+    }));
+    for (const count of [0, -1, 2, 101, 1.5, '10', null]) {
+      const response = await handleCultivation(f.context, {
+        id: 'invalid_batch',
+        operation: 'fuse',
+        item: 'middle',
+        count,
+      });
+      assert.equal(response.status, 400);
+    }
+    assert.equal(samples, 0);
+    const input = { id: 'batch_100_request', operation: 'fuse', item: 'middle', count: 100 };
+    const body = (await (await handleCultivation(f.context, input)).json()) as any;
+    assert.equal(body.result.count, 100);
+    assert.equal(body.result.successes, 100);
+    assert.equal(body.result.received, 100);
+    assert.deepEqual(body.result.consumed, { middle: 300 });
+    assert.equal(body.account.state.inventory.middle, 0);
+    assert.equal(body.account.state.inventory.high, 100);
+    assert.equal(body.result.stoppedEarly, false);
+    assert.deepEqual(await (await handleCultivation(f.context, input)).json(), body);
+    assert.equal(samples, 100);
+  } finally {
+    f.raw.close();
+  }
+});
+
+test('old wallets gain an immortal slot and supreme batches burn keepsakes on both outcomes without using Song Sinh quota', async (t) => {
+  const f = await fixture('humbug');
+  try {
+    let samples = 0;
+    t.mock.method(crypto, 'getRandomValues', ((array: Uint32Array) => {
+      array.fill(samples++ === 0 ? 0 : 4294967295);
+      return array;
+    }) as typeof crypto.getRandomValues);
+    await f.healthy.mutate(owner, 'immortal_recipe_seed', 'fixture', {}, now, (state) => ({
+      state: { ...state, inventory: { ...state.inventory, supreme: 30, keepsake: 30 } },
+      result: {},
+    }));
+    f.raw.exec(
+      "UPDATE cultivation_accounts SET state_json=json_remove(state_json,'$.inventory.immortal')",
+    );
+    assert.equal((await f.healthy.read(owner)).state.inventory.immortal, 0);
+    const input = { id: 'immortal_recipe_request', operation: 'fuse', item: 'supreme', count: 10 };
+    const body = (await (await handleCultivation(f.context, input)).json()) as any;
+    assert.equal(body.result.count, 10);
+    assert.equal(body.result.successes, 1);
+    assert.equal(body.result.failures, 9);
+    assert.equal(body.result.received, 1);
+    assert.deepEqual(body.result.consumed, { supreme: 30, keepsake: 30 });
+    assert.equal(body.account.state.inventory.immortal, 1);
+    const skill = JSON.parse(
+      String(f.raw.prepare('SELECT state_json FROM beast_v2_states').get()!.state_json),
+    );
+    assert.equal(skill.daily.fusionUses, 0);
+    assert.deepEqual(await (await handleCultivation(f.context, input)).json(), body);
+    assert.equal(samples, 10);
+  } finally {
+    f.raw.close();
+  }
+});
+
+test('immortal breakthrough persists its floor and grants both protections exactly once on either outcome', async (t) => {
+  let sample = 4294967295;
+  t.mock.method(crypto, 'getRandomValues', ((array: Uint32Array) => {
+    array.fill(sample);
+    return array;
+  }) as typeof crypto.getRandomValues);
+  for (const succeeds of [false, true]) {
+    sample = succeeds ? 0 : 4294967295;
+    const f = await fixture('humbug');
+    try {
+      await f.healthy.mutate(owner, 'immortal_use_seed', 'fixture', {}, now, (state) => ({
+        state: {
+          ...state,
+          qi: 1000,
+          earned: 1000,
+          streak: 100,
+          inventory: { ...state.inventory, immortal: 1 },
+        },
+        result: {},
+      }));
+      const input = { id: 'immortal_use_request', operation: 'breakthrough', item: 'immortal' };
+      const body = (await (await handleCultivation(f.context, input)).json()) as any;
+      assert.equal(body.result.success, succeeds);
+      assert.equal(body.result.penalty, succeeds ? 0 : 1);
+      assert.equal(body.account.state.immortalPity, !succeeds);
+      assert.equal(body.account.state.inventory.heart, 1);
+      assert.equal(body.account.state.inventory.peace, 1);
+      assert.equal(body.account.state.inventory.immortal, 0);
+      const repeated = await (await handleCultivation(f.context, input)).json();
+      assert.deepEqual(repeated, body);
+      const stored = (await f.healthy.read(owner)).state;
+      assert.equal(stored.inventory.heart, 1);
+      assert.equal(stored.inventory.peace, 1);
+      assert.equal(stored.immortalPity, !succeeds);
+    } finally {
+      f.raw.close();
+    }
+  }
+});
+
+test('immortal support leaves Mai Da three-failure cycle unchanged and resets after breakthrough success', async (t) => {
+  let sample = 4294967295;
+  t.mock.method(crypto, 'getRandomValues', ((array: Uint32Array) => {
+    array.fill(sample);
+    return array;
+  }) as typeof crypto.getRandomValues);
+  const f = await fixture('gibber');
+  try {
+    await f.healthy.mutate(owner, 'separate_support_seed', 'fixture', {}, now, (state) => ({
+      state: {
+        ...state,
+        qi: 1000,
+        earned: 1000,
+        streak: 100,
+        inventory: { ...state.inventory, immortal: 1 },
+      },
+      result: {},
+    }));
+    const counters = [1, 2, 3, 0, 0];
+    const chances = [90, 70, 70, 80, 80];
+    for (let attempt = 0; attempt < 5; attempt++) {
+      if (attempt === 4) sample = 0;
+      const input = {
+        id: 'separate_support_' + attempt,
+        operation: 'breakthrough',
+        item: attempt === 0 ? 'immortal' : null,
+      };
+      const context = { ...f.context, now: now + attempt * 86400000 };
+      const body = (await (await handleCultivation(context, input)).json()) as any;
+      assert.equal(body.result.success, attempt === 4);
+      assert.equal(body.result.chance, chances[attempt]);
+      assert.equal(body.account.state.immortalPity, attempt !== 4);
+      const skillState = JSON.parse(
+        String(f.raw.prepare('SELECT state_json FROM beast_v2_states').get()!.state_json),
+      );
+      assert.equal(
+        skillState.counters.breakthroughFailures,
+        counters[attempt],
+        'Mai Da still requires three actual failures and consumes its own readiness once',
+      );
+      assert.equal(body.account.state.inventory.heart, 1);
+      assert.equal(body.account.state.inventory.peace, 1);
+      assert.deepEqual(await (await handleCultivation(context, input)).json(), body);
+    }
+    const stored = (await f.healthy.read(owner)).state;
+    assert.equal(stored.immortalPity, false);
+    assert.equal(stored.failures, 0);
+  } finally {
+    f.raw.close();
+  }
+});
+
+test('legacy Song Sinh is consumed once inside a fully funded fusion batch and preserves its refund', async (t) => {
+  const f = await fixture('humbug');
+  try {
+    f.raw
+      .prepare('UPDATE beast_v2_runtime SET cutover_day=? WHERE owner=?')
+      .run(f.today.day + 1, owner);
+    const account = await f.store.read(owner);
+    await new BeastUltimateService(f.store).execute(
+      owner,
+      'legacy_fusion_activate',
+      {
+        operation: 'ultimate',
+        day: f.today.day,
+        version: account.version,
+        beastId: 'runtime_beast',
+      },
+      f.today.day,
+      now,
+      f.today.end_at,
+    );
+    await f.healthy.mutate(owner, 'legacy_fusion_seed', 'fixture', {}, now, (state) => ({
+      state: { ...state, inventory: { ...state.inventory, basic: 30 } },
+      result: {},
+    }));
+    let samples = 0;
+    t.mock.method(crypto, 'getRandomValues', ((array: Uint32Array) => {
+      array.fill(samples++ === 0 ? 4294967295 : 0);
+      return array;
+    }) as typeof crypto.getRandomValues);
+    const input = { id: 'legacy_fusion_batch', operation: 'fuse', item: 'basic', count: 10 };
+    const body = (await (await handleCultivation(f.context, input)).json()) as any;
+    assert.equal(body.result.count, 10);
+    assert.equal(body.result.received, 9);
+    assert.equal(body.account.state.inventory.basic, 1);
+    assert.equal(
+      JSON.parse(String(f.raw.prepare('SELECT state_json FROM beast_ultimates').get()!.state_json))
+        .remaining,
+      0,
+    );
+    assert.deepEqual(await (await handleCultivation(f.context, input)).json(), body);
+    assert.equal(samples, 10);
+  } finally {
+    f.raw.close();
+  }
+});
+
+test('failed fusion commit rolls back ingredients, outputs, receipt and daily Song Sinh uses together', async (t) => {
+  const f = await fixture('humbug');
+  try {
+    t.mock.method(crypto, 'getRandomValues', ((array: Uint32Array) => {
+      array.fill(0);
+      return array;
+    }) as typeof crypto.getRandomValues);
+    await f.healthy.mutate(owner, 'fusion_rollback_seed', 'fixture', {}, now, (state) => ({
+      state: { ...state, inventory: { ...state.inventory, basic: 30 } },
+      result: {},
+    }));
+    const before = await f.healthy.read(owner);
+    f.raw.exec(
+      "CREATE TRIGGER reject_fusion BEFORE INSERT ON beast_skill_events WHEN NEW.kind='v2:fusion' BEGIN SELECT RAISE(ABORT,'forced_failure'); END",
+    );
+    const input = { id: 'fusion_atomic_batch', operation: 'fuse', item: 'basic', count: 10 };
+    await assert.rejects(handleCultivation(f.context, input), /forced_failure/);
+    assert.deepEqual(await f.healthy.read(owner), before);
+    assert.equal(await f.healthy.receipt(owner, input.id, 'fuse', input), null);
+    assert.equal(f.raw.prepare('SELECT COUNT(*) n FROM beast_v2_states').get()!.n, 0);
+    f.raw.exec('DROP TRIGGER reject_fusion');
+    const body = (await (await handleCultivation(f.context, input)).json()) as any;
+    assert.equal(body.result.count, 10);
+    assert.equal(body.result.received, 13);
+    assert.equal(body.account.state.inventory.basic, 0);
+    const skill = JSON.parse(
+      String(f.raw.prepare('SELECT state_json FROM beast_v2_states').get()!.state_json),
+    );
+    assert.equal(skill.daily.fusionUses, 3);
   } finally {
     f.raw.close();
   }

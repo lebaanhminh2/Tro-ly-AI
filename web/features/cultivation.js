@@ -1,12 +1,19 @@
-import { demoBreakthrough, demoCheckin, demoDrawBatch, demoFuse } from '../demo/cultivation.js';
+import {
+  demoBreakthrough,
+  demoCheckin,
+  demoDrawBatch,
+  demoFuseBatch,
+} from '../demo/cultivation.js';
 import {
   breakthroughPenalties,
+  breakthroughPity,
   checkinProgress,
   dailyRewardLabel,
   loot,
   realms,
   rewardLabels,
   talismans,
+  talismanName,
 } from '../models/cultivation.js';
 import { button, el } from '../ui/dom.js';
 import { playEffect } from '../ui/effects.js';
@@ -39,11 +46,13 @@ export function createCultivationActions(context) {
     render,
     toast,
   } = context;
-  let drawOpened = false;
+  let drawOpened = false,
+    inventoryOpened = false;
   sheet.addEventListener('close', () => {
     if (sheet.open) return;
-    const refreshDraw = drawOpened;
+    const refreshDraw = drawOpened || inventoryOpened;
     drawOpened = false;
+    inventoryOpened = false;
     if (refreshDraw && state.live && state.baseDirty) context.refreshOnReturn();
   });
   function openShare() {
@@ -149,7 +158,9 @@ export function createCultivationActions(context) {
           sheetContent.append(
             el(
               'p',
-              'Có thể ghép 3 phù cùng cấp trong Túi vật phẩm để thử tạo một phù cấp cao hơn.',
+              item.key === 'supreme'
+                ? 'Ghép Hộ Đạo Tiên Phù tại mục Tín vật & vật phẩm đặc biệt trong Túi vật phẩm: 3 phù cực phẩm + 3 tín vật Minh Anh, tỷ lệ 20%.'
+                : 'Có thể ghép 3 phù cùng cấp trong Túi vật phẩm để thử tạo một phù cấp cao hơn.',
               'hint',
             ),
           );
@@ -343,11 +354,61 @@ export function createCultivationActions(context) {
     sync();
   }
   function openInventory() {
+    if (runtime.pendingFusion?.session !== runtime.session) runtime.pendingFusion = null;
     openSheet('Túi vật phẩm');
+    inventoryOpened = true;
     const c = state.cultivation;
-    const itemHeading = (name, count) => {
+    const quantities = [],
+      fusionControls = [];
+    let busy = false;
+    const countLabel = el('label', 'Số lượt ghép', 'form-field');
+    const countSelect = el('select');
+    countSelect.dataset.fusionCount = 'true';
+    for (const count of [1, 10, 100]) {
+      const option = el('option', count + ' lượt');
+      option.value = String(count);
+      countSelect.append(option);
+    }
+    countSelect.value = String(runtime.pendingFusion?.count ?? 1);
+    countLabel.append(countSelect);
+    const fusionHint = el('p', '', 'hint');
+    fusionHint.setAttribute('role', 'status');
+    function syncInventory() {
+      if (!countSelect.isConnected) return;
+      const latest = state.cultivation,
+        pending = runtime.pendingFusion;
+      for (const { key, badge } of quantities)
+        badge.textContent = '×' + (latest.inventory[key] ?? 0);
+      countSelect.disabled = busy || runtime.saving || !!pending;
+      fusionHint.textContent = busy
+        ? 'Đang ghép và lưu kết quả…'
+        : pending
+          ? 'Chưa xác nhận được đợt ghép. Bấm Kiểm tra lại để lấy đúng kết quả, không trừ thêm nguyên liệu.'
+          : '';
+      fusionHint.hidden = !fusionHint.textContent;
+      for (const { t, control } of fusionControls) {
+        const retry = pending?.item === t.key;
+        const required = 3 * Number(countSelect.value);
+        control.textContent = retry
+          ? 'Kiểm tra lại ×' + pending.count
+          : 'Ghép ×' + countSelect.value + ' · ' + t.chance + '%';
+        control.disabled =
+          busy ||
+          runtime.saving ||
+          (!!pending && !retry) ||
+          (!retry &&
+            (latest.suspended ||
+              latest.inventory[t.key] < required ||
+              (t.key === 'supreme' && latest.inventory.keepsake < required)));
+      }
+    }
+    countSelect.addEventListener('change', syncInventory);
+    const itemHeading = (name, count, key) => {
       const row = el('div', undefined, 'inventory-heading');
-      row.append(el('h3', name), el('span', '×' + count, 'quantity-badge'));
+      const badge = el('span', '×' + (count ?? 0), 'quantity-badge');
+      badge.dataset.inventoryItem = key;
+      quantities.push({ key, badge });
+      row.append(el('h3', name), badge);
       return row;
     };
     sheetContent.append(el('p', 'BẢO VỆ', 'inventory-group'));
@@ -364,7 +425,7 @@ export function createCultivationActions(context) {
       ],
     ]) {
       const item = el('section', undefined, 'item-row');
-      item.append(itemHeading(name, c.inventory[key]), el('p', description, 'hint'));
+      item.append(itemHeading(name, c.inventory[key], key), el('p', description, 'hint'));
       const use = button(
         c.active[key]
           ? state.live
@@ -397,11 +458,64 @@ export function createCultivationActions(context) {
       item.append(use);
       sheetContent.append(item);
     }
-    sheetContent.append(el('p', 'PHÁ CẢNH', 'inventory-group'));
-    for (const t of talismans) {
+    function appendFusionControls(item, t) {
+      const result = el('p', '', 'hint');
+      result.hidden = true;
+      result.dataset.fusionResult = t.key;
+      result.setAttribute('role', 'status');
+      const fuse = button(
+        '',
+        async () => {
+          if (fuse.disabled || busy || runtime.saving) return;
+          const count = Number(countSelect.value),
+            session = runtime.session;
+          busy = true;
+          syncInventory();
+          result.hidden = false;
+          result.textContent = 'Đang ghép…';
+          try {
+            const saved = state.live
+              ? await performLive(
+                  'cultivation',
+                  { operation: 'fuse', item: t.key, count },
+                  { keepSheet: true, silent: true },
+                )
+              : demoFuseBatch(state.cultivation, t.key, count);
+            if (!result.isConnected || !sheet.open || runtime.session !== session) return;
+            if (!saved) {
+              result.textContent = runtime.pendingFusion
+                ? 'Chưa xác nhận được kết quả. Kiểm tra lại đợt ghép này.'
+                : 'Chưa ghép được. Kiểm tra nguyên liệu và thử lại.';
+              return;
+            }
+            result.textContent =
+              saved.count +
+              ' lượt · ' +
+              saved.successes +
+              ' thành công · ' +
+              saved.failures +
+              ' thất bại. Nhận ' +
+              saved.received +
+              ' ' +
+              talismanName(saved.output) +
+              '.';
+            if (!state.live) render();
+          } finally {
+            busy = false;
+            syncInventory();
+          }
+        },
+        'secondary',
+      );
+      fuse.dataset.fuseItem = t.key;
+      fusionControls.push({ t, control: fuse });
+      item.append(fuse, result);
+    }
+    sheetContent.append(el('p', 'PHÁ CẢNH', 'inventory-group'), countLabel, fusionHint);
+    for (const t of talismans.filter((t) => t.key !== 'immortal')) {
       const item = el('section', undefined, 'item-row');
       item.append(
-        itemHeading('Phá Cảnh Phù · ' + t.name, c.inventory[t.key]),
+        itemHeading(talismanName(t.key), c.inventory[t.key], t.key),
         el(
           'p',
           'Khi dùng trong lần đột phá này, cơ hội thành công tăng thêm ' +
@@ -410,45 +524,40 @@ export function createCultivationActions(context) {
           'hint',
         ),
       );
-      if (t.next) {
-        const fuse = button(
-          'Ghép 3 lá · ' + t.chance + '%',
-          () =>
-            confirm(
-              'Ghép lên ' + talismans.find((n) => n.key === t.next).name + '?',
-              'Ghép 3 phù cùng cấp. Thành công nhận 1 phù cấp cao hơn; thất bại mất 1 và trả lại 2. Tỷ lệ thành công ' +
-                t.chance +
-                '%.',
-              () => {
-                if (state.live) {
-                  performLive('cultivation', { operation: 'fuse', item: t.key });
-                  return;
-                }
-                const success = demoFuse(c, t.key);
-                if (success === null) return;
-                toast(success ? 'Ghép thành công ✦' : 'Chưa thành, đã trả lại 2 lá.');
-                openInventory();
-                render();
-              },
-            ),
-          'secondary',
-        );
-        fuse.disabled = c.inventory[t.key] < 3;
-        item.append(fuse);
-      }
+      if (t.next && t.key !== 'supreme') appendFusionControls(item, t);
       sheetContent.append(item);
     }
     sheetContent.append(
-      el('p', 'TÍN VẬT', 'inventory-group'),
+      el('p', 'TÍN VẬT & VẬT PHẨM ĐẶC BIỆT', 'inventory-group'),
       (() => {
         const box = el('section', undefined, 'item-row');
         box.append(
-          itemHeading('Tín vật Minh Anh', c.inventory.keepsake),
-          el('p', 'Vật phẩm sưu tầm, không phải tu vi.', 'hint'),
+          itemHeading('Tín vật Minh Anh', c.inventory.keepsake, 'keepsake'),
+          el(
+            'p',
+            'Dùng cùng phù cực phẩm để ghép Hộ Đạo Tiên Phù. Mỗi lượt cần 3 tín vật.',
+            'hint',
+          ),
         );
         return box;
       })(),
     );
+    const immortal = el('section', undefined, 'item-row');
+    immortal.append(
+      itemHeading('Hộ Đạo Tiên Phù', c.inventory.immortal, 'immortal'),
+      el(
+        'p',
+        'Tăng 25 điểm % tỷ lệ đột phá. Thất bại mất 1 tu vi và bỏ qua tích lũy thất bại để hưởng hỗ trợ +5 điểm % từ lần thử sau.',
+        'hint',
+      ),
+      el('p', 'Khi sử dụng, nhận 1 Hộ Tâm Phù và 1 An Tâm Phù.', 'hint'),
+    );
+    appendFusionControls(
+      immortal,
+      talismans.find((t) => t.key === 'supreme'),
+    );
+    sheetContent.append(immortal);
+    syncInventory();
   }
   async function openBreakthrough() {
     if (state.live && state.beastV2?.active) {
@@ -487,7 +596,10 @@ export function createCultivationActions(context) {
     openSheet('Đột phá · ' + target.name);
     const modifier = state.live && state.beastV2?.active ? state.beastV2.breakthrough : null;
     const basePenalty = (state.breakthroughPenalties ?? breakthroughPenalties)[c.rank];
-    const penalty = modifier?.preventLoss ? 0 : basePenalty * (modifier?.penaltyMultiplier ?? 1);
+    const penalty = () =>
+      modifier?.preventLoss
+        ? 0
+        : (select.value === 'immortal' ? 1 : basePenalty) * (modifier?.penaltyMultiplier ?? 1);
     sheetContent.append(
       el(
         'p',
@@ -495,14 +607,12 @@ export function createCultivationActions(context) {
           target.qi +
           ' tu vi và ' +
           target.days +
-          ' ngày ngủ đúng giờ. Thành công không tiêu hao tu vi; thất bại trừ ' +
-          penalty +
-          ' tu vi.',
+          ' ngày ngủ đúng giờ. Thành công không tiêu hao tu vi. Mức phạt thất bại theo phù và bảo hộ đã chọn được hiển thị bên dưới.',
         'hint',
       ),
     );
     const select = el('select'),
-      label = el('label', 'Dùng Phá Cảnh Phù', 'form-field'),
+      label = el('label', 'Chọn phù đột phá', 'form-field'),
       none = el('option', 'Không dùng phù');
     none.value = '';
     select.append(none);
@@ -524,7 +634,7 @@ export function createCultivationActions(context) {
         100,
         target.chance +
           (modifier?.chancePoints ?? 0) +
-          5 * Math.min(Math.max(c.failures - 1, 0), 3) +
+          breakthroughPity(c) +
           (talismans.find((t) => t.key === select.value)?.boost ?? 0),
       );
     const explain = () => {
@@ -536,15 +646,18 @@ export function createCultivationActions(context) {
         ': ' +
         target.chance +
         '%. Thất bại −' +
-        penalty +
+        penalty() +
         ' tu vi, giữ cảnh giới và chuỗi ngủ. Phù đã chọn vẫn tiêu hao. Thất bại 1 lần chưa cộng; 2/3/4 lần liên tiếp cộng 5/10/15 điểm % cho lần sau, tối đa +15 điểm %. Thành công đặt lại chuỗi thất bại. Phù cộng thêm tỷ lệ, tổng tối đa 100%. Mỗi ngày sinh hoạt chỉ thử 1 lần.';
       if (modifier?.chancePoints)
         info.textContent += ` Linh thú cộng thêm ${modifier.chancePoints} điểm % thành công cho lần này.`;
+      if (c.immortalPity)
+        info.textContent += ' Hộ Đạo: đã có hỗ trợ đột phá, không cần tích lũy thất bại.';
+      if (select.value === 'immortal')
+        info.textContent +=
+          ' Hộ Đạo Tiên Phù: thất bại bỏ qua tích lũy để hưởng hỗ trợ +5 điểm % từ lần thử sau. Khi sử dụng, nhận 1 Hộ Tâm Phù + 1 An Tâm Phù.';
       if (modifier?.preventLoss)
         info.textContent +=
           ' Mai Đá Hộ Thể: lần này thất bại không mất tu vi; thử xong tiêu hao bảo hộ.';
-      else if (modifier?.penaltyMultiplier > 1)
-        info.textContent += ` Hình phạt tu vi hôm nay nhân ${modifier.penaltyMultiplier}.`;
     };
     select.addEventListener('change', explain);
     explain();
@@ -581,6 +694,10 @@ export function createCultivationActions(context) {
               ' tu vi. Cảnh giới và chuỗi vẫn giữ; mình thử lại khi đủ điều kiện nhé.';
           if (!saved.success && saved.effect?.refundQi > 0)
             result.textContent += ` Linh thú hoàn lại ${saved.effect.refundQi} tu vi.`;
+          if (select.value === 'immortal')
+            result.textContent +=
+              ' Đã thêm 1 Hộ Tâm Phù + 1 An Tâm Phù vào túi.' +
+              (!saved.success ? ' Đã mở hỗ trợ đột phá cho lần thử sau.' : '');
           attempt.textContent = 'Đã thử hôm nay';
           return;
         }
@@ -596,6 +713,10 @@ export function createCultivationActions(context) {
         result.textContent = r.success
           ? 'Đột phá thành công ✦ ' + realms[c.rank].name + ' · Được bảo vệ hạ bậc 72 giờ.'
           : 'Chưa thành công · −' + r.penalty + ' tu vi. Cảnh giới và chuỗi vẫn giữ.';
+        if (select.value === 'immortal')
+          result.textContent +=
+            ' Đã thêm 1 Hộ Tâm Phù + 1 An Tâm Phù vào túi.' +
+            (!r.success ? ' Đã mở hỗ trợ đột phá cho lần thử sau.' : '');
         attempt.textContent = 'Đã thử hôm nay';
         render();
       },

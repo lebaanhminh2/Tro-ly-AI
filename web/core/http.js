@@ -119,7 +119,7 @@ async function transport(path, body) {
       NO_ACTIVE_DAY:
         'Cậu đã lưu giờ sinh hoạt. Ngày hoạt động tiếp theo chưa bắt đầu; không cần thiết lập lại.',
       BREAKTHROUGH_UNAVAILABLE: 'Chưa đủ điều kiện hoặc hôm nay đã thử đột phá.',
-      FUSION_UNAVAILABLE: 'Chưa đủ ba phù cùng cấp.',
+      FUSION_UNAVAILABLE: 'Chưa đủ nguyên liệu cho số lượt ghép đã chọn.',
       ITEM_UNAVAILABLE: 'Vật phẩm chưa dùng được lúc này.',
       ALREADY_PROTECTED: 'Hôm nay đã kích hoạt bảo vệ rồi.',
       NO_NEXT_REMINDER: 'Không còn lần nhắc sắp tới để sửa.',

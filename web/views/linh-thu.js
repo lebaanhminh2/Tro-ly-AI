@@ -1129,20 +1129,26 @@ function collection(ui, state, root) {
     label,
   );
   const representative = data.collectionOverview?.[selectedSpecies.id]?.best;
-  const knownForm = Math.max(
-    data.discoveries?.[selectedSpecies.id]?.form ?? 1,
-    representative ? beastProgress(data, representative).form : 1,
-    ...beasts.map((entry) => beastProgress(data, entry).form),
-  );
+  const history = data.discoveries?.[selectedSpecies.id];
+  const views = [representative, ...beasts, ...(data.selected ?? [])]
+    .filter((entry) => entry?.speciesId === selectedSpecies.id)
+    .map((entry) => beastProgress(data, entry));
+  const knownForm = Math.max(history?.form ?? 1, ...views.map((view) => view.form));
+  const knownForms = [
+    ...Array.from({ length: 4 }, (_, index) => index < knownForm),
+    !!history?.awakened || views.some((view) => view.awakened),
+    !!history?.perfect || views.some((view) => view.perfect),
+  ];
   const discovery = el('div', undefined, 'beast-species-discovery');
   const steps = el('div', undefined, 'beast-discovery-steps');
   steps.setAttribute('aria-hidden', 'true');
-  for (let form = 1; form <= 4; form++) {
-    steps.append(
-      el('span', undefined, 'beast-discovery-step' + (form <= knownForm ? ' is-known' : '')),
-    );
+  for (const known of knownForms) {
+    steps.append(el('span', undefined, 'beast-discovery-step' + (known ? ' is-known' : '')));
   }
-  discovery.append(el('p', `Đã khám phá ${knownForm}/4 dạng`), steps);
+  discovery.append(
+    el('p', `Đã khám phá ${knownForms.filter(Boolean).length}/${knownForms.length} dạng`),
+    steps,
+  );
   root.append(discovery);
   const grid = el('div', undefined, 'beast-collection-grid');
   for (const beast of beasts.filter((entry) => entry.speciesId === selectedSpecies.id)) {

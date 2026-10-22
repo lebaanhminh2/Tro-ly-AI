@@ -4,13 +4,13 @@ import { prepareBeastEffect } from '../../adapters/d1/linh-thu-effects.ts';
 import { prepareCultivationDraw } from '../../adapters/d1/linh-thu-draw.ts';
 import { readBeastV2Context } from '../../adapters/d1/linh-thu-v2-context.ts';
 import { prepareBeastV2Effect } from '../../adapters/d1/linh-thu-v2-effects.ts';
+import { runFusionBatch } from '../../adapters/d1/cultivation-fusion.ts';
 import { beastV2BreakthroughModifier } from '../../domain/linh-thu-v2.ts';
 import type { MiniAppTiming } from '../../adapters/observability.ts';
 import {
   breakthrough,
   CHARMS,
   drawRewards,
-  fuseCharm,
   operatingDay,
   useProtection,
   type Charm,
@@ -27,13 +27,15 @@ export async function handleCultivation(
   if (!['draw', 'fuse', 'protect', 'breakthrough', 'checkin'].includes(String(operation)))
     return json({ error: 'INVALID_OPERATION' }, 400);
   if (
-    (operation !== 'draw' && input.count !== undefined) ||
+    (!['draw', 'fuse'].includes(String(operation)) && input.count !== undefined) ||
     (operation === 'draw' && input.item !== undefined)
   )
     return json({ error: 'INVALID_REQUEST' }, 400);
   const count = input.count === undefined ? 1 : input.count;
   if (operation === 'draw' && count !== 1 && count !== 10)
     return json({ error: 'INVALID_DRAW_COUNT' }, 400);
+  if (operation === 'fuse' && count !== 1 && count !== 10 && count !== 100)
+    return json({ error: 'INVALID_FUSION_COUNT' }, 400);
   if (operation === 'draw') {
     const measure = <T>(phase: 'draw_context' | 'draw_prepare', run: () => Promise<T>) =>
       timing ? timing.measure(phase, run) : run();
@@ -105,8 +107,45 @@ export async function handleCultivation(
   const item = input.item;
   if (operation === 'protect' && !['heart', 'peace'].includes(String(item)))
     return json({ error: 'INVALID_ITEM' }, 400);
-  if (operation === 'fuse' && (!Object.hasOwn(CHARMS, String(item)) || item === 'supreme'))
+  if (operation === 'fuse' && (!Object.hasOwn(CHARMS, String(item)) || item === 'immortal'))
     return json({ error: 'INVALID_ITEM' }, 400);
+  if (operation === 'fuse') {
+    const response = await healthy.mutateWithAccount<Record<string, unknown>>(
+      owner,
+      input.id,
+      'fuse',
+      input,
+      now,
+      async (state) => {
+        if (state.suspended) throw Error('ACCOUNT_SUSPENDED');
+        const batchInput = { state, item: item as Charm, count: count as number };
+        const effect = await prepareBeastEffect(
+          env.DB,
+          owner,
+          {
+            kind: 'fusion',
+            sourceId: input.id,
+            day,
+            at: now,
+            qualified: false,
+            fusionTier: String(item),
+          },
+          now,
+          random,
+          undefined,
+          batchInput,
+        );
+        const batch = effect?.batch ?? runFusionBatch(batchInput, random);
+        return {
+          state: batch.state,
+          result: { ...batch.result, ...(effect ? { beastEffect: effect.result } : {}) },
+          statements: effect?.statements ?? [],
+        };
+      },
+      timing,
+    );
+    return json(response);
+  }
   if (
     operation === 'breakthrough' &&
     item !== undefined &&
@@ -114,8 +153,7 @@ export async function handleCultivation(
     !Object.hasOwn(CHARMS, String(item))
   )
     return json({ error: 'INVALID_ITEM' }, 400);
-  const before =
-    operation === 'fuse' || operation === 'breakthrough' ? await healthy.read(owner) : null;
+  const before = operation === 'breakthrough' ? await healthy.read(owner) : null;
   // Use one immutable skill snapshot both before the roll and for the outcome
   // writes. A competing change must reject this transaction via its guard.
   const v2 = before ? await readBeastV2Context(env.DB, owner, day, now) : null;
@@ -128,28 +166,19 @@ export async function handleCultivation(
       }
     : undefined;
   const prepared = before
-    ? operation === 'fuse'
-      ? fuseCharm(before.state, item as Charm, random())
-      : breakthrough(before.state, day, now, (item as Charm | null) ?? null, random(), modifier)
+    ? breakthrough(before.state, day, now, (item as Charm | null) ?? null, random(), modifier)
     : null;
   const effect = prepared
     ? v2?.active
       ? await prepareBeastV2Effect(
           env.DB,
           owner,
-          operation === 'fuse'
-            ? {
-                kind: 'fusion',
-                day,
-                from: item as 'basic' | 'middle' | 'high',
-                success: prepared.success,
-              }
-            : {
-                kind: 'breakthrough',
-                day,
-                success: prepared.success,
-                lostQi: before!.state.qi - prepared.state.qi,
-              },
+          {
+            kind: 'breakthrough',
+            day,
+            success: prepared.success,
+            lostQi: before!.state.qi - prepared.state.qi,
+          },
           input.id,
           now,
           random,
@@ -159,14 +188,13 @@ export async function handleCultivation(
           env.DB,
           owner,
           {
-            kind: operation === 'fuse' ? 'fusion' : 'breakthrough',
+            kind: 'breakthrough',
             sourceId: input.id,
             day,
             at: now,
             qualified: operation === 'breakthrough' && !prepared.success,
             success: prepared.success,
             actualQiLoss: operation === 'breakthrough' ? before!.state.qi - prepared.state.qi : 0,
-            ...(operation === 'fuse' ? { fusionTier: String(item) } : {}),
           },
           now,
           random,
@@ -180,22 +208,6 @@ export async function handleCultivation(
     now,
     (state) => {
       if (state.suspended) throw Error('ACCOUNT_SUSPENDED');
-      if (operation === 'fuse') {
-        const r = prepared!;
-        return {
-          state: effect ? effect.apply(r.state) : r.state,
-          result: { success: r.success, ...(effect ? { beastEffect: effect.result } : {}) },
-          statements: [
-            query(
-              env.DB,
-              'INSERT INTO transaction_guard SELECT CASE WHEN (SELECT version FROM cultivation_accounts WHERE owner=?)=? THEN 1 ELSE 0 END',
-              owner,
-              before!.version + 1,
-            ),
-            ...(effect?.statements ?? []),
-          ],
-        };
-      }
       if (operation === 'protect')
         return {
           state: useProtection(state, item as 'heart' | 'peace', day),

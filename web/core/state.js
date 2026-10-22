@@ -25,7 +25,16 @@ export function createAppState(live) {
       highestRank: 0,
       streak: 0,
       tickets: 0,
-      inventory: { basic: 0, middle: 0, high: 0, supreme: 0, heart: 0, peace: 0, keepsake: 0 },
+      inventory: {
+        basic: 0,
+        middle: 0,
+        high: 0,
+        supreme: 0,
+        immortal: 0,
+        heart: 0,
+        peace: 0,
+        keepsake: 0,
+      },
     };
   }
   return state;

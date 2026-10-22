@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   initialHealthy,
   assessSleep,
+  undoSleepAssessment,
   resumeHealthy,
   breakthrough,
   drawReward,
@@ -23,6 +24,7 @@ import {
 } from '../../src/domain/healthy.ts';
 import { healthyCommand } from '../../src/application/healthy-command.ts';
 import { scheduleEntry } from '../../src/application/schedule-command.ts';
+import { runFusionBatch } from '../../src/adapters/d1/cultivation-fusion.ts';
 const window = dayWindow(20000, 270, 1350);
 const assessment = {
   day: 20000,
@@ -188,21 +190,22 @@ test('odds, pity, daily attempts, fusion and lifetime rewards', () => {
   assert.equal(r.state.protectedUntil, 5000 + 72 * 3600000);
   s.inventory.basic = 3;
   const fused = fuseCharm(s, 'basic', 0.99);
-  assert.equal(fused.state.inventory.basic, 2);
-  assert.equal(REALMS.at(-1)!.qi, 2000);
-  assert.equal(REALMS.at(-1)!.days, 45);
+  assert.equal(fused.state.inventory.basic, 0);
+  assert.equal(REALMS.at(-1)!.qi, 10000);
+  assert.equal(REALMS.at(-1)!.days, 60);
 });
 
 test('breakthrough gets harder by realm; failure bonuses start at two and cap at four, with matching charms in server and demo', async () => {
   const webPath = '../../web/api.js',
     web = await import(webPath);
-  const realmChances = [65, 60, 55, 50, 45, 40, 35, 30, 25, 20, 15];
+  const realmChances = [65, 60, 55, 50, 45, 40, 35, 30, 25, 20, 15, 12, 9, 7, 5];
   const failureBonuses = [0, 0, 5, 10, 15, 15, 15];
   const charms = [
     ['basic', 5],
     ['middle', 10],
     ['high', 20],
     ['supreme', 25],
+    ['immortal', 25],
   ] as const;
   assert.deepEqual(
     REALMS.slice(1).map((realm) => realm.chance),
@@ -253,6 +256,171 @@ test('breakthrough gets harder by realm; failure bonuses start at two and cap at
       }
     }
   }
+});
+
+test('fusion batches require and burn three inputs per attempt on both success and failure', async () => {
+  const demoPath = '../../web/demo/cultivation.js';
+  const { demoFuseBatch } = await import(demoPath);
+  for (const count of [1, 10, 100]) {
+    for (const key of ['basic', 'middle', 'high', 'supreme'] as const) {
+      const state = initialHealthy();
+      state.inventory[key] = 3 * count;
+      state.inventory.keepsake = 3 * count;
+      for (const ingredient of key === 'supreme' ? ([key, 'keepsake'] as const) : [key]) {
+        const short = { ...state, inventory: { ...state.inventory, [ingredient]: 3 * count - 1 } };
+        const before = structuredClone(short);
+        const noRoll = () => {
+          throw Error('MUST_NOT_ROLL');
+        };
+        assert.throws(
+          () => runFusionBatch({ state: short, item: key, count }, noRoll),
+          /FUSION_UNAVAILABLE/,
+        );
+        const demo = { ...short, inventory: { ...short.inventory }, log: [] };
+        assert.equal(demoFuseBatch(demo, key, count, noRoll), null);
+        assert.deepEqual(short, before);
+        assert.deepEqual(demo.inventory, before.inventory);
+      }
+      for (const sample of [0, 0.999999]) {
+        let rolls = 0;
+        const batch = runFusionBatch({ state, item: key, count }, () => {
+          rolls++;
+          return sample;
+        });
+        assert.equal(rolls, count);
+        assert.equal(batch.result.count, count);
+        assert.equal(batch.result.stoppedEarly, false);
+        assert.equal(batch.result.consumed[key], count * 3);
+        const demo = { ...state, inventory: { ...state.inventory }, log: [] };
+        assert.deepEqual(
+          demoFuseBatch(demo, key, count, () => sample),
+          batch.result,
+        );
+        assert.deepEqual(demo.inventory, batch.state.inventory);
+      }
+    }
+  }
+});
+
+test('immortal crafting uses a 20% boundary, burns both ingredients on failure, and requires the full recipe', async () => {
+  const demoPath = '../../web/demo/cultivation.js';
+  const { demoFuse } = await import(demoPath);
+  const state = initialHealthy();
+  state.inventory.supreme = 6;
+  state.inventory.keepsake = 6;
+  for (const roll of [0, 0.199999, 0.2, 0.999999]) {
+    const outcome = fuseCharm(state, 'supreme', roll);
+    assert.equal(outcome.success, roll < 0.2);
+    assert.equal(outcome.state.inventory.supreme, 3);
+    assert.equal(outcome.state.inventory.keepsake, 3);
+    assert.equal(outcome.state.inventory.immortal, roll < 0.2 ? 1 : 0);
+    const demo = { ...state, inventory: { ...state.inventory }, log: [] };
+    assert.equal(
+      demoFuse(demo, 'supreme', () => roll),
+      outcome.success,
+    );
+    assert.deepEqual(demo.inventory, outcome.state.inventory);
+  }
+  for (const key of ['supreme', 'keepsake'] as const) {
+    const short = { ...state, inventory: { ...state.inventory, [key]: 2 } };
+    assert.throws(() => fuseCharm(short, 'supreme', 0), /FUSION_UNAVAILABLE/);
+    assert.equal(short.inventory.immortal, 0);
+  }
+  assert.equal(state.inventory.supreme, 6);
+  assert.equal(state.inventory.keepsake, 6);
+});
+
+test('immortal breakthrough has a one-qi base penalty, applies triple penalties, and is consumed on either outcome', () => {
+  for (let rank = 0; rank < REALMS.length - 1; rank++) {
+    const target = REALMS[rank + 1]!;
+    const state = { ...initialHealthy(), qi: target.qi, streak: target.days, rank };
+    state.inventory.immortal = 1;
+    const failed = breakthrough(state, 1, 1000, 'immortal', 0.999999, {
+      chancePoints: 0,
+      preventLoss: false,
+      penaltyMultiplier: 3,
+    });
+    assert.equal(failed.penalty, 3);
+    assert.equal(failed.state.qi, state.qi - 3);
+    assert.equal(breakthrough(state, 1, 1000, 'immortal', 0.999999).penalty, 1);
+    assert.equal(failed.chance, Math.min(100, target.chance + 25));
+    assert.equal(failed.state.inventory.immortal, 0);
+    assert.equal(failed.state.immortalPity, true);
+    assert.equal(failed.state.inventory.heart, 1);
+    assert.equal(failed.state.inventory.peace, 1);
+    const success = breakthrough(state, 1, 1000, 'immortal', 0);
+    assert.equal(success.penalty, 0);
+    assert.equal(success.state.inventory.immortal, 0);
+    assert.equal(success.state.inventory.heart, 1);
+    assert.equal(success.state.inventory.peace, 1);
+    assert.equal(success.state.immortalPity, false, 'success does not unlock the pity floor');
+  }
+});
+
+test('immortal pity skips the wait, never stacks, resets with the failure chain, and agrees with demo and display', async () => {
+  const demoPath = '../../web/demo/cultivation.js';
+  const modelPath = '../../web/models/cultivation.js';
+  const { demoBreakthrough } = await import(demoPath);
+  const { breakthroughPity } = await import(modelPath);
+  const fresh = { ...initialHealthy(), qi: 1000, streak: 100 };
+  fresh.inventory.immortal = 1;
+  const failedWithCharm = breakthrough(fresh, 1, 1000, 'immortal', 0.99).state;
+  assert.equal(failedWithCharm.failures, 1, 'charm does not fabricate extra failed attempts');
+  assert.equal(
+    breakthrough(failedWithCharm, 2, 2000, null, 0.99).chance,
+    70,
+    'next attempt gets the five-point floor immediately',
+  );
+  for (const failures of [0, 1, 2, 3, 4, 100]) {
+    for (const item of [null, 'immortal'] as const) {
+      const state = { ...initialHealthy(), qi: 1000, streak: 100, immortalPity: true, failures };
+      state.inventory.immortal = 1;
+      const expected = Math.max(5, 5 * Math.min(Math.max(failures - 1, 0), 3));
+      assert.equal(breakthroughPity(state), expected);
+      for (const sample of [0, 0.999999]) {
+        const outcome = breakthrough(state, 1, 1000, item, sample);
+        assert.equal(outcome.chance, Math.min(100, 65 + expected + (item ? 25 : 0)));
+        assert.equal(outcome.state.immortalPity, !outcome.success);
+        const demo = { ...state, inventory: { ...state.inventory }, log: [] };
+        demoBreakthrough(demo, 1, item, 1000, () => sample);
+        assert.equal(demo.immortalPity, !outcome.success);
+        assert.deepEqual(demo.inventory, outcome.state.inventory);
+      }
+    }
+  }
+  const won = breakthrough(
+    { ...initialHealthy(), qi: 1000, streak: 100, immortalPity: true },
+    1,
+    1000,
+    null,
+    0,
+  ).state;
+  assert.equal(won.failures, 0);
+  assert.equal(won.immortalPity, false);
+  assert.equal(breakthrough(won, 2, 2000, null, 0).chance, 60, 'new realm has no carried support');
+  const demoted = assessSleep(
+    { ...won, qi: 15, protectedUntil: 0, immortalPity: true },
+    {
+      day: 2,
+      target: 2000,
+      end: 3000,
+      reportedAt: null,
+      chatActive: true,
+      assessedAt: 3000,
+    },
+  );
+  assert.equal(demoted.demoted, true);
+  assert.equal(demoted.state.immortalPity, false);
+  const restored = undoSleepAssessment(
+    demoted.state,
+    { ...won, qi: 15, protectedUntil: 0, immortalPity: true },
+    demoted.state,
+  );
+  assert.equal(
+    restored.immortalPity,
+    true,
+    'undo restores only the support cleared by sleep demotion',
+  );
 });
 
 test('published daily calendar varies rewards and preserves all four milestones', async () => {
@@ -404,5 +572,15 @@ test('failed breakthrough penalties increase gently, never demote or reduce life
     const success = breakthrough(s, 1, 1000, null, 0);
     assert.equal(success.penalty, 0);
     assert.equal(success.state.qi, s.qi);
+    assert.equal(success.state.rank, rank + 1);
+    assert.equal(success.state.streak, s.streak);
+    assert.throws(
+      () => breakthrough({ ...s, qi: target.qi - 1 }, 1, 1000, null, 0),
+      /BREAKTHROUGH_UNAVAILABLE/,
+    );
+    assert.throws(
+      () => breakthrough({ ...s, streak: target.days - 1 }, 1, 1000, null, 0),
+      /BREAKTHROUGH_UNAVAILABLE/,
+    );
   }
 });

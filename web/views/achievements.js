@@ -1,5 +1,6 @@
 import {
   breakthroughPenalties,
+  breakthroughPity,
   checkinProgress,
   dailyRewardLabel,
   flameLevel,
@@ -489,6 +490,8 @@ export function renderAchievements(ui, state) {
     attempt.disabled =
       c.suspended || c.qi < next.qi || c.streak < next.days || c.attemptDay === ui.demoDay();
     target.append(attempt);
+    if (c.immortalPity)
+      target.append(el('p', 'Hỗ trợ đột phá: +' + breakthroughPity(c) + ' điểm %.', 'hint'));
     target.append(
       el(
         'p',

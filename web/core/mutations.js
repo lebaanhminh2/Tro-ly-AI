@@ -40,6 +40,17 @@ export function createMutations({
       toast('Còn một giao ước chưa xác nhận. Vào Linh thú và bấm Kiểm tra kết quả trước nhé.');
       return null;
     }
+    if (runtime.pendingFusion?.session !== runtime.session) runtime.pendingFusion = null;
+    if (
+      runtime.pendingFusion &&
+      (path !== 'cultivation' ||
+        input.operation !== 'fuse' ||
+        input.item !== runtime.pendingFusion.item ||
+        (input.count ?? 1) !== runtime.pendingFusion.count)
+    ) {
+      toast('Còn một đợt ghép chưa xác nhận. Mở Túi vật phẩm và kiểm tra lại trước nhé.');
+      return null;
+    }
     if (runtime.pendingDraw?.revision !== runtime.revision) runtime.pendingDraw = null;
     if (
       runtime.pendingDraw &&
@@ -54,6 +65,7 @@ export function createMutations({
     const writeRevision = ++runtime.revision;
     const featureWrite = path === 'habits';
     const drawWrite = path === 'cultivation' && input.operation === 'draw';
+    const fusionWrite = path === 'cultivation' && input.operation === 'fuse';
     const editor = sheet.querySelector('#sheet-content')?.firstElementChild;
     state.featureSaving = { path, habitId: input.habitId ?? null };
     // Only the submitted editor is busy. Navigation and queued checks stay usable.
@@ -68,7 +80,7 @@ export function createMutations({
       oldLabel = save?.textContent;
     if (save) save.textContent = 'Đang lưu…';
     controls.forEach(({ control }) => (control.disabled = true));
-    let drawAttempt;
+    let drawAttempt, fusionAttempt;
     try {
       if (runtime.refreshPending) {
         const snapshot = await refreshLive({
@@ -92,6 +104,14 @@ export function createMutations({
         };
         runtime.pendingDraw = drawAttempt;
       }
+      if (fusionWrite) {
+        fusionAttempt = runtime.pendingFusion ?? {
+          item: input.item,
+          count: input.count ?? 1,
+          session: runtime.session,
+        };
+        runtime.pendingFusion = fusionAttempt;
+      }
       if (options.effect)
         void Promise.resolve()
           .then(options.effect)
@@ -100,6 +120,7 @@ export function createMutations({
       const data = await liveMutation(path, input, { acknowledge: true });
       if (writeRevision !== runtime.revision || session !== runtime.session) return null;
       if (drawWrite && runtime.pendingDraw === drawAttempt) runtime.pendingDraw = null;
+      if (fusionWrite && runtime.pendingFusion === fusionAttempt) runtime.pendingFusion = null;
       const result = data.result?.result ?? data.result;
       let reconciled = false;
       if (data.result?.account?.state) {
@@ -179,6 +200,12 @@ export function createMutations({
     } catch (error) {
       if (writeRevision !== runtime.revision || session !== runtime.session) return null;
       if (
+        fusionAttempt &&
+        !['NETWORK_UNCONFIRMED', 'OPERATION_NOT_CONFIRMED'].includes(error.code) &&
+        runtime.pendingFusion === fusionAttempt
+      )
+        runtime.pendingFusion = null;
+      if (
         drawAttempt &&
         !['NETWORK_UNCONFIRMED', 'OPERATION_NOT_CONFIRMED'].includes(error.code) &&
         runtime.pendingDraw === drawAttempt
@@ -206,13 +233,16 @@ export function createMutations({
           if (authChanged) runtime.pendingDraw = null;
           else drawAttempt.revision = runtime.revision;
         }
+        if (runtime.pendingFusion === fusionAttempt && fusionAttempt) {
+          if (session !== runtime.session) runtime.pendingFusion = null;
+        }
         controls.forEach(({ control, disabled }) => {
           if (control.isConnected) control.disabled = disabled;
         });
         releaseWrite(runtime, writeToken);
         render();
         if (!authChanged && (runtime.refreshPending || (!featureWrite && state.baseDirty)))
-          scheduleRefresh(drawWrite);
+          scheduleRefresh(drawWrite || fusionWrite);
       }
     }
   }

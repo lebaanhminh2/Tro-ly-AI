@@ -14,6 +14,11 @@ import type { MiniAppTiming } from '../observability.ts';
 
 type Account = { state_json: string; version: number };
 type Mutation<T> = { state: HealthyState; result: T; statements?: Statement[] };
+function restoreHealthy(json?: string | null): HealthyState {
+  const defaults = initialHealthy();
+  const saved = json ? JSON.parse(json) : {};
+  return { ...defaults, ...saved, inventory: { ...defaults.inventory, ...saved.inventory } };
+}
 // Every write has an immutable request receipt. Random samples must be supplied
 // by the server; retries return the existing result instead of rolling again.
 export class HealthyStore {
@@ -58,7 +63,7 @@ export class HealthyStore {
     ).first<Account>();
     return row
       ? {
-          state: { ...initialHealthy(), ...JSON.parse(row.state_json) } as HealthyState,
+          state: restoreHealthy(row.state_json),
           version: row.version,
         }
       : { state: initialHealthy(), version: 0 };
@@ -105,10 +110,7 @@ export class HealthyStore {
         result_json: string | null;
       }>();
       const account = {
-        state: {
-          ...initialHealthy(),
-          ...(row?.state_json ? JSON.parse(row.state_json) : {}),
-        } as HealthyState,
+        state: restoreHealthy(row?.state_json),
         version: row?.version ?? 0,
       };
       if (row?.operation != null) {

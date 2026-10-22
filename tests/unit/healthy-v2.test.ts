@@ -91,11 +91,60 @@ test('v2 breakthrough modifier changes pre-roll chance, cap, and loss without ch
     penaltyMultiplier: 3,
   });
   assert.equal(tripled.penalty, 9);
-  const clamped = breakthrough({ ...before, qi: 6 }, 100, 1000, null, 0.99, {
+  assert.throws(
+    () =>
+      breakthrough({ ...before, qi: 14 }, 100, 1000, null, 0.99, {
+        chancePoints: 0,
+        preventLoss: false,
+        penaltyMultiplier: 3,
+      }),
+    /BREAKTHROUGH_UNAVAILABLE/,
+  );
+});
+
+test('final realm respects 60-day eligibility, capped pity, charms and v2 loss protection', () => {
+  const before = {
+    ...initialHealthy(),
+    qi: 10000,
+    earned: 12000,
+    rank: 14,
+    highestRank: 14,
+    streak: 60,
+    failures: 4,
+  };
+  before.inventory.supreme = 1;
+  const failed = breakthrough(before, 100, 1000, 'supreme', 0.45, {
     chancePoints: 0,
     preventLoss: false,
     penaltyMultiplier: 3,
   });
-  assert.equal(clamped.penalty, 6);
-  assert.equal(clamped.state.qi, 0);
+  assert.equal(failed.chance, 45);
+  assert.equal(failed.success, false);
+  assert.equal(failed.penalty, 900);
+  assert.equal(failed.state.qi, 9100);
+  assert.equal(failed.state.rank, 14);
+  assert.equal(failed.state.streak, 60);
+  assert.equal(failed.state.earned, 12000);
+  assert.equal(failed.state.inventory.supreme, 0);
+  assert.throws(
+    () => breakthrough({ ...before, streak: 59 }, 100, 1000, 'supreme', 0),
+    /BREAKTHROUGH_UNAVAILABLE/,
+  );
+  const guarded = breakthrough(before, 100, 1000, 'supreme', 0.99, {
+    chancePoints: 5,
+    preventLoss: true,
+    penaltyMultiplier: 3,
+  });
+  assert.equal(guarded.chance, 50);
+  assert.equal(guarded.penalty, 0);
+  assert.equal(guarded.state.qi, 10000);
+  const success = breakthrough(before, 100, 1000, 'supreme', 0.4499);
+  assert.equal(success.success, true);
+  assert.equal(success.state.rank, 15);
+  assert.equal(success.state.highestRank, 15);
+  assert.equal(success.state.qi, 10000);
+  assert.throws(
+    () => breakthrough(success.state, 101, 1000 + 86400000, null, 0),
+    /BREAKTHROUGH_UNAVAILABLE/,
+  );
 });

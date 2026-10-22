@@ -21,6 +21,7 @@ import {
   type BeastV2State,
 } from '../../domain/linh-thu-v2.ts';
 import { prepareBeastV2Effect } from './linh-thu-v2-effects.ts';
+import { runFusionBatch, type FusionBatchInput } from './cultivation-fusion.ts';
 
 export function creditBeastReward(
   healthy: HealthyState,
@@ -47,6 +48,7 @@ export async function prepareBeastEffect(
   now: number,
   random: () => number,
   attemptOverride?: BeastAttempt,
+  fusionBatch?: FusionBatchInput,
 ) {
   const v2 = await readBeastV2Context(db, owner, event.day, now);
   if (v2?.active) {
@@ -58,12 +60,12 @@ export async function prepareBeastEffect(
           kind: 'fusion',
           day: event.day,
           success: !!event.success,
-          from: event.fusionTier as 'basic' | 'middle' | 'high',
+          from: event.fusionTier as 'basic' | 'middle' | 'high' | 'supreme',
         },
         event.sourceId,
         now,
         random,
-        { context: v2 },
+        { context: v2, fusionBatch },
       );
     if (event.kind === 'breakthrough')
       return prepareBeastV2Effect(
@@ -120,7 +122,21 @@ export async function prepareBeastEffect(
         random,
       )
     : null;
-  const boosted: UltimateOutcome | null = ultimate ? applyBeastUltimate(ultimate, event) : null;
+  let boosted: UltimateOutcome | null = ultimate ? applyBeastUltimate(ultimate, event) : null;
+  let batch: ReturnType<typeof runFusionBatch> | undefined;
+  if (event.kind === 'fusion' && fusionBatch) {
+    let previous = ultimate;
+    const rewards: SkillReward = {};
+    batch = runFusionBatch(fusionBatch, random, (state, success) => {
+      if (!previous) return state;
+      boosted = applyBeastUltimate(previous, { ...event, success });
+      previous = boosted.state;
+      addSkillReward(rewards, boosted.reward);
+      return creditBeastReward(state, boosted.reward);
+    });
+    if (boosted) boosted.reward = rewards;
+    if (passive) batch.state = creditBeastReward(batch.state, passive.reward);
+  }
   const reward: SkillReward = {};
   if (passive) addSkillReward(reward, passive.reward);
   if (boosted) addSkillReward(reward, boosted.reward);
@@ -207,6 +223,7 @@ export async function prepareBeastEffect(
     protectStreak: boosted?.protectStreak ?? false,
     protectQi: boosted?.protectQi ?? false,
     apply: (healthy: HealthyState) => creditBeastReward(healthy, reward, refundQi),
+    batch,
   };
 }
 

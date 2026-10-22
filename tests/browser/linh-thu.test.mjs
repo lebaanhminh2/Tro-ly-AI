@@ -604,6 +604,66 @@ test(
 );
 
 test(
+  'species discovery counts all six forms and retains awakening and perfection without owned beasts',
+  { skip: !browserBin, timeout: 60000 },
+  async () => {
+    const control = beastFixture();
+    const beast = control.beastData.selected[0];
+    const server = await serve(control);
+    let browser;
+    try {
+      browser = await chrome();
+      for (const scenario of [
+        { earned: 0, gray: 0, count: 1 },
+        { earned: 800, gray: 0, count: 4 },
+        { earned: 1080, gray: 120, count: 4 },
+        { earned: 1140, gray: 60, count: 5 },
+        { earned: 1200, gray: 0, count: 6 },
+        { history: { form: 4, awakened: true, perfect: false }, count: 5 },
+        { history: { form: 4, awakened: true, perfect: true }, count: 6 },
+      ]) {
+        Object.assign(beast.attempt, {
+          earned: scenario.earned ?? 0,
+          gray: scenario.gray ?? 0,
+        });
+        control.ownedBeasts = scenario.history ? [] : [beast];
+        control.beastData.selected = control.ownedBeasts;
+        control.beastData.speciesCounts = { frostnip: control.ownedBeasts.length };
+        control.beastData.discoveries = scenario.history ? { frostnip: scenario.history } : {};
+        if (scenario.history) control.beastData.roles.current = [];
+        await browser.navigate(server.url, 360);
+        await browser.wait("!!document.querySelector('.focus-flip-card')");
+        await browser.evaluate("document.querySelector('[data-tab=beasts]').click()");
+        await browser.wait("!!document.querySelector('.beast-tabs')");
+        await browser.click('Bộ sưu tập');
+        await browser.wait("!!document.querySelector('[data-species=frostnip]')");
+        await browser.evaluate("document.querySelector('[data-species=frostnip]').click()");
+        await browser.wait("!!document.querySelector('.beast-species-discovery')");
+        assert.deepEqual(
+          await browser.evaluate(`({
+            label:document.querySelector('.beast-species-discovery p').textContent,
+            steps:document.querySelectorAll('.beast-discovery-step').length,
+            known:document.querySelectorAll('.beast-discovery-step.is-known').length,
+            overflow:document.documentElement.scrollWidth>innerWidth
+          })`),
+          {
+            label: `Đã khám phá ${scenario.count}/6 dạng`,
+            steps: 6,
+            known: scenario.count,
+            overflow: false,
+          },
+        );
+      }
+      assert.equal(control.posts.length, 0);
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      await browser?.close();
+      await server.close();
+    }
+  },
+);
+
+test(
   'alchemy stays compact, explains guarantee, locks pending writes, and pages the reset picker',
   { skip: !browserBin, timeout: 60000 },
   async () => {

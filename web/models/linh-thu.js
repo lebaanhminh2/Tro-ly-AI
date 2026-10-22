@@ -7,6 +7,7 @@ const skillItems = {
   middle: 'phù trung cấp',
   high: 'phù cao cấp',
   supreme: 'phù tối cao',
+  immortal: 'Hộ Đạo Tiên Phù',
   heart: 'Hộ Tâm Phù',
   peace: 'An Tâm Phù',
   keepsake: 'tín vật',
