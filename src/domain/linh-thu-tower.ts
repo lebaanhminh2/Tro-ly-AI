@@ -8,6 +8,9 @@ export type BeastTower = {
   trap: number;
   status: 'choosing' | 'decision' | 'claimed' | 'failed' | 'expired';
   rescueAvailable: boolean;
+  /** Missing on paid v1 runs: retain their original floor-three protection. */
+  rescueMaxFloor?: 3 | 4;
+  rewardMultiplier?: 1 | 3;
   rescued: boolean;
   lastPick: number | null;
   lastResult: 'safe' | 'trap' | 'rescued' | null;
@@ -23,6 +26,7 @@ export function beginBeastTower(
   day: number,
   rescueAvailable: boolean,
   random: () => number,
+  rules?: { rescueMaxFloor: 3 | 4; rewardMultiplier: 1 | 3 },
 ): BeastTower {
   if (!Number.isSafeInteger(day)) throw Error('INVALID_TOWER_DAY');
   return {
@@ -32,6 +36,7 @@ export function beginBeastTower(
     trap: trapFor(1, random),
     status: 'choosing',
     rescueAvailable,
+    ...(rules ?? {}),
     rescued: false,
     lastPick: null,
     lastResult: null,
@@ -44,7 +49,7 @@ export function pickBeastTower(state: BeastTower, card: number, random: () => nu
   if (!count || !Number.isInteger(card) || card < 0 || card >= count)
     throw Error('INVALID_TOWER_CARD');
   if (card === state.trap) {
-    if (state.rescueAvailable && !state.rescued && state.floor <= 3)
+    if (state.rescueAvailable && !state.rescued && state.floor <= (state.rescueMaxFloor ?? 3))
       return {
         ...state,
         trap: trapFor(state.floor, random),
@@ -72,15 +77,24 @@ export function continueBeastTower(state: BeastTower, random: () => number): Bea
 
 export function claimBeastTower(state: BeastTower) {
   if (state.status !== 'decision') throw Error('TOWER_CANNOT_CLAIM');
-  return { state: { ...state, status: 'claimed' as const }, reward: towerReward(state.cleared) };
+  return {
+    state: { ...state, status: 'claimed' as const },
+    reward: runReward(state, state.cleared),
+  };
 }
 
 export function expireBeastTower(state: BeastTower) {
   const active = state.status === 'choosing' || state.status === 'decision';
   return {
     state: active ? { ...state, status: 'expired' as const } : state,
-    reward: towerReward(active ? state.cleared : 0),
+    reward: runReward(state, active ? state.cleared : 0),
   };
+}
+
+function runReward(state: BeastTower, cleared: number) {
+  const reward = towerReward(cleared),
+    multiplier = state.rewardMultiplier ?? 1;
+  return { tickets: reward.tickets * multiplier, summonTickets: reward.summonTickets * multiplier };
 }
 
 export function beastTowerPublic(state: BeastTower) {
@@ -92,10 +106,11 @@ export function beastTowerPublic(state: BeastTower) {
     cards: TOWER_CARD_COUNTS[state.floor - 1]!,
     status: state.status,
     rescued: state.rescued,
-    rescueAvailable: state.rescueAvailable && !state.rescued && state.floor <= 3,
+    rescueAvailable:
+      state.rescueAvailable && !state.rescued && state.floor <= (state.rescueMaxFloor ?? 3),
     lastPick: state.lastPick,
     lastResult: state.lastResult,
-    atRisk: towerReward(state.status === 'failed' ? 0 : state.cleared),
-    nextReward: state.floor < 4 ? towerReward(state.floor + 1) : null,
+    atRisk: runReward(state, state.status === 'failed' ? 0 : state.cleared),
+    nextReward: state.floor < 4 ? runReward(state, state.floor + 1) : null,
   };
 }

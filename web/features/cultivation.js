@@ -12,6 +12,8 @@ import { button, el } from '../ui/dom.js';
 import { playEffect } from '../ui/effects.js';
 import { prefersReducedMotion } from '../core/experience.js';
 import { renderRewardCalendar } from '../views/achievements.js';
+import { liveRequest } from '../core/http.js';
+import { mapAccount } from '../core/live-data.js';
 export function summarizeDrawRewards(rewards) {
   const groups = new Map();
   let qi = 0;
@@ -448,12 +450,44 @@ export function createCultivationActions(context) {
       })(),
     );
   }
-  function openBreakthrough() {
+  async function openBreakthrough() {
+    if (state.live && state.beastV2?.active) {
+      if (runtime.saving) return;
+      openSheet('Đột phá');
+      const loading = el('p', 'Đang cập nhật năng lực đột phá…', 'hint');
+      loading.setAttribute('role', 'status');
+      sheetContent.append(loading);
+      const revision = runtime.revision;
+      try {
+        // Do not coalesce with a background bootstrap started before this preview.
+        const latest = await liveRequest('bootstrap?breakthroughPreview=' + crypto.randomUUID());
+        if (!state.loaded || !sheet.open || !loading.isConnected || revision !== runtime.revision)
+          return;
+        state.cultivation = mapAccount(latest.account, latest.day?.day);
+        state.day = latest.day;
+        state.beastV2 = latest.beastV2 ?? null;
+        state.breakthroughPenalties = latest.breakthroughPenalties;
+      } catch (error) {
+        if (!state.loaded || !sheet.open || !loading.isConnected || revision !== runtime.revision)
+          return;
+        loading.textContent = error.message;
+        sheetContent.append(button('Thử lại', openBreakthrough, 'primary'));
+        return;
+      }
+    }
     const c = state.cultivation,
       target = realms[c.rank + 1];
-    if (!target) return;
+    if (!target) {
+      if (state.live && state.beastV2?.active) {
+        openSheet('Đột phá');
+        sheetContent.append(el('p', 'Đã đạt cảnh giới cao nhất hiện có.', 'hint'));
+      }
+      return;
+    }
     openSheet('Đột phá · ' + target.name);
-    const penalty = (state.breakthroughPenalties ?? breakthroughPenalties)[c.rank];
+    const modifier = state.live && state.beastV2?.active ? state.beastV2.breakthrough : null;
+    const basePenalty = (state.breakthroughPenalties ?? breakthroughPenalties)[c.rank];
+    const penalty = modifier?.preventLoss ? 0 : basePenalty * (modifier?.penaltyMultiplier ?? 1);
     sheetContent.append(
       el(
         'p',
@@ -489,6 +523,7 @@ export function createCultivationActions(context) {
       Math.min(
         100,
         target.chance +
+          (modifier?.chancePoints ?? 0) +
           5 * Math.min(Math.max(c.failures - 1, 0), 3) +
           (talismans.find((t) => t.key === select.value)?.boost ?? 0),
       );
@@ -503,6 +538,13 @@ export function createCultivationActions(context) {
         '%. Thất bại −' +
         penalty +
         ' tu vi, giữ cảnh giới và chuỗi ngủ. Phù đã chọn vẫn tiêu hao. Thất bại 1 lần chưa cộng; 2/3/4 lần liên tiếp cộng 5/10/15 điểm % cho lần sau, tối đa +15 điểm %. Thành công đặt lại chuỗi thất bại. Phù cộng thêm tỷ lệ, tổng tối đa 100%. Mỗi ngày sinh hoạt chỉ thử 1 lần.';
+      if (modifier?.chancePoints)
+        info.textContent += ` Linh thú cộng thêm ${modifier.chancePoints} điểm % thành công cho lần này.`;
+      if (modifier?.preventLoss)
+        info.textContent +=
+          ' Mai Đá Hộ Thể: lần này thất bại không mất tu vi; thử xong tiêu hao bảo hộ.';
+      else if (modifier?.penaltyMultiplier > 1)
+        info.textContent += ` Hình phạt tu vi hôm nay nhân ${modifier.penaltyMultiplier}.`;
     };
     select.addEventListener('change', explain);
     explain();
@@ -520,6 +562,10 @@ export function createCultivationActions(context) {
             { keepSheet: true, silent: true },
           );
           if (saved === null && attempt.isConnected) {
+            if (state.beastV2?.active) {
+              await openBreakthrough();
+              return;
+            }
             attempt.disabled = false;
             attempt.textContent = 'Đột phá';
             return;
@@ -533,6 +579,8 @@ export function createCultivationActions(context) {
             : 'Chưa thành công · −' +
               saved.penalty +
               ' tu vi. Cảnh giới và chuỗi vẫn giữ; mình thử lại khi đủ điều kiện nhé.';
+          if (!saved.success && saved.effect?.refundQi > 0)
+            result.textContent += ` Linh thú hoàn lại ${saved.effect.refundQi} tu vi.`;
           attempt.textContent = 'Đã thử hôm nay';
           return;
         }

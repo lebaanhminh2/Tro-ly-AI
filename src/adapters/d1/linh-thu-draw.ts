@@ -14,6 +14,8 @@ import {
   type OwnedBeast,
 } from '../../domain/linh-thu-account.ts';
 import type { BeastUltimate } from '../../domain/linh-thu-ultimates.ts';
+import { readBeastV2Context, multiplyBeastV2Reward } from './linh-thu-v2-context.ts';
+import { prepareBeastV2Effect } from './linh-thu-v2-effects.ts';
 
 export type DrawLoot = ReturnType<typeof drawReward>['reward'];
 export function drawLootReward(loot: readonly DrawLoot[]): SkillReward {
@@ -46,10 +48,16 @@ export async function prepareCultivationDraw(
     apply:
       row.day === null
         ? null
-        : prepareDrawEffects(db, owner, requestId, row.day, now, count, random, row),
+        : row.cutover_day !== null && row.day >= row.cutover_day
+          ? !row.id && (!row.snapshot_json || !JSON.parse(row.snapshot_json).beastId)
+            ? prepareUnaccompaniedV2Draw(db, owner, requestId, row.day, now, count, random, row)
+            : await prepareV2DrawEffects(db, owner, requestId, row.day, now, count, random)
+          : prepareDrawEffects(db, owner, requestId, row.day, now, count, random, row),
   };
 }
 
+/** V1 compatibility preparer for existing paid-choice fixtures and receipts.
+ * Live API dispatch, including v2, always uses prepareCultivationDraw. */
 export async function prepareBeastDraw(
   db: Database,
   owner: string,
@@ -87,12 +95,24 @@ async function readDrawContext(
       FROM (SELECT ? AS owner) o LEFT JOIN schedule_settings s ON s.owner=o.owner
     )
     SELECT c.day,c.start_minutes,c.sleep_minutes,ba.state_json AS account_json,ba.version,ba.activated_day,
+      rt.cutover_day,rt.version AS runtime_version,vd.snapshot_json,
+      CASE WHEN vd.snapshot_json IS NOT NULL THEN json_extract(vd.snapshot_json,'$.startSleepStreak')
+        WHEN rt.cutover_day IS NULL OR c.day<rt.cutover_day OR b.id IS NOT NULL THEN 0
+        WHEN rt.last_day=c.day-1 THEN rt.sleep_streak ELSE
+        (WITH RECURSIVE nights(day) AS (
+          SELECT c.day-1 WHERE EXISTS(SELECT 1 FROM sleep_assessments
+            WHERE owner=c.owner AND day=c.day-1 AND result='on_time')
+          UNION ALL SELECT nights.day-1 FROM nights WHERE EXISTS(SELECT 1 FROM sleep_assessments
+            WHERE owner=c.owner AND day=nights.day-1 AND result='on_time')
+        ) SELECT COUNT(*) FROM nights) END AS start_sleep_streak,
       u.state_json AS ultimate_json,
       b.id,b.species_id,b.acquired_at,a.id AS attempt_id,a.rule_version,a.status,a.earned,a.gray,a.form,a.counters_json,
       (SELECT COALESCE(SUM(COALESCE(json_extract(cr.request_json,'$.count'),1)),0)
        FROM cultivation_receipts cr JOIN schedule_days d ON d.owner=cr.owner AND d.day=c.day
        WHERE cr.owner=ba.owner AND cr.operation='draw' AND cr.created>=d.start_at AND cr.created<d.end_at) AS ordinal
      FROM context c LEFT JOIN beast_accounts ba ON ba.owner=c.owner
+     LEFT JOIN beast_v2_runtime rt ON rt.owner=c.owner
+     LEFT JOIN beast_v2_days vd ON vd.owner=c.owner AND vd.day=c.day
      LEFT JOIN beast_roles r ON r.owner=ba.owner AND r.role='companion'
        AND r.effective_day=(SELECT MAX(effective_day) FROM beast_roles WHERE owner=ba.owner AND role='companion' AND effective_day<=c.day)
      LEFT JOIN beasts b ON b.owner=ba.owner AND b.id=r.beast_id AND b.sacrificed_at IS NULL
@@ -110,6 +130,10 @@ async function readDrawContext(
     account_json: string | null;
     version: number;
     activated_day: number | null;
+    cutover_day: number | null;
+    runtime_version: number;
+    snapshot_json: string | null;
+    start_sleep_streak: number;
     ultimate_json: string | null;
     id: string | null;
     species_id: string;
@@ -123,6 +147,128 @@ async function readDrawContext(
     counters_json: string;
     ordinal: number;
   }>();
+}
+
+/** No beast counters can fire. Keep ordinary paid draws at wallet/context/batch,
+ * including the day latch and guards in that same transaction. */
+function prepareUnaccompaniedV2Draw(
+  db: Database,
+  owner: string,
+  requestId: string,
+  day: number,
+  now: number,
+  count: 1 | 10,
+  random: () => number,
+  row: NonNullable<Awaited<ReturnType<typeof readDrawContext>>>,
+) {
+  const snapshot = row.snapshot_json
+    ? JSON.parse(row.snapshot_json)
+    : {
+        multiplier: 1,
+        startSleepStreak: row.start_sleep_streak,
+        beastId: null,
+        attemptId: null,
+        attempt: null,
+      };
+  return (healthy: HealthyState) => {
+    if (healthy.suspended || healthy.tickets < count) throw Error('NO_TICKETS');
+    const rewards = Array.from(
+      { length: count },
+      () => drawReward({ ...healthy, tickets: 1 }, random()).reward,
+    );
+    const baseReward = drawLootReward(rewards);
+    const earnedReward = multiplyBeastV2Reward(baseReward, snapshot.multiplier);
+    return {
+      state: creditBeastReward({ ...healthy, tickets: healthy.tickets - count }, earnedReward),
+      statements: [
+        query(
+          db,
+          'INSERT INTO transaction_guard SELECT CASE WHEN (SELECT version FROM beast_accounts WHERE owner=?)=? AND (SELECT version FROM beast_v2_runtime WHERE owner=?)=? THEN 1 ELSE 0 END',
+          owner,
+          row.version,
+          owner,
+          row.runtime_version,
+        ),
+        query(
+          db,
+          `INSERT INTO beast_v2_days(owner,day,snapshot_json,updated) VALUES(?,?,?,?)
+          ON CONFLICT(owner,day) DO NOTHING`,
+          owner,
+          day,
+          JSON.stringify(snapshot),
+          now,
+        ),
+        query(
+          db,
+          `INSERT INTO beast_skill_events(owner,source_id,kind,day,beast_id,skill_version,result_json,created)
+          VALUES(?,?,'v2:draw',?,NULL,2,?,?)`,
+          owner,
+          requestId,
+          day,
+          JSON.stringify({
+            version: 2,
+            count,
+            reward: earnedReward,
+            baseReward,
+            multiplier: snapshot.multiplier,
+            refundQi: 0,
+            triggered: [],
+          }),
+          now,
+        ),
+      ],
+      result: {
+        count,
+        rewards,
+        ...(count === 1 ? { reward: rewards[0] } : {}),
+        choices: [],
+        earnedReward,
+      },
+    };
+  };
+}
+
+async function prepareV2DrawEffects(
+  db: Database,
+  owner: string,
+  requestId: string,
+  day: number,
+  now: number,
+  count: 1 | 10,
+  random: () => number,
+) {
+  const context = await readBeastV2Context(db, owner, day, now);
+  return async (healthy: HealthyState) => {
+    // No loot or pity roll until all original input tickets are available.
+    if (healthy.suspended || healthy.tickets < count) throw Error('NO_TICKETS');
+    const rewards = Array.from(
+      { length: count },
+      () => drawReward({ ...healthy, tickets: 1 }, random()).reward,
+    );
+    const baseReward = drawLootReward(rewards);
+    const effect = await prepareBeastV2Effect(
+      db,
+      owner,
+      { kind: 'draw', day, count },
+      requestId,
+      now,
+      random,
+      { ...(context ? { context } : {}), extraEarned: baseReward },
+    );
+    if (!effect) throw Error('BEAST_V2_CONTEXT_CHANGED');
+    return {
+      state: effect.apply({ ...healthy, tickets: healthy.tickets - count }),
+      statements: effect.statements,
+      result: {
+        count,
+        rewards,
+        ...(count === 1 ? { reward: rewards[0] } : {}),
+        choices: [],
+        earnedReward: effect.reward,
+        beastEffect: effect.result,
+      },
+    };
+  };
 }
 
 function prepareDrawEffects(

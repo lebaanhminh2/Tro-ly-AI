@@ -1,0 +1,1078 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light" />
+    <title>Đồng hành · Demo iPhone</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #292638;
+        --muted: #898395;
+        --accent: #7959cc;
+        --line: #eae7ef;
+        --bg: #f4f3f9;
+        --device-width: 390px;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #eae8ef;
+        color: var(--ink);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      button {
+        font: inherit;
+        color: inherit;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+      }
+      button,
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+      button:focus-visible {
+        outline: 3px solid #a38adf;
+        outline-offset: 3px;
+      }
+      button:disabled {
+        cursor: default;
+      }
+      svg {
+        width: 20px;
+        height: 20px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.7;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        flex: none;
+      }
+      .symbols {
+        position: absolute;
+        width: 0;
+        height: 0;
+        overflow: hidden;
+      }
+      .workspace {
+        min-height: 100svh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 64px;
+        padding: 32px;
+      }
+      .review {
+        width: 286px;
+        flex: none;
+      }
+      .eyebrow {
+        color: var(--accent);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 1.8px;
+        text-transform: uppercase;
+      }
+      .review h1 {
+        font-size: 33px;
+        font-weight: 650;
+        line-height: 1.18;
+        letter-spacing: -1.2px;
+        margin: 15px 0;
+      }
+      .intro {
+        color: #70697f;
+        font-size: 14px;
+        line-height: 1.8;
+      }
+      .controls {
+        margin-top: 26px;
+      }
+      .segmented {
+        display: flex;
+        gap: 3px;
+        padding: 4px;
+        background: #ddd8e6;
+        border-radius: 12px;
+      }
+      .segmented button {
+        flex: 1;
+        border: 0;
+        border-radius: 9px;
+        padding: 10px 12px;
+        min-height: 44px;
+        font-size: 12px;
+        background: transparent;
+        color: #746b83;
+      }
+      .segmented button[aria-pressed='true'] {
+        background: white;
+        color: var(--ink);
+        box-shadow: 0 2px 5px #3520440a;
+        font-weight: 650;
+      }
+      .sizes {
+        display: flex;
+        gap: 8px;
+        margin-top: 16px;
+      }
+      .sizes button {
+        min-height: 44px;
+        flex: 1;
+        border: 1px solid #d5cfdf;
+        border-radius: 9px;
+        background: #ffffff55;
+        font-size: 12px;
+      }
+      .sizes button[aria-pressed='true'] {
+        color: var(--accent);
+        border-color: #b9aad5;
+        background: #f8f5ff;
+      }
+      .design-notes {
+        margin-top: 26px;
+        padding-top: 21px;
+        border-top: 1px solid #d9d3e2;
+        font-size: 12px;
+        color: #756c84;
+        line-height: 1.8;
+      }
+      .design-notes strong {
+        display: block;
+        color: var(--ink);
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+      .review-footnote {
+        font-size: 11px;
+        color: #8a8196;
+        line-height: 1.7;
+        margin-top: 23px;
+      }
+      .device {
+        width: calc(var(--device-width) + 20px);
+        flex: none;
+        padding: 9px;
+        background: #292633;
+        border: 1px solid #4c465b;
+        border-radius: 49px;
+        box-shadow:
+          0 24px 70px #35234426,
+          inset 0 0 0 3px #3e384a;
+        transition: width 0.2s;
+      }
+      .phone {
+        width: 100%;
+        height: 844px;
+        position: relative;
+        overflow: hidden;
+        isolation: isolate;
+        border-radius: 40px;
+        background: var(--bg);
+        display: flex;
+        flex-direction: column;
+      }
+      .statusbar {
+        height: 42px;
+        flex: none;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 4px 26px 0;
+        font-size: 12px;
+        font-weight: 650;
+      }
+      .island {
+        position: absolute;
+        top: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #24212c;
+        width: 94px;
+        height: 24px;
+        border-radius: 18px;
+      }
+      .status-icons {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .status-icons svg {
+        width: 15px;
+        height: 15px;
+      }
+      .app-head {
+        padding: 13px 20px 0;
+        flex: none;
+      }
+      .heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .heading h1 {
+        font-size: 27px;
+        letter-spacing: -0.8px;
+        font-weight: 700;
+      }
+      .head-actions {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .alchemy {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: #827b90;
+        background: none;
+        border: 0;
+        min-height: 44px;
+        padding: 0;
+        font-size: 11px;
+      }
+      .alchemy svg {
+        width: 16px;
+        height: 16px;
+        color: var(--accent);
+      }
+      .settings {
+        display: grid;
+        place-items: center;
+        width: 42px;
+        height: 44px;
+        border: 1px solid var(--line);
+        background: white;
+        border-radius: 14px;
+      }
+      .top-tabs {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        border-bottom: 1px solid #e5e1ec;
+        margin-top: 12px;
+      }
+      .top-tabs button {
+        min-width: 0;
+        border: 0;
+        background: transparent;
+        color: #7b7488;
+        padding: 12px 0 15px;
+        min-height: 45px;
+        font-size: 12px;
+        position: relative;
+      }
+      .top-tabs button[aria-current='page'] {
+        color: var(--ink);
+        font-weight: 650;
+      }
+      .top-tabs button[aria-current='page']::after {
+        content: '';
+        position: absolute;
+        bottom: -1px;
+        height: 3px;
+        background: var(--accent);
+        border-radius: 3px;
+        left: 15%;
+        right: 15%;
+      }
+      .content {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-width: none;
+        padding: 16px 20px 26px;
+      }
+      .content::-webkit-scrollbar {
+        display: none;
+      }
+      .hero,
+      .support {
+        background: white;
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        box-shadow: 0 5px 24px #34215204;
+      }
+      .hero {
+        padding: 17px 18px 13px;
+      }
+      .companion-card {
+        display: contents;
+      }
+      .identity {
+        text-align: center;
+      }
+      .identity h2 {
+        font-size: 24px;
+        line-height: 1.3;
+        letter-spacing: -0.5px;
+        font-weight: 650;
+      }
+      .meta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
+        margin-top: 6px;
+        font-size: 11px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+      .rank {
+        color: #638ab4;
+        letter-spacing: 0.3px;
+      }
+      .role {
+        padding-left: 9px;
+        border-left: 1px solid var(--line);
+      }
+      .summary {
+        font-size: 12px;
+        line-height: 1.65;
+        color: var(--muted);
+        margin-top: 3px;
+        text-align: center;
+      }
+      .art-stage {
+        height: 167px;
+        margin: 0;
+        position: relative;
+        display: grid;
+        place-items: center;
+        isolation: isolate;
+      }
+      .portrait {
+        width: 151px;
+        height: 151px;
+        object-fit: contain;
+        display: block;
+        filter: drop-shadow(0 5px 5px #2820370c);
+      }
+      .hero-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 9px;
+      }
+      .hero-actions button {
+        min-width: 0;
+        min-height: 44px;
+        border-radius: 11px;
+        padding: 8px 3px;
+        border: 1px solid var(--line);
+        background: white;
+        font-size: 13px;
+        line-height: 1.45;
+        font-weight: 600;
+      }
+      .hero-actions .change {
+        border-color: transparent;
+        background: #faf9fc;
+        color: #524d62;
+      }
+      .hero-actions svg {
+        display: none;
+      }
+      .support {
+        padding: 20px;
+        margin-top: 16px;
+      }
+      .support-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .support-heading h2 {
+        font-size: 15px;
+        line-height: 1.5;
+        font-weight: 650;
+        letter-spacing: -0.2px;
+      }
+      .all-skills {
+        color: var(--accent);
+        background: none;
+        border: 0;
+        min-height: 44px;
+        padding: 0;
+        font-size: 11px;
+        font-weight: 550;
+      }
+      .support-heading .all-skills {
+        display: none;
+      }
+      .ability {
+        margin-top: 32px;
+        padding-left: 13px;
+        position: relative;
+      }
+      .ability::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 4px;
+        height: 12px;
+        width: 3px;
+        border-radius: 3px;
+        background: #b59ae9;
+      }
+      .ability-icon {
+        display: none;
+      }
+      .ability h3 {
+        font-size: 14px;
+        line-height: 1.5;
+        font-weight: 600;
+      }
+      .ability p {
+        font-size: 13px;
+        line-height: 1.75;
+        color: #625b70;
+        margin-top: 7px;
+      }
+      .support-footer {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 25px;
+      }
+      .bottom-nav {
+        flex: none;
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 0;
+        border-top: 1px solid #e6e2ed;
+        padding: 8px 7px 22px;
+        background: #fffffffa;
+      }
+      .bottom-nav button {
+        border: 0;
+        background: none;
+        min-width: 0;
+        min-height: 44px;
+        padding: 2px 0;
+        color: #81788f;
+        font-size: 9px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+      }
+      .bottom-nav button[aria-current='page'] {
+        color: var(--accent);
+        font-weight: 600;
+      }
+      .bottom-nav svg {
+        width: 22px;
+        height: 22px;
+      }
+      .home-indicator {
+        position: absolute;
+        bottom: 6px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 112px;
+        height: 4px;
+        background: #302a3a;
+        border-radius: 8px;
+        z-index: 10;
+        pointer-events: none;
+      }
+      /* One white card connects identity, artwork, abilities, and actions. */
+      [data-version='proposed'] .companion-card {
+        display: block;
+        padding: 22px 20px 9px;
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        background: white;
+        box-shadow: 0 5px 24px #34215204;
+      }
+      [data-version='proposed'] :is(.hero, .support) {
+        padding: 0;
+        margin: 0;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        background: transparent;
+      }
+      [data-version='proposed'] .meta {
+        margin-top: 8px;
+        font-size: 12px;
+      }
+      [data-version='proposed'] .summary {
+        display: none;
+      }
+      [data-version='proposed'] .art-stage {
+        height: 188px;
+        margin: 8px 0;
+      }
+      [data-version='proposed'] .portrait {
+        width: 184px;
+        height: 184px;
+      }
+      [data-version='proposed'] .hero-actions {
+        margin-top: 18px;
+        padding-top: 7px;
+        border-top: 1px solid var(--line);
+        gap: 12px;
+      }
+      [data-version='proposed'] .hero-actions button {
+        min-height: 48px;
+        border: 0;
+        background: transparent;
+        font-size: 13px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+      }
+      [data-version='proposed'] .hero-actions .detail {
+        color: var(--accent);
+      }
+      [data-version='proposed'] .hero-actions .change {
+        color: #6e657c;
+      }
+      [data-version='proposed'] .hero-actions .detail svg {
+        display: block;
+        width: 15px;
+        height: 15px;
+      }
+      [data-version='proposed'] .support {
+        padding-top: 3px;
+        border-top: 1px solid var(--line);
+      }
+      [data-version='proposed'] .support-heading .all-skills {
+        display: block;
+      }
+      [data-version='proposed'] .support-heading h2 {
+        font-size: 14px;
+        color: #6e657c;
+        font-weight: 500;
+      }
+      [data-version='proposed'] .all-skills {
+        font-size: 12px;
+      }
+      [data-version='proposed'] .ability {
+        padding: 0;
+        margin-top: 3px;
+      }
+      [data-version='proposed'] .ability::before {
+        display: none;
+      }
+      [data-version='proposed'] .ability h3 {
+        font-size: 15px;
+      }
+      [data-version='proposed'] .ability p {
+        font-size: 14px;
+        margin-top: 4px;
+        line-height: 1.7;
+      }
+      [data-version='proposed'] .support-footer {
+        display: none;
+      }
+      .sheet-layer {
+        position: absolute;
+        inset: 0;
+        z-index: 20;
+        display: flex;
+        align-items: flex-end;
+        background: #29223855;
+      }
+      .sheet-layer[hidden] {
+        display: none;
+      }
+      .sheet {
+        background: white;
+        width: 100%;
+        max-height: 85%;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding: 10px 20px 32px;
+        border-radius: 25px 25px 0 0;
+        box-shadow: 0 -8px 35px #21132f12;
+      }
+      .handle {
+        width: 32px;
+        height: 4px;
+        border-radius: 6px;
+        background: #ded8e8;
+        margin: 0 auto 6px;
+      }
+      .sheet-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 14px;
+      }
+      .sheet-heading h2 {
+        font-size: 19px;
+        font-weight: 650;
+      }
+      .close {
+        display: grid;
+        place-items: center;
+        border: 1px solid var(--line);
+        border-radius: 13px;
+        width: 44px;
+        height: 44px;
+        background: white;
+      }
+      .sheet-content {
+        color: #6f667c;
+        font-size: 13px;
+        line-height: 1.85;
+      }
+      .sheet-content h3 {
+        color: var(--ink);
+        font-size: 15px;
+        margin: 16px 0 4px;
+      }
+      .sheet-portrait {
+        display: block;
+        width: 156px;
+        height: 156px;
+        object-fit: contain;
+        margin: 0 auto 12px;
+      }
+      .sheet-meta {
+        text-align: center;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .picker-row {
+        padding: 10px 12px;
+        border: 1px solid #d9cdef;
+        background: #faf7ff;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        gap: 13px;
+      }
+      .picker-row img {
+        width: 65px;
+        height: 65px;
+        object-fit: contain;
+      }
+      .picker-row strong {
+        color: var(--ink);
+        display: block;
+        font-weight: 600;
+      }
+      .demo-note {
+        color: #93889f;
+        font-size: 11px;
+        margin-top: 18px;
+      }
+      .toast {
+        position: absolute;
+        bottom: 95px;
+        left: 20px;
+        right: 20px;
+        text-align: center;
+        background: #373041ed;
+        color: white;
+        border-radius: 12px;
+        padding: 12px;
+        font-size: 12px;
+        line-height: 1.6;
+        z-index: 30;
+        pointer-events: none;
+      }
+      .toast[hidden] {
+        display: none;
+      }
+      @media (max-width: 820px) {
+        body {
+          background: var(--bg);
+        }
+        .workspace {
+          display: block;
+          min-height: 100svh;
+          padding: 0;
+        }
+        .review {
+          width: 100%;
+        }
+        .review > :not(.controls) {
+          display: none;
+        }
+        .controls {
+          margin: 0;
+          padding: 6px 20px;
+          border-bottom: 1px solid #e4deec;
+          background: #eae6f0;
+        }
+        .segmented {
+          max-width: 390px;
+          margin: 0 auto;
+          padding: 2px;
+        }
+        .segmented button {
+          padding: 8px;
+          min-height: 40px;
+        }
+        .sizes {
+          display: none;
+        }
+        .device {
+          width: 100%;
+          padding: 0;
+          border: 0;
+          border-radius: 0;
+          background: transparent;
+          box-shadow: none;
+          transition: none;
+        }
+        .phone {
+          max-width: 520px;
+          height: calc(100svh - 57px);
+          margin: 0 auto;
+          border-radius: 0;
+        }
+        .statusbar {
+          display: none;
+        }
+        .app-head {
+          padding-top: 12px;
+        }
+        .bottom-nav {
+          padding-bottom: max(20px, env(safe-area-inset-bottom));
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .device {
+          transition: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <svg class="symbols" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+      <symbol id="flask" viewBox="0 0 24 24">
+        <path d="M9 3h6M10 3v6L5 19a1.4 1.4 0 0 0 1.3 2h11.4a1.4 1.4 0 0 0 1.3-2L14 9V3M8 14h8" />
+      </symbol>
+      <symbol id="settings" viewBox="0 0 24 24">
+        <path d="m9 3-1 3-3 1-2 5 2 5 3 1 1 3h6l1-3 3-1 2-5-2-5-3-1-1-3Z" />
+        <circle cx="12" cy="12" r="3.3" />
+      </symbol>
+      <symbol id="chevron" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6" /></symbol>
+      <symbol id="close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18" /></symbol>
+      <symbol id="shield" viewBox="0 0 24 24">
+        <path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6Z" />
+        <path d="m8 12 3 3 5-6" />
+      </symbol>
+      <symbol id="clock" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 6v6h4" />
+      </symbol>
+      <symbol id="check" viewBox="0 0 24 24">
+        <rect x="3" y="3" width="18" height="18" rx="5" />
+        <path d="m7 12 3 3 7-8" />
+      </symbol>
+      <symbol id="bell" viewBox="0 0 24 24">
+        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 9h18c0-1-3-2-3-9M10 21h4" />
+      </symbol>
+      <symbol id="paw" viewBox="0 0 24 24">
+        <ellipse cx="5" cy="9" rx="2.2" ry="3" />
+        <ellipse cx="10" cy="5" rx="2.1" ry="3" />
+        <ellipse cx="16" cy="5.5" rx="2.1" ry="3" />
+        <ellipse cx="20" cy="10" rx="2" ry="2.8" />
+        <path d="M5 19c-1-3 2-4 4-7 1-2 5-2 6 0 2 3 5 5 3 7s-4 0-6 0-5 3-7 0Z" />
+      </symbol>
+      <symbol id="star" viewBox="0 0 24 24">
+        <path d="m12 2 3 6.5 7 1-5 5 1.3 7-6.3-3.4L5.7 22 7 14.5l-5-5 7-1Z" />
+      </symbol>
+      <symbol id="signal" viewBox="0 0 20 20">
+        <path d="M3 15v-3m4 3V9m4 6V6m4 9V3" stroke-width="2.6" />
+      </symbol>
+      <symbol id="battery" viewBox="0 0 24 24">
+        <rect x="2" y="6" width="18" height="12" rx="3" />
+        <path d="M23 10v4M5 9h11v6H5Z" />
+      </symbol>
+    </svg>
+    <main class="workspace">
+      <aside class="review" aria-label="Điều khiển demo">
+        <p class="eyebrow">Linh thú · Nghiên cứu giao diện</p>
+        <h1>Đồng hành,<br />liền mạch hơn.</h1>
+        <p class="intro">
+          Tên, linh thú và năng lực cùng nằm trong một thẻ trắng. Giữ cách căn giữa quen thuộc, đưa
+          các thao tác xuống chân thẻ.
+        </p>
+        <div class="controls">
+          <div class="segmented" role="group" aria-label="So sánh bố cục">
+            <button type="button" data-version-choice="current" aria-pressed="false">
+              Hiện tại
+            </button>
+            <button type="button" data-version-choice="proposed" aria-pressed="true">
+              Đề xuất
+            </button>
+          </div>
+          <div class="sizes" role="group" aria-label="Chiều rộng màn hình iPhone">
+            <button type="button" data-width="375" aria-pressed="false">375px</button>
+            <button type="button" data-width="390" aria-pressed="true">390px</button>
+            <button type="button" data-width="430" aria-pressed="false">430px</button>
+          </div>
+        </div>
+        <div class="design-notes" aria-live="polite">
+          <strong id="note-title">Một bố cục liền mạch</strong>
+          <p id="note-body">
+            Hình ảnh nằm ngay dưới tên. Năng lực nối tiếp bằng đường phân cách mảnh, chữ dễ đọc hơn.
+            Hai thao tác kết thúc thẻ ở phía dưới.
+          </p>
+        </div>
+        <p class="review-footnote">
+          Demo độc lập · Ảnh gốc của ứng dụng.<br />Có thể bấm xem chi tiết và đổi đồng hành.<br />Bản
+          hiện tại được dựng lại để so bố cục.
+        </p>
+      </aside>
+      <section class="device" aria-label="Bản xem trước iPhone">
+        <div class="phone" data-version="proposed">
+          <div class="statusbar" aria-hidden="true">
+            <span>9:41</span><span class="island"></span
+            ><span class="status-icons"
+              ><svg><use href="#signal" /></svg><svg><use href="#battery" /></svg
+            ></span>
+          </div>
+          <header class="app-head">
+            <div class="heading">
+              <h1>Linh thú</h1>
+              <div class="head-actions">
+                <button
+                  type="button"
+                  class="alchemy"
+                  data-toast="Đây là bản xem thử giao diện Đồng hành."
+                >
+                  <svg aria-hidden="true"><use href="#flask" /></svg
+                  ><span>Lò đan · 0/30</span></button
+                ><button
+                  type="button"
+                  class="settings"
+                  aria-label="Cài đặt"
+                  data-toast="Đây là bản xem thử giao diện Đồng hành."
+                >
+                  <svg aria-hidden="true"><use href="#settings" /></svg>
+                </button>
+              </div>
+            </div>
+            <nav class="top-tabs" aria-label="Linh thú">
+              <button type="button" data-toast="Demo này tập trung vào tab Đồng hành.">
+                Đang luyện</button
+              ><button type="button" aria-current="page" data-home>Đồng hành</button
+              ><button type="button" data-toast="Demo này tập trung vào tab Đồng hành.">
+                Bộ sưu tập</button
+              ><button type="button" data-toast="Demo này tập trung vào tab Đồng hành.">
+                Triệu hồi
+              </button>
+            </nav>
+          </header>
+          <div class="content">
+            <article class="companion-card" aria-labelledby="beast-name">
+              <div class="hero">
+                <div class="identity">
+                  <h2 id="beast-name">Tiểu Thạch Quy</h2>
+                  <p class="meta">
+                    <span class="rank">R · T1</span><span class="role">Đang đồng hành</span>
+                  </p>
+                </div>
+                <p class="summary">
+                  Hoàn tu vi khi đột phá thất bại; bảo hộ lần thử sau ba thất bại liên tiếp.
+                </p>
+                <div class="art-stage">
+                  <img
+                    class="portrait"
+                    src="../../web/assets/linh-thu/designed/v3/r/gibber/t1-normal-e46c5b1999b8.webp"
+                    alt="Tiểu Thạch Quy"
+                    width="174"
+                    height="174"
+                  />
+                </div>
+                <div class="hero-actions">
+                  <button type="button" class="detail" data-sheet="detail">
+                    Chi tiết linh thú<svg aria-hidden="true"><use href="#chevron" /></svg></button
+                  ><button type="button" class="change" data-sheet="change">Đổi đồng hành</button>
+                </div>
+              </div>
+              <section class="support" aria-labelledby="support-title">
+                <div class="support-heading">
+                  <h2 id="support-title">Năng lực đồng hành</h2>
+                  <button type="button" class="all-skills" data-sheet="skills">Toàn bộ ›</button>
+                </div>
+                <div class="ability">
+                  <span class="ability-icon" aria-hidden="true"
+                    ><svg><use href="#shield" /></svg
+                  ></span>
+                  <div>
+                    <h3>Thạch Giáp</h3>
+                    <p>Đột phá thất bại: 25% hoàn tối đa 5 tu vi thực mất.</p>
+                  </div>
+                </div>
+                <div class="support-footer">
+                  <button type="button" class="all-skills" data-sheet="skills">
+                    Toàn bộ năng lực ›
+                  </button>
+                </div>
+              </section>
+            </article>
+          </div>
+          <nav class="bottom-nav" aria-label="Điều hướng chính">
+            <button type="button" data-toast="Demo này tập trung vào tab Đồng hành.">
+              <svg aria-hidden="true"><use href="#clock" /></svg>Hôm nay</button
+            ><button type="button" data-toast="Demo này tập trung vào tab Đồng hành.">
+              <svg aria-hidden="true"><use href="#check" /></svg>Thói quen</button
+            ><button type="button" data-toast="Demo này tập trung vào tab Đồng hành.">
+              <svg aria-hidden="true"><use href="#bell" /></svg>Lời nhắc</button
+            ><button type="button" aria-current="page" data-home>
+              <svg aria-hidden="true"><use href="#paw" /></svg>Linh thú</button
+            ><button type="button" data-toast="Demo này tập trung vào tab Đồng hành.">
+              <svg aria-hidden="true"><use href="#star" /></svg>Thành tích
+            </button>
+          </nav>
+          <span class="home-indicator" aria-hidden="true"></span>
+          <div class="sheet-layer" hidden>
+            <section
+              class="sheet"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="sheet-title"
+              tabindex="-1"
+            >
+              <div class="handle" aria-hidden="true"></div>
+              <header class="sheet-heading">
+                <h2 id="sheet-title">Chi tiết linh thú</h2>
+                <button type="button" class="close" aria-label="Đóng">
+                  <svg aria-hidden="true"><use href="#close" /></svg>
+                </button>
+              </header>
+              <div class="sheet-content"></div>
+            </section>
+          </div>
+          <div class="toast" role="status" hidden></div>
+        </div>
+      </section>
+    </main>
+    <script>
+      const phone = document.querySelector('.phone');
+      const layer = document.querySelector('.sheet-layer');
+      const sheet = document.querySelector('.sheet');
+      const content = document.querySelector('.content');
+      const companionCard = document.querySelector('.companion-card');
+      const hero = document.querySelector('.hero');
+      const heroActions = document.querySelector('.hero-actions');
+      let returnFocus;
+      let toastTimer;
+      const portrait =
+        '<img class="sheet-portrait" src="../../web/assets/linh-thu/designed/v3/r/gibber/t1-normal-e46c5b1999b8.webp" alt="Tiểu Thạch Quy" width="156" height="156" />';
+      const panels = {
+        detail: {
+          title: 'Tiểu Thạch Quy',
+          body:
+            portrait +
+            '<p class="sheet-meta">R · T1 · Đang đồng hành</p><h3>Thạch Giáp</h3><p>Đột phá thất bại: 25% hoàn tối đa 5 tu vi thực mất.</p><p class="demo-note">Bảng xem thử. Thiết kế chi tiết linh thú trong ứng dụng vẫn được giữ nguyên.</p>',
+        },
+        change: {
+          title: 'Đổi đồng hành',
+          body: '<div class="picker-row"><img src="../../web/assets/linh-thu/designed/v3/r/gibber/t1-normal-e46c5b1999b8.webp" alt="" width="65" height="65" /><div><strong>Tiểu Thạch Quy</strong><p>R · T1 · Đang đồng hành</p></div></div><p class="demo-note">Demo dùng một linh thú mẫu để bạn xem bố cục. Không thay đổi dữ liệu trong ứng dụng.</p>',
+        },
+        skills: {
+          title: 'Năng lực đồng hành',
+          body: '<p class="sheet-meta">Tiểu Thạch Quy · T1</p><h3>Thạch Giáp</h3><p>Đột phá thất bại: 25% hoàn tối đa 5 tu vi thực mất.</p><p class="demo-note">Demo chỉ hiển thị năng lực hiện tại của T1.</p>',
+        },
+      };
+      function closeSheet() {
+        if (layer.hidden) return;
+        layer.hidden = true;
+        for (const element of [
+          document.querySelector('.app-head'),
+          content,
+          document.querySelector('.bottom-nav'),
+        ])
+          element.inert = false;
+        returnFocus?.focus({ preventScroll: true });
+      }
+      function setVersion(version) {
+        closeSheet();
+        phone.dataset.version = version;
+        const proposed = version === 'proposed';
+        (proposed ? companionCard : hero).append(heroActions);
+        document.querySelectorAll('[data-version-choice]').forEach((item) => {
+          item.setAttribute('aria-pressed', String(item.dataset.versionChoice === version));
+        });
+        document.querySelector('#note-title').textContent = proposed
+          ? 'Một bố cục liền mạch'
+          : 'Bố cục hiện tại';
+        document.querySelector('#note-body').textContent = proposed
+          ? 'Hình ảnh nằm ngay dưới tên. Năng lực nối tiếp bằng đường phân cách mảnh, chữ dễ đọc hơn. Hai thao tác kết thúc thẻ ở phía dưới.'
+          : 'Các tầng nội dung đều căn giữa. Mô tả nằm trên hình; hai nút có trọng lượng gần nhau. Khối năng lực bên dưới còn nhiều khoảng trống.';
+        content.scrollTop = 0;
+      }
+      setVersion('proposed');
+      document.querySelectorAll('[data-version-choice]').forEach((button) => {
+        button.addEventListener('click', () => {
+          setVersion(button.dataset.versionChoice);
+        });
+      });
+      document.querySelectorAll('[data-width]').forEach((button) =>
+        button.addEventListener('click', () => {
+          document.documentElement.style.setProperty('--device-width', button.dataset.width + 'px');
+          document
+            .querySelectorAll('[data-width]')
+            .forEach((item) => item.setAttribute('aria-pressed', String(item === button)));
+        }),
+      );
+      document.querySelectorAll('[data-sheet]').forEach((button) =>
+        button.addEventListener('click', () => {
+          const panel = panels[button.dataset.sheet];
+          returnFocus = button;
+          document.querySelector('#sheet-title').textContent = panel.title;
+          document.querySelector('.sheet-content').innerHTML = panel.body;
+          layer.hidden = false;
+          for (const element of [
+            document.querySelector('.app-head'),
+            content,
+            document.querySelector('.bottom-nav'),
+          ])
+            element.inert = true;
+          sheet.querySelector('.close').focus({ preventScroll: true });
+        }),
+      );
+      document.querySelector('.close').addEventListener('click', closeSheet);
+      layer.addEventListener('click', (event) => {
+        if (event.target === layer) closeSheet();
+      });
+      document.addEventListener('keydown', (event) => {
+        if (layer.hidden) return;
+        if (event.key === 'Escape') closeSheet();
+        if (event.key === 'Tab') {
+          event.preventDefault();
+          sheet.querySelector('.close').focus();
+        }
+      });
+      document
+        .querySelectorAll('[data-home]')
+        .forEach((button) =>
+          button.addEventListener('click', () => content.scrollTo({ top: 0, behavior: 'smooth' })),
+        );
+      document.querySelectorAll('[data-toast]').forEach((button) =>
+        button.addEventListener('click', () => {
+          const toast = document.querySelector('.toast');
+          clearTimeout(toastTimer);
+          toast.textContent = button.dataset.toast;
+          toast.hidden = false;
+          toastTimer = setTimeout(() => {
+            toast.hidden = true;
+          }, 2400);
+        }),
+      );
+    </script>
+  </body>
+</html>

@@ -2,6 +2,12 @@
 
 Cập nhật 21/10/2026. Mục lục cho mã nguồn hiện hành của trợ lý cá nhân Telegram/web.
 
+## Nâng cấp Linh thú v2 — đặc tả ngày 22/10/2026
+
+**Đã phát hành staging; xem [hồ sơ phát hành](LINH_THU_V2_RELEASE.md).** Đọc [bảng kỹ năng và câu chữ hiện hành](LINH_THU_V2_PLAYER_COPY.md), [đặc tả v2](LINH_THU_V2_SPEC.md), [hồ sơ kiểm chứng](LINH_THU_V2_VERIFICATION.md), [chạy local/migration/phục hồi](LINH_THU_V2_OPERATIONS.md). [Kế hoạch](LINH_THU_V2_IMPLEMENTATION.md) và [lệnh goal](LINH_THU_V2_GOAL.md) giữ hợp đồng triển khai. Thông số kỹ năng v2 ưu tiên hơn bộ kỹ năng v1 bên dưới; luật ngoài phạm vi giữ theo source hiện hành.
+
+## Tài liệu runtime và bối cảnh hiện hành
+
 | Tài liệu                                      | Khi cần đọc                                                             |
 | --------------------------------------------- | ----------------------------------------------------------------------- |
 | [Sản phẩm](PRODUCT_BRIEF.md)                  | Chức năng, năm mục điều hướng và nguyên tắc trải nghiệm                 |

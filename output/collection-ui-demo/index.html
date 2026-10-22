@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="Demo giao diện Bộ sưu tập Linh thú trên iPhone.">
+  <title>Bộ sưu tập · Demo iPhone</title>
+  <style>
+    :root { color-scheme: light; --bg:#f6f5fa; --surface:#fff; --ink:#28243c; --muted:#79758d; --accent:#7962ce; --line:#e9e5f1; --soft:#efebf8; --device-width:390px; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:var(--ink); background:#eae8ef; -webkit-font-smoothing:antialiased; }
+    button { font:inherit; color:inherit; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+    button:disabled { cursor:default; }
+    button:focus-visible, summary:focus-visible { outline:3px solid #a38adf; outline-offset:3px; }
+    button, h1, h2, h3, p { margin:0; }
+    svg { width:21px; height:21px; flex:none; }
+    button svg { pointer-events:none; }
+    .workspace { min-height:100dvh; display:flex; align-items:center; justify-content:center; gap:64px; padding:36px; }
+    .review-panel { width:300px; flex:none; }
+    .review-kicker { font-size:11px; color:var(--accent); font-weight:700; letter-spacing:2px; text-transform:uppercase; }
+    .review-panel h1 { font-size:34px; letter-spacing:-1.3px; line-height:1.18; margin:16px 0; }
+    .review-description { font-size:14px; color:#6d687e; line-height:1.8; }
+    .review-group { margin-top:28px; }
+    .review-label { display:block; margin-bottom:10px; font-size:12px; font-weight:650; }
+    .review-options { display:flex; flex-wrap:wrap; gap:7px; }
+    .review-options button { background:#ffffff80; border:1px solid #dcd6e8; padding:10px 13px; min-height:42px; border-radius:11px; font-size:12px; }
+    .review-options button[aria-pressed="true"] { background:var(--ink); color:white; border-color:var(--ink); }
+    .screen-links { display:grid; gap:1px; }
+    .screen-links button { display:flex; gap:12px; align-items:center; background:transparent; border:0; border-bottom:1px solid #dcd7e4; text-align:left; padding:13px 0; min-height:45px; font-size:13px; }
+    .screen-links span { color:#91899f; font-size:11px; }
+    .review-footnote { margin-top:24px; font-size:11px; color:#81798e; line-height:1.7; }
+    .device { flex:none; width:calc(var(--device-width) + 20px); padding:9px; border-radius:49px; background:#262333; border:1px solid #4c465b; box-shadow:0 28px 65px #30234324, inset 0 0 0 3px #3d374b; }
+    .phone { width:var(--device-width); height:844px; position:relative; border-radius:40px; overflow:hidden; background:var(--bg); isolation:isolate; }
+    .statusbar { height:40px; display:flex; justify-content:space-between; align-items:center; padding:5px 25px 0; background:var(--bg); font-size:12px; font-weight:650; }
+    .status-right { display:flex; align-items:center; gap:5px; }
+    .status-right svg { width:15px; height:15px; }
+    .notch { position:absolute; width:95px; height:24px; top:7px; left:50%; transform:translateX(-50%); background:#262333; border-radius:18px; }
+    .app { position:absolute; inset:40px 0 0; display:flex; flex-direction:column; }
+    .app-head { padding:15px 20px 0; flex:none; }
+    .heading-row { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .app-title { font-size:26px; line-height:1.2; font-weight:730; letter-spacing:-.8px; }
+    .alchemy { min-height:44px; display:flex; gap:6px; align-items:center; padding:8px 0 8px 12px; background:none; border:0; font-size:11px; color:var(--muted); }
+    .alchemy svg { color:var(--accent); width:17px; height:17px; }
+    .top-tabs { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); border-bottom:1px solid var(--line); margin-top:12px; }
+    .top-tab { position:relative; border:0; background:transparent; min-height:45px; font-size:11.5px; padding:8px 0 12px; color:var(--muted); }
+    .top-tab[aria-current="page"] { color:var(--ink); font-weight:700; }
+    .top-tab[aria-current="page"]::after { content:""; position:absolute; bottom:-1px; height:3px; border-radius:3px; background:var(--accent); left:20%; right:20%; }
+    .content { overflow-y:auto; flex:1; padding:23px 20px 28px; overscroll-behavior:contain; scrollbar-width:none; }
+    .content::-webkit-scrollbar, .detail-body::-webkit-scrollbar { display:none; }
+    .section-heading { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+    .section-heading h2 { font-size:19px; line-height:1.35; font-weight:700; letter-spacing:-.4px; }
+    .collection-count { display:inline-flex; flex:none; align-items:baseline; gap:3px; font-size:11px; color:var(--muted); }
+    .collection-count b { color:var(--accent); font-size:16px; font-weight:650; }
+    .collection-track { height:3px; border-radius:4px; background:#e9e5f1; margin:12px 0 18px; overflow:hidden; }
+    .collection-track span { display:block; height:100%; border-radius:4px; background:#a18bd9; }
+    .atlas { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px 8px; }
+    [data-rank="UR"] { --rank:#c26b77; --rank-bg:#f9edf0; }
+    [data-rank="SSR"] { --rank:#b3813e; --rank-bg:#faf2e7; }
+    [data-rank="SR"] { --rank:#9171bb; --rank-bg:#f2ecf9; }
+    [data-rank="R"] { --rank:#638ab4; --rank-bg:#eaf1f8; }
+    .atlas-card { min-width:0; display:flex; flex-direction:column; align-items:center; position:relative; padding:10px 6px 11px; border:1px solid #e7e2ef; border-radius:17px; background:var(--surface); text-align:center; min-height:153px; box-shadow:0 2px 4px #3b2b6202; }
+    .atlas-card:not(:disabled):active, .individual-open:active { background:#faf8ff; }
+    .atlas-card .rank { align-self:flex-start; margin-left:3px; }
+    .rank { color:var(--rank); font-size:9px; font-weight:750; letter-spacing:.3px; line-height:16px; }
+    .atlas-art { display:grid; place-items:center; width:80px; height:77px; max-width:100%; margin:1px 0 4px; }
+    .atlas-art img { width:100%; height:100%; object-fit:contain; }
+    .atlas-name { display:flex; align-items:center; justify-content:center; min-height:29px; font-size:11px; line-height:1.35; font-weight:650; width:100%; text-wrap:balance; }
+    .atlas-card small { font-size:9.5px; color:var(--muted); margin-top:4px; line-height:14px; }
+    .atlas-card.is-unknown { background:#faf9fc; border-color:#e9e5f0; box-shadow:none; }
+    .is-unknown .atlas-art { color:#c5bfd5; }
+    .is-unknown .atlas-art svg { width:35px; height:35px; }
+    .is-unknown .atlas-name { font-size:10.5px; color:#948da6; font-weight:500; }
+    .is-unknown small { color:#a09aac; }
+    .atlas-card.is-unknown .rank { opacity:.65; }
+    .catalog-note { color:var(--muted); text-align:center; font-size:11px; line-height:1.7; margin:20px 7px 0; }
+    .bottom-nav { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); padding:8px 8px 17px; background:#ffffffef; border-top:1px solid var(--line); flex:none; backdrop-filter:blur(16px); }
+    .bottom-nav button { min-height:44px; padding:3px 0; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:5px; font-size:9px; background:none; border:0; color:#817b91; }
+    .bottom-nav button[aria-current="page"] { color:var(--accent); font-weight:600; }
+    .bottom-nav svg { width:21px; height:21px; }
+    .home-indicator { height:4px; width:112px; background:#383343; border-radius:9px; position:absolute; bottom:5px; left:50%; transform:translateX(-50%); z-index:8; pointer-events:none; }
+    .back-link { display:inline-flex; align-items:center; gap:2px; color:var(--accent); background:none; border:0; min-height:44px; font-size:12px; padding:0; margin:-13px 0 5px -5px; }
+    .back-link svg { width:19px; height:19px; }
+    .species-heading { font-size:21px; letter-spacing:-.5px; line-height:1.3; text-wrap:balance; margin:2px 0 9px; max-width:290px; }
+    .species-meta { display:flex; align-items:center; gap:8px; color:var(--muted); font-size:12px; }
+    .rank-pill { padding:2px 7px; border-radius:5px; background:var(--rank-bg); color:var(--rank); font-size:10px; font-weight:750; }
+    .species-discovery { margin:19px 0 21px; padding:12px 14px; border:1px solid var(--line); border-radius:13px; background:#ffffff70; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .species-discovery p { font-size:11px; color:var(--muted); }
+    .discovery-steps { display:flex; gap:5px; }
+    .discovery-step { width:21px; height:4px; border-radius:3px; background:#e6e1ef; }
+    .discovery-step.is-known { background:#a18bd9; }
+    .individuals { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:start; gap:12px; }
+    .individual { min-width:0; position:relative; border:1px solid var(--line); background:white; border-radius:18px; overflow:hidden; }
+    .individual-open { width:100%; border:0; background:transparent; padding:10px 12px 12px; text-align:left; display:flex; flex-direction:column; align-items:stretch; }
+    .individual-top { display:flex; align-items:center; justify-content:space-between; height:22px; padding-right:28px; }
+    .individual-number { font-size:10px; color:#9990a9; }
+    .individual img { width:96px; height:96px; object-fit:contain; align-self:center; margin:1px 0 6px; }
+    .individual-name { font-size:13px; line-height:1.4; font-weight:650; min-height:36.4px; text-wrap:balance; }
+    .individual-stage { font-size:11px; color:var(--muted); margin-top:4px; line-height:17px; }
+    .individual-purity { font-size:11px; line-height:17px; }
+    .individual-purity span { color:#948c9f; font-size:10px; }
+    .individual-role { font-size:9px; line-height:1.4; margin-top:6px; color:var(--accent); background:#f1edf9; border-radius:6px; min-height:22px; display:flex; align-items:center; padding:4px 6px; }
+    .individual-role.is-idle { background:#f7f6fa; color:#8b8499; }
+    .star { border:0; background:none; display:grid; place-items:center; width:44px; height:44px; padding:0; color:#a59aaf; }
+    .individual > .star { position:absolute; right:1px; top:1px; }
+    .star svg { width:18px; height:18px; }
+    .star[aria-pressed="true"] { color:#b98b3f; }
+    .star[aria-pressed="true"] svg { fill:#f2d692; }
+    .species-note { margin-top:19px; font-size:11px; color:var(--muted); line-height:1.8; }
+    .sheet-layer { position:absolute; inset:0; z-index:10; background:#29223955; display:flex; align-items:flex-end; }
+    .sheet-layer[hidden] { display:none; }
+    .detail-sheet { width:100%; height:min(88%,760px); border:0; border-radius:27px 27px 0 0; background:white; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 -10px 45px #24113712; }
+    .sheet-handle { width:32px; height:4px; border-radius:4px; background:#ded9e9; margin:10px auto 1px; flex:none; }
+    .detail-header { display:flex; justify-content:space-between; gap:12px; align-items:center; padding:12px 20px 10px; min-height:69px; flex:none; }
+    .detail-header h2 { font-size:18px; line-height:1.4; letter-spacing:-.3px; }
+    .close-button { width:44px; height:44px; flex:none; display:grid; place-items:center; border:1px solid var(--line); border-radius:15px; background:white; color:var(--ink); }
+    .detail-body { overflow-y:auto; overscroll-behavior:contain; scrollbar-width:none; padding:0 20px 35px; flex:1; }
+    .detail-summary { color:var(--muted); font-size:12px; line-height:1.75; margin:4px 0 10px; }
+    .detail-identity { display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:52px; margin:4px 0; }
+    .detail-identity p { color:var(--muted); font-size:11px; line-height:1.65; }
+    .detail-identity .detail-meta { margin-top:3px; font-size:12px; }
+    .detail-identity .star { margin-right:-8px; }
+    .portrait { height:180px; display:grid; place-items:center; margin:4px 0 12px; }
+    .portrait img { width:180px; height:180px; object-fit:contain; }
+    .portrait .mystery { color:#beb5cc; width:55px; height:55px; }
+    .detail-mystery-note { text-align:center; color:var(--muted); font-size:11px; margin:0 0 12px; }
+    .detail-return { display:flex; margin:0 0 5px -5px; }
+    .form-selector { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin:14px 0 20px; }
+    .form-button { min-width:0; height:58px; border:1px solid var(--line); border-radius:12px; background:white; display:flex; justify-content:center; align-items:center; gap:5px; color:#8d829f; padding:5px; }
+    .form-button > span { font-size:12px; font-weight:700; }
+    .form-button img { width:34px; height:34px; object-fit:contain; }
+    .form-button svg { width:24px; height:24px; color:#c6bed3; }
+    .form-button[aria-pressed="true"] { background:#f7f3ff; color:var(--accent); border-color:#a38adf; box-shadow:inset 0 0 0 1px #a38adf; }
+    .form-button.is-unknown { background:#fbfafd; border-style:dashed; }
+    .abilities-card { border:1px solid var(--line); border-radius:20px; padding:20px; }
+    .abilities-card h3 { font-size:16px; font-weight:650; margin:0 0 7px; }
+    .ability-context { font-size:12px; line-height:1.7; color:var(--muted); margin-bottom:21px; }
+    .skill { padding:0 0 19px; }
+    .skill + .skill { padding-top:19px; border-top:1px solid var(--line); }
+    .skill h4 { font-size:14px; font-weight:650; margin:0 0 7px; line-height:1.5; }
+    .skill p { color:#635b74; font-size:14px; line-height:1.8; }
+    .all-abilities { min-height:44px; padding:8px 0; color:var(--accent); border:0; background:none; font-size:12px; }
+    .ability-roadmap { border-top:1px solid var(--line); padding-top:17px; }
+    .ability-roadmap h4 { margin:0 0 6px; font-size:14px; }
+    .ability-roadmap p { margin-bottom:18px; font-size:13px; color:var(--muted); line-height:1.8; }
+    .sacrifice-sheet { height:min(88%,760px); }
+    .exchange-tabs { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:4px; padding:4px; margin:2px 20px 11px; flex:none; border-radius:13px; background:var(--soft); }
+    .exchange-tabs button { min-height:44px; border:0; border-radius:10px; background:transparent; color:var(--muted); font-size:12px; }
+    .exchange-tabs button[aria-selected="true"] { background:white; color:var(--accent); font-weight:650; }
+    .sacrifice-navigation { flex:none; padding:0 20px; }
+    .sacrifice-back { min-height:44px; display:flex; align-items:center; gap:2px; padding:0; margin-left:-5px; border:0; background:none; color:var(--accent); font-size:12px; }
+    .sacrifice-back svg { width:18px; height:18px; }
+    .rarity-filters { display:grid; grid-template-columns:1.25fr repeat(4,1fr); gap:6px; margin:0 0 13px; }
+    .rarity-filters button { min-height:44px; padding:7px 3px; border:1px solid var(--line); border-radius:11px; background:white; font-size:11px; }
+    .rarity-filters button[aria-pressed="true"] { background:var(--soft); color:var(--accent); border-color:#baa9df; font-weight:650; }
+    .sacrifice-body { flex:1; min-height:0; padding:0 20px 14px; overflow:auto; overscroll-behavior:contain; scrollbar-width:none; }
+    .sacrifice-body::-webkit-scrollbar { display:none; }
+    .sacrifice-body .atlas { padding-top:1px; }
+    .sacrifice-body .atlas-card small { font-size:9px; line-height:1.5; }
+    .sacrifice-title { font-size:16px; line-height:1.5; margin:3px 0 4px; letter-spacing:-.2px; }
+    .sacrifice-hint { font-size:11px; line-height:1.75; color:var(--muted); margin:0 0 13px; }
+    .sacrifice-individuals { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; align-items:stretch; }
+    .sacrifice-individual { position:relative; min-width:0; display:flex; flex-direction:column; border:1px solid var(--line); border-radius:15px; overflow:hidden; background:white; }
+    .sacrifice-individual.is-selected { border-color:#a38adf; box-shadow:inset 0 0 0 1px #a38adf; background:#faf7ff; }
+    .sacrifice-choice { flex:1; display:flex; flex-direction:column; align-items:stretch; width:100%; padding:10px; border:0; background:transparent; text-align:left; min-width:0; }
+    .choice-heading { display:flex; align-items:center; justify-content:space-between; gap:5px; font-size:10px; color:var(--muted); line-height:16px; }
+    .choice-heading > span:last-child { display:flex; align-items:center; gap:5px; }
+    .choice-heading svg { width:12px; height:12px; color:#b58a43; }
+    .sacrifice-choice img { width:72px; height:72px; object-fit:contain; align-self:center; margin:5px 0 6px; }
+    .choice-name { font-size:12px; line-height:1.4; min-height:33.6px; font-weight:650; text-wrap:balance; }
+    .choice-state { font-size:10px; line-height:17px; color:var(--muted); margin:3px 0 7px; }
+    .choice-footer { margin-top:auto; display:flex; align-items:center; gap:6px; min-height:27px; font-size:11px; color:var(--accent); line-height:1.4; }
+    .choice-check { display:grid; place-items:center; flex:none; width:17px; height:17px; border:1px solid #d7cde5; border-radius:5px; color:white; }
+    .choice-check svg { width:13px; height:13px; }
+    .is-selected .choice-check { background:var(--accent); border-color:var(--accent); }
+    .sacrifice-choice:disabled .choice-footer { color:#96899f; font-size:10px; }
+    .sacrifice-choice:disabled .choice-footer svg { width:12px; height:12px; }
+    .sacrifice-choice:disabled img { opacity:.5; }
+    .choice-details { min-height:44px; width:100%; padding:8px; border:0; border-top:1px solid #efebf5; background:transparent; color:var(--accent); font-size:11px; }
+    .sacrifice-footer { flex:none; margin:0 20px; padding:11px 0 max(16px,env(safe-area-inset-bottom)); border-top:1px solid var(--line); background:white; }
+    .sacrifice-total { font-size:12px; font-weight:650; line-height:18px; }
+    .sacrifice-quote { font-size:11px; color:var(--muted); line-height:17px; margin:2px 0 8px; }
+    .sacrifice-quote strong { font-weight:600; color:var(--accent); }
+    .primary-action { width:100%; min-height:44px; border:0; border-radius:12px; padding:10px 12px; background:var(--accent); color:white; font-size:12px; font-weight:650; }
+    .primary-action:disabled { background:#c6b9e6; }
+    .secondary-action { width:100%; min-height:44px; padding:10px 12px; border:1px solid var(--line); border-radius:12px; color:var(--accent); background:#faf8fd; font-size:12px; }
+    .sacrifice-summary { padding-top:6px; }
+    .sacrifice-summary > p { margin-bottom:14px; }
+    .sacrifice-selected-row { display:flex; gap:10px; align-items:center; border-bottom:1px solid var(--line); padding:9px 0; }
+    .sacrifice-selected-row img { width:44px; height:44px; object-fit:contain; }
+    .sacrifice-selected-row > div { flex:1; min-width:0; }
+    .sacrifice-selected-row strong { font-size:12px; line-height:1.5; display:block; }
+    .sacrifice-selected-row p { color:var(--muted); font-size:10px; line-height:1.6; }
+    .sacrifice-remove { flex:none; width:44px; height:44px; background:none; border:0; color:#9b8ba5; display:grid; place-items:center; }
+    .sacrifice-remove svg { width:17px; height:17px; }
+    .sacrifice-warning { color:#a17a44; background:#fcf7ee; border-radius:12px; padding:12px; font-size:12px; line-height:1.8; margin:10px 0; }
+    .toast { position:absolute; z-index:20; left:20px; right:20px; bottom:90px; color:white; background:#383044ed; border-radius:12px; padding:13px 16px; font-size:12px; text-align:center; line-height:1.6; box-shadow:0 5px 18px #281b3620; pointer-events:none; }
+    .toast[hidden] { display:none; }
+    .mobile-demo { display:none; }
+    .capture .workspace { padding:0; min-height:100dvh; }
+    .capture .review-panel { display:none; }
+    .capture .device { width:100%; padding:0; border:0; border-radius:0; box-shadow:none; background:var(--bg); }
+    .capture .phone { width:100%; height:100dvh; border-radius:0; }
+    .capture .statusbar, .capture .notch, .capture .home-indicator { display:none; }
+    .capture .app { inset:0; }
+    @media (max-width:760px) {
+      .workspace { padding:0; display:block; }
+      .review-panel { width:auto; padding:calc(10px + env(safe-area-inset-top)) 15px 10px; background:#eae6f0; }
+      .review-panel > :not(.mobile-demo) { display:none; }
+      .mobile-demo { display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:32px; font-size:10px; color:#73677f; }
+      .mobile-demo div { display:flex; gap:5px; }
+      .mobile-demo button { min-height:32px; background:#ffffffb0; border:1px solid #dbd3e6; border-radius:8px; padding:5px 9px; font-size:10px; }
+      .mobile-demo button[aria-pressed="true"] { background:var(--ink); border-color:var(--ink); color:white; }
+      .device { width:100%; padding:0; border:0; border-radius:0; box-shadow:none; background:var(--bg); }
+      .phone { width:100%; height:calc(100dvh - 52px - env(safe-area-inset-top)); border-radius:0; }
+      .statusbar,.notch,.home-indicator { display:none; }
+      .app { inset:0; }
+      .bottom-nav { padding-bottom:max(10px,env(safe-area-inset-bottom)); }
+      .detail-body { padding-bottom:max(30px,env(safe-area-inset-bottom)); }
+      .capture .phone { height:100dvh; }
+    }
+    @media (prefers-reduced-motion:no-preference) {
+      .detail-sheet { animation:sheet-in .24s cubic-bezier(.2,.7,.3,1); }
+      @keyframes sheet-in { from { transform:translateY(28px); opacity:.6; } to { transform:translateY(0); opacity:1; } }
+    }
+  </style>
+</head>
+<body>
+  <div class="workspace">
+    <aside class="review-panel" aria-label="Điều khiển bản demo">
+      <p class="review-kicker">Minh Anh · UI study 01</p>
+      <h1>Một bộ sưu tập.<br>Gọn hơn một chút.</h1>
+      <p class="review-description">Giữ cảm giác bảng thành tựu 3 cột. Chỉnh tỷ lệ thẻ, khoảng cách và cách đi vào từng cá thể.</p>
+      <div class="review-group">
+        <span class="review-label">Kích thước màn hình</span>
+        <div class="review-options" id="sizes">
+          <button data-width="375" aria-pressed="false">375</button>
+          <button data-width="390" aria-pressed="true">390 · iPhone</button>
+          <button data-width="430" aria-pressed="false">430</button>
+        </div>
+      </div>
+      <div class="review-group">
+        <span class="review-label">Tình huống sưu tập</span>
+        <div class="review-options" id="scenarios">
+          <button data-scenario="new" aria-pressed="true">1 loài · 1 cá thể</button>
+          <button data-scenario="full" aria-pressed="false">6 loài · nhiều cá thể</button>
+        </div>
+      </div>
+      <div class="review-group screen-links">
+        <button data-screen="atlas"><span>01</span>Bộ sưu tập · 3 cột</button>
+        <button data-screen="species"><span>02</span>Cá thể trong một loài · 2 cột</button>
+        <button data-screen="detail"><span>03</span>Chi tiết · sát bố cục gốc</button>
+        <button data-screen="sacrifice"><span>04</span>Hiến tế · chọn loài</button>
+        <button data-screen="sacrifice-individuals"><span>05</span>Hiến tế · chọn cá thể</button>
+      </div>
+      <p class="review-footnote">Dữ liệu minh họa. Nút sao chỉ thay đổi trong demo.<br>Chạm linh thú để xem cá thể và năng lực.</p>
+      <div class="mobile-demo"><span>DEMO · Dữ liệu minh họa</span><div><button data-scenario="new" aria-pressed="true">1 loài</button><button data-scenario="full" aria-pressed="false">6 loài</button><button data-screen="sacrifice">Hiến tế</button></div></div>
+    </aside>
+    <div class="device">
+      <div class="phone" id="phone">
+        <div class="statusbar" aria-hidden="true"><span>9:41</span><div class="status-right"><svg viewBox="0 0 20 16"><path d="M1 14h2v-3H1zm4 0h2V8H5zm4 0h2V5H9zm4 0h2V2h-2z" fill="currentColor"/></svg><svg viewBox="0 0 20 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6a12 12 0 0 1 16 0M5 9a8 8 0 0 1 10 0M8 12a3 3 0 0 1 4 0"/><circle cx="10" cy="14" r=".8" fill="currentColor"/></svg><svg viewBox="0 0 24 14"><rect x="1" y="2" width="19" height="10" rx="3" fill="none" stroke="currentColor"/><rect x="3" y="4" width="15" height="6" rx="1" fill="currentColor"/><path d="M22 5v4" stroke="currentColor" stroke-width="2"/></svg></div></div>
+        <div class="notch" aria-hidden="true"></div>
+        <div class="app">
+          <header class="app-head">
+            <div class="heading-row"><h1 class="app-title">Linh thú</h1><button class="alchemy" data-notice="Lò đan nằm ngoài phần giao diện đang thử."><span data-icon="flask"></span>Lò đan <span>0/30</span></button></div>
+            <nav class="top-tabs" aria-label="Linh thú"><button class="top-tab" data-notice="Đang luyện nằm ngoài phần giao diện đang thử.">Đang luyện</button><button class="top-tab" data-notice="Đồng hành nằm ngoài phần giao diện đang thử.">Đồng hành</button><button class="top-tab" data-screen="atlas" aria-current="page">Bộ sưu tập</button><button class="top-tab" data-notice="Triệu hồi nằm ngoài phần giao diện đang thử.">Triệu hồi</button></nav>
+          </header>
+          <main class="content" id="content" tabindex="-1" aria-label="Bộ sưu tập"></main>
+          <nav class="bottom-nav" aria-label="Điều hướng chính"><button data-notice="Bản demo tập trung vào Bộ sưu tập."><span data-icon="clock"></span><span>Hôm nay</span></button><button data-notice="Bản demo tập trung vào Bộ sưu tập."><span data-icon="check"></span><span>Thói quen</span></button><button data-notice="Bản demo tập trung vào Bộ sưu tập."><span data-icon="bell"></span><span>Lời nhắc</span></button><button data-screen="atlas" aria-current="page"><span data-icon="paw"></span><span>Linh thú</span></button><button data-notice="Bản demo tập trung vào Bộ sưu tập."><span data-icon="sparkle"></span><span>Thành tích</span></button></nav>
+        </div>
+        <div class="sheet-layer" id="sheet-layer" hidden><section class="detail-sheet" role="dialog" aria-modal="true" aria-labelledby="detail-title"><div class="sheet-handle" aria-hidden="true"></div><header class="detail-header"><h2 id="detail-title">Chi tiết cá thể</h2><button class="close-button" id="close-detail" aria-label="Đóng chi tiết"><span data-icon="close"></span></button></header><div class="detail-body" id="detail-body"></div></section></div>
+        <div class="sheet-layer" id="sacrifice-layer" hidden><section class="detail-sheet sacrifice-sheet" role="dialog" aria-modal="true" aria-labelledby="sacrifice-title"><div class="sheet-handle" aria-hidden="true"></div><header class="detail-header"><h2 id="sacrifice-title">Đổi vé triệu hồi</h2><button class="close-button" id="close-sacrifice" aria-label="Đóng hiến tế"><span data-icon="close"></span></button></header><div class="exchange-tabs" role="tablist" aria-label="Cách đổi vé"><button data-exchange-tab="exchange" role="tab" aria-selected="false" aria-controls="sacrifice-panel" id="exchange-tab" tabindex="-1">Đổi vé</button><button data-exchange-tab="sacrifice" role="tab" aria-selected="true" aria-controls="sacrifice-panel" id="sacrifice-tab">Hiến tế</button></div><div class="sacrifice-navigation" id="sacrifice-navigation"></div><div class="sacrifice-body" id="sacrifice-panel" role="tabpanel" aria-labelledby="sacrifice-tab"></div><footer class="sacrifice-footer" id="sacrifice-footer" aria-live="polite"></footer></section></div>
+        <div class="toast" role="status" id="toast" hidden></div>
+        <div class="home-indicator" aria-hidden="true"></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    'use strict';
+    // Static snapshot of the existing catalog, artwork paths and approved v2 skill copy.
+    const catalog = [{"id":"pyropup","rank":"UR","title":"Khuyển Tam Diệm","forms":["Hỏa Khuyển Con","Liệp Hỏa Khuyển","Ngục Hỏa Khuyển","Tam Diệm Ma Khuyển"],"art":["../../web/assets/linh-thu/designed/v3/ur/pyropup/t1-normal-dae0cf4abdd3.webp","../../web/assets/linh-thu/designed/v3/ur/pyropup/t2-normal-4bccc6a96404.webp","../../web/assets/linh-thu/designed/v3/ur/pyropup/t3-normal-583791fb2dbe.webp","../../web/assets/linh-thu/designed/v3/ur/pyropup/t4-normal-da2982e91bdc.webp"],"skills":{"summary":"Công việc thưởng tu vi và vé; chuỗi ngủ dài mở thưởng ×3, phạt ×3 và tự trừ 36 tu vi/ngày.","talentChances":[[0.25,0.5,0.75,1],[0,0,0.4,0.8]],"activity":{"tasks":true,"sleep":false,"sleepOnPerfect":true},"stages":[{"form":1,"skills":[{"id":"talent_1","name":"Liệp Hỏa","description":"Hoàn thành công việc: 25% nhận thêm 3 tu vi."}]},{"form":2,"skills":[{"id":"talent_1","name":"Liệp Hỏa","description":"Hoàn thành công việc: 50% nhận thêm 3 tu vi."}]},{"form":3,"skills":[{"id":"talent_1","name":"Liệp Hỏa","description":"Hoàn thành công việc: 75% nhận thêm 3 tu vi."},{"id":"talent_2","name":"Truy Tài","description":"Hoàn thành công việc: 40% nhận thêm 2 vé quay thường."}]},{"form":4,"skills":[{"id":"talent_1","name":"Liệp Hỏa","description":"Hoàn thành công việc: nhận thêm 3 tu vi."},{"id":"talent_2","name":"Truy Tài","description":"Hoàn thành công việc: 80% nhận thêm 2 vé quay thường."}]}],"awakening":{"id":"awakening","name":"Tam Diệm Tụ Hồn","description":"Tích lũy 10 công việc: nhận 10 vé quay thường và có 30% nhận thêm 1 vé triệu hồi linh thú.","scope":"cumulative","target":10},"perfect":{"id":"perfect","name":"Tam Thủ Chiêu Hồn","description":"Khi bắt đầu ngày với chuỗi ngủ đúng giờ từ 30 ngày: nhận gấp 3 phần thưởng và mất gấp 3 tu vi khi bị phạt. Mỗi ngày có hiệu ứng tự trừ 36 tu vi, đã nhân 3 từ mức gốc 12 tu vi.","scope":"daily","details":["Thưởng ×3 gồm tu vi, vé quay thường, vé triệu hồi linh thú và vật phẩm kiếm được từ công việc, thói quen, ngủ, điểm danh, quay thường, tháp và kỹ năng linh thú.","Phạt ×3 áp dụng khi ngủ sai giờ hoặc đột phá thất bại. Ngày đang có hiệu ứng mà ngủ muộn vẫn chịu phạt ×3.","Ví dụ: thưởng 5 tu vi thành 15 tu vi; phạt 20 tu vi thành 60 tu vi.","Không nhân chi phí, khoản hoàn trả, tài nguyên từ đổi vé hoặc hiến tế, sản phẩm ghép phù hoặc luyện đan, và số linh thú triệu hồi."]}}},{"id":"rubblet","rank":"UR","title":"Tinh Vẫn Cự Thú","forms":["Tiểu Thạch Thú","Nham Giáp Thú","Cự Nham Thú","Tinh Vẫn Cự Thú"],"art":["../../web/assets/linh-thu/designed/v3/ur/rubblet/t1-normal-9866a66231eb.webp","../../web/assets/linh-thu/designed/v3/ur/rubblet/t2-normal-26e6e8b781c0.webp","../../web/assets/linh-thu/designed/v3/ur/rubblet/t3-normal-26733025fcfa.webp","../../web/assets/linh-thu/designed/v3/ur/rubblet/t4-normal-6fd5302294f5.webp"],"skills":{"summary":"Sinh hoạt đều đặn tạo tu vi; ngày hoàn hảo và chuỗi ngủ dài tạo nhiều vé.","talentChances":[[0.25,0.5,0.75,1],[0,0,0.5,1]],"activity":{"tasks":false,"sleep":true,"sleepOnPerfect":true},"stages":[{"form":1,"skills":[{"id":"talent_1","name":"Địa Mạch","description":"Ngày đủ thói quen: 25% nhận thêm 5 tu vi."}]},{"form":2,"skills":[{"id":"talent_1","name":"Địa Mạch","description":"Ngày đủ thói quen: 50% nhận thêm 5 tu vi."}]},{"form":3,"skills":[{"id":"talent_1","name":"Địa Mạch","description":"Ngày đủ thói quen: 75% nhận thêm 5 tu vi."},{"id":"talent_2","name":"Tinh Tức","description":"Ngủ đúng giờ: 50% nhận thêm 10 tu vi."}]},{"form":4,"skills":[{"id":"talent_1","name":"Địa Mạch","description":"Ngày đủ thói quen: nhận thêm 5 tu vi."},{"id":"talent_2","name":"Tinh Tức","description":"Ngủ đúng giờ: nhận thêm 10 tu vi."}]}],"awakening":{"id":"awakening","name":"Nhật Nguyệt Đồng Tu","description":"Đạt 7 ngày hoàn hảo liên tiếp: nhận 100 vé quay thường.","scope":"consecutive","target":7},"perfect":{"id":"perfect","name":"Tinh Vẫn Kết Giới","description":"Mỗi ngày hoàn hảo: nhận vé quay thường bằng số ngày trong chuỗi ngủ đúng giờ hiện tại. Không giới hạn lượng thưởng.","scope":"daily"}}},{"id":"frostnip","rank":"SSR","title":"Băng Nguyệt Linh Miêu","forms":["Tiểu Tuyết Miêu","Băng Trảo Miêu","Hàn Sương Linh Miêu","Băng Nguyệt Linh Miêu"],"art":["../../web/assets/linh-thu/designed/v3/ssr/frostnip/t1-normal-2232d94d2ecc.webp","../../web/assets/linh-thu/designed/v3/ssr/frostnip/t2-normal-2e244fe686bd.webp","../../web/assets/linh-thu/designed/v3/ssr/frostnip/t3-normal-8a36c8148281.webp","../../web/assets/linh-thu/designed/v3/ssr/frostnip/t4-normal-7109953ffb83.webp"],"skills":{"summary":"Ngủ đúng giờ thưởng nhiều tu vi; chuỗi ngủ tạo vé quay tăng dần.","talentChances":[[0.25,0.5,0.75,1],[0,0,0.05,0.1]],"activity":{"tasks":false,"sleep":true,"sleepOnPerfect":false},"stages":[{"form":1,"skills":[{"id":"talent_1","name":"Nguyệt Tức","description":"Ngủ đúng giờ: 25% nhận thêm 10 tu vi."}]},{"form":2,"skills":[{"id":"talent_1","name":"Nguyệt Tức","description":"Ngủ đúng giờ: 50% nhận thêm 10 tu vi."}]},{"form":3,"skills":[{"id":"talent_1","name":"Nguyệt Tức","description":"Ngủ đúng giờ: 75% nhận thêm 10 tu vi."},{"id":"talent_2","name":"Tuyết Ấn","description":"Ngày đủ thói quen: 5% nhận 1 An Tâm Phù."}]},{"form":4,"skills":[{"id":"talent_1","name":"Nguyệt Tức","description":"Ngủ đúng giờ: nhận thêm 10 tu vi."},{"id":"talent_2","name":"Tuyết Ấn","description":"Ngày đủ thói quen: 10% nhận 1 An Tâm Phù."}]}],"awakening":{"id":"awakening","name":"Băng Nguyệt Giao Hòa","description":"Ngày đủ thói quen và ngủ đúng giờ: thêm 2 vé quay thường.","scope":"daily"},"perfect":{"id":"perfect","name":"Băng Nguyệt Phong Ấn","description":"Cứ ngủ đúng giờ thêm 3 đêm liên tiếp: nhận vé quay thường bằng số ngày trong chuỗi ngủ đúng giờ hiện tại. Không giới hạn lượng thưởng.","scope":"consecutive","target":3}}},{"id":"zappur","rank":"SSR","title":"Lôi Vương","forms":["Tiểu Lôi Sư","Điện Nha Sư","Lôi Đình Hùng Sư","Lôi Vương"],"art":["../../web/assets/linh-thu/designed/v3/ssr/zappur/t1-normal-3b6a44f818f1.webp","../../web/assets/linh-thu/designed/v3/ssr/zappur/t2-normal-08fedd01ce3c.webp","../../web/assets/linh-thu/designed/v3/ssr/zappur/t3-normal-faa2ec5b5dc4.webp","../../web/assets/linh-thu/designed/v3/ssr/zappur/t4-normal-d2438c6f9e75.webp"],"skills":{"summary":"Công việc thưởng đồng thời vé và tu vi; ngày hoàn hảo có thêm thưởng.","talentChances":[[0.25,0.5,0.75,1],[0,0,0.5,1]],"activity":{"tasks":true,"sleep":false,"sleepOnPerfect":true},"stages":[{"form":1,"skills":[{"id":"talent_1","name":"Lôi Tài","description":"Hoàn thành công việc: 25% nhận thêm 1 vé quay thường."}]},{"form":2,"skills":[{"id":"talent_1","name":"Lôi Tài","description":"Hoàn thành công việc: 50% nhận thêm 1 vé quay thường."}]},{"form":3,"skills":[{"id":"talent_1","name":"Lôi Tài","description":"Hoàn thành công việc: 75% nhận thêm 1 vé quay thường."},{"id":"talent_2","name":"Lôi Tức","description":"Hoàn thành công việc: 50% nhận thêm 1 tu vi. Có thể nhận cùng thưởng Lôi Tài."}]},{"form":4,"skills":[{"id":"talent_1","name":"Lôi Tài","description":"Hoàn thành công việc: nhận thêm 1 vé quay thường."},{"id":"talent_2","name":"Lôi Tức","description":"Hoàn thành công việc: nhận thêm 1 tu vi. Có thể nhận cùng thưởng Lôi Tài."}]}],"awakening":{"id":"awakening","name":"Tam Lôi","description":"Từ công việc thứ 3 trong ngày trở đi: mỗi việc nhận thêm 3 vé quay thường. Không giới hạn số việc.","scope":"daily","target":3},"perfect":{"id":"perfect","name":"Lôi Vương Bảo Khố","description":"Mỗi ngày hoàn hảo, nhận thêm tu vi và vé quay thường với số lượng bằng nhau: lấy số ngày trong chuỗi ngủ đúng giờ chia 2, làm tròn lên. Tối đa 5 tu vi và 5 vé quay thường.","scope":"daily"}}},{"id":"skinklet","rank":"SSR","title":"Huyễn Sắc Nhẫn Giả","forms":["Tiểu Tích Linh","Huyễn Sắc Tích","Ảnh Nhẫn Tích","Huyễn Sắc Nhẫn Giả"],"art":["../../web/assets/linh-thu/designed/v3/ssr/skinklet/t1-normal-24868fa82335.webp","../../web/assets/linh-thu/designed/v3/ssr/skinklet/t2-normal-0bc0d5c7841a.webp","../../web/assets/linh-thu/designed/v3/ssr/skinklet/t3-normal-609a3e2e601f.webp","../../web/assets/linh-thu/designed/v3/ssr/skinklet/t4-normal-05310525d4ca.webp"],"skills":{"summary":"Ngày hoàn hảo kiếm vé triệu hồi; quay x10 tăng dần cơ hội thưởng thêm.","talentChances":[[0.1,0.15,0.25,0.35]],"activity":{"tasks":false,"sleep":true,"sleepOnPerfect":false},"stages":[{"form":1,"skills":[{"id":"talent_1","name":"Huyễn Tức","description":"Ngày hoàn hảo: 10% nhận 1 vé triệu hồi linh thú."}]},{"form":2,"skills":[{"id":"talent_1","name":"Huyễn Tức","description":"Ngày hoàn hảo: 15% nhận 1 vé triệu hồi linh thú."}]},{"form":3,"skills":[{"id":"talent_1","name":"Huyễn Tức","description":"Ngày hoàn hảo: 25% nhận 1 vé triệu hồi linh thú."},{"id":"talent_2","name":"Thế Thân","description":"Khi chuỗi ngủ đúng giờ từ 14 ngày, tỷ lệ nhận 1 vé triệu hồi linh thú của Huyễn Tức tăng từ 25% lên 35%."}]},{"form":4,"skills":[{"id":"talent_1","name":"Huyễn Tức","description":"Ngày hoàn hảo: 35% nhận 1 vé triệu hồi linh thú."},{"id":"talent_2","name":"Thế Thân","description":"Khi chuỗi ngủ đúng giờ từ 14 ngày, tỷ lệ nhận 1 vé triệu hồi linh thú của Huyễn Tức tăng từ 35% lên 55%."}]}],"awakening":{"id":"awakening","name":"Tam Ảnh Tụ Khí","description":"Mỗi lần quay thường x10: 3% nhận đồng thời 1 vé triệu hồi linh thú và 30 vé quay thường. Mỗi lần hụt, tỷ lệ nhận gói thưởng này tăng thêm 3 điểm phần trăm, tối đa 100%. Nhận được gói thưởng thì tỷ lệ về 3%.","scope":"event"},"perfect":{"id":"perfect","name":"Ảo Ảnh Tam Phân","description":"Đạt 3 ngày hoàn hảo liên tiếp: nhận 30 vé quay thường và 1 vé triệu hồi linh thú. Chỉ đếm những ngày có chuỗi ngủ đúng giờ từ 7 ngày trở lên.","scope":"consecutive","target":3}}},{"id":"punchimp","rank":"SSR","title":"Đấu Chiến Linh Hầu","forms":["Tiểu Quyền Hầu","Thạch Quyền Hầu","Võ Đạo Linh Hầu","Đấu Chiến Linh Hầu"],"art":["../../web/assets/linh-thu/designed/v3/ssr/punchimp/t1-normal-a2530be74c17.webp","../../web/assets/linh-thu/designed/v3/ssr/punchimp/t2-normal-ebcad5aee25e.webp","../../web/assets/linh-thu/designed/v3/ssr/punchimp/t3-normal-5643224c95c2.webp","../../web/assets/linh-thu/designed/v3/ssr/punchimp/t4-normal-40e95cd738e3.webp"],"skills":{"summary":"Thói quen thưởng tu vi; công việc tăng thưởng ngày sau; cứu bẫy ở mọi tầng tháp.","talentChances":[[0.25,0.5,0.75,1],[0,0,0.5,1]],"activity":{"tasks":true,"sleep":false,"sleepOnPerfect":false},"stages":[{"form":1,"skills":[{"id":"talent_1","name":"Hầu Vương Tụ Khí","description":"Ngày đủ thói quen: 25% nhận thêm 5 tu vi."}]},{"form":2,"skills":[{"id":"talent_1","name":"Hầu Vương Tụ Khí","description":"Ngày đủ thói quen: 50% nhận thêm 5 tu vi."}]},{"form":3,"skills":[{"id":"talent_1","name":"Hầu Vương Tụ Khí","description":"Ngày đủ thói quen: 75% nhận thêm 5 tu vi."},{"id":"talent_2","name":"Kiên Tâm","description":"Hoàn thành 2 công việc trong ngày: 50% nhận 3 vé quay thường. Dù có nhận được 3 vé hay không, ngày hôm sau mỗi công việc vẫn được thêm 1 tu vi và 1 vé quay thường. Mỗi ngày kích hoạt 1 lần."}]},{"form":4,"skills":[{"id":"talent_1","name":"Hầu Vương Tụ Khí","description":"Ngày đủ thói quen: nhận thêm 5 tu vi và 1 vé quay thường."},{"id":"talent_2","name":"Kiên Tâm","description":"Hoàn thành 2 công việc trong ngày: nhận 3 vé quay thường. Ngày hôm sau, mỗi công việc được thêm 1 tu vi và 1 vé quay thường. Mỗi ngày kích hoạt 1 lần."}]}],"awakening":{"id":"awakening","name":"Ngũ Nhật Chiêu Linh","description":"Tích lũy 5 ngày đủ thói quen: nhận 1 vé triệu hồi linh thú.","scope":"cumulative","target":5},"perfect":{"id":"perfect","name":"Phân Thân Thế Mệnh","description":"Mỗi lượt tháp được cứu bẫy 1 lần ở bất kỳ tầng nào, kể cả tầng 4. Các ô được xáo lại để chọn lại; vẫn có thể gặp bẫy.","scope":"event","target":1}}},{"id":"shardsnail","rank":"SR","title":"Tinh Thạch Linh Ốc","forms":["Tiểu Thạch Ốc","Bảo Thạch Ốc","Ngọc Giáp Linh Ốc","Tinh Thạch Linh Ốc"],"art":["../../web/assets/linh-thu/designed/v3/sr/shardsnail/t1-normal-b7d48b8620bb.webp","../../web/assets/linh-thu/designed/v3/sr/shardsnail/t2-normal-a5ac82166a7c.webp","../../web/assets/linh-thu/designed/v3/sr/shardsnail/t3-normal-31dbde02e151.webp","../../web/assets/linh-thu/designed/v3/sr/shardsnail/t4-normal-a581f7852e7a.webp"],"skills":{"summary":"Tích lũy vé từ thói quen; thưởng lớn cho chuỗi ngày hoàn hảo.","talentChances":[[0.25,0.5,0.75,1]],"activity":{"tasks":false,"sleep":false,"sleepOnPerfect":false},"stages":[{"form":1,"skills":[{"id":"talent_1","name":"Tinh Thạch Tích Lũy","description":"Ngày đủ thói quen: 25% nhận thêm 2 vé quay thường."}]},{"form":2,"skills":[{"id":"talent_1","name":"Tinh Thạch Tích Lũy","description":"Ngày đủ thói quen: 50% nhận thêm 2 vé quay thường."}]},{"form":3,"skills":[{"id":"talent_1","name":"Tinh Thạch Tích Lũy","description":"Ngày đủ thói quen: 75% nhận thêm 2 vé quay thường."}]},{"form":4,"skills":[{"id":"talent_1","name":"Tinh Thạch Tích Lũy","description":"Ngày đủ thói quen: nhận thêm 2 vé quay thường."}]}],"awakening":{"id":"awakening","name":"Ngũ Sắc Kết Tinh","description":"Tích lũy 5 ngày đủ thói quen: nhận 5 vé quay thường và 10 tu vi.","scope":"cumulative","target":5},"perfect":{"id":"perfect","name":"Tinh Hốc Bí Tàng","description":"Đạt 5 ngày hoàn hảo liên tiếp: nhận 20 vé quay thường và 20 tu vi.","scope":"consecutive","target":5}}},{"id":"flameow","rank":"SR","title":"Hỏa Miêu","forms":["Tiểu Hỏa Miêu","Diễm Vĩ Miêu","Ngân Diễm Miêu","Tẫn Hỏa Linh Miêu"],"art":["../../web/assets/linh-thu/designed/v3/sr/flameow/t1-normal-2ec677345f00.webp","../../web/assets/linh-thu/designed/v3/sr/flameow/t2-normal-e2b398d1ac0a.webp","../../web/assets/linh-thu/designed/v3/sr/flameow/t3-normal-a82803fa5252.webp","../../web/assets/linh-thu/designed/v3/sr/flameow/t4-normal-36d6b9b104b5.webp"],"skills":{"summary":"Kiếm tu vi từ công việc; càng làm nhiều việc trong ngày, càng nhận thêm tu vi.","talentChances":[[0.15,0.3,0.45,0.6]],"activity":{"tasks":true,"sleep":false,"sleepOnPerfect":false},"stages":[{"form":1,"skills":[{"id":"talent_1","name":"Dư Hỏa","description":"Hoàn thành công việc: 15% nhận thêm 1 tu vi."}]},{"form":2,"skills":[{"id":"talent_1","name":"Dư Hỏa","description":"Hoàn thành công việc: 30% nhận thêm 1 tu vi."}]},{"form":3,"skills":[{"id":"talent_1","name":"Dư Hỏa","description":"Hoàn thành công việc: 45% nhận thêm 1 tu vi."}]},{"form":4,"skills":[{"id":"talent_1","name":"Dư Hỏa","description":"Hoàn thành công việc: 60% nhận thêm 1 tu vi."}]}],"awakening":{"id":"awakening","name":"Tam Trảo","description":"Công việc thứ 3 trong ngày: thêm 3 tu vi.","scope":"daily","target":3},"perfect":{"id":"perfect","name":"Hỏa Liên Trảm","description":"Trong ngày, công việc thứ 1 nhận thêm 1 tu vi, thứ 2 thêm 2 tu vi, từ thứ 3 trở đi mỗi việc thêm 3 tu vi. Không giới hạn số việc; sang ngày mới đếm lại.","scope":"daily"}}},{"id":"manteeny","rank":"SR","title":"Lan Liêm","forms":["Tiểu Lan Đường","Tiềm Ảnh Đường","Hoa Nhận Đường","Lan Liêm Nữ Vương"],"art":["../../web/assets/linh-thu/designed/v3/sr/manteeny/t1-normal-1c980257e521.webp","../../web/assets/linh-thu/designed/v3/sr/manteeny/t2-normal-ce7f71db64d6.webp","../../web/assets/linh-thu/designed/v3/sr/manteeny/t3-normal-c8a46eeec1e7.webp","../../web/assets/linh-thu/designed/v3/sr/manteeny/t4-normal-c152a142b926.webp"],"skills":{"summary":"Công việc kiếm vé, thưởng thêm khi làm trước trưa và duy trì ngày hoàn hảo.","talentChances":[[0.1,0.25,0.35,0.5]],"activity":{"tasks":true,"sleep":false,"sleepOnPerfect":false},"stages":[{"form":1,"skills":[{"id":"talent_1","name":"Lan Liêm Truy Tài","description":"Hoàn thành công việc: 10% nhận thêm 1 vé quay thường."}]},{"form":2,"skills":[{"id":"talent_1","name":"Lan Liêm Truy Tài","description":"Hoàn thành công việc: 25% nhận thêm 1 vé quay thường."}]},{"form":3,"skills":[{"id":"talent_1","name":"Lan Liêm Truy Tài","description":"Hoàn thành công việc: 35% nhận thêm 1 vé quay thường."}]},{"form":4,"skills":[{"id":"talent_1","name":"Lan Liêm Truy Tài","description":"Hoàn thành công việc: 50% nhận thêm 1 vé quay thường."}]}],"awakening":{"id":"awakening","name":"Tam Hoa","description":"Hoàn thành 3 công việc trước 12:00 trong cùng ngày: nhận 10 vé quay thường. Mỗi ngày 1 lần.","scope":"daily","target":3},"perfect":{"id":"perfect","name":"Song Liêm Khế","description":"Đạt 2 ngày hoàn hảo liên tiếp: nhận 3 vé quay thường và 5 tu vi.","scope":"consecutive","target":2}}},{"id":"fluffle","rank":"SR","title":"Thiên Vân Dương","forms":["Tiểu Miên Dương","Vân Nhung Dương","Phong Vân Linh Dương","Thiên Vân Dương"],"art":["../../web/assets/linh-thu/designed/v3/sr/fluffle/t1-normal-fd8c408af031.webp","../../web/assets/linh-thu/designed/v3/sr/fluffle/t2-normal-43baffb57d5d.webp","../../web/assets/linh-thu/designed/v3/sr/fluffle/t3-normal-36683b58e611.webp","../../web/assets/linh-thu/designed/v3/sr/fluffle/t4-normal-432410326415.webp"],"skills":{"summary":"Ngủ đúng giờ kiếm tu vi; chuỗi dài tăng thưởng Hoàn mỹ.","talentChances":[[0.25,0.5,0.75,1]],"activity":{"tasks":false,"sleep":true,"sleepOnPerfect":false},"stages":[{"form":1,"skills":[{"id":"talent_1","name":"Vân Tức","description":"Ngủ đúng giờ: 25% nhận thêm 2 tu vi."}]},{"form":2,"skills":[{"id":"talent_1","name":"Vân Tức","description":"Ngủ đúng giờ: 50% nhận thêm 2 tu vi."}]},{"form":3,"skills":[{"id":"talent_1","name":"Vân Tức","description":"Ngủ đúng giờ: 75% nhận thêm 2 tu vi."}]},{"form":4,"skills":[{"id":"talent_1","name":"Vân Tức","description":"Ngủ đúng giờ: nhận thêm 2 tu vi."}]}],"awakening":{"id":"awakening","name":"Tam Vân Tụ Khí","description":"Tích lũy 3 lần ngủ đúng giờ: thêm 5 tu vi.","scope":"cumulative","target":3},"perfect":{"id":"perfect","name":"Thiên Cung Mộng Du","description":"Cứ ngủ đúng giờ thêm 3 đêm liên tiếp: nhận tu vi bằng số ngày trong chuỗi ngủ đúng giờ hiện tại. Không giới hạn lượng thưởng.","scope":"consecutive","target":3}}},{"id":"maskfry","rank":"SR","title":"Vực Hải Giáp Linh","forms":["Tiểu Diện Ngư","Cốt Giáp Ngư","Thiết Hàm Ngư","Vực Hải Giáp Linh"],"art":["../../web/assets/linh-thu/designed/v3/sr/maskfry/t1-normal-4b7c435c0b8c.webp","../../web/assets/linh-thu/designed/v3/sr/maskfry/t2-normal-e6c8a5f5f5a6.webp","../../web/assets/linh-thu/designed/v3/sr/maskfry/t3-normal-3eaa68956da6.webp","../../web/assets/linh-thu/designed/v3/sr/maskfry/t4-normal-a7a44c92839f.webp"],"skills":{"summary":"Hoàn tu vi khi đột phá thất bại; chuỗi ngủ kiếm vé triệu hồi.","talentChances":[[0.25,0.5,0.75,1]],"activity":{"tasks":false,"sleep":false,"sleepOnPerfect":true},"stages":[{"form":1,"skills":[{"id":"talent_1","name":"Hải Giáp","description":"Đột phá thất bại: 25% hoàn tối đa 10 tu vi thực mất."}]},{"form":2,"skills":[{"id":"talent_1","name":"Hải Giáp","description":"Đột phá thất bại: 50% hoàn tối đa 10 tu vi thực mất."}]},{"form":3,"skills":[{"id":"talent_1","name":"Hải Giáp","description":"Đột phá thất bại: 75% hoàn tối đa 10 tu vi thực mất."}]},{"form":4,"skills":[{"id":"talent_1","name":"Hải Giáp","description":"Đột phá thất bại: hoàn tối đa 10 tu vi thực mất."}]}],"awakening":{"id":"awakening","name":"Triều Sinh","description":"Mỗi ngày đủ thói quen: thêm 2 tu vi.","scope":"daily"},"perfect":{"id":"perfect","name":"Giao Ước Vực Sâu","description":"Ngủ đúng giờ 5 đêm liên tiếp: nhận 1 vé triệu hồi linh thú.","scope":"consecutive","target":5}}},{"id":"goonbug","rank":"SR","title":"Giáp Dực Kỵ Sĩ","forms":["Tiểu Giáp Trùng","Thiết Giáp Trùng","Huyền Giáp Trùng","Giáp Dực Kỵ Sĩ"],"art":["../../web/assets/linh-thu/designed/v3/sr/goonbug/t1-normal-c611771b88eb.webp","../../web/assets/linh-thu/designed/v3/sr/goonbug/t2-normal-b552b68746d8.webp","../../web/assets/linh-thu/designed/v3/sr/goonbug/t3-normal-b34d476a3f3b.webp","../../web/assets/linh-thu/designed/v3/sr/goonbug/t4-normal-bb7cdb7cee16.webp"],"skills":{"summary":"Thói quen tạo An Tâm Phù có bảo hiểm; chuỗi ngủ tạo phù bảo hộ.","talentChances":[[0.03,0.05,0.07,0.09]],"activity":{"tasks":false,"sleep":false,"sleepOnPerfect":true},"stages":[{"form":1,"skills":[{"id":"talent_1","name":"Giáp Dực","description":"Ngày đủ thói quen: 3% nhận 1 An Tâm Phù."}]},{"form":2,"skills":[{"id":"talent_1","name":"Giáp Dực","description":"Ngày đủ thói quen: 5% nhận 1 An Tâm Phù."}]},{"form":3,"skills":[{"id":"talent_1","name":"Giáp Dực","description":"Ngày đủ thói quen: 7% nhận 1 An Tâm Phù."}]},{"form":4,"skills":[{"id":"talent_1","name":"Giáp Dực","description":"Ngày đủ thói quen: 9% nhận 1 An Tâm Phù."}]}],"awakening":{"id":"awakening","name":"Thất Nhật Hộ Ấn","description":"Đủ thói quen 7 ngày liên tiếp mà Giáp Dực chưa cho An Tâm Phù: nhận 1 An Tâm Phù. Nếu Giáp Dực cho phù hoặc bỏ lỡ một ngày, bộ đếm bảo hiểm về 0.","scope":"consecutive","target":7},"perfect":{"id":"perfect","name":"Hiệp Sĩ Hộ Vệ","description":"Ngủ đúng giờ 10 đêm liên tiếp: nhận 1 phù, với 30% là Hộ Tâm Phù và 70% là An Tâm Phù.","scope":"consecutive","target":10}}},{"id":"humbug","rank":"R","title":"Nghi Lễ Kim Trùng","forms":["Tiểu Kim Trùng","Khiêm Tâm Giáp","Thiền Tâm Kim Trùng","Nghi Lễ Kim Trùng"],"art":["../../web/assets/linh-thu/designed/v3/r/humbug/t1-normal-ce1e7ed2659c.webp","../../web/assets/linh-thu/designed/v3/r/humbug/t2-normal-ee6344b76f9f.webp","../../web/assets/linh-thu/designed/v3/r/humbug/t3-normal-897e2c4f16d9.webp","../../web/assets/linh-thu/designed/v3/r/humbug/t4-normal-f50c619c4c3f.webp"],"skills":{"summary":"Kiếm Phá Cảnh Phù từ thói quen và hỗ trợ ghép phù.","talentChances":[[0.25,0.5,0.75,1]],"activity":{"tasks":false,"sleep":false,"sleepOnPerfect":false},"stages":[{"form":1,"skills":[{"id":"talent_1","name":"Phù Ấn","description":"Ngày đủ thói quen: 25% nhận 1 Phá Cảnh Phù sơ cấp."}]},{"form":2,"skills":[{"id":"talent_1","name":"Phù Ấn","description":"Ngày đủ thói quen: 50% nhận 1 Phá Cảnh Phù sơ cấp."}]},{"form":3,"skills":[{"id":"talent_1","name":"Phù Ấn","description":"Ngày đủ thói quen: 75% nhận 1 Phá Cảnh Phù sơ cấp."}]},{"form":4,"skills":[{"id":"talent_1","name":"Phù Ấn","description":"Ngày đủ thói quen: nhận 1 Phá Cảnh Phù sơ cấp."}]}],"awakening":{"id":"awakening","name":"Tam Nhật Kết Ấn","description":"Tích lũy 3 ngày đủ thói quen: nhận 1 Phá Cảnh Phù trung cấp.","scope":"cumulative","target":3},"perfect":{"id":"perfect","name":"Luyện Phù Song Sinh","description":"Hỗ trợ 3 lần ghép Phá Cảnh Phù sơ cấp → trung cấp mỗi ngày. Thành công nhận tổng 2 Phá Cảnh Phù trung cấp; thất bại hoàn 1 Phá Cảnh Phù sơ cấp.","scope":"daily","target":3}}},{"id":"hootlet","rank":"R","title":"Thời Mộng Linh Cú","forms":["Tiểu Dạ Cú","Thời Khắc Cú","Thời Luân Linh Cú","Thời Mộng Linh Cú"],"art":["../../web/assets/linh-thu/designed/v3/r/hootlet/t1-normal-98979c698746.webp","../../web/assets/linh-thu/designed/v3/r/hootlet/t2-normal-4d3e9a1fada9.webp","../../web/assets/linh-thu/designed/v3/r/hootlet/t3-normal-492173151942.webp","../../web/assets/linh-thu/designed/v3/r/hootlet/t4-normal-934f21a81236.webp"],"skills":{"summary":"Chuỗi ngủ ngắn kiếm vé, chuỗi dài có cơ hội nhận Hộ Tâm Phù.","talentChances":[[0.25,0.5,0.75,1]],"activity":{"tasks":false,"sleep":true,"sleepOnPerfect":false},"stages":[{"form":1,"skills":[{"id":"talent_1","name":"Dạ Tức","description":"Ngủ đúng giờ: 25% nhận thêm 1 tu vi."}]},{"form":2,"skills":[{"id":"talent_1","name":"Dạ Tức","description":"Ngủ đúng giờ: 50% nhận thêm 1 tu vi."}]},{"form":3,"skills":[{"id":"talent_1","name":"Dạ Tức","description":"Ngủ đúng giờ: 75% nhận thêm 1 tu vi."}]},{"form":4,"skills":[{"id":"talent_1","name":"Dạ Tức","description":"Ngủ đúng giờ: nhận thêm 1 tu vi."}]}],"awakening":{"id":"awakening","name":"Tam Dạ Hộ Tâm","description":"Ngủ đúng giờ 3 đêm liên tiếp: nhận 3 vé quay thường.","scope":"consecutive","target":3},"perfect":{"id":"perfect","name":"Đêm Đứng Yên","description":"Ngủ đúng giờ 14 đêm liên tiếp: 40% nhận 1 Hộ Tâm Phù. Xét xong bắt đầu chu kỳ mới.","scope":"consecutive","target":14}}},{"id":"gibber","rank":"R","title":"Cổ Thạch Linh Quy","forms":["Tiểu Thạch Quy","Kiên Giáp Quy","Nham Giáp Linh Quy","Cổ Thạch Linh Quy"],"art":["../../web/assets/linh-thu/designed/v3/r/gibber/t1-normal-e46c5b1999b8.webp","../../web/assets/linh-thu/designed/v3/r/gibber/t2-normal-153de94c3748.webp","../../web/assets/linh-thu/designed/v3/r/gibber/t3-normal-c76a69fe7cc6.webp","../../web/assets/linh-thu/designed/v3/r/gibber/t4-normal-fccc0f895578.webp"],"skills":{"summary":"Hoàn tu vi khi đột phá thất bại; bảo hộ lần thử sau ba thất bại liên tiếp.","talentChances":[[0.25,0.5,0.75,1]],"activity":{"tasks":false,"sleep":false,"sleepOnPerfect":false},"stages":[{"form":1,"skills":[{"id":"talent_1","name":"Thạch Giáp","description":"Đột phá thất bại: 25% hoàn tối đa 5 tu vi thực mất."}]},{"form":2,"skills":[{"id":"talent_1","name":"Thạch Giáp","description":"Đột phá thất bại: 50% hoàn tối đa 5 tu vi thực mất."}]},{"form":3,"skills":[{"id":"talent_1","name":"Thạch Giáp","description":"Đột phá thất bại: 75% hoàn tối đa 5 tu vi thực mất."}]},{"form":4,"skills":[{"id":"talent_1","name":"Thạch Giáp","description":"Đột phá thất bại: hoàn tối đa 5 tu vi thực mất."}]}],"awakening":{"id":"awakening","name":"Quy Tức","description":"Mỗi ngày đủ thói quen: thêm 1 tu vi.","scope":"daily"},"perfect":{"id":"perfect","name":"Mai Đá Hộ Thể","description":"Sau 3 lần đột phá thất bại liên tiếp, lần đột phá tiếp theo được cộng 5 điểm phần trăm vào tỷ lệ thành công và không mất tu vi nếu thất bại. Dùng xong đếm lại.","scope":"event","target":3}}},{"id":"voltfawn","rank":"R","title":"Từ Giác Linh Lộc","forms":["Tiểu Điện Lộc","Tia Điện Lộc","Lôi Giác Linh Lộc","Từ Giác Linh Lộc"],"art":["../../web/assets/linh-thu/designed/v3/r/voltfawn/t1-normal-ecd4b5deffae.webp","../../web/assets/linh-thu/designed/v3/r/voltfawn/t2-normal-e513ea506500.webp","../../web/assets/linh-thu/designed/v3/r/voltfawn/t3-normal-c3f216f373f2.webp","../../web/assets/linh-thu/designed/v3/r/voltfawn/t4-normal-da4558452a8b.webp"],"skills":{"summary":"Kiếm tu vi từ công việc, thưởng thêm khi hoàn thành việc sáng sớm.","talentChances":[[0.1,0.2,0.3,0.35]],"activity":{"tasks":true,"sleep":false,"sleepOnPerfect":false},"stages":[{"form":1,"skills":[{"id":"talent_1","name":"Tụ Từ","description":"Hoàn thành công việc: 10% nhận thêm 1 tu vi."}]},{"form":2,"skills":[{"id":"talent_1","name":"Tụ Từ","description":"Hoàn thành công việc: 20% nhận thêm 1 tu vi."}]},{"form":3,"skills":[{"id":"talent_1","name":"Tụ Từ","description":"Hoàn thành công việc: 30% nhận thêm 1 tu vi."}]},{"form":4,"skills":[{"id":"talent_1","name":"Tụ Từ","description":"Hoàn thành công việc: 35% nhận thêm 1 tu vi."}]}],"awakening":{"id":"awakening","name":"Tam Cực","description":"Công việc thứ 3 trong ngày: thêm 3 tu vi.","scope":"daily","target":3},"perfect":{"id":"perfect","name":"Cực Từ Đảo Chiều","description":"Hoàn thành công việc từ 05:00 đến trước 08:00: nhận thêm 5 tu vi. Mỗi ngày 1 lần.","scope":"daily"}}},{"id":"cheerling","rank":"R","title":"Tinh Tú Linh Thỏ","forms":["Tiểu Hỷ Thỏ","Hoan Hỷ Thỏ","Xuân Hỷ Linh Thỏ","Tinh Tú Linh Thỏ"],"art":["../../web/assets/linh-thu/designed/v3/r/cheerling/t1-normal-6130598b5741.webp","../../web/assets/linh-thu/designed/v3/r/cheerling/t2-normal-4a4ea92c7b54.webp","../../web/assets/linh-thu/designed/v3/r/cheerling/t3-normal-ba33dc29f96c.webp","../../web/assets/linh-thu/designed/v3/r/cheerling/t4-normal-43f913e2494b.webp"],"skills":{"summary":"Kiếm vé từ công việc; đủ tám việc trong ngày nhận vé triệu hồi linh thú.","talentChances":[[0.1,0.2,0.3,0.35]],"activity":{"tasks":true,"sleep":false,"sleepOnPerfect":false},"stages":[{"form":1,"skills":[{"id":"talent_1","name":"Tinh Tài","description":"Hoàn thành công việc: 10% nhận thêm 1 vé quay thường."}]},{"form":2,"skills":[{"id":"talent_1","name":"Tinh Tài","description":"Hoàn thành công việc: 20% nhận thêm 1 vé quay thường."}]},{"form":3,"skills":[{"id":"talent_1","name":"Tinh Tài","description":"Hoàn thành công việc: 30% nhận thêm 1 vé quay thường."}]},{"form":4,"skills":[{"id":"talent_1","name":"Tinh Tài","description":"Hoàn thành công việc: 35% nhận thêm 1 vé quay thường."}]}],"awakening":{"id":"awakening","name":"Tam Tinh","description":"Công việc thứ 3 trong ngày: thêm 3 vé quay thường.","scope":"daily","target":3},"perfect":{"id":"perfect","name":"Tinh Tú Dẫn Lối","description":"Hoàn thành 8 công việc trong ngày: nhận 1 vé triệu hồi linh thú. Mỗi ngày 1 lần.","scope":"daily","target":8}}},{"id":"funglet","rank":"R","title":"Mộng Nấm Linh","forms":["Tiểu Nấm Linh","Mê Mộng Nấm","Huyễn Mộng Nấm","Mộng Nấm Tiên Linh"],"art":["../../web/assets/linh-thu/designed/v3/r/funglet/t1-normal-e4bb53099893.webp","../../web/assets/linh-thu/designed/v3/r/funglet/t2-normal-c4b2f40755d5.webp","../../web/assets/linh-thu/designed/v3/r/funglet/t3-normal-1f8615227e45.webp","../../web/assets/linh-thu/designed/v3/r/funglet/t4-normal-04298ccabef8.webp"],"skills":{"summary":"Thưởng tu vi từ thói quen và chuỗi kết hợp ngủ đúng giờ.","talentChances":[[0.25,0.5,0.75,1]],"activity":{"tasks":false,"sleep":false,"sleepOnPerfect":false},"stages":[{"form":1,"skills":[{"id":"talent_1","name":"Mộng Tức","description":"Ngày đủ thói quen: 25% nhận thêm 2 tu vi."}]},{"form":2,"skills":[{"id":"talent_1","name":"Mộng Tức","description":"Ngày đủ thói quen: 50% nhận thêm 2 tu vi."}]},{"form":3,"skills":[{"id":"talent_1","name":"Mộng Tức","description":"Ngày đủ thói quen: 75% nhận thêm 2 tu vi."}]},{"form":4,"skills":[{"id":"talent_1","name":"Mộng Tức","description":"Ngày đủ thói quen: nhận thêm 2 tu vi."}]}],"awakening":{"id":"awakening","name":"An Mộng","description":"Ngày đủ thói quen và ngủ đúng giờ: thêm 2 tu vi.","scope":"daily"},"perfect":{"id":"perfect","name":"Mộng Cảnh","description":"Đủ thói quen và ngủ đúng giờ 3 ngày liên tiếp: nhận 3 vé quay thường và 3 tu vi.","scope":"consecutive","target":3}}}];
+    const params = new URLSearchParams(location.search);
+    if (params.has('capture')) document.body.classList.add('capture');
+    const icons = {
+      paw:'<path d="M8 15c1.3-1.3 2-4 4-4s2.7 2.7 4 4c3 3 1.5 6-1 5-1.5-.6-1.7-1-3-1s-1.5.4-3 1c-2.5 1-4-2-1-5Z"/><ellipse cx="5.5" cy="9" rx="1.8" ry="2.5" transform="rotate(-20 5.5 9)"/><ellipse cx="10" cy="5.5" rx="1.8" ry="2.5"/><ellipse cx="14.5" cy="5.5" rx="1.8" ry="2.5"/><ellipse cx="19" cy="9" rx="1.8" ry="2.5" transform="rotate(20 19 9)"/>',
+      clock:'<circle cx="12" cy="12" r="8"/><path d="M12 7v5h3"/>',
+      check:'<rect x="4" y="4" width="16" height="16" rx="5"/><path d="m8 12 3 3 5-6"/>',
+      bell:'<path d="M18 8a6 6 0 0 0-12 0c0 6-3 7-3 9h18c0-2-3-3-3-9M10 21h4"/>',
+      sparkle:'<path d="m12 3 2.8 6.2L21 12l-6.2 2.8L12 21l-2.8-6.2L3 12l6.2-2.8L12 3Z"/>',
+      star:'<path d="m12 3 2.8 5.6 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.5l6.2-.9L12 3Z"/>',
+      close:'<path d="m6 6 12 12M18 6 6 18"/>',
+      back:'<path d="m14 6-6 6 6 6"/>',
+      lock:'<rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
+      moon:'<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5Z"/>',
+      flask:'<path d="M9 3h6M10 3v6L5 18a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3M8 14h8"/>'
+    };
+    const icon = name => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name] || icons.sparkle}</svg>`;
+    document.querySelectorAll('[data-icon]').forEach(node => { node.innerHTML = icon(node.dataset.icon); });
+    const content = document.getElementById('content');
+    const layer = document.getElementById('sheet-layer');
+    const detailBody = document.getElementById('detail-body');
+    const sacrificeLayer = document.getElementById('sacrifice-layer');
+    const sacrificeBody = document.getElementById('sacrifice-panel');
+    const app = document.querySelector('.app');
+    let scenario = params.get('scenario') === 'full' ? 'full' : 'new';
+    let screen = 'atlas', selectedSpecies = 'frostnip', selectedNumber = 1, selectedForm = 3;
+    let returnFocus = null, toastTimer;
+    let detailSpecies = 'frostnip', detailOrigin = 'collection', showRoadmap = false;
+    let sacrificeStage = 'picker', sacrificeSpecies = null, sacrificeRank = 'all';
+    let exchangeTab = 'sacrifice', sacrificeOpener = null;
+    const sacrificeSelected = new Set();
+    const sacrificePoints = {R:1,SR:1,SSR:2,UR:3};
+    const sacrificeBalance = 2;
+    const protectedIds = new Set(['frostnip:1']);
+    const roles = { frostnip:'Đang luyện · Đồng hành' };
+    const owned = { pyropup:1, frostnip:3, shardsnail:2, flameow:1, hootlet:2, cheerling:1 };
+    const forms = { pyropup:2, frostnip:3, shardsnail:2, flameow:2, hootlet:3, cheerling:1 };
+    const specimens = [
+      {number:1,form:3,purity:'83,3%',status:'Đang luyện'},
+      {number:2,form:1,purity:'—',status:'Chưa luyện'},
+      {number:3,form:2,purity:'96,0%',status:'Đã khóa lượt'},
+      {number:4,form:1,purity:'—',status:'Chưa luyện'}
+    ];
+    const getSpecies = id => catalog.find(species => species.id === id);
+    const countFor = id => scenario === 'new' ? (id === 'frostnip' ? 1 : 0) : (owned[id] || 0);
+    const formFor = id => forms[id] || 1;
+    function individuals(id) {
+      return specimens.slice(0,countFor(id)).map((entry,index) => ({...entry,form:index === 0 ? formFor(id) : entry.form}));
+    }
+    const img = (species,form,extra='') => `<img src="${species.art[form - 1]}" width="128" height="128" alt="${species.forms[form - 1]}" decoding="async" ${extra}>`;
+    const star = (id,number) => `<button class="star" data-protect="${id}:${number}" aria-pressed="${protectedIds.has(`${id}:${number}`)}" aria-label="${protectedIds.has(`${id}:${number}`) ? 'Bỏ bảo vệ' : 'Bảo vệ'} cá thể ${number}">${icon('star')}</button>`;
+    const rank = species => `<span class="rank-pill">${species.rank}</span>`;
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      clearTimeout(toastTimer); toast.textContent = message; toast.hidden = false;
+      toastTimer = setTimeout(() => { toast.hidden = true; },2600);
+    }
+    function renderAtlas() {
+      screen = 'atlas';
+      const found = catalog.filter(species => countFor(species.id)).length;
+      content.setAttribute('aria-label','Bộ sưu tập');
+      content.innerHTML = `<div class="section-heading"><h2>Bộ sưu tập</h2><span class="collection-count"><b>${found}</b> / 18 loài</span></div><div class="collection-track" aria-hidden="true"><span style="width:${found / 18 * 100}%"></span></div><div class="atlas">${catalog.map(species => {
+        const count = countFor(species.id);
+        return `<button class="atlas-card${count ? '' : ' is-unknown'}" data-rank="${species.rank}" ${count ? `data-species="${species.id}" aria-label="${species.title}, ${count} cá thể"` : 'disabled aria-label="Linh thú chưa khám phá"'}><span class="rank">${species.rank}</span><span class="atlas-art">${count ? img(species,formFor(species.id),'loading="lazy"') : icon('paw')}</span><span class="atlas-name">${count ? species.forms[formFor(species.id) - 1] : 'Chưa khám phá'}</span><small>${count ? count + ' cá thể' : '· · ·'}</small></button>`;
+      }).join('')}</div><p class="catalog-note">Mỗi giao ước, thêm một dấu mốc trên hành trình.</p>`;
+      content.scrollTop = 0;
+    }
+    function renderSpecies(id = selectedSpecies) {
+      selectedSpecies = id; screen = 'species';
+      const species = getSpecies(id), count = countFor(id), known = formFor(id);
+      content.setAttribute('aria-label',`Cá thể ${species.title}`);
+      content.innerHTML = `<button class="back-link" data-screen="atlas">${icon('back')}Bộ sưu tập</button><h2 class="species-heading">${species.title}</h2><div class="species-meta" data-rank="${species.rank}">${rank(species)}<span>·</span><span>${count} cá thể đang sở hữu</span></div><div class="species-discovery"><p>Đã khám phá ${known}/4 dạng</p><div class="discovery-steps" aria-hidden="true">${[1,2,3,4].map(form => `<span class="discovery-step ${form <= known ? 'is-known' : ''}"></span>`).join('')}</div></div><div class="individuals">${individuals(id).map(entry => {
+        const isActive = id === 'frostnip' && entry.number === 1;
+        return `<article class="individual" data-rank="${species.rank}"><button class="individual-open" data-individual="${entry.number}" aria-label="Xem ${species.forms[entry.form - 1]}, cá thể ${entry.number}"><span class="individual-top"><span class="rank">${species.rank}</span><span class="individual-number">#${String(entry.number).padStart(2,'0')}</span></span>${img(species,entry.form)}<span class="individual-name">${species.forms[entry.form - 1]}</span><span class="individual-stage">T${entry.form} · ${entry.status}</span><span class="individual-purity">${entry.purity}${entry.purity === '—' ? ' <span>Chưa xác định</span>' : ' <span>· Tạm tính</span>'}</span><span class="individual-role ${isActive ? '' : 'is-idle'}">${isActive ? roles[id] : 'Chưa nhận vai trò'}</span></button>${star(id,entry.number)}</article>`;
+      }).join('')}</div><p class="species-note">${icon('star').replace('<svg ','<svg style="width:12px;height:12px;vertical-align:-2px;margin-right:4px" ')} Đánh dấu sao để bảo vệ cá thể khỏi hiến tế.</p>`;
+      content.scrollTop = 0;
+    }
+    function renderDetail() {
+      const species = getSpecies(detailSpecies);
+      const entry = individuals(detailSpecies).find(item => item.number === selectedNumber) || individuals(detailSpecies)[0];
+      const form = selectedForm, known = form <= formFor(detailSpecies), isCurrent = form === entry.form;
+      const isActive = detailSpecies === 'frostnip' && entry.number === 1;
+      const skills = species.skills.stages.find(stage => stage.form === form).skills;
+      const stageLabel = isCurrent ? 'Dạng hiện tại' : form <= entry.form ? 'Dạng cá thể này đã đạt' : known ? 'Đã khám phá · Cá thể này chưa đạt' : 'Chưa khám phá';
+      document.getElementById('detail-title').textContent = known ? species.forms[form - 1] : `T${form} · Chưa khám phá`;
+      detailBody.innerHTML = `${detailOrigin === 'sacrifice' ? `<button class="back-link detail-return" data-return-sacrifice>${icon('back')}Quay lại hiến tế</button>` : ''}<p class="detail-summary">${species.skills.summary}</p><div class="detail-identity"><div><p>#${entry.number} · ${stageLabel}</p><p class="detail-meta">${species.rank} · T${form}</p></div>${star(detailSpecies,entry.number)}</div><div class="portrait">${known ? img(species,form) : icon('paw').replace('<svg ','<svg class="mystery" ')}</div>${known ? '' : '<p class="detail-mystery-note">Tiến hóa để khám phá diện mạo này.</p>'}<nav class="form-selector" aria-label="Các dạng tiến hóa">${[1,2,3,4].map(stage => `<button class="form-button ${stage > formFor(detailSpecies) ? 'is-unknown' : ''}" data-form="${stage}" aria-pressed="${stage === form}" aria-label="T${stage}, ${stage <= formFor(detailSpecies) ? species.forms[stage - 1] : 'chưa khám phá'}" ${stage === entry.form ? 'aria-current="step"' : ''}><span>T${stage}</span>${stage <= formFor(detailSpecies) ? img(species,stage) : icon('paw')}</button>`).join('')}</nav><section class="abilities-card"><h3>Năng lực T${form}</h3><p class="ability-context">${isCurrent && isActive ? 'Đang hỗ trợ bạn' : 'Năng lực hỗ trợ khi cá thể đồng hành có hiệu lực.'}</p>${skills.map(skill => `<article class="skill"><h4>${skill.name}</h4><p>${skill.description}</p></article>`).join('')}<button class="all-abilities" data-roadmap aria-expanded="${showRoadmap}" aria-controls="ability-roadmap">${showRoadmap ? 'Thu gọn năng lực' : 'Toàn bộ năng lực ›'}</button><div class="ability-roadmap" id="ability-roadmap" ${showRoadmap ? '' : 'hidden'}>${species.skills.stages.map(stage => `<h4>T${stage.form}</h4><p>${stage.skills.map(skill => `<b>${skill.name}:</b> ${skill.description}`).join('<br>')}</p>`).join('')}<h4>Thức tỉnh · T4 đầy · Độ thuần từ 95%</h4><p><b>${species.skills.awakening.name}</b><br>${species.skills.awakening.description}</p><h4>Hoàn mỹ · T4 đầy · Độ thuần 100%</h4><p><b>${species.skills.perfect.name}</b><br>${species.skills.perfect.description}</p></div></section>`;
+    }
+    function openDetail(number = 1, speciesId = selectedSpecies, fromSacrifice = false) {
+      detailSpecies = speciesId;
+      detailOrigin = fromSacrifice ? 'sacrifice' : 'collection';
+      showRoadmap = false;
+      selectedNumber = number;
+      selectedForm = individuals(speciesId).find(entry => entry.number === number).form;
+      returnFocus = document.activeElement;
+      if (fromSacrifice) sacrificeLayer.hidden = true;
+      renderDetail(); detailBody.scrollTop = 0; layer.hidden = false; app.inert = true;
+      document.getElementById('close-detail').focus({preventScroll:true});
+    }
+    function closeDetail() {
+      if (layer.hidden) return;
+      layer.hidden = true;
+      if (detailOrigin === 'sacrifice') {
+        sacrificeLayer.hidden = false; app.inert = true; renderSacrifice();
+        sacrificeBody.querySelector(`[data-sacrifice-detail="${detailSpecies}:${selectedNumber}"]`)?.focus({preventScroll:true});
+      } else {
+        app.inert = false;
+        if (returnFocus?.isConnected) returnFocus.focus({preventScroll:true});
+      }
+    }
+    function sacrificeBlocked(id, number) {
+      if (id === 'frostnip' && number === 1) return 'Đang sử dụng';
+      if (protectedIds.has(`${id}:${number}`)) return 'Đã bảo vệ';
+      return '';
+    }
+    function sacrificeQuote() {
+      const entries = [...sacrificeSelected].flatMap(key => {
+        const [id,value] = key.split(':'), number = Number(value);
+        const entry = individuals(id).find(item => item.number === number);
+        if (!entry || sacrificeBlocked(id,number)) { sacrificeSelected.delete(key); return []; }
+        return [{...entry,species:getSpecies(id),key}];
+      });
+      const points = entries.reduce((total,entry) => total + sacrificePoints[entry.species.rank],0);
+      return {entries,points,total:points + sacrificeBalance,tickets:Math.floor((points + sacrificeBalance) / 10)};
+    }
+    function selectedList(entries) {
+      return entries.map(entry => `<div class="sacrifice-selected-row">${img(entry.species,entry.form)}<div><strong>${entry.species.forms[entry.form - 1]}</strong><p>#${entry.number} · ${entry.species.rank} · ${sacrificePoints[entry.species.rank]} điểm</p></div><button class="sacrifice-remove" data-sacrifice-remove="${entry.key}" aria-label="Bỏ chọn cá thể ${entry.number} ${entry.species.title}">${icon('close')}</button></div>`).join('');
+    }
+    function renderSacrifice() {
+      const quote = sacrificeQuote(), root = document.querySelector('.sacrifice-sheet');
+      const viewKey = `${exchangeTab}:${sacrificeStage}:${sacrificeSpecies || ''}:${sacrificeRank}`;
+      const previousScroll = root.dataset.view === viewKey ? sacrificeBody.scrollTop : 0;
+      const focusKey = document.activeElement?.dataset.sacrificeFocus;
+      root.dataset.view = viewKey;
+      const navigation = document.getElementById('sacrifice-navigation');
+      const footer = document.getElementById('sacrifice-footer');
+      document.querySelectorAll('[data-exchange-tab]').forEach(button => {
+        const selected = button.dataset.exchangeTab === exchangeTab;
+        button.setAttribute('aria-selected',String(selected)); button.tabIndex = selected ? 0 : -1;
+      });
+      sacrificeBody.setAttribute('aria-labelledby',exchangeTab === 'sacrifice' ? 'sacrifice-tab' : 'exchange-tab');
+      navigation.innerHTML = '';
+      footer.hidden = exchangeTab !== 'sacrifice';
+      if (exchangeTab === 'exchange') {
+        sacrificeBody.innerHTML = '<div class="sacrifice-summary"><h3 class="sacrifice-title">Đổi vé triệu hồi</h3><p class="sacrifice-hint">Chuyển sang Hiến tế để thử giao diện chọn linh thú.</p><button class="secondary-action" data-exchange-tab="sacrifice">Chọn linh thú để hiến tế</button></div>';
+        return;
+      }
+      if (sacrificeStage === 'picker') {
+        navigation.innerHTML = `<button class="sacrifice-back" data-sacrifice-back data-sacrifice-focus="back">${icon('back')}${sacrificeSpecies ? 'Các loài linh thú' : 'Quay lại'}</button>${sacrificeSpecies ? '' : `<div class="rarity-filters" role="group" aria-label="Lọc phẩm cấp">${['all','R','SR','SSR','UR'].map(value => `<button data-rarity="${value}" data-sacrifice-focus="rank-${value}" aria-pressed="${sacrificeRank === value}">${value === 'all' ? 'Tất cả' : value}</button>`).join('')}</div>`}`;
+        if (!sacrificeSpecies) {
+          const available = catalog.filter(species => countFor(species.id) && (sacrificeRank === 'all' || sacrificeRank === species.rank));
+          sacrificeBody.innerHTML = available.length ? `<div class="atlas">${available.map(species => {
+            const eligible = individuals(species.id).filter(entry => !sacrificeBlocked(species.id,entry.number)).length;
+            return `<button class="atlas-card" data-rank="${species.rank}" data-sacrifice-species="${species.id}"><span class="rank">${species.rank}</span><span class="atlas-art">${img(species,1)}</span><span class="atlas-name">${species.title}</span><small>${eligible}/${countFor(species.id)} có thể hiến tế</small></button>`;
+          }).join('')}</div>` : '<p class="sacrifice-hint">Chưa có cá thể thuộc phẩm cấp này.</p>';
+        } else {
+          const species = getSpecies(sacrificeSpecies);
+          sacrificeBody.innerHTML = `<h3 class="sacrifice-title">${species.title}</h3><p class="sacrifice-hint">Chạm để chọn · ${sacrificePoints[species.rank]} điểm mỗi cá thể</p><div class="sacrifice-individuals">${individuals(species.id).map(entry => {
+            const key = `${species.id}:${entry.number}`, blocked = sacrificeBlocked(species.id,entry.number), selected = sacrificeSelected.has(key);
+            return `<article class="sacrifice-individual ${selected ? 'is-selected' : ''}" data-rank="${species.rank}"><button class="sacrifice-choice" data-sacrifice-pick="${key}" data-sacrifice-focus="pick-${key}" aria-pressed="${selected}" aria-label="${selected ? 'Bỏ chọn' : 'Chọn'} ${species.forms[entry.form - 1]}, cá thể ${entry.number}, ${sacrificePoints[species.rank]} điểm${blocked ? ', ' + blocked : ''}" ${blocked ? 'disabled' : ''}><span class="choice-heading"><span class="rank">${species.rank}</span><span>#${String(entry.number).padStart(2,'0')}${protectedIds.has(key) ? icon('star') : ''}</span></span>${img(species,entry.form)}<span class="choice-name">${species.forms[entry.form - 1]}</span><span class="choice-state">T${entry.form} · ${entry.status}</span><span class="choice-footer">${blocked ? icon('lock') + blocked : `<span class="choice-check" aria-hidden="true">${selected ? '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 8 3 3 7-7"/></svg>' : ''}</span>${selected ? 'Đã chọn · ' : ''}${sacrificePoints[species.rank]} điểm`}</span></button><button class="choice-details" data-sacrifice-detail="${key}">Xem chi tiết</button></article>`;
+          }).join('')}</div>`;
+        }
+      } else if (sacrificeStage === 'summary') {
+        sacrificeBody.innerHTML = `<div class="sacrifice-summary"><p class="sacrifice-hint">10 điểm hiến tế = 1 vé triệu hồi.<br>R / SR: 1 điểm · SSR: 2 điểm · UR: 3 điểm.</p><button class="secondary-action" data-sacrifice-choose>${quote.entries.length ? 'Chọn thêm linh thú' : 'Chọn linh thú'}</button><p class="sacrifice-hint" style="margin-top:12px">Cá thể đang sử dụng hoặc được bảo vệ không thể hiến tế.</p>${selectedList(quote.entries)}</div>`;
+      } else {
+        navigation.innerHTML = `<button class="sacrifice-back" data-sacrifice-back>${icon('back')}Quay lại lựa chọn</button>`;
+        sacrificeBody.innerHTML = `<h3 class="sacrifice-title">Hiến tế ${quote.entries.length} cá thể?</h3><p class="sacrifice-warning">Các cá thể đã hiến tế sẽ bị tiêu hao vĩnh viễn.${quote.entries.some(entry => ['SSR','UR'].includes(entry.species.rank)) ? '<br>Có cá thể SSR / UR trong lựa chọn.' : ''}${quote.entries.some(entry => entry.form > 1) ? '<br>Tiến trình luyện của cá thể được chọn sẽ mất.' : ''}</p>${selectedList(quote.entries)}`;
+      }
+      footer.innerHTML = `<p class="sacrifice-total">Đã chọn ${quote.entries.length} cá thể · ${quote.points} điểm</p><p class="sacrifice-quote">${sacrificeBalance} điểm sẵn có · <strong>${quote.tickets ? `Nhận ${quote.tickets} vé · Dư ${quote.total % 10} điểm` : `Cần thêm ${10 - quote.total} điểm`}</strong></p><button class="primary-action" data-sacrifice-submit ${!quote.entries.length || !quote.tickets ? 'disabled' : ''}>${sacrificeStage === 'review' ? `Hiến tế ${quote.entries.length} cá thể` : 'Xem lại hiến tế'}</button>`;
+      sacrificeBody.scrollTop = previousScroll;
+      if (focusKey) root.querySelector(`[data-sacrifice-focus="${CSS.escape(focusKey)}"]`)?.focus({preventScroll:true});
+    }
+    function openSacrifice(speciesId = null) {
+      closeDetail();
+      sacrificeOpener = document.activeElement;
+      sacrificeStage = 'picker'; sacrificeSpecies = speciesId; sacrificeRank = 'all'; exchangeTab = 'sacrifice';
+      renderSacrifice(); sacrificeLayer.hidden = false; app.inert = true;
+      document.getElementById('close-sacrifice').focus({preventScroll:true});
+    }
+    function closeSacrifice() {
+      if (sacrificeLayer.hidden) return;
+      sacrificeLayer.hidden = true; app.inert = false;
+      if (sacrificeOpener?.isConnected) sacrificeOpener.focus({preventScroll:true});
+    }
+    function setScenario(value) {
+      closeDetail(); scenario = value;
+      document.querySelectorAll('[data-scenario]').forEach(button => button.setAttribute('aria-pressed',String(button.dataset.scenario === value)));
+      if (screen === 'species' && countFor(selectedSpecies)) renderSpecies(); else renderAtlas();
+      if (!sacrificeLayer.hidden) {
+        if (sacrificeSpecies && !countFor(sacrificeSpecies)) sacrificeSpecies = null;
+        renderSacrifice(); app.inert = true;
+      }
+    }
+    document.addEventListener('click',event => {
+      const button = event.target.closest('button');
+      if (!button || button.disabled) return;
+      if (button.dataset.scenario) return setScenario(button.dataset.scenario);
+      if (button.dataset.width) {
+        document.documentElement.style.setProperty('--device-width',`${button.dataset.width}px`);
+        document.querySelectorAll('[data-width]').forEach(option => option.setAttribute('aria-pressed',String(option === button)));
+        return;
+      }
+      if (button.dataset.screen) {
+        closeDetail(); closeSacrifice();
+        if (button.dataset.screen === 'sacrifice') return openSacrifice();
+        if (button.dataset.screen === 'sacrifice-individuals') return openSacrifice('frostnip');
+        if (button.dataset.screen === 'atlas') renderAtlas();
+        else { renderSpecies('frostnip'); if (button.dataset.screen === 'detail') openDetail(); }
+        return;
+      }
+      if (button.dataset.exchangeTab) {
+        exchangeTab = button.dataset.exchangeTab; renderSacrifice();
+        document.querySelector(`.exchange-tabs [data-exchange-tab="${exchangeTab}"]`).focus({preventScroll:true});
+        return;
+      }
+      if (button.hasAttribute('data-sacrifice-back')) {
+        if (sacrificeStage === 'review') sacrificeStage = 'summary';
+        else if (sacrificeSpecies) sacrificeSpecies = null;
+        else sacrificeStage = 'summary';
+        renderSacrifice(); return;
+      }
+      if (button.hasAttribute('data-sacrifice-choose')) {
+        sacrificeStage = 'picker'; sacrificeSpecies = null; renderSacrifice(); return;
+      }
+      if (button.dataset.rarity) {
+        sacrificeRank = button.dataset.rarity; renderSacrifice(); return;
+      }
+      if (button.dataset.sacrificeSpecies) {
+        sacrificeSpecies = button.dataset.sacrificeSpecies; renderSacrifice(); return;
+      }
+      if (button.dataset.sacrificePick) {
+        const key = button.dataset.sacrificePick, [id,value] = key.split(':');
+        if (sacrificeBlocked(id,Number(value))) return;
+        if (sacrificeSelected.has(key)) sacrificeSelected.delete(key);
+        else sacrificeSelected.add(key);
+        renderSacrifice(); return;
+      }
+      if (button.dataset.sacrificeRemove) {
+        sacrificeSelected.delete(button.dataset.sacrificeRemove); renderSacrifice(); return;
+      }
+      if (button.dataset.sacrificeDetail) {
+        const [id,value] = button.dataset.sacrificeDetail.split(':');
+        return openDetail(Number(value),id,true);
+      }
+      if (button.hasAttribute('data-return-sacrifice')) return closeDetail();
+      if (button.hasAttribute('data-sacrifice-submit')) {
+        if (sacrificeStage === 'review') return showToast('Đây là bản xem thử. Không hiến tế hoặc thay đổi dữ liệu thật.');
+        sacrificeStage = 'review'; renderSacrifice(); return;
+      }
+      if (button.dataset.species) return renderSpecies(button.dataset.species);
+      if (button.dataset.individual) return openDetail(Number(button.dataset.individual));
+      if (button.dataset.form) {
+        const previousScroll = detailBody.scrollTop;
+        selectedForm = Number(button.dataset.form); renderDetail();
+        detailBody.scrollTop = previousScroll;
+        detailBody.querySelector(`[data-form="${selectedForm}"]`).focus({preventScroll:true});
+        return;
+      }
+      if (button.hasAttribute('data-roadmap')) {
+        const previousScroll = detailBody.scrollTop;
+        showRoadmap = !showRoadmap; renderDetail(); detailBody.scrollTop = previousScroll;
+        detailBody.querySelector('[data-roadmap]').focus({preventScroll:true}); return;
+      }
+      if (button.dataset.protect) {
+        const id = button.dataset.protect;
+        if (protectedIds.has(id)) protectedIds.delete(id); else protectedIds.add(id);
+        document.querySelectorAll(`[data-protect="${id}"]`).forEach(control => {
+          const protectedValue = protectedIds.has(id);
+          control.setAttribute('aria-pressed',String(protectedValue));
+          control.setAttribute('aria-label',`${protectedValue ? 'Bỏ bảo vệ' : 'Bảo vệ'} cá thể ${id.split(':')[1]}`);
+        });
+        return showToast(protectedIds.has(id) ? 'Đã bảo vệ cá thể · Thay đổi trong demo' : 'Đã bỏ bảo vệ · Thay đổi trong demo');
+      }
+      if (button.dataset.notice) showToast(button.dataset.notice);
+    });
+    document.getElementById('close-detail').addEventListener('click',closeDetail);
+    document.getElementById('close-sacrifice').addEventListener('click',closeSacrifice);
+    layer.addEventListener('click',event => { if (event.target === layer) closeDetail(); });
+    sacrificeLayer.addEventListener('click',event => { if (event.target === sacrificeLayer) closeSacrifice(); });
+    document.addEventListener('keydown',event => {
+      const activeLayer = !layer.hidden ? layer : !sacrificeLayer.hidden ? sacrificeLayer : null;
+      if (!activeLayer) return;
+      if (event.key === 'Escape') { event.preventDefault(); if (activeLayer === layer) closeDetail(); else closeSacrifice(); return; }
+      if (event.target.closest('.exchange-tabs') && ['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) {
+        event.preventDefault(); exchangeTab = event.key === 'Home' ? 'exchange' : event.key === 'End' ? 'sacrifice' : exchangeTab === 'exchange' ? 'sacrifice' : 'exchange';
+        renderSacrifice(); document.querySelector(`.exchange-tabs [data-exchange-tab="${exchangeTab}"]`).focus(); return;
+      }
+      if (event.key !== 'Tab') return;
+      const controls = [...activeLayer.querySelectorAll('button,summary')].filter(node => !node.disabled && node.tabIndex >= 0 && node.getClientRects().length);
+      const first = controls[0], last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    });
+    setScenario(scenario);
+    if (params.get('screen') === 'species' || params.get('screen') === 'detail') renderSpecies('frostnip');
+    if (params.get('screen') === 'detail') openDetail();
+    if (params.get('screen') === 'sacrifice') openSacrifice();
+    if (params.get('screen') === 'sacrifice-individuals') openSacrifice('frostnip');
+  </script>
+</body>
+</html>

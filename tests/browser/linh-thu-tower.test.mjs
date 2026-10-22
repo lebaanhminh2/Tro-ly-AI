@@ -444,6 +444,17 @@ test(
           await b.evaluate("document.querySelectorAll('.tower-card.is-revealed').length"),
           1,
         );
+        const claimFrame = await b.evaluate(`(() => {
+          const button=document.querySelector('.beast-tower-claim'),box=button.getBoundingClientRect();
+          const hit=document.elementFromPoint(box.left+box.width/2,box.top+box.height/2);
+          return {bottom:box.bottom,top:box.top,height:innerHeight,tappable:button.contains(hit),hit:hit?.className,scroll:document.querySelector('#sheet-content').scrollTop,header:document.querySelector('.sheet-title-row').getBoundingClientRect().bottom};
+        })()`);
+        await shot(b, 'conflict-claim-geometry');
+        assert.ok(
+          claimFrame.bottom <= claimFrame.height && claimFrame.tappable,
+          'claim stays visible and tappable after reconciling a conflict: ' +
+            JSON.stringify(claimFrame),
+        );
         await b.tap('.beast-tower-claim');
         await b.wait("!!document.querySelector('.tower-receipt')");
         assert.equal(c.towerRun.status, 'claimed');

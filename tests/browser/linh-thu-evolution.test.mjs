@@ -532,8 +532,8 @@ test(
         assert.match(view.quality[0], expected[species.id], species.id);
         assert.equal(view.images, 0, species.id);
         assert.equal(view.overflow, false, species.id);
-        assert.match(view.text, /Độ thuần ≥ 95%/);
-        assert.match(view.text, /Độ thuần 100%/);
+        assert.match(view.text, /Thức tỉnh · ≥95%/);
+        assert.match(view.text, /Hoàn mỹ · 100%/);
         if (species.id === 'pyropup') {
           assert.match(view.text, /40% cơ hội nhận thêm 1 vé thường/);
           assert.match(view.text, /40% → 80%/);

@@ -25,7 +25,9 @@ export class BeastSettlementService {
       if (!assessed.ready) break;
       const outcomes = assessed.outcomes!;
       const endAt = await this.store.dayEnd(owner, day);
-      const ultimate = endAt ? await this.store.ultimate(owner, habitWeekStart(day)) : null;
+      const isV2 = snapshot.skillCutoverDay != null && day >= snapshot.skillCutoverDay;
+      const ultimate =
+        !isV2 && endAt ? await this.store.ultimate(owner, habitWeekStart(day)) : null;
       const selections = await this.store.roles(owner, day);
       const training = selections.current.find((role) => role.role === 'training');
       const companion = selections.current.find((role) => role.role === 'companion');
@@ -82,7 +84,7 @@ export class BeastSettlementService {
           // Habit buffs use the companion and skill state that existed in the original day.
           const full = outcomes.includes('achieved') && !outcomes.includes('missed');
           const passive =
-            companionBeast && !healthy.suspended
+            !isV2 && companionBeast && !healthy.suspended
               ? applyBeastPassives(
                   companionBeast.attempt,
                   companionBeast.counters,
@@ -132,6 +134,15 @@ export class BeastSettlementService {
             reward,
             alchemy: state.alchemy,
             companionAttempt: companionBeast?.attempt ?? null,
+            companionAttemptId: companionBeast?.attemptId ?? null,
+            ...(isV2
+              ? {
+                  v2Habit: {
+                    satisfied: assessed.habitSatisfied ?? !outcomes.includes('missed'),
+                    rewardEligible: assessed.habitRewardEligible ?? full,
+                  },
+                }
+              : {}),
           };
           return {
             state,

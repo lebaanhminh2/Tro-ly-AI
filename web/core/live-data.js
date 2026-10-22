@@ -150,6 +150,7 @@ export async function refreshLive({
     loaded: true,
     checkin: data.checkin,
     breakthroughPenalties: data.breakthroughPenalties,
+    beastV2: data.beastV2 ?? null,
     resting: data.resting,
     rest: data.rest,
     sleepStatus: data.sleepStatus,

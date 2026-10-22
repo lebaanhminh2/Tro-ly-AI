@@ -1,5 +1,6 @@
 import { button, el } from './dom.js';
 import { beastTalentUpgrade } from '../models/linh-thu.js';
+import { beastSkillsV2, beastUpgradeV2 } from '../models/linh-thu-v2.js';
 import { prefersReducedMotion } from '../core/experience.js';
 import { createEvolutionMotion, EVOLUTION_STYLES } from './beast-evolution-motion.js';
 
@@ -44,15 +45,32 @@ export function createBeastEvolution({ data, result, progress, portrait, isCurre
   const final = el('div', undefined, 'beast-evolution-final');
   final.hidden = true;
   final.append(el('p', 'NĂNG LỰC ĐƯỢC NÂNG', 'evolution-gains-label'));
-  data.config.skills[species.id].talents.forEach((skill, index) => {
-    if (index > 0 && progress.form < 3) return;
-    const row = el('div', undefined, 'evolution-gain');
-    const heading = el('div', undefined, 'evolution-gain-heading');
-    heading.append(el('strong', skill.name));
-    if (index > 0 && result.from < 3) heading.append(el('span', 'MỞ MỚI'));
-    row.append(heading, el('p', beastTalentUpgrade(skill, result.from, progress.form, index)));
-    final.append(row);
-  });
+  const v2 = beastSkillsV2(data, { speciesId: species.id });
+  if (v2) {
+    for (const skill of beastUpgradeV2(v2, result.from, progress.form)) {
+      const row = el('div', undefined, 'evolution-gain');
+      const heading = el('div', undefined, 'evolution-gain-heading');
+      heading.append(el('strong', skill.name));
+      if (skill.isNew) heading.append(el('span', 'MỞ MỚI'));
+      row.append(heading);
+      if (skill.change) {
+        const change = el('p', undefined, 'beast-upgrade-change');
+        change.append('Xác suất: ', el('strong', `${skill.change.from} → ${skill.change.to}`));
+        row.append(change);
+      }
+      row.append(el('p', skill.description));
+      final.append(row);
+    }
+  } else
+    data.config.skills[species.id].talents.forEach((skill, index) => {
+      if (index > 0 && progress.form < 3) return;
+      const row = el('div', undefined, 'evolution-gain');
+      const heading = el('div', undefined, 'evolution-gain-heading');
+      heading.append(el('strong', skill.name));
+      if (index > 0 && result.from < 3) heading.append(el('span', 'MỞ MỚI'));
+      row.append(heading, el('p', beastTalentUpgrade(skill, result.from, progress.form, index)));
+      final.append(row);
+    });
   const actions = el('div', undefined, 'evolution-actions');
   const next = button('Tiếp tục nuôi dưỡng', close, 'evolution-continue');
   const replay = button('Xem lại hiệu ứng', () => play(), 'evolution-replay');

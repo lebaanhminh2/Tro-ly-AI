@@ -209,6 +209,8 @@ export type SleepAssessment = {
   reportedAt: number | null;
   chatActive: boolean;
   assessedAt: number;
+  /** Immutable original-day skill policy, supplied only by the server. */
+  rewardMultiplier?: 1 | 3;
 };
 export function assessSleep(state: HealthyState, input: SleepAssessment) {
   if (
@@ -232,15 +234,16 @@ export function assessSleep(state: HealthyState, input: SleepAssessment) {
   if (state.suspended || (state.lastScoredDay !== null && input.day <= state.lastScoredDay))
     return { state: next, applied: false, delta: 0, demoted: false };
   const onTime = input.reportedAt !== null && input.reportedAt <= input.target;
+  const multiplier = input.rewardMultiplier === 3 ? 3 : 1;
   const guarded = next.heartDay === input.day;
   if (onTime) {
-    next.qi += 5;
-    next.earned += 5;
+    next.qi += 5 * multiplier;
+    next.earned += 5 * multiplier;
     next.streak++;
     next.bestStreak = Math.max(next.bestStreak, next.streak);
   } else {
     if (!guarded) next.streak = 0;
-    if (next.peaceDay !== input.day) next.qi = Math.max(0, next.qi - 20);
+    if (next.peaceDay !== input.day) next.qi = Math.max(0, next.qi - 20 * multiplier);
   }
   let demoted = false;
   // Only a real penalty checks rank. Protection expiring is never a penalty.
@@ -371,6 +374,7 @@ export function breakthrough(
   now: number,
   item: Charm | null,
   random: number,
+  modifier?: { chancePoints: number; preventLoss: boolean; penaltyMultiplier?: 1 | 3 },
 ) {
   const target = REALMS[state.rank + 1],
     charm = item ? CHARMS[item] : null;
@@ -385,7 +389,10 @@ export function breakthrough(
     throw Error('BREAKTHROUGH_UNAVAILABLE');
   const chance = Math.min(
     100,
-    target.chance + 5 * Math.min(Math.max(state.failures - 1, 0), 3) + (charm?.boost ?? 0),
+    target.chance +
+      5 * Math.min(Math.max(state.failures - 1, 0), 3) +
+      (charm?.boost ?? 0) +
+      (modifier?.chancePoints ?? 0),
   );
   const success = roll(random) < chance,
     next = copy(state);
@@ -398,7 +405,11 @@ export function breakthrough(
     next.protectedUntil = now + 3 * DAY_MS;
   } else {
     next.failures++;
-    next.qi = Math.max(0, next.qi - BREAKTHROUGH_PENALTIES[state.rank]!);
+    if (!modifier?.preventLoss)
+      next.qi = Math.max(
+        0,
+        next.qi - BREAKTHROUGH_PENALTIES[state.rank]! * (modifier?.penaltyMultiplier === 3 ? 3 : 1),
+      );
   }
   return { state: next, success, chance, penalty: state.qi - next.qi };
 }

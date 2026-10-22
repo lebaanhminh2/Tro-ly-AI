@@ -189,7 +189,6 @@ export function renderToday(ui, state) {
             }, 'secondary'));
         root.append(rest);
     }
-    root.append(renderWorkState(ui, state, plan, now));
     const main = el('div', undefined, 'today-main'), panel = el('div', undefined, 'today-view-panel');
     panel.id = 'today-view-panel';
     const toggle = el('div', undefined, 'segment today-view-switch');
@@ -213,8 +212,9 @@ export function renderToday(ui, state) {
         controls.push([value, b]);
     }
     updatePanel();
-    main.append(toggle, panel);
-    root.append(main);
+    main.append(panel);
+    root.insertBefore(toggle, top.nextSibling);
+    root.append(renderWorkState(ui, state, plan, now), main);
     return root;
 }
 function renderTaskList(ui, state, buckets, card, button, openTask, render) {

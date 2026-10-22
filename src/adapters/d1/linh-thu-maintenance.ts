@@ -3,6 +3,7 @@ import { query, type Database } from './database.ts';
 import { D1BeastStore } from './linh-thu-store.ts';
 import { HealthyStore } from './healthy-store.ts';
 import { prepareBeastEffect, creditBeastReward } from './linh-thu-effects.ts';
+import { settleOneBeastV2Day } from './linh-thu-v2-daily.ts';
 
 /** Rendezvous after both habit and sleep settle; always joins their original assigned day. */
 export async function settleOneCombinedBeastDay(
@@ -11,14 +12,18 @@ export async function settleOneCombinedBeastDay(
   now: number,
   random: () => number,
 ) {
+  if (await settleOneBeastV2Day(db, owner, now, random)) return true;
   const row = await query(
     db,
     `SELECT b.day,json_extract(b.result_json,'$.full') AS full,json_extract(b.result_json,'$.companionAttempt') AS companion_attempt,s.result,d.end_at,s.reported_at
      FROM beast_day_settlements b JOIN sleep_assessments s ON s.owner=b.owner AND s.day=b.day
      JOIN schedule_days d ON d.owner=b.owner AND d.day=b.day
-     WHERE b.owner=? AND NOT EXISTS(SELECT 1 FROM beast_skill_events e WHERE e.owner=b.owner AND e.kind='combined' AND e.source_id=CAST(b.day AS TEXT))
+     WHERE b.owner=? AND d.end_at<=?
+       AND NOT EXISTS(SELECT 1 FROM beast_v2_runtime rt WHERE rt.owner=b.owner AND b.day>=rt.cutover_day)
+       AND NOT EXISTS(SELECT 1 FROM beast_skill_events e WHERE e.owner=b.owner AND e.kind='combined' AND e.source_id=CAST(b.day AS TEXT))
      ORDER BY b.day LIMIT 1`,
     owner,
+    now,
   ).first<{
     day: number;
     full: number;
@@ -67,13 +72,16 @@ export async function settleOneExpiredBeastUltimate(db: Database, owner: string,
     `SELECT state_json FROM beast_ultimates u WHERE owner=? AND expires_at<=?
     AND COALESCE(json_extract(state_json,'$.settled'),0)=0 AND COALESCE(json_extract(state_json,'$.cancelled'),0)=0
     AND NOT EXISTS(SELECT 1 FROM schedule_days d JOIN cultivation_accounts c ON c.owner=d.owner
-      WHERE d.owner=u.owner AND d.day>=MAX(u.week_start,(SELECT activated_day FROM beast_accounts WHERE owner=u.owner)) AND d.day<u.week_start+7 AND
+      WHERE d.owner=u.owner AND d.day>=MAX(u.week_start,(SELECT activated_day FROM beast_accounts WHERE owner=u.owner)) AND d.day<u.week_start+7
+       AND NOT EXISTS(SELECT 1 FROM beast_v2_runtime rt WHERE rt.owner=d.owner AND d.day>=rt.cutover_day) AND
        (d.end_at>? OR (NOT EXISTS(SELECT 1 FROM sleep_assessments s WHERE s.owner=d.owner AND s.day=d.day)
         AND COALESCE(json_extract(c.state_json,'$.suspended'),0)=0)))
     AND NOT EXISTS(SELECT 1 FROM schedule_days d WHERE d.owner=u.owner AND d.day>=MAX(u.week_start,(SELECT activated_day FROM beast_accounts WHERE owner=u.owner)) AND d.day<u.week_start+7
+      AND NOT EXISTS(SELECT 1 FROM beast_v2_runtime rt WHERE rt.owner=d.owner AND d.day>=rt.cutover_day)
       AND NOT EXISTS(SELECT 1 FROM beast_day_settlements b WHERE b.owner=d.owner AND b.day=d.day))
     AND NOT EXISTS(SELECT 1 FROM beast_day_settlements b JOIN sleep_assessments s ON s.owner=b.owner AND s.day=b.day
       WHERE b.owner=u.owner AND b.day>=u.week_start AND b.day<u.week_start+7
+      AND NOT EXISTS(SELECT 1 FROM beast_v2_runtime rt WHERE rt.owner=b.owner AND b.day>=rt.cutover_day)
       AND NOT EXISTS(SELECT 1 FROM beast_skill_events e WHERE e.owner=b.owner AND e.kind='combined' AND e.source_id=CAST(b.day AS TEXT)))
     ORDER BY week_start LIMIT 1`,
     owner,

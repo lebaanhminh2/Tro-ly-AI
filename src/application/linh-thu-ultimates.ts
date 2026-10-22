@@ -110,6 +110,11 @@ export class BeastUltimateService {
       (snapshot, healthy) => {
         if (command.day !== day) throw Error('BEAST_DAY_CLOSED');
         if (healthy.suspended) throw Error('ACCOUNT_SUSPENDED');
+        // The store replays committed v1 receipts before this callback. New
+        // activation is forbidden after cutover, including direct service calls
+        // from old clients, while chooseReward remains a compatibility path.
+        if (snapshot.skillCutoverDay != null && day >= snapshot.skillCutoverDay)
+          throw Error('BEAST_SKILLS_AUTOMATIC');
         if (used) throw Error('BEAST_ULTIMATE_WEEK_USED');
         if (!beast) throw Error('BEAST_NOT_FOUND');
         const companion = roles.current.find((role) => role.role === 'companion');

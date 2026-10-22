@@ -72,6 +72,12 @@ test(
       );
       await habits.settle('123', now, 30);
       await beasts.initialize('123', day - 1, now - DAY);
+      // This regression deliberately exercises already-issued v1 weekly rights.
+      // New-account automatic v2 skills have separate browser/runtime coverage.
+      await db
+        .prepare("UPDATE beast_v2_runtime SET cutover_day=? WHERE owner='123'")
+        .bind(day + 100)
+        .run();
       await healthy.mutate('123', 'live_seed_wallet', 'fixture', {}, now, (state) => ({
         state: { ...state, tickets: 40 },
         result: {},

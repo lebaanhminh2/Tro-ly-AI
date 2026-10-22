@@ -88,7 +88,14 @@ export class BeastTowerService {
         if (command.operation === 'tower_start') {
           if (existing) throw Error('TOWER_ALREADY_PLAYED');
           if (!eligibility?.eligible || eligibility.day !== day) throw Error('TOWER_NOT_ELIGIBLE');
-          const state = beginBeastTower(day, eligibility.rescueAvailable, this.random);
+          const state = beginBeastTower(
+            day,
+            eligibility.rescueAvailable,
+            this.random,
+            eligibility.skillVersion === 2
+              ? { rescueMaxFloor: 4, rewardMultiplier: eligibility.rewardMultiplier ?? 1 }
+              : undefined,
+          );
           return {
             state: snapshot.state,
             healthy,

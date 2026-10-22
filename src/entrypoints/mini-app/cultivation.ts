@@ -2,6 +2,9 @@ import { query } from '../../adapters/d1/database.ts';
 import { ScheduleStore } from '../../adapters/d1/schedule-store.ts';
 import { prepareBeastEffect } from '../../adapters/d1/linh-thu-effects.ts';
 import { prepareCultivationDraw } from '../../adapters/d1/linh-thu-draw.ts';
+import { readBeastV2Context } from '../../adapters/d1/linh-thu-v2-context.ts';
+import { prepareBeastV2Effect } from '../../adapters/d1/linh-thu-v2-effects.ts';
+import { beastV2BreakthroughModifier } from '../../domain/linh-thu-v2.ts';
 import type { MiniAppTiming } from '../../adapters/observability.ts';
 import {
   breakthrough,
@@ -113,28 +116,61 @@ export async function handleCultivation(
     return json({ error: 'INVALID_ITEM' }, 400);
   const before =
     operation === 'fuse' || operation === 'breakthrough' ? await healthy.read(owner) : null;
+  // Use one immutable skill snapshot both before the roll and for the outcome
+  // writes. A competing change must reject this transaction via its guard.
+  const v2 = before ? await readBeastV2Context(env.DB, owner, day, now) : null;
+  const modifier = v2?.active
+    ? {
+        ...(v2.beast
+          ? beastV2BreakthroughModifier(v2.beast.skills, v2.beast.state)
+          : { chancePoints: 0, preventLoss: false }),
+        penaltyMultiplier: v2.snapshot.multiplier,
+      }
+    : undefined;
   const prepared = before
     ? operation === 'fuse'
       ? fuseCharm(before.state, item as Charm, random())
-      : breakthrough(before.state, day, now, (item as Charm | null) ?? null, random())
+      : breakthrough(before.state, day, now, (item as Charm | null) ?? null, random(), modifier)
     : null;
   const effect = prepared
-    ? await prepareBeastEffect(
-        env.DB,
-        owner,
-        {
-          kind: operation === 'fuse' ? 'fusion' : 'breakthrough',
-          sourceId: input.id,
-          day,
-          at: now,
-          qualified: operation === 'breakthrough' && !prepared.success,
-          success: prepared.success,
-          actualQiLoss: operation === 'breakthrough' ? before!.state.qi - prepared.state.qi : 0,
-          ...(operation === 'fuse' ? { fusionTier: String(item) } : {}),
-        },
-        now,
-        random,
-      )
+    ? v2?.active
+      ? await prepareBeastV2Effect(
+          env.DB,
+          owner,
+          operation === 'fuse'
+            ? {
+                kind: 'fusion',
+                day,
+                from: item as 'basic' | 'middle' | 'high',
+                success: prepared.success,
+              }
+            : {
+                kind: 'breakthrough',
+                day,
+                success: prepared.success,
+                lostQi: before!.state.qi - prepared.state.qi,
+              },
+          input.id,
+          now,
+          random,
+          { context: v2 },
+        )
+      : await prepareBeastEffect(
+          env.DB,
+          owner,
+          {
+            kind: operation === 'fuse' ? 'fusion' : 'breakthrough',
+            sourceId: input.id,
+            day,
+            at: now,
+            qualified: operation === 'breakthrough' && !prepared.success,
+            success: prepared.success,
+            actualQiLoss: operation === 'breakthrough' ? before!.state.qi - prepared.state.qi : 0,
+            ...(operation === 'fuse' ? { fusionTier: String(item) } : {}),
+          },
+          now,
+          random,
+        )
     : null;
   const result = await healthy.mutate<Record<string, unknown>>(
     owner,

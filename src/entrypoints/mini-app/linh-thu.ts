@@ -21,6 +21,15 @@ import {
 } from '../../application/linh-thu-ultimates.ts';
 import { beastCalendarWeek } from '../../domain/linh-thu-ultimates.ts';
 import {
+  readBeastV2Context,
+  readBeastV2SkillProgress,
+} from '../../adapters/d1/linh-thu-v2-context.ts';
+import {
+  beastV2SpeciesProjection,
+  BEAST_V2_SELF_BURN_FINAL,
+  type BeastV2State,
+} from '../../domain/linh-thu-v2.ts';
+import {
   settleOneCombinedBeastDay,
   settleOneExpiredBeastUltimate,
 } from '../../adapters/d1/linh-thu-maintenance.ts';
@@ -153,6 +162,8 @@ export async function readBeasts(
   let wallet = initialWallet;
   if (day) {
     if (account.version === 0) await store.initialize(owner, day.day, now);
+    // Establish an existing account's cutover before training writes its day snapshot.
+    if (account.skillCutoverDay == null) await readBeastV2Context(env.DB, owner, day.day, now);
     // One mutating maintenance job per read. Stacking settlement + rendezvous
     // exceeded the Free-plan 50-query budget with an active companion.
     const settled = await new BeastSettlementService(store, random).settle(owner, now);
@@ -186,6 +197,23 @@ export async function readBeasts(
       store.summonChoice(owner),
       store.pendingDraws(owner),
     ]);
+  const v2Context = day ? await readBeastV2Context(env.DB, owner, day.day, now) : null;
+  const skillProgress = v2Context ? await readBeastV2SkillProgress(env.DB, v2Context) : null;
+  const selectedBeasts = selected.filter((beast) => beast !== null);
+  const skillStates =
+    v2Context?.active && selectedBeasts.length
+      ? (
+          await query(
+            env.DB,
+            'SELECT attempt_id,state_json FROM beast_v2_states WHERE owner=? AND attempt_id IN(SELECT value FROM json_each(?))',
+            owner,
+            JSON.stringify(selectedBeasts.map((beast) => beast.attemptId)),
+          ).all<{ attempt_id: string; state_json: string }>()
+        ).results
+      : [];
+  const stateByAttempt = new Map(
+    skillStates.map((row) => [row.attempt_id, JSON.parse(row.state_json) as BeastV2State]),
+  );
   return json({
     now,
     day: day ? { day: day.day, endAt: day.end_at } : null,
@@ -201,12 +229,38 @@ export async function readBeasts(
     summonChoice,
     drawChoices,
     roles,
-    selected: selected.filter((beast) => beast !== null),
+    selected: selectedBeasts.map((beast) => ({
+      ...beast,
+      skillStateV2:
+        v2Context?.active && v2Context.beast?.attemptId === beast.attemptId
+          ? v2Context.beast.state
+          : (stateByAttempt.get(beast.attemptId) ?? null),
+    })),
+    v2: {
+      skillProgress,
+      active: v2Context?.active ?? false,
+      cutoverDay: v2Context?.runtime.cutoverDay ?? null,
+      day: day?.day ?? null,
+      multiplier: v2Context?.snapshot.multiplier ?? 1,
+      startSleepStreak: v2Context?.snapshot.startSleepStreak ?? 0,
+      taskCount: v2Context?.taskCount ?? 0,
+      beforeNoonTasks: v2Context?.beforeNoonTasks ?? 0,
+      taskBuff: v2Context?.taskBuff ?? { qi: 0, tickets: 0 },
+      pendingDay:
+        v2Context?.runtime.lastDay == null
+          ? (v2Context?.runtime.cutoverDay ?? null)
+          : v2Context.runtime.lastDay + 1,
+      selfBurnFinal: BEAST_V2_SELF_BURN_FINAL,
+    },
     recentSummons,
     config: {
       version: LINH_THU_RULE_VERSION,
       catalog: BEAST_CATALOG,
       skills: BEAST_SKILLS,
+      skillVersion: v2Context?.active ? 2 : 1,
+      skillsV2: Object.fromEntries(
+        BEAST_CATALOG.map((species) => [species.id, beastV2SpeciesProjection(species.id, false)]),
+      ),
       training: BEAST_TRAINING,
       exchangeCost: BEAST_EXCHANGE_COST,
       sacrificeCost: BEAST_SACRIFICE_COST,

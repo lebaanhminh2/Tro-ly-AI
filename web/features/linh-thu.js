@@ -27,6 +27,7 @@ import { prefersReducedMotion } from '../core/experience.js';
 import { createBeastReveal } from '../ui/beast-reveal.js';
 import { createBeastEvolution } from '../ui/beast-evolution.js';
 import { openBeastTowerSheet } from '../ui/beast-tower.js';
+import { beastSkillsV2 } from '../models/linh-thu-v2.js';
 
 const pendingKey = 'minh-anh-beast-pending-v1';
 export function createBeastActions(context) {
@@ -760,6 +761,8 @@ export function createBeastActions(context) {
       known = form <= history.form;
     openSheet(known ? species.forms[form - 1] : `T${form} · Chưa khám phá`);
     context.sheet.classList.add('beast-sheet-open');
+    const skillsV2 = beastSkillsV2(data, beast);
+    if (skillsV2) sheetContent.append(el('p', skillsV2.summary, 'beast-skill-description'));
     if (onBack)
       sheetContent.append(
         button('‹ Quay lại hiến tế', onBack, 'text-button beast-collection-back'),
@@ -1274,11 +1277,12 @@ export function createBeastActions(context) {
           entry.dataset.species = species.id;
           entry.disabled = blocked || draft.loading;
           entry.append(
+            el('span', species.rank, 'beast-atlas-rank'),
             portrait(species, 1, true),
             el('strong', species.title),
             el(
               'small',
-              `${species.rank} · ${available === undefined ? 'Đang kiểm tra…' : `${available}/${count} có thể hiến tế`}`,
+              available === undefined ? 'Đang kiểm tra…' : `${available}/${count} có thể hiến tế`,
             ),
           );
           atlas.append(entry);
@@ -1397,17 +1401,18 @@ export function createBeastActions(context) {
       'beast-sacrifice-total',
     );
     status.setAttribute('role', 'status');
-    footer.append(
-      status,
-      el('p', `Điểm cũ: ${quote.previous} · Tổng: ${quote.previous + quote.points}`, 'hint'),
+    const quoteLine = el('p', undefined, 'beast-sacrifice-quote');
+    quoteLine.append(
+      el('span', `${quote.previous} điểm sẵn có · `),
       el(
-        'p',
+        'span',
         quote.tickets
           ? `Nhận ${quote.tickets} vé triệu hồi · Còn dư ${quote.remainder} điểm`
           : `Cần thêm ${quote.cost - quote.previous - quote.points} điểm để đổi 1 vé`,
         'beast-sacrifice-result',
       ),
     );
+    footer.append(status, quoteLine);
     const submit = button(
       draft.screen === 'review' ? `Hiến tế ${quote.selected.length} cá thể` : 'Xem lại hiến tế',
       async () => {
@@ -1493,6 +1498,10 @@ export function createBeastActions(context) {
     return list;
   }
   function openBeastUltimate(beast, draft = { targets: [], pact: 'reward' }) {
+    if (beastSkillsV2(state.beastData, beast)) {
+      showBeast(beast, undefined, true);
+      return;
+    }
     const data = state.beastData,
       progress = beastProgress(data, beast),
       skill = data.config.skills[beast.speciesId].ultimate;

@@ -491,11 +491,15 @@ export class TaskHierarchyStore {
               );
               return {
                 state: beastEffect
-                  ? beastEffect.apply({ ...state, tickets: state.tickets + 1 })
+                  ? beastEffect.apply({
+                      ...state,
+                      tickets:
+                        state.tickets + ('multiplier' in beastEffect ? beastEffect.multiplier : 1),
+                    })
                   : { ...state, tickets: state.tickets + 1 },
                 result: {
                   id: task.id,
-                  ticket: 1,
+                  ticket: beastEffect && 'multiplier' in beastEffect ? beastEffect.multiplier : 1,
                   ...(beastEffect ? { beastEffect: beastEffect.result } : {}),
                 },
                 statements: [...statements, ...(beastEffect?.statements ?? [])],

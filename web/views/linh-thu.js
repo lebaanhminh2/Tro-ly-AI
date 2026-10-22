@@ -18,6 +18,16 @@ import {
   beastAwakeningProgress,
   beastTrainingProjection,
 } from '../models/linh-thu.js';
+import {
+  beastSkillsV2,
+  beastStageSkillsV2,
+  beastUpgradeV2,
+  beastProgressV2,
+  beastSkillProgressV2,
+  beastRoadmapSkillsV2,
+  beastSkillTransitionV2,
+  beastRulesV2,
+} from '../models/linh-thu-v2.js';
 
 function ticketIcon() {
   const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -87,6 +97,24 @@ export function beastUpgrade(ui, data, beast) {
   const p = beastProgress(data, beast);
   const box = ui.el('div', undefined, 'beast-upgrade');
   box.append(ui.el('h3', `Lên T${p.form + 1} sẽ nhận`, 'beast-upgrade-heading'));
+  const v2 = beastSkillsV2(data, beast);
+  if (v2) {
+    for (const skill of beastUpgradeV2(v2, p.form, p.form + 1)) {
+      const row = ui.el('div', undefined, 'beast-upgrade-row');
+      const heading = ui.el('div', undefined, 'beast-upgrade-name');
+      heading.append(ui.el('strong', skill.name));
+      if (skill.isNew) heading.append(ui.el('span', 'Mở mới', 'beast-upgrade-badge'));
+      row.append(heading);
+      if (skill.change) {
+        const change = ui.el('p', undefined, 'beast-upgrade-change');
+        change.append('Xác suất: ', ui.el('strong', `${skill.change.from} → ${skill.change.to}`));
+        row.append(change);
+      }
+      row.append(ui.el('p', skill.description, 'beast-upgrade-copy'));
+      box.append(row);
+    }
+    return box;
+  }
   data.config.skills[p.species.id].talents.forEach((skill, index) => {
     if (index > 0 && p.form + 1 < 3) return;
     const row = ui.el('div', undefined, 'beast-upgrade-row');
@@ -101,12 +129,62 @@ export function beastUpgrade(ui, data, beast) {
 
 function skillEntry(ui, skill, description, progress) {
   const row = ui.el('div', undefined, 'beast-skill-entry');
+  if (skill.id) row.dataset.skillId = skill.id;
   row.append(ui.el('h3', skill.name), ui.el('p', description, 'beast-skill-description'));
+  appendSkillDetails(ui, row, skill);
   if (progress) row.append(ui.el('p', progress, 'beast-skill-counter'));
   return row;
 }
 
+function appendSkillProgress(ui, row, progress, name) {
+  if (!progress?.label) return;
+  const box = ui.el('div', undefined, 'beast-skill-meter');
+  box.dataset.kind = progress.kind;
+  box.dataset.status = progress.status;
+  box.append(ui.el('p', progress.label, 'beast-skill-meter-label'));
+  if (
+    progress.kind !== 'status' &&
+    Number.isFinite(progress.value) &&
+    Number.isFinite(progress.max) &&
+    progress.max > 0
+  ) {
+    const value = Math.max(0, Math.min(progress.max, progress.value));
+    const track = ui.el('div', undefined, 'beast-skill-meter-track');
+    track.setAttribute('role', 'progressbar');
+    track.setAttribute('aria-label', name);
+    track.setAttribute('aria-valuemin', '0');
+    track.setAttribute('aria-valuemax', String(progress.max));
+    track.setAttribute('aria-valuenow', String(value));
+    track.setAttribute('aria-valuetext', progress.label);
+    if (progress.kind !== 'probability' && Number.isInteger(progress.max) && progress.max <= 5) {
+      track.classList.add('is-segmented');
+      for (let index = 0; index < progress.max; index++) {
+        const segment = ui.el('span', undefined, index < value ? 'is-filled' : '');
+        segment.setAttribute('aria-hidden', 'true');
+        track.append(segment);
+      }
+    } else {
+      const fill = ui.el('span', undefined, 'beast-skill-meter-fill');
+      fill.style.width = `${(value / progress.max) * 100}%`;
+      fill.setAttribute('aria-hidden', 'true');
+      track.append(fill);
+    }
+    box.append(track);
+  }
+  if (progress.hint) box.append(ui.el('p', progress.hint, 'beast-skill-meter-hint'));
+  row.append(box);
+}
+
+function appendSkillDetails(ui, row, skill) {
+  if (!skill.details?.length) return;
+  const details = ui.el('details', undefined, 'beast-skill-details');
+  details.append(ui.el('summary', 'Thưởng và phạt được tính thế nào?'));
+  for (const text of skill.details) details.append(ui.el('p', text));
+  row.append(details);
+}
+
 export function beastAbilities(ui, data, beast, form = beastProgress(data, beast).form, panel) {
+  if (beastSkillsV2(data, beast)) return beastAbilitiesV2(ui, data, beast, form, panel);
   const p = beastProgress(data, beast),
     skills = data.config.skills[beast.speciesId];
   const section = ui.el('section', undefined, 'card beast-support');
@@ -135,6 +213,9 @@ export function beastAbilities(ui, data, beast, form = beastProgress(data, beast
     heading.append(ui.el('span', `T${form}`, 'beast-stage-badge'));
   }
   section.append(heading);
+  const transition = beastRoadmapSkillsV2(data, beast) && beastSkillTransitionV2(data);
+  if (transition)
+    section.append(ui.el('p', transition, 'beast-skill-context beast-skill-transition'));
   if (!current || preview || !panel)
     section.append(
       ui.el(
@@ -201,6 +282,7 @@ export function beastAbilities(ui, data, beast, form = beastProgress(data, beast
 }
 
 export function beastAbilityRoadmap(ui, data, beast) {
+  if (beastRoadmapSkillsV2(data, beast)) return beastRoadmapV2(ui, data, beast);
   const p = beastProgress(data, beast),
     skills = data.config.skills[beast.speciesId];
   const section = ui.el('section', undefined, 'beast-roadmap');
@@ -295,55 +377,163 @@ export function beastAbilityRoadmap(ui, data, beast) {
 }
 
 export function beastMilestones(ui, data, beast) {
+  if (beastSkillsV2(data, beast)) return beastMilestonesV2(ui, data, beast);
   const p = beastProgress(data, beast),
     skills = data.config.skills[p.species.id];
   const section = ui.el('section', undefined, 'beast-milestones');
   section.append(ui.el('h2', 'Khi luyện đầy T4'));
-  for (const [percent, name, description, opened, possible] of [
-    [
-      95,
-      skills.awakening.name,
-      beastSkillLabel(skills.awakening),
-      p.awakened,
-      beast.attempt.gray <= Math.floor(p.capacity / 20),
-    ],
-    [
-      100,
-      skills.ultimate.name,
-      beastUltimateText[skills.ultimate.kind],
-      p.perfect,
-      beast.attempt.gray === 0,
-    ],
+  for (const [percent, name, description, opened] of [
+    [95, skills.awakening.name, beastSkillLabel(skills.awakening), p.awakened],
+    [100, skills.ultimate.name, beastUltimateText[skills.ultimate.kind], p.perfect],
   ]) {
     const row = ui.el('div', undefined, 'beast-milestone' + (opened ? ' is-open' : ''));
     const copy = ui.el('div');
-    copy.append(
-      ui.el('span', percent === 95 ? 'Thức tỉnh' : 'Tuyệt kỹ hoàn mỹ', 'beast-skill-tier'),
-      ui.el(
-        'span',
-        opened
-          ? 'Đã mở'
-          : !possible || beast.attempt.status === 'sealed'
-            ? 'Không đạt trong lượt này'
-            : 'Luyện đầy T4 để mở',
-        'beast-milestone-status',
-      ),
-      ui.el('h3', name),
-      ui.el('p', description, 'hint'),
-    );
+    copy.append(ui.el('h3', name), ui.el('p', description, 'hint'));
     row.append(
-      ui.el('span', percent === 95 ? 'Độ thuần ≥ 95%' : 'Độ thuần 100%', 'beast-milestone-mark'),
+      ui.el('span', percent === 95 ? 'Thức tỉnh · ≥95%' : 'Hoàn mỹ · 100%', 'beast-milestone-mark'),
       copy,
     );
     section.append(row);
   }
+  section.append(ui.el('p', 'Mỗi tài khoản được kích hoạt một tuyệt kỹ mỗi tuần.', 'hint'));
+  return section;
+}
+
+function beastAbilitiesV2(ui, data, beast, form, panel) {
+  const p = beastProgress(data, beast),
+    skills = beastSkillsV2(data, beast);
+  const section = ui.el('section', undefined, 'card beast-support');
+  section.dataset.skillVersion = '2';
+  if (panel) section.dataset.panel = panel;
+  section.append(ui.el('h2', panel === 'companion' ? 'Năng lực đồng hành' : `Năng lực T${form}`));
+  const current = data.roles.current.some(
+    (role) =>
+      role.role === 'companion' && role.beastId === beast.id && role.attemptId === beast.attemptId,
+  );
+  const pending = data.roles.pending.some(
+    (role) =>
+      role.role === 'companion' && role.beastId === beast.id && role.attemptId === beast.attemptId,
+  );
+  if (!current || form !== p.form)
+    section.append(
+      ui.el(
+        'p',
+        form !== p.form
+          ? `Đang xem T${form} · Cá thể hiện ở T${p.form}`
+          : pending
+            ? 'Đồng hành có hiệu lực từ ngày mai'
+            : 'Chọn làm đồng hành để nhận hiệu ứng kỹ năng',
+        'beast-skill-context',
+      ),
+    );
+  if (skills.activity?.tasks)
+    section.append(
+      ui.el('p', 'Thiên phú xét 5 công việc hợp lệ đầu tiên mỗi ngày.', 'beast-skill-limit'),
+    );
+  const meters = current && form === p.form ? beastSkillProgressV2(data, beast) : {};
+  for (const skill of beastStageSkillsV2(skills, form)) {
+    const row = skillEntry(ui, skill, skill.description);
+    appendSkillProgress(ui, row, meters[skill.id], skill.name);
+    section.append(row);
+  }
+  if (form === p.form) {
+    for (const [skill, opened, label] of [
+      [skills.awakening, p.awakened, 'Thức tỉnh'],
+      [skills.perfect, p.perfect, 'Hoàn mỹ'],
+    ]) {
+      if (!opened) continue;
+      const row = skillEntry(ui, skill, skill.description);
+      row.prepend(ui.el('span', label, 'beast-skill-tier'));
+      appendSkillProgress(ui, row, meters[skill.id], skill.name);
+      section.append(row);
+    }
+    if (current) {
+      const progress = beastProgressV2(data, beast, p);
+      if (progress.length) {
+        const state = ui.el('div', undefined, 'beast-skill-progress');
+        state.setAttribute('aria-label', 'Tiến trình kỹ năng tự động');
+        for (const line of progress) state.append(ui.el('p', line, 'beast-skill-counter'));
+        section.append(state);
+      }
+    }
+  }
   section.append(
-    ui.el(
-      'p',
-      'Hoàn mỹ giữ cả Thức tỉnh. Mỗi tài khoản được kích hoạt một tuyệt kỹ mỗi tuần.',
-      'hint',
+    ui.button(
+      'Toàn bộ năng lực ›',
+      () => ui.showBeast(beast, undefined, true),
+      'text-button beast-abilities-link',
     ),
   );
+  return section;
+}
+
+function beastRoadmapV2(ui, data, beast) {
+  const p = beastProgress(data, beast),
+    skills = beastRoadmapSkillsV2(data, beast),
+    transition = beastSkillTransitionV2(data);
+  const section = ui.el('section', undefined, 'beast-roadmap');
+  section.dataset.skillVersion = '2';
+  section.setAttribute('aria-label', 'Năng lực qua từng mốc');
+  if (transition) {
+    section.dataset.skillPreview = 'true';
+    const notice = ui.el('p', transition, 'beast-skill-context beast-skill-transition');
+    notice.setAttribute('role', 'status');
+    section.append(ui.el('strong', 'Bộ kỹ năng mới đã chốt'), notice);
+  }
+  section.append(ui.el('p', skills.summary, 'beast-skill-description'));
+  if (skills.activity?.tasks)
+    section.append(
+      ui.el('p', 'Thiên phú xét 5 công việc hợp lệ đầu tiên mỗi ngày.', 'beast-skill-limit'),
+    );
+  const track = ui.el('div', undefined, 'beast-roadmap-track');
+  for (let form = 1; form <= 4; form++) {
+    const step = ui.el(
+      'section',
+      undefined,
+      'beast-roadmap-step' + (form === p.form ? ' is-current' : ''),
+    );
+    step.dataset.tier = String(form);
+    const header = ui.el('div', undefined, 'beast-roadmap-heading');
+    header.append(ui.el('h2', `T${form}`));
+    if (form === p.form)
+      header.append(
+        ui.el('span', transition ? 'Hình thái hiện tại' : 'Hiện tại', 'beast-stage-badge'),
+      );
+    else if (form < p.form) header.append(ui.el('span', 'Đã đạt', 'beast-roadmap-status'));
+    step.append(header);
+    for (const skill of beastStageSkillsV2(skills, form))
+      step.append(skillEntry(ui, skill, skill.description));
+    track.append(step);
+  }
+  track.append(beastMilestonesV2(ui, data, beast, skills));
+  section.append(track);
+  const rules = ui.el('details', undefined, 'beast-skill-rules');
+  rules.append(ui.el('summary', 'Quy ước chung'));
+  for (const text of beastRulesV2(skills)) rules.append(ui.el('p', text));
+  section.append(rules);
+  return section;
+}
+
+function beastMilestonesV2(ui, data, beast, roadmapSkills = null) {
+  const p = beastProgress(data, beast),
+    skills = roadmapSkills ?? beastSkillsV2(data, beast);
+  const section = ui.el('section', undefined, 'beast-milestones');
+  section.append(ui.el('h2', 'Luyện đầy T4 để mở các mốc độ thuần'));
+  for (const [percent, skill, opened] of [
+    [95, skills.awakening, p.awakened],
+    [100, skills.perfect, p.perfect],
+  ]) {
+    const row = ui.el('div', undefined, 'beast-milestone' + (opened ? ' is-open' : ''));
+    row.dataset.tier = String(percent);
+    const copy = ui.el('div');
+    copy.append(ui.el('h3', skill.name), ui.el('p', skill.description, 'hint'));
+    appendSkillDetails(ui, copy, skill);
+    row.append(
+      ui.el('span', percent === 95 ? 'Thức tỉnh · ≥95%' : 'Hoàn mỹ · 100%', 'beast-milestone-mark'),
+      copy,
+    );
+    section.append(row);
+  }
   return section;
 }
 
@@ -474,6 +664,12 @@ export function beastTrainingCard(ui, data, beast, pending = false) {
 // Keep decoded art and navigation nodes alive through role switches and refreshes.
 export function reconcileBeasts(current, next) {
   if (!current) return next;
+  // A shorter role panel must not clamp the scroll and move the retained portrait.
+  if (current.dataset.rolePanel && next.dataset.rolePanel && window.scrollY > 0) {
+    const bottomPadding = parseFloat(getComputedStyle(current.parentElement).paddingBottom) || 0;
+    const visibleTop = current.getBoundingClientRect().top;
+    current.style.minHeight = Math.max(0, window.innerHeight - visibleTop - bottomPadding) + 'px';
+  } else current.style.removeProperty('min-height');
   const retained = new Map();
   const oldProgress = current.querySelector(':scope > .beast-progress');
   const freshProgress = next.querySelector(':scope > .beast-progress');
@@ -572,11 +768,21 @@ export function renderBeasts(ui, state) {
   const head = heading('Linh thú', 'Một giao ước. Một hành trình.');
   head.querySelector('.subtitle')?.remove();
   const alchemy = state.beastData?.account.state.alchemy;
-  const furnace = button(
-    'Lò đan' + (alchemy ? ` · ${alchemy.days}/30` : ''),
-    ui.openBeastAlchemy,
-    'beast-alchemy-entry',
-  );
+  const furnace = button('', ui.openBeastAlchemy, 'beast-alchemy-entry');
+  const flask = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  flask.setAttribute('viewBox', '0 0 24 24');
+  flask.setAttribute('aria-hidden', 'true');
+  flask.setAttribute('focusable', 'false');
+  flask.setAttribute('fill', 'none');
+  flask.setAttribute('stroke', 'currentColor');
+  flask.setAttribute('stroke-width', '1.6');
+  flask.setAttribute('stroke-linecap', 'round');
+  flask.setAttribute('stroke-linejoin', 'round');
+  const flaskPath = document.createElementNS(flask.namespaceURI, 'path');
+  flaskPath.setAttribute('d', 'M9 3h6M10 3v6L5 18a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3M8 14h8');
+  flask.append(flaskPath);
+  furnace.append(flask, el('span', 'Lò đan'));
+  if (alchemy) furnace.append(el('span', ` · ${alchemy.days}/30`, 'beast-alchemy-entry-count'));
   furnace.disabled = !alchemy;
   head.append(furnace);
   const updating = el(
@@ -736,6 +942,8 @@ export function renderBeasts(ui, state) {
     ),
   );
   copy.append(el('h2', p.species.forms[p.form - 1]), meta);
+  const skillsV2 = beastSkillsV2(data, beast);
+  if (skillsV2) copy.append(el('p', skillsV2.summary, 'beast-skill-description'));
   if (p.awakened || p.perfect)
     copy.append(
       el(
@@ -829,6 +1037,8 @@ export function beastCollectionCard(ui, state, beast, options = {}) {
     data = state.beastData,
     p = beastProgress(data, beast);
   const wrapper = el('div', undefined, 'beast-collection-item');
+  wrapper.classList.toggle('is-picker', !!options.onSelect);
+  wrapper.classList.toggle('is-selected', !!options.selected);
   const b = button('', () => (options.onSelect ?? ui.showBeast)(beast), 'beast-collection-card');
   b.dataset.rank = p.species.rank;
   b.dataset.beastId = beast.id;
@@ -838,36 +1048,52 @@ export function beastCollectionCard(ui, state, beast, options = {}) {
     b.disabled = !!options.blockedReason || state.beastBusy || ui.beastPending();
   }
   const heading = el('span', undefined, 'beast-card-heading');
-  heading.append(el('span', p.species.rank, 'beast-card-rank'));
+  heading.append(
+    el('span', p.species.rank, 'beast-card-rank'),
+    el('span', beastIdentity(beast), 'beast-card-number'),
+  );
   b.append(
     heading,
     image(ui, p.species, p.form, true, p.perfect, p.awakened),
     el('strong', p.species.forms[p.form - 1]),
-    el('small', beastIdentity(beast) + ' · ' + beastPurityLabel(p)),
     el(
       'small',
-      `Dạng ${p.form} · ${beast.attempt.status === 'sealed' ? 'Đã khóa lượt' : beast.attempt.status === 'completed' ? 'Hoàn tất' : beast.attempt.status === 'training' ? 'Đang luyện' : 'Chưa luyện'}`,
+      `T${p.form} · ${beast.attempt.status === 'sealed' ? 'Đã khóa lượt' : beast.attempt.status === 'completed' ? 'Hoàn tất' : beast.attempt.status === 'training' ? 'Đang luyện' : 'Chưa luyện'}`,
+      'beast-card-stage',
     ),
   );
+  if (!options.onSelect) b.append(el('small', beastPurityLabel(p), 'beast-card-purity'));
   const roles = data.roles.current.filter(
     (role) => role.beastId === beast.id && role.attemptId === beast.attemptId,
   );
-  if (roles.length)
+  if (!options.onSelect)
     b.append(
       el(
         'small',
-        roles.map((role) => (role.role === 'training' ? 'Đang luyện' : 'Đồng hành')).join(' · '),
-        'beast-card-roles',
+        roles.length
+          ? roles.map((role) => (role.role === 'training' ? 'Đang luyện' : 'Đồng hành')).join(' · ')
+          : 'Chưa nhận vai trò',
+        'beast-card-roles' + (roles.length ? '' : ' is-idle'),
       ),
     );
-  if (options.onSelect)
-    b.append(
+  if (options.onSelect) {
+    const selection = el('small', undefined, 'beast-card-selection');
+    selection.classList.toggle('is-blocked', !!options.blockedReason);
+    const check = el(
+      'span',
+      options.blockedReason ? '·' : options.selected ? '✓' : '',
+      'beast-card-check',
+    );
+    check.setAttribute('aria-hidden', 'true');
+    selection.append(
+      check,
       el(
-        'small',
-        options.blockedReason || `${options.selected ? '✓ Đã chọn · ' : ''}${options.points} điểm`,
-        'beast-card-selection',
+        'span',
+        options.blockedReason || `${options.selected ? 'Đã chọn · ' : ''}${options.points} điểm`,
       ),
     );
+    b.append(selection);
+  }
   const star = beastProtectionButton(ui, state, beast);
   if (options.onSelect) {
     star.disabled = true;
@@ -890,15 +1116,34 @@ function collection(ui, state, root) {
   const beasts = state.beastSpeciesPage?.beasts ?? [];
   const selectedSpecies = beastSpecies(data, state.beastCollectionSpecies);
   if (!selectedSpecies) return speciesCollection(ui, state, root);
-  const label = el('div', undefined, 'beast-collection-heading');
-  label.append(
-    el('h2', selectedSpecies.title),
-    el('span', `${data.speciesCounts?.[selectedSpecies.id] ?? 0} cá thể`, 'hint'),
+  const label = el('div', undefined, 'beast-collection-heading beast-species-heading');
+  const meta = el('div', undefined, 'beast-species-meta');
+  meta.dataset.rank = selectedSpecies.rank;
+  meta.append(
+    el('span', selectedSpecies.rank, 'beast-species-rank'),
+    el('span', `· ${data.speciesCounts?.[selectedSpecies.id] ?? 0} cá thể đang sở hữu`, 'hint'),
   );
+  label.append(el('h2', selectedSpecies.title), meta);
   root.append(
     button('‹ Bộ sưu tập', () => ui.openBeastSpecies(null), 'text-button beast-collection-back'),
     label,
   );
+  const representative = data.collectionOverview?.[selectedSpecies.id]?.best;
+  const knownForm = Math.max(
+    data.discoveries?.[selectedSpecies.id]?.form ?? 1,
+    representative ? beastProgress(data, representative).form : 1,
+    ...beasts.map((entry) => beastProgress(data, entry).form),
+  );
+  const discovery = el('div', undefined, 'beast-species-discovery');
+  const steps = el('div', undefined, 'beast-discovery-steps');
+  steps.setAttribute('aria-hidden', 'true');
+  for (let form = 1; form <= 4; form++) {
+    steps.append(
+      el('span', undefined, 'beast-discovery-step' + (form <= knownForm ? ' is-known' : '')),
+    );
+  }
+  discovery.append(el('p', `Đã khám phá ${knownForm}/4 dạng`), steps);
+  root.append(discovery);
   const grid = el('div', undefined, 'beast-collection-grid');
   for (const beast of beasts.filter((entry) => entry.speciesId === selectedSpecies.id)) {
     grid.append(beastCollectionCard(ui, state, beast));
@@ -935,16 +1180,23 @@ function speciesCollection(ui, state, root) {
   const { el, button } = ui,
     data = state.beastData;
   const catalog = data.config.catalog;
+  const discoveredCount = catalog.filter(
+    (species) => (data.speciesCounts?.[species.id] ?? 0) > 0 || !!data.discoveries?.[species.id],
+  ).length;
   const label = el('div', undefined, 'beast-collection-heading');
-  label.append(
-    el('h2', 'Bộ sưu tập'),
-    el(
-      'span',
-      `${new Set([...Object.keys(data.speciesCounts ?? {}), ...Object.keys(data.discoveries ?? {})]).size}/${catalog.length} loài`,
-      'hint',
-    ),
-  );
-  root.append(label);
+  const count = el('span', undefined, 'beast-catalog-count');
+  count.append(el('strong', String(discoveredCount)), el('span', `/${catalog.length} loài`));
+  label.append(el('h2', 'Bộ sưu tập'), count);
+  const progress = el('div', undefined, 'beast-catalog-track');
+  progress.setAttribute('role', 'progressbar');
+  progress.setAttribute('aria-label', 'Số loài đã khám phá');
+  progress.setAttribute('aria-valuemin', '0');
+  progress.setAttribute('aria-valuemax', String(catalog.length));
+  progress.setAttribute('aria-valuenow', String(discoveredCount));
+  const fill = el('span');
+  fill.style.width = (catalog.length ? (100 * discoveredCount) / catalog.length : 0) + '%';
+  progress.append(fill);
+  root.append(label, progress);
   const atlas = el('div', undefined, 'beast-atlas');
   for (const species of catalog) {
     const count = data.speciesCounts?.[species.id] ?? 0;
@@ -955,8 +1207,11 @@ function speciesCollection(ui, state, root) {
       'beast-atlas-entry' + (discovered ? '' : ' is-unowned'),
     );
     entry.disabled = !discovered;
+    const rankLabel = el('span', discovered ? species.rank : '', 'beast-atlas-rank');
+    rankLabel.setAttribute('aria-hidden', 'true');
+    entry.append(rankLabel);
+    if (discovered) entry.dataset.rank = species.rank;
     if (count) {
-      entry.dataset.rank = species.rank;
       entry.dataset.species = species.id;
       const representative = data.collectionOverview?.[species.id]?.best;
       const best = representative && beastProgress(data, representative);
@@ -968,9 +1223,13 @@ function speciesCollection(ui, state, root) {
       } else {
         entry.append(paw(el), el('strong', 'Đang tải…'));
       }
-      entry.append(el('small', `${species.rank} · ${count} cá thể`));
+      const metadata = el('small');
+      metadata.append(
+        el('span', `${species.rank} · `, 'beast-atlas-meta-rank'),
+        document.createTextNode(`${count} cá thể`),
+      );
+      entry.append(metadata);
     } else if (discovered) {
-      entry.dataset.rank = species.rank;
       entry.dataset.species = species.id;
       entry.append(
         image(ui, species, data.discoveries[species.id].form, true),
@@ -978,12 +1237,17 @@ function speciesCollection(ui, state, root) {
         el('small', 'Đã khám phá · 0 cá thể'),
       );
     } else {
-      entry.append(paw(el), el('strong', 'Chưa khám phá'));
+      const unknown = el('small', '· · ·');
+      unknown.setAttribute('aria-hidden', 'true');
+      entry.append(paw(el), el('strong', 'Chưa khám phá'), unknown);
       entry.setAttribute('aria-label', 'Linh thú chưa khám phá');
     }
     atlas.append(entry);
   }
-  root.append(atlas);
+  root.append(
+    atlas,
+    el('p', 'Mỗi giao ước, thêm một dấu mốc trên hành trình.', 'beast-catalog-note'),
+  );
   return root;
 }
 function paw(el) {

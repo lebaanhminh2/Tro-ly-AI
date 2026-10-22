@@ -35,6 +35,8 @@ for (const individuals of [24, 2400]) {
       store = new D1BeastStore(db);
     await healthy.read('123');
     await store.initialize('123', 20745, now);
+    // Retain the legacy runtime benchmark; v2 has its own runtime benchmark.
+    raw.exec("UPDATE beast_v2_runtime SET cutover_day=1000000 WHERE owner='123'");
     raw.exec('BEGIN');
     for (let i = 0; i < individuals; i++) {
       raw
@@ -198,6 +200,7 @@ for (const [job, pendingSleep] of [
       habits = new D1HabitStore(db);
     await schedule.configure('123', '05:30', '23:15', 0, now - DAY);
     await store.initialize('123', day, now);
+    raw.exec("UPDATE beast_v2_runtime SET cutover_day=1000000 WHERE owner='123'");
     await healthy.read('123');
     for (let index = 0; index < 30; index++)
       await new HabitService(habits).execute(

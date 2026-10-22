@@ -64,6 +64,13 @@ async function summon(browser) {
 }
 
 async function pinnedHeader(browser, label) {
+  assert.equal(
+    await browser.evaluate(
+      "getComputedStyle(document.querySelector('.sheet-title-row')).borderBottomWidth",
+    ),
+    '1px',
+    label + ' shared header separator',
+  );
   const before = await browser.evaluate(frame);
   const scrolled = await browser.evaluate(`(() => {
     const nodes = [...document.querySelectorAll('#sheet, #sheet-content, #sheet-content *')];

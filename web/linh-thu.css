@@ -21,6 +21,7 @@
   position: relative;
   align-items: center;
   gap: 12px;
+  margin: 5px 0 13px;
 }
 .beast-updating {
   position: absolute;
@@ -31,21 +32,40 @@
   pointer-events: none;
 }
 .beast-page > .heading h1 {
-  font-size: 27px;
+  font-size: 25px;
+  letter-spacing: -0.8px;
 }
-.beast-page > .heading .subtitle {
-  max-width: 240px;
-}
-.beast-alchemy-entry {
+/* Keep the entry independent of the shared heading's generic action-button styles. */
+#content > .beast-page > .heading > button.beast-alchemy-entry {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   flex-shrink: 0;
-  border: 1px solid var(--line);
-  background: var(--surface);
-  color: var(--accent);
-  border-radius: 16px;
-  padding: 12px;
-  font-size: 11px;
-  font-weight: 700;
   min-height: 44px;
+  max-width: 100%;
+  margin: 0 0 0 auto;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  border-radius: 10px;
+  padding: 8px 0;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.beast-alchemy-entry > svg {
+  width: 17px;
+  height: 17px;
+  flex: none;
+  color: var(--accent);
+}
+.beast-alchemy-entry-count {
+  font-variant-numeric: tabular-nums;
+}
+.beast-alchemy-entry:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
 }
 .beast-tabs {
   display: grid;
@@ -455,8 +475,101 @@
   margin: 0;
 }
 .beast-collection-heading {
-  margin: 24px 0 18px;
+  margin: 23px 0 12px;
   flex-wrap: wrap;
+}
+.beast-collection-heading h2 {
+  font-size: 19px;
+  letter-spacing: -0.4px;
+}
+.beast-catalog-count {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.beast-catalog-count strong {
+  font-size: 16px;
+  font-weight: 650;
+  color: var(--accent);
+}
+.beast-catalog-track {
+  height: 3px;
+  margin: 0 0 18px;
+  background: var(--line);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.beast-catalog-track > span {
+  display: block;
+  height: 100%;
+  background: color-mix(in srgb, var(--accent) 70%, var(--surface));
+  border-radius: inherit;
+}
+.beast-species-heading {
+  display: block;
+  margin: 2px 0 0;
+}
+.beast-species-heading h2 {
+  font-size: 21px;
+  line-height: 1.3;
+  text-wrap: balance;
+}
+.beast-species-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 9px;
+}
+.beast-species-meta .hint {
+  margin: 0;
+  font-size: 12px;
+}
+.beast-species-rank {
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--rank-color) 10%, var(--surface));
+  color: color-mix(in srgb, var(--rank-color) 80%, var(--text));
+  font-size: 10px;
+  font-weight: 750;
+}
+.beast-species-discovery {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  margin: 19px 0 21px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+}
+.beast-species-discovery p {
+  margin: 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+.beast-discovery-steps {
+  display: flex;
+  flex-shrink: 0;
+  gap: 5px;
+}
+.beast-discovery-step {
+  width: 21px;
+  height: 4px;
+  border-radius: 3px;
+  background: var(--line);
+}
+.beast-discovery-step.is-known {
+  background: color-mix(in srgb, var(--accent) 70%, var(--surface));
+}
+.beast-catalog-note {
+  margin: 20px 7px 0;
+  font-size: 11px;
+  line-height: 1.7;
+  text-align: center;
+  color: var(--muted);
 }
 .beast-progress-heading {
   flex-wrap: wrap;
@@ -467,10 +580,7 @@
 .beast-collection-grid {
   display: grid;
   font-size: 14px;
-  grid-template-columns: repeat(
-    auto-fit,
-    minmax(min(100%, max(8em, calc((100% - 36px) / 4))), 1fr)
-  );
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 .beast-collection-item {
@@ -491,9 +601,16 @@
 .beast-card-heading {
   display: flex;
   align-items: center;
-  min-height: 30px;
+  justify-content: space-between;
+  gap: 5px;
+  min-height: 32px;
   padding-right: 34px;
-  margin-bottom: 4px;
+  margin-bottom: 1px;
+}
+.beast-card-number {
+  font-size: 10px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
 }
 .beast-card-heading > .beast-card-rank {
   line-height: 1.2;
@@ -534,8 +651,8 @@
 }
 .beast-collection-item > .beast-protection {
   position: absolute;
-  top: 4px;
-  right: 4px;
+  top: 0;
+  right: 0;
 }
 .beast-protection.is-protected {
   color: #b98525;
@@ -635,7 +752,7 @@ dialog#sheet.beast-exchange-sheet {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 5px;
   padding: 4px;
-  margin: 18px 0;
+  margin: 2px 0 11px;
   border-radius: 13px;
   background: var(--soft);
 }
@@ -676,7 +793,7 @@ dialog#sheet.beast-exchange-sheet {
   flex: 0 0 auto;
 }
 .beast-sacrifice h3 {
-  margin: 18px 0 12px;
+  margin: 3px 0 13px;
   font-size: 16px;
 }
 .beast-sacrifice-balance {
@@ -690,15 +807,16 @@ dialog#sheet.beast-exchange-sheet {
   margin-bottom: 12px;
 }
 .beast-sacrifice-filters {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1.25fr repeat(4, minmax(0, 1fr));
   gap: 6px;
-  margin: 12px 0;
+  margin: 0 0 13px;
 }
 .beast-sacrifice-filters button {
   min-height: 44px;
-  flex: 1 1 auto;
-  padding: 8px 10px;
+  min-width: 0;
+  padding: 7px 3px;
+  font-size: 11px;
 }
 .beast-sacrifice-filters button[aria-pressed='true'] {
   background: var(--soft);
@@ -706,16 +824,47 @@ dialog#sheet.beast-exchange-sheet {
   border-color: var(--accent);
 }
 .beast-sacrifice .beast-collection-grid {
-  margin: 14px 0;
+  gap: 10px;
+  margin: 0 0 14px;
   align-items: stretch;
+}
+.beast-sacrifice .beast-atlas {
+  margin: 0 0 14px;
 }
 .beast-sacrifice .beast-collection-item {
   display: flex;
   flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  overflow: hidden;
+  background: var(--surface);
+}
+.beast-sacrifice .beast-collection-item.is-selected {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 5%, var(--surface));
+  box-shadow: inset 0 0 0 1px var(--accent);
 }
 .beast-sacrifice .beast-collection-card {
   flex: 1;
   height: auto;
+  padding: 10px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.beast-sacrifice .beast-card-heading {
+  min-height: 28px;
+}
+.beast-sacrifice .beast-collection-card img {
+  width: 72px;
+  height: 72px;
+  margin: 5px 0 6px;
+}
+.beast-sacrifice .beast-collection-card strong {
+  font-size: 12px;
+}
+.beast-sacrifice .beast-card-stage {
+  margin: 3px 0 7px;
 }
 .beast-collection-card.is-selected {
   border-color: var(--accent);
@@ -723,41 +872,86 @@ dialog#sheet.beast-exchange-sheet {
   box-shadow: inset 0 0 0 1px var(--accent);
 }
 .beast-sacrifice .beast-collection-card:disabled {
-  opacity: 0.65;
+  opacity: 1;
+}
+.beast-sacrifice .beast-collection-card:disabled img {
+  opacity: 0.5;
+}
+.beast-sacrifice .beast-collection-card.is-selected {
+  background: transparent;
+  box-shadow: none;
 }
 .beast-card-details {
   min-height: 44px;
   width: 100%;
-  font-size: 12px;
+  font-size: 11px;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  padding: 8px;
 }
 .beast-sacrifice .beast-card-selection {
-  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 27px;
+  margin-top: auto;
+  line-height: 1.4;
+  font-size: 11px;
   color: var(--accent);
-  font-weight: 600;
+  font-weight: 500;
+}
+.beast-card-check {
+  display: grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  flex: 0 0 17px;
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--line));
+  border-radius: 5px;
+}
+.is-selected .beast-card-check {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--surface);
+}
+.beast-sacrifice .beast-card-selection.is-blocked {
+  font-size: 10px;
+  color: var(--muted);
+}
+.beast-card-selection.is-blocked .beast-card-check {
+  width: 10px;
+  flex-basis: 10px;
+  border: 0;
 }
 .beast-sacrifice-footer {
   flex: 0 0 auto;
   margin-top: 0;
-  padding: 14px 0 max(16px, env(safe-area-inset-bottom));
+  padding: 11px 0 max(16px, env(safe-area-inset-bottom));
   background: var(--surface);
   border-top: 1px solid var(--line);
-  box-shadow: 0 -10px 20px color-mix(in srgb, var(--surface) 90%, transparent);
 }
 .beast-sacrifice-footer p {
-  margin: 0 0 6px;
+  margin: 0;
   overflow-wrap: anywhere;
 }
 .beast-sacrifice-total,
 .beast-sacrifice-result {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
 }
 .beast-sacrifice-result {
+  font-size: inherit;
   color: var(--accent);
+}
+.beast-sacrifice-footer .beast-sacrifice-quote {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.55;
 }
 .beast-sacrifice-submit {
   width: 100%;
-  min-height: 46px;
+  min-height: 44px;
   margin-top: 8px;
 }
 .beast-sacrifice-warning {
@@ -804,20 +998,20 @@ dialog#sheet.beast-exchange-sheet {
   position: relative;
   min-width: 0;
   border: 1px solid var(--line);
-  border-top: 2px solid var(--rank-color);
-  border-radius: 19px;
+  border-radius: 18px;
   background: var(--surface);
-  padding: 14px;
+  padding: 10px 12px 12px;
   color: var(--text);
   text-align: left;
 }
 .beast-collection-card img {
-  width: 100%;
-  max-width: 160px;
+  width: 96px;
+  max-width: 100%;
   align-self: center;
-  height: auto;
+  height: 96px;
   aspect-ratio: 1;
   object-fit: contain;
+  margin: 1px 0 6px;
 }
 .beast-card-rank {
   font-size: 10px;
@@ -826,8 +1020,8 @@ dialog#sheet.beast-exchange-sheet {
 }
 .beast-collection-card strong {
   display: block;
-  font-size: 14px;
-  margin: 4px 0;
+  font-size: 13px;
+  margin: 0;
   overflow-wrap: normal;
   line-height: 1.4;
   min-height: 2.8em;
@@ -836,13 +1030,32 @@ dialog#sheet.beast-exchange-sheet {
 .beast-collection-card small {
   display: block;
   font-size: 10px;
-  line-height: 1.8;
+  line-height: 1.6;
   color: var(--muted);
   overflow-wrap: anywhere;
 }
 .beast-collection-card .beast-card-roles {
+  display: flex;
+  align-items: center;
+  min-height: 22px;
+  margin-top: 6px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  background: var(--soft);
+  font-size: 9px;
+  line-height: 1.4;
   color: var(--accent);
-  font-weight: 600;
+  font-weight: 500;
+}
+.beast-collection-card .beast-card-roles.is-idle {
+  color: var(--muted);
+  background: color-mix(in srgb, var(--muted) 5%, var(--surface));
+}
+.beast-card-stage {
+  margin-top: 4px;
+}
+.beast-collection-card :is(.beast-card-stage, .beast-card-purity) {
+  font-size: 11px;
 }
 .beast-collection-back {
   min-height: 44px;
@@ -851,12 +1064,9 @@ dialog#sheet.beast-exchange-sheet {
 .beast-atlas {
   display: grid;
   font-size: 12px;
-  grid-template-columns: repeat(
-    auto-fit,
-    minmax(min(100%, max(8em, calc((100% - 24px) / 4))), 1fr)
-  );
-  gap: 8px;
-  margin: 16px 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px 8px;
+  margin: 0;
 }
 .beast-atlas h2 {
   grid-column: 1/-1;
@@ -866,22 +1076,56 @@ dialog#sheet.beast-exchange-sheet {
 .beast-atlas-entry {
   min-width: 0;
   text-align: center;
-  padding: 9px 3px;
-  border-radius: 15px;
+  padding: 10px 6px 11px;
+  min-height: 153px;
+  border-radius: 17px;
   background: var(--surface);
   border: 1px solid var(--line);
   color: var(--text);
   display: flex;
   flex-direction: column;
-  align-items: stretch;
+  align-items: center;
   justify-content: flex-start;
 }
-.beast-atlas-entry:not(:disabled) {
-  border-top: 2px solid var(--rank-color);
+.beast-atlas-rank {
+  align-self: flex-start;
+  margin-left: 3px;
+  color: color-mix(in srgb, var(--rank-color) 80%, var(--muted));
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: 0.3px;
+  line-height: 16px;
+  min-height: 16px;
+}
+.beast-atlas-meta-rank {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 .beast-atlas-entry.is-unowned {
   opacity: 1;
   cursor: default;
+  background: color-mix(in srgb, var(--muted) 3%, var(--surface));
+}
+.beast-atlas-entry.is-unowned .beast-atlas-rank {
+  opacity: 0.65;
+}
+.beast-atlas-entry > .beast-paw {
+  width: 80px;
+  max-width: 100%;
+  height: 77px;
+  margin: 1px 0 4px;
+  aspect-ratio: auto;
+  flex-shrink: 0;
+}
+.beast-atlas-entry > .beast-paw svg {
+  width: 35px;
+  height: 35px;
 }
 .beast-paw {
   display: grid;
@@ -895,12 +1139,14 @@ dialog#sheet.beast-exchange-sheet {
   height: auto;
 }
 .beast-atlas-entry img {
-  width: 100%;
-  max-width: 160px;
+  width: 80px;
+  max-width: 100%;
   align-self: center;
   aspect-ratio: 1;
-  height: auto;
+  height: 77px;
   object-fit: contain;
+  margin: 1px 0 4px;
+  flex-shrink: 0;
 }
 .beast-atlas-entry.is-unowned img {
   filter: grayscale(1) brightness(0.65);
@@ -908,6 +1154,8 @@ dialog#sheet.beast-exchange-sheet {
 }
 .beast-atlas-entry.is-unowned strong {
   color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 500;
 }
 .beast-atlas-entry strong,
 .beast-atlas-entry small {
@@ -918,36 +1166,31 @@ dialog#sheet.beast-exchange-sheet {
 .beast-atlas-entry strong {
   display: grid;
   place-items: center;
-  flex: 1;
-  font-size: 12px;
-  min-height: 4.5em;
-  line-height: 1.5;
+  width: 100%;
+  font-size: 11px;
+  min-height: 2.7em;
+  line-height: 1.35;
   overflow-wrap: normal;
   text-wrap: balance;
 }
 .beast-atlas-entry small {
   color: var(--muted);
   font-size: 9px;
-  margin: 5px 0;
+  margin: 4px 0 0;
+  line-height: 1.55;
+}
+@media (min-width: 900px) {
+  .beast-page > :is(.beast-atlas, .beast-collection-grid) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (max-width: 360px) {
+  .beast-atlas-entry {
+    padding-inline: 2px;
+  }
 }
 
 /* Approved v22: a compact light panel, with the existing application accent. */
-.beast-page > .heading {
-  margin: 5px 0 13px;
-}
-.beast-page > .heading h1 {
-  font-size: 25px;
-  letter-spacing: -0.8px;
-}
-.beast-page > .heading .subtitle {
-  display: none;
-}
-.beast-page .beast-alchemy-entry {
-  min-height: 38px;
-  padding: 8px 10px;
-  border-radius: 12px;
-  font-size: 10px;
-}
 .beast-page .beast-tabs {
   margin: 13px 0 16px;
   padding: 4px;
@@ -1376,18 +1619,22 @@ dialog#sheet.beast-exchange-sheet {
   .beast-page {
     container-type: inline-size;
   }
-  .beast-page > .heading h1 {
+  .app-ready #content > .beast-page > .heading {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    padding-right: 52px;
+  }
+  .app-ready.browser-session #content > .beast-page > .heading {
+    padding-right: 100px;
+  }
+  .app-ready #content > .beast-page > .heading h1,
+  .app-ready.browser-session #content > .beast-page > .heading h1 {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding-right: 0;
     font-size: var(--page-title-size);
     letter-spacing: -0.6px;
-  }
-  .beast-page .beast-alchemy-entry {
-    min-height: 44px;
-    font-size: 12px;
-    border: 0;
-    padding: 10px 0;
-    background: transparent;
-    border-radius: 0;
-    color: var(--muted);
   }
   .beast-page .beast-tabs {
     margin: 0 0 16px;
@@ -2434,10 +2681,6 @@ dialog.beast-reveal {
   .beast-tab {
     font-size: 10px;
   }
-  .beast-alchemy-entry {
-    font-size: 10px;
-    padding: 10px;
-  }
   .beast-hero-copy h2 {
     font-size: 27px;
   }
@@ -2474,13 +2717,24 @@ dialog#sheet.beast-sheet-open:has(.tower-experience)::backdrop {
   background: #241f3b66;
   backdrop-filter: blur(4px);
 }
+dialog#sheet.beast-sheet-open:has(.tower-experience) #sheet-content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+dialog#sheet.beast-sheet-open:has(.tower-experience) #sheet-feedback {
+  flex: 0 0 auto;
+}
 dialog#sheet.beast-sheet-open:has(.tower-experience) .sheet-handle {
   display: none;
 }
 dialog#sheet.beast-sheet-open:has(.tower-experience) .sheet-title-row {
+  flex: 0 0 auto;
   margin: 0 0 24px;
-  padding: 0;
-  border: 0;
+  padding: 0 0 12px;
+  border-bottom: 1px solid var(--line);
   align-items: center;
 }
 dialog#sheet.beast-sheet-open:has(.tower-experience) .sheet-title-row h2 {
@@ -2512,6 +2766,8 @@ dialog#sheet.beast-sheet-open:has(.tower-experience) .sheet-title-row .icon-butt
   --tower-trap-ink: #a35651;
   --tower-trap-border: #e7c7bb;
   display: grid;
+  flex: 1 1 auto;
+  min-height: 0;
   gap: 18px;
   padding: 0;
   border: 0;
@@ -3126,10 +3382,26 @@ button.tower-card {
   max-width: 144px;
 }
 .tower-experience.has-run {
-  grid-template-rows: auto auto 1fr 62px minmax(34px, auto);
+  grid-template-rows: auto auto minmax(0, 1fr) minmax(62px, auto) minmax(34px, auto);
+}
+.tower-experience.has-run > .tower-stage {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 .tower-experience.has-run > .tower-actions {
+  position: relative;
   min-height: 62px;
+}
+.tower-experience.has-run > .tower-actions::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -9px;
+  height: 1px;
+  background: var(--line);
 }
 .tower-experience.has-run > .tower-actions:empty {
   display: grid;
@@ -3144,11 +3416,6 @@ button.tower-card {
 .tower-experience.has-run > .tower-footnote:empty {
   display: block;
   visibility: hidden;
-}
-@media (max-width: 699px) {
-  .tower-experience.has-run {
-    min-height: calc(100dvh - 114px);
-  }
 }
 @keyframes tower-loss-ring {
   0% {
@@ -3439,43 +3706,37 @@ html[data-motion='reduce'] .tower-card .tower-crack {
   margin-top: 24px;
 }
 .beast-milestone {
-  display: grid;
-  grid-template-columns: 48px minmax(0, 1fr);
-  gap: 12px;
-  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
   padding: 17px 0;
   border-bottom: 1px solid var(--line);
 }
 .beast-milestone-mark {
-  display: grid;
-  place-items: center;
-  width: 46px;
-  height: 46px;
-  border-radius: 14px;
+  display: inline-block;
+  padding: 5px 9px;
+  border-radius: 7px;
   background: color-mix(in srgb, var(--muted) 9%, var(--surface));
   color: var(--muted);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
+  line-height: 1.5;
 }
 .beast-milestone.is-open .beast-milestone-mark {
   background: var(--soft);
   color: var(--accent);
 }
-.beast-milestone-status {
-  color: var(--muted);
-  font-size: 10px;
-}
-.beast-milestone.is-open .beast-milestone-status {
-  color: var(--accent);
-}
 .beast-milestone h3 {
-  margin: 5px 0 7px;
-  font-size: 14px;
+  margin: 0 0 6px;
+  font-size: 15px;
+  line-height: 1.5;
 }
 .beast-milestones .hint {
-  font-size: 12px;
-  line-height: 1.8;
+  font-size: 14px;
+  line-height: 1.75;
   margin: 0;
+  color: var(--text);
 }
 .beast-milestones > .hint {
   margin-top: 12px;
@@ -4035,6 +4296,55 @@ html[data-motion='reduce'] .beast-progress-track * {
   font-size: 13px;
   line-height: 1.7;
 }
+.beast-skill-meter {
+  margin-top: 12px;
+  max-width: 100%;
+}
+.beast-skill-meter-label {
+  margin: 0 0 7px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.beast-skill-meter-track {
+  display: flex;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--line);
+}
+.beast-skill-meter-track.is-segmented {
+  gap: 4px;
+  background: transparent;
+}
+.beast-skill-meter-track.is-segmented > span {
+  flex: 1;
+  min-width: 0;
+  border-radius: 3px;
+  background: var(--line);
+}
+.beast-skill-meter-fill,
+.beast-skill-meter-track.is-segmented > .is-filled {
+  background: var(--accent);
+}
+.beast-skill-meter[data-status='ready'] .beast-skill-meter-label {
+  color: var(--accent);
+}
+.beast-skill-meter[data-status='done'] .beast-skill-meter-label {
+  color: var(--muted);
+}
+.beast-skill-meter-hint {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.beast-skill-meter[data-kind='status'] .beast-skill-meter-label {
+  margin-bottom: 0;
+}
 .beast-abilities-link {
   display: block;
   width: 100%;
@@ -4065,6 +4375,35 @@ html[data-motion='reduce'] .beast-progress-track * {
 .beast-upgrade-copy {
   margin-top: 4px;
 }
+.beast-upgrade-name {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+}
+.beast-upgrade-badge {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+}
+.beast-upgrade-change {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  margin: 5px 0 0;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--muted);
+}
+.beast-upgrade-change strong {
+  color: var(--accent);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.evolution-gain .beast-upgrade-change strong {
+  color: var(--evolution-color);
+}
 .beast-stage-numbers {
   margin-top: 10px;
 }
@@ -4089,35 +4428,12 @@ html[data-motion='reduce'] .beast-progress-track * {
 .beast-progress[data-evolution-state='blocked'] {
   border-left: 3px solid var(--gold);
 }
-.beast-milestone {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 10px;
-}
-.beast-milestone-mark {
-  display: inline-block;
-  width: auto;
-  height: auto;
-  padding: 5px 9px;
-  border-radius: 7px;
-  font-size: 12px;
-}
-.beast-milestone-status {
-  font-size: 12px;
-}
-.beast-milestones .hint {
-  font-size: 14px;
-  line-height: 1.75;
-}
 .beast-milestones > .hint {
   font-size: 12px;
-}
-.beast-milestone h3 {
-  font-size: 15px;
+  color: var(--muted);
 }
 .beast-roadmap-intro {
-  margin: 0 0 24px;
+  margin: 0 0 10px;
   font-size: 13px;
   line-height: 1.7;
   color: var(--muted);
@@ -4187,7 +4503,8 @@ html[data-motion='reduce'] .beast-progress-track * {
   padding: 0 0 25px 22px;
   margin-left: 5px;
 }
-.beast-roadmap-step::before {
+.beast-roadmap-step::before,
+.beast-roadmap > .beast-milestones > .beast-milestone::before {
   content: '';
   position: absolute;
   left: -6px;
@@ -4197,7 +4514,8 @@ html[data-motion='reduce'] .beast-progress-track * {
   border-radius: 50%;
   background: var(--line);
 }
-.beast-roadmap-step.is-current::before {
+.beast-roadmap-step.is-current::before,
+.beast-roadmap > .beast-milestones > .beast-milestone.is-open::before {
   background: var(--accent);
   box-shadow: 0 0 0 4px var(--soft);
 }
@@ -4224,10 +4542,131 @@ html[data-motion='reduce'] .beast-progress-track * {
 }
 .beast-roadmap > .beast-milestones {
   margin-top: 0;
-  padding-left: 28px;
 }
 .beast-roadmap > .beast-milestones > h2 {
-  display: none;
+  margin: 0 0 18px 28px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+  font-weight: 500;
+}
+.beast-roadmap > .beast-milestones > .beast-milestone {
+  position: relative;
+  margin-left: 5px;
+  padding: 0 0 24px 22px;
+  border-left: 2px solid var(--line);
+  border-bottom: 0;
+}
+.beast-roadmap > .beast-milestones > .beast-milestone:last-child {
+  border-left-color: transparent;
+  padding-bottom: 0;
+}
+.beast-roadmap-track {
+  position: relative;
+  font-size: 16px;
+}
+.beast-roadmap-track::before {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 0.75em;
+  bottom: 0;
+  width: 2px;
+  background: var(--line);
+}
+.beast-roadmap-track > .beast-roadmap-step {
+  border: 0;
+  margin-left: 0;
+  padding-left: 28px;
+}
+.beast-roadmap-track > .beast-roadmap-step::before {
+  content: none;
+}
+.beast-roadmap-track .beast-roadmap-heading {
+  position: relative;
+}
+.beast-roadmap-track .beast-roadmap-heading::before,
+.beast-roadmap-track .beast-milestone-mark::before {
+  content: '';
+  position: absolute;
+  left: -27px;
+  top: calc(50% - 5px);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--line);
+  z-index: 1;
+}
+.beast-roadmap-track .is-current > .beast-roadmap-heading::before,
+.beast-roadmap-track .is-open > .beast-milestone-mark::before {
+  background: var(--accent);
+  box-shadow: 0 0 0 4px var(--soft);
+}
+.beast-roadmap-track > .beast-milestones {
+  margin-top: 0;
+}
+.beast-roadmap-track > .beast-milestones > h2 {
+  margin: 0 0 18px 28px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+  font-weight: 500;
+}
+.beast-roadmap-track .beast-milestone {
+  position: relative;
+  padding: 0 0 24px 28px;
+  border: 0;
+  font-size: 12px;
+}
+.beast-roadmap-track .beast-milestone-mark {
+  position: relative;
+  font-size: inherit;
+}
+.beast-roadmap-track .beast-milestone-mark::before {
+  left: -28px;
+}
+.beast-roadmap-track .beast-milestone:last-child {
+  padding-bottom: 0;
+}
+.beast-roadmap-track .beast-milestone:last-child::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: calc(0.75em + 6px);
+  bottom: 0;
+  width: 2px;
+  background: var(--surface);
+}
+.beast-roadmap[data-skill-version='2'] > .beast-skill-description {
+  margin-bottom: 24px;
+  color: var(--muted);
+  font-size: 14px;
+}
+.beast-support[data-skill-version='2'] > h2 {
+  margin-bottom: 16px;
+}
+.beast-support[data-skill-version='2'] > .beast-skill-limit {
+  margin: 0 0 16px;
+}
+.beast-roadmap[data-skill-version='2'] > .beast-skill-limit {
+  margin: -14px 0 24px;
+}
+.beast-skill-details {
+  margin-top: 8px;
+  color: var(--muted);
+}
+.beast-skill-details summary {
+  min-height: 44px;
+  padding: 10px 0;
+  box-sizing: border-box;
+  font-size: 13px;
+  line-height: 1.7;
+  cursor: pointer;
+}
+.beast-skill-details p {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.75;
 }
 .beast-skill-rules {
   border-top: 1px solid var(--line);
@@ -4250,6 +4689,7 @@ html[data-motion='reduce'] .beast-progress-track * {
   box-shadow: none;
 }
 .beast-abilities-link:focus-visible,
+.beast-skill-details summary:focus-visible,
 .beast-skill-rules summary:focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: 3px;

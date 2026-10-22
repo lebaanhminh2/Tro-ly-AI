@@ -73,9 +73,11 @@ export const BEAST_SACRIFICE_BLOCK_SQL = `CASE
     WHERE c.owner=b.owner AND c.resolved_at IS NULL) THEN 'Còn lựa chọn thưởng chưa hoàn tất'
   WHEN EXISTS(SELECT 1 FROM schedule_days d JOIN beast_accounts ba ON ba.owner=d.owner
     WHERE d.owner=b.owner AND d.day>=ba.activated_day AND d.day<ctx.day
-    AND (NOT EXISTS(SELECT 1 FROM beast_day_settlements s WHERE s.owner=d.owner AND s.day=d.day)
-      OR NOT EXISTS(SELECT 1 FROM sleep_assessments s WHERE s.owner=d.owner AND s.day=d.day)
-      OR NOT EXISTS(SELECT 1 FROM beast_skill_events e WHERE e.owner=d.owner AND e.kind='combined' AND e.source_id=CAST(d.day AS TEXT)))
+    AND (CASE WHEN EXISTS(SELECT 1 FROM beast_v2_runtime rt WHERE rt.owner=d.owner AND d.day>=rt.cutover_day)
+      THEN NOT EXISTS(SELECT 1 FROM beast_v2_days v WHERE v.owner=d.owner AND v.day=d.day AND v.settled=1)
+      ELSE (NOT EXISTS(SELECT 1 FROM beast_day_settlements s WHERE s.owner=d.owner AND s.day=d.day)
+        OR NOT EXISTS(SELECT 1 FROM sleep_assessments s WHERE s.owner=d.owner AND s.day=d.day)
+        OR NOT EXISTS(SELECT 1 FROM beast_skill_events e WHERE e.owner=d.owner AND e.kind='combined' AND e.source_id=CAST(d.day AS TEXT))) END)
     AND EXISTS(SELECT 1 FROM beast_roles r WHERE r.owner=b.owner AND r.beast_id=b.id
       AND r.effective_day=(SELECT MAX(effective_day) FROM beast_roles WHERE owner=r.owner AND role=r.role AND effective_day<=d.day)))
     THEN 'Còn ngày chưa quyết toán'
@@ -92,13 +94,24 @@ export class D1BeastReader {
   async read(owner: string): Promise<BeastSnapshot> {
     const row = await query(
       this.db,
-      'SELECT state_json,version,activated_day FROM beast_accounts WHERE owner=?',
+      `SELECT ba.state_json,ba.version,ba.activated_day,rt.cutover_day
+       FROM beast_accounts ba LEFT JOIN beast_v2_runtime rt ON rt.owner=ba.owner WHERE ba.owner=?`,
       owner,
-    ).first<{ state_json: string; version: number; activated_day: number }>();
+    ).first<{
+      state_json: string;
+      version: number;
+      activated_day: number;
+      cutover_day: number | null;
+    }>();
     if (!row) return { state: initialBeastAccount(), version: 0, activatedDay: null };
     const state = JSON.parse(row.state_json) as BeastAccount;
     validBeastAccount(state);
-    return { state, version: row.version, activatedDay: row.activated_day };
+    return {
+      state,
+      version: row.version,
+      activatedDay: row.activated_day,
+      skillCutoverDay: row.cutover_day,
+    };
   }
 
   async collection(

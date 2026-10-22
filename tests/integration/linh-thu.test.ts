@@ -469,6 +469,15 @@ async function perfectCompanion(db: Database, store: D1BeastStore, speciesId: st
     )
     .bind(day, 'b_' + id, 'a_' + id, now)
     .run();
+  // Establish fixture cutover metadata before rollback snapshots are taken;
+  // production lazy bootstrap is metadata-only and otherwise appears as an
+  // unrelated first-read change during the deliberately failing transaction.
+  await db
+    .prepare(
+      "INSERT OR IGNORE INTO beast_v2_runtime(owner,cutover_day,updated) VALUES('123',1000000,?)",
+    )
+    .bind(now)
+    .run();
   return 'b_' + id;
 }
 async function fixture() {
@@ -484,6 +493,13 @@ async function fixture() {
     .filter((file) => file.endsWith('.sql'))
     .sort())
     await db.exec(readFileSync(`migrations/${file}`, 'utf8').replace(/\r?\n/g, ' '));
+  // This suite is the retained v1 contract (weekly activation, paid choices and
+  // old quotas). Keep its world explicitly before cutover, even when a tested
+  // route initializes runtime lazily. V2 default/cutover behavior is exercised
+  // separately by linh-thu-v2-* suites; do not alter any v1 expected rewards.
+  await db.exec(
+    'CREATE TRIGGER legacy_fixture_before_v2 AFTER INSERT ON beast_v2_runtime BEGIN UPDATE beast_v2_runtime SET cutover_day=1000000 WHERE owner=NEW.owner; END;',
+  );
   const healthy = new HealthyStore(db);
   await healthy.mutate('123', 'seed_beasts_001', 'fixture', {}, now, (state) => ({
     state: { ...state, tickets: 400 },

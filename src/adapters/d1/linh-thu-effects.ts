@@ -14,6 +14,13 @@ import { D1BeastReader } from './linh-thu-reader.ts';
 import { query, type Database, type Statement } from './database.ts';
 import { habitWeekStart } from '../../domain/habits.ts';
 import type { BeastAttempt } from '../../domain/linh-thu-training.ts';
+import { readBeastV2Context, beastV2AttemptContext } from './linh-thu-v2-context.ts';
+import {
+  initialBeastV2State,
+  beastV2Multiplier,
+  type BeastV2State,
+} from '../../domain/linh-thu-v2.ts';
+import { prepareBeastV2Effect } from './linh-thu-v2-effects.ts';
 
 export function creditBeastReward(
   healthy: HealthyState,
@@ -41,6 +48,42 @@ export async function prepareBeastEffect(
   random: () => number,
   attemptOverride?: BeastAttempt,
 ) {
+  const v2 = await readBeastV2Context(db, owner, event.day, now);
+  if (v2?.active) {
+    if (event.kind === 'fusion')
+      return prepareBeastV2Effect(
+        db,
+        owner,
+        {
+          kind: 'fusion',
+          day: event.day,
+          success: !!event.success,
+          from: event.fusionTier as 'basic' | 'middle' | 'high',
+        },
+        event.sourceId,
+        now,
+        random,
+        { context: v2 },
+      );
+    if (event.kind === 'breakthrough')
+      return prepareBeastV2Effect(
+        db,
+        owner,
+        {
+          kind: 'breakthrough',
+          day: event.day,
+          success: !!event.success,
+          lostQi: event.actualQiLoss ?? 0,
+        },
+        event.sourceId,
+        now,
+        random,
+        { context: v2 },
+      );
+    // Daily skill sources wait for the complete closed day and the undo window.
+    // Never fall through to v1 merely because a v2 event has no immediate reward.
+    return null;
+  }
   const store = new D1BeastReader(db);
   const account = await store.read(owner);
   if (account.activatedDay === null || event.day < account.activatedDay) return null;
@@ -176,6 +219,17 @@ export async function prepareBeastSleepEffect(
 ) {
   if (healthy.suspended || (healthy.lastScoredDay !== null && healthy.lastScoredDay >= input.day))
     return null;
+  const v2 = await readBeastV2Context(db, owner, input.day, input.assessedAt);
+  if (v2?.active)
+    return prepareBeastV2Effect(
+      db,
+      owner,
+      { kind: 'source_sleep', day: input.day },
+      String(input.day),
+      input.assessedAt,
+      random,
+      { context: v2 },
+    );
   const prior = await query(
     db,
     "SELECT result_json FROM beast_skill_events WHERE owner=? AND kind='sleep' AND source_id=?",
@@ -216,14 +270,90 @@ export async function prepareBeastTaskEffect(
   taskId: string,
   now: number,
   random: () => number,
+  source?: { day: number; at: number; beastSourceJson?: string | null },
 ) {
-  const day = await query(
-    db,
-    'SELECT day,start_at,end_at FROM schedule_days WHERE owner=? AND start_at<=? AND end_at>? ORDER BY day DESC LIMIT 1',
-    owner,
-    now,
-    now,
-  ).first<{ day: number; start_at: number; end_at: number }>();
+  const sourceAt = source?.at ?? now;
+  const readDay = () =>
+    query(
+      db,
+      'SELECT day,start_at,end_at FROM schedule_days WHERE owner=? AND start_at<=? AND end_at>? ORDER BY day DESC LIMIT 1',
+      owner,
+      sourceAt,
+      sourceAt,
+    ).first<{ day: number; start_at: number; end_at: number }>();
+  let day = source ? null : await readDay();
+  const sourceDay = source?.day ?? day?.day;
+  if (sourceDay === undefined) return null;
+  const v2 = await readBeastV2Context(db, owner, sourceDay, now);
+  if (v2?.active && source) {
+    const saved = Object.hasOwn(source, 'beastSourceJson')
+      ? { beast_source_json: source.beastSourceJson }
+      : await query(
+          db,
+          'SELECT beast_source_json FROM task_completions WHERE owner=? AND task_id=?',
+          owner,
+          taskId,
+        ).first<{ beast_source_json: string | null }>();
+    if (saved?.beast_source_json) {
+      const original = JSON.parse(saved.beast_source_json) as {
+        day: number;
+        beastId: string | null;
+        attemptId: string | null;
+        attempt: BeastAttempt | null;
+      };
+      if (original.day !== sourceDay) throw Error('BEAST_SOURCE_DAY_CHANGED');
+      if (!original.attempt || !original.beastId || !original.attemptId) v2.beast = null;
+      else {
+        const state =
+          v2.beast?.attemptId === original.attemptId
+            ? v2.beast.state
+            : (
+                await query(
+                  db,
+                  'SELECT state_json FROM beast_v2_states WHERE owner=? AND attempt_id=?',
+                  owner,
+                  original.attemptId,
+                ).first<{ state_json: string }>()
+              )?.state_json;
+        v2.beast = {
+          id: original.beastId,
+          attemptId: original.attemptId,
+          attempt: original.attempt,
+          skills: beastV2AttemptContext(original.attempt),
+          state:
+            typeof state === 'string'
+              ? (JSON.parse(state) as BeastV2State)
+              : (state ?? initialBeastV2State()),
+        };
+      }
+      if (!v2.snapshotExists)
+        v2.snapshot = {
+          ...v2.snapshot,
+          beastId: original.beastId,
+          attemptId: original.attemptId,
+          attempt: original.attempt,
+          multiplier: v2.beast
+            ? beastV2Multiplier(v2.beast.skills, v2.snapshot.startSleepStreak)
+            : 1,
+        };
+    }
+  }
+  if (v2?.active)
+    return prepareBeastV2Effect(
+      db,
+      owner,
+      {
+        kind: 'task',
+        day: sourceDay,
+        ordinal: v2.taskCount + 1,
+        localMinute: Math.floor(((sourceAt + 7 * 3600000) % 86400000) / 60000),
+      },
+      taskId,
+      now,
+      random,
+      { context: v2 },
+    );
+  day ??= await readDay();
   if (!day) return null;
   const count = await query(
     db,

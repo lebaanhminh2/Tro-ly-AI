@@ -7,6 +7,8 @@ import { query } from './database.ts';
 import { HealthyStore } from './healthy-store.ts';
 import { D1HabitStore } from './habit-store.ts';
 import { D1BeastReader, BEAST_SACRIFICE_BLOCK_SQL } from './linh-thu-reader.ts';
+import { initializeBeastV2Runtime, readBeastV2Context } from './linh-thu-v2-context.ts';
+import { beastV2TowerEligible } from '../../domain/linh-thu-v2.ts';
 
 /** Coordinates assessed habit state and guarded, receipt-backed mutations. */
 export class D1BeastStore extends D1BeastReader implements BeastStore {
@@ -20,15 +22,29 @@ export class D1BeastStore extends D1BeastReader implements BeastStore {
       now,
       now,
     ).run();
+    await initializeBeastV2Runtime(this.db, owner, day, now);
   }
 
   async assessedHabitDay(owner: string, day: number, now: number) {
     const assessed = await new D1HabitStore(this.db).assessedDay(owner, day, now);
+    const active = assessed.ready
+      ? await query(
+          this.db,
+          `SELECT COUNT(*) AS total FROM habit_outcomes WHERE owner=? AND day=?
+       AND reason NOT IN('not_started','archived')`,
+          owner,
+          day,
+        ).first<{ total: number }>()
+      : null;
     return assessed.ready
       ? {
           ready: true,
           version: assessed.version,
           outcomes: assessed.outcomes.map((entry) => entry.status),
+          habitSatisfied: !assessed.outcomes.some((entry) => entry.status === 'missed'),
+          habitRewardEligible:
+            (active?.total ?? 0) > 0 &&
+            !assessed.outcomes.some((entry) => entry.status === 'missed'),
         }
       : { ready: false };
   }
@@ -55,13 +71,19 @@ export class D1BeastStore extends D1BeastReader implements BeastStore {
       today.day.startAt,
       today.day.endAt,
     ).first<{ id: string }>();
-    const rescue = await query(
-      this.db,
-      "SELECT beast_id FROM beast_ultimates WHERE owner=? AND activated_at<=? AND expires_at>? AND json_extract(state_json,'$.kind')='tower_rescue' AND COALESCE(json_extract(state_json,'$.cancelled'),0)=0 LIMIT 1",
-      owner,
-      now,
-      now,
-    ).first<{ beast_id: string }>();
+    const context = await readBeastV2Context(this.db, owner, today.day.day, now);
+    const v2Rescue = context?.active && context.beast && beastV2TowerEligible(context.beast.skills);
+    const rescue = context?.active
+      ? v2Rescue
+        ? { beast_id: context.beast!.id }
+        : null
+      : await query(
+          this.db,
+          "SELECT beast_id FROM beast_ultimates WHERE owner=? AND activated_at<=? AND expires_at>? AND json_extract(state_json,'$.kind')='tower_rescue' AND COALESCE(json_extract(state_json,'$.cancelled'),0)=0 LIMIT 1",
+          owner,
+          now,
+          now,
+        ).first<{ beast_id: string }>();
     return {
       day: today.day.day,
       startAt: today.day.startAt,
@@ -73,6 +95,8 @@ export class D1BeastStore extends D1BeastReader implements BeastStore {
       eligible: achieved > 0 && missed === 0 && task !== null,
       rescueAvailable: rescue !== null,
       rescueBeastId: rescue?.beast_id ?? null,
+      skillVersion: context?.active ? (2 as const) : (1 as const),
+      rewardMultiplier: context?.active ? context.snapshot.multiplier : (1 as const),
     };
   }
 
@@ -108,8 +132,14 @@ export class D1BeastStore extends D1BeastReader implements BeastStore {
         receiptOperation,
         input,
         now,
-        (currentHealthy) => {
+        async (currentHealthy) => {
           const outcome = apply(snapshot, currentHealthy);
+          // A same-day reset rewrites companion roles. Latch the original day
+          // before that rewrite, even if no wallet source has occurred yet.
+          const latch =
+            outcome.newAttempts?.length || operation === 'evolve' || outcome.tower?.version === 0
+              ? await readBeastV2Context(this.db, owner, day, now)
+              : null;
           validBeastAccount(outcome.state);
           const statements = [
             query(
@@ -129,6 +159,41 @@ export class D1BeastStore extends D1BeastReader implements BeastStore {
               now,
             ),
           ];
+          if (snapshot.version === 0)
+            statements.push(
+              query(
+                this.db,
+                `INSERT INTO beast_v2_runtime(owner,cutover_day,updated) VALUES(?,?,?)
+               ON CONFLICT(owner) DO NOTHING`,
+                owner,
+                day,
+                now,
+              ),
+            );
+          if (latch?.active && !latch.snapshotExists)
+            statements.unshift(
+              query(
+                this.db,
+                'INSERT INTO transaction_guard SELECT CASE WHEN (SELECT version FROM beast_v2_runtime WHERE owner=?)=? THEN 1 ELSE 0 END',
+                owner,
+                latch.runtime.version,
+              ),
+              query(
+                this.db,
+                'UPDATE beast_v2_runtime SET version=version+1,updated=? WHERE owner=?',
+                now,
+                owner,
+              ),
+              query(
+                this.db,
+                `INSERT INTO beast_v2_days(owner,day,snapshot_json,updated) VALUES(?,?,?,?)
+               ON CONFLICT(owner,day) DO NOTHING`,
+                owner,
+                day,
+                JSON.stringify(latch.snapshot),
+                now,
+              ),
+            );
           if (deadline !== undefined) {
             const commitNow = now + Math.max(0, Date.now() - started);
             if (!Number.isSafeInteger(deadline) || commitNow >= deadline)

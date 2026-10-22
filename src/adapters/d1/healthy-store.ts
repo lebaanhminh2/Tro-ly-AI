@@ -3,10 +3,13 @@ import {
   initialHealthy,
   assessSleep,
   claimDailyReward,
+  operatingDay,
   type SleepAssessment,
   type HealthyState,
 } from '../../domain/healthy.ts';
-import { prepareBeastSleepEffect } from './linh-thu-effects.ts';
+import { prepareBeastSleepEffect, prepareBeastTaskEffect } from './linh-thu-effects.ts';
+import { prepareBeastV2Effect } from './linh-thu-v2-effects.ts';
+import { multiplyBeastV2Reward } from './linh-thu-v2-context.ts';
 import type { MiniAppTiming } from '../observability.ts';
 
 type Account = { state_json: string; version: number };
@@ -66,7 +69,7 @@ export class HealthyStore {
     operation: string,
     input: unknown,
     now: number,
-    apply: (state: HealthyState) => Mutation<T>,
+    apply: (state: HealthyState) => Mutation<T> | Promise<Mutation<T>>,
   ): Promise<T> {
     return (await this.mutateWithAccount(owner, id, operation, input, now, apply)).result;
   }
@@ -180,7 +183,10 @@ export class HealthyStore {
           ...(effect.protectQi ? { peaceDay: input.day } : {}),
         }
       : state;
-    const outcome = assessSleep(guarded, input);
+    const outcome = assessSleep(guarded, {
+      ...input,
+      rewardMultiplier: effect && 'multiplier' in effect ? effect.multiplier : 1,
+    });
     const baseState = outcome.state;
     const next = outcome.applied && effect ? effect.apply(baseState) : baseState;
     const result = { applied: outcome.applied, delta: outcome.delta, demoted: outcome.demoted };
@@ -238,97 +244,231 @@ export class HealthyStore {
     );
   }
   async checkIn(owner: string, id: string, input: unknown, now: number) {
-    return this.mutate(owner, id, 'daily-checkin', input, now, (state) => {
-      const r = claimDailyReward(state, now);
-      return {
-        state: r.state,
-        result: { dailyReward: r.reward, calendarDay: r.calendarDay },
-        statements: [
-          query(
-            this.db,
-            'INSERT INTO daily_checkins(owner,day,cycle_start_day,reward_day,reward_json,created) VALUES(?,?,?,?,?,?)',
-            owner,
-            r.calendarDay,
-            r.cycleStartDay,
-            r.reward.day,
-            JSON.stringify(r.reward),
-            now,
-          ),
-        ],
-      };
-    });
+    return (
+      await this.mutateWithAccount(owner, id, 'daily-checkin', input, now, async (state) => {
+        const r = claimDailyReward(state, now);
+        const sourceDay = await this.skillDayAt(owner, now);
+        const effect = await prepareBeastV2Effect(
+          this.db,
+          owner,
+          { kind: 'reward', day: sourceDay },
+          'checkin:' + r.calendarDay,
+          now,
+          () => crypto.getRandomValues(new Uint32Array(1))[0]! / 4294967296,
+          { extraEarned: r.reward },
+        );
+        // claimDailyReward updates calendar progress and credits base amounts.
+        // Keep the progress, replace the credit with the single classified credit.
+        const next = effect
+          ? effect.apply({
+              ...r.state,
+              qi: state.qi,
+              earned: state.earned,
+              tickets: state.tickets,
+              inventory: { ...state.inventory },
+            })
+          : r.state;
+        const reward = effect ? multiplyBeastV2Reward(r.reward, effect.multiplier) : r.reward;
+        return {
+          state: next,
+          result: { dailyReward: reward, calendarDay: r.calendarDay },
+          statements: [
+            query(
+              this.db,
+              'INSERT INTO daily_checkins(owner,day,cycle_start_day,reward_day,reward_json,created) VALUES(?,?,?,?,?,?)',
+              owner,
+              r.calendarDay,
+              r.cycleStartDay,
+              r.reward.day,
+              JSON.stringify(reward),
+              now,
+            ),
+            ...(effect?.statements ?? []),
+          ],
+        };
+      })
+    ).result;
+  }
+  private async skillDayAt(owner: string, at: number): Promise<number> {
+    const row = await query(
+      this.db,
+      `SELECT start_minutes,(SELECT day FROM schedule_days WHERE owner=s.owner
+       AND start_at<=? AND end_at>? ORDER BY day DESC LIMIT 1) AS day
+       FROM schedule_settings s WHERE owner=?`,
+      at,
+      at,
+      owner,
+    ).first<{ start_minutes: number; day: number | null }>();
+    return row?.day ?? operatingDay(at, row?.start_minutes ?? 0);
   }
   // Join the habit log's guarded batch. SQL updates the current balance, so a
   // concurrent task reward/check-in cannot be overwritten by a stale snapshot.
-  prepareHabitTicket(owner: string, habitId: string, day: number, weekStart: number, now: number) {
-    return [
-      query(
-        this.db,
-        'INSERT INTO habit_ticket_awards(owner,habit_id,day,week_start,created) VALUES(?,?,?,?,?)',
-        owner,
-        habitId,
-        day,
-        weekStart,
-        now,
-      ),
-      query(
-        this.db,
-        `INSERT INTO cultivation_accounts(owner,state_json,updated) VALUES(?,?,?)
+  async prepareHabitTicket(
+    owner: string,
+    habitId: string,
+    day: number,
+    weekStart: number,
+    now: number,
+  ) {
+    const effect = await prepareBeastV2Effect(
+      this.db,
+      owner,
+      { kind: 'reward', day },
+      'habit:' + habitId + ':' + day,
+      now,
+      () => crypto.getRandomValues(new Uint32Array(1))[0]! / 4294967296,
+      { extraEarned: { tickets: 1 } },
+    );
+    const ticketAwarded = effect?.reward.tickets ?? 1;
+    return {
+      ticketAwarded,
+      statements: [
+        query(
+          this.db,
+          'INSERT INTO habit_ticket_awards(owner,habit_id,day,week_start,created) VALUES(?,?,?,?,?)',
+          owner,
+          habitId,
+          day,
+          weekStart,
+          now,
+        ),
+        query(
+          this.db,
+          `INSERT INTO cultivation_accounts(owner,state_json,updated) VALUES(?,?,?)
          ON CONFLICT(owner) DO UPDATE SET
-         state_json=json_set(cultivation_accounts.state_json,'$.tickets',COALESCE(json_extract(cultivation_accounts.state_json,'$.tickets'),0)+1),
+         state_json=json_set(cultivation_accounts.state_json,'$.tickets',COALESCE(json_extract(cultivation_accounts.state_json,'$.tickets'),0)+?),
          version=cultivation_accounts.version+1,updated=excluded.updated`,
-        owner,
-        JSON.stringify({ ...initialHealthy(), tickets: 1 }),
-        now,
-      ),
-    ];
+          owner,
+          JSON.stringify({ ...initialHealthy(), tickets: ticketAwarded }),
+          now,
+          ticketAwarded,
+        ),
+        ...(effect?.statements ?? []),
+      ],
+    };
   }
   async awardTask(owner: string, taskId: string, now: number) {
-    return this.mutate(owner, 'ticket:' + taskId, 'task-ticket', { taskId }, now, (state) => {
-      const next = { ...state, tickets: state.tickets + 1 };
-      return {
-        state: next,
-        result: { ticket: 1 },
-        statements: [
-          query(
+    return this.awardTaskFromSource(owner, taskId, now);
+  }
+  private async awardTaskFromSource(
+    owner: string,
+    taskId: string,
+    now: number,
+    selected?: {
+      version: number;
+      completed_at: number;
+      source_day: number | null;
+      beast_source_json: string | null;
+    },
+  ) {
+    return (
+      await this.mutateWithAccount(
+        owner,
+        'ticket:' + taskId,
+        'task-ticket',
+        { taskId },
+        now,
+        async (state) => {
+          if (state.suspended) throw Error('CULTIVATION_SUSPENDED');
+          const task =
+            selected ??
+            (await query(
+              this.db,
+              `SELECT t.version,COALESCE(c.completed_at,t.created) AS completed_at FROM tasks t
+         LEFT JOIN task_completions c ON c.owner=t.owner AND c.task_id=t.id
+         WHERE t.owner=? AND t.id=? AND t.status='completed' AND t.deleted_at IS NULL`,
+              owner,
+              taskId,
+            ).first<{ version: number; completed_at: number }>());
+          if (!task) throw Error('TASK_NOT_COMPLETED');
+          const sourceDay =
+            selected?.source_day ?? (await this.skillDayAt(owner, task.completed_at));
+          const source = {
+            day: sourceDay,
+            at: task.completed_at,
+            ...(selected ? { beastSourceJson: selected.beast_source_json } : {}),
+          };
+          const effect = await prepareBeastTaskEffect(
             this.db,
-            "INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM tasks WHERE owner=? AND id=? AND status='completed' AND deleted_at IS NULL) THEN 1 ELSE 0 END",
-            owner,
-            taskId,
-          ),
-          query(
-            this.db,
-            'INSERT INTO task_ticket_awards(owner,task_id,created) VALUES(?,?,?)',
             owner,
             taskId,
             now,
-          ),
-        ],
-      };
-    });
+            () => crypto.getRandomValues(new Uint32Array(1))[0]! / 4294967296,
+            source,
+          );
+          const ticket = effect && 'multiplier' in effect ? effect.multiplier : 1;
+          const base = { ...state, tickets: state.tickets + ticket };
+          const next = effect ? effect.apply(base) : base;
+          return {
+            state: next,
+            result: { ticket, ...(effect ? { beastEffect: effect.result } : {}) },
+            statements: [
+              query(
+                this.db,
+                "INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM tasks WHERE owner=? AND id=? AND version=? AND status='completed' AND deleted_at IS NULL) AND EXISTS(SELECT 1 FROM schedule_settings WHERE owner=? AND sleep_minutes IS NOT NULL) THEN 1 ELSE 0 END",
+                owner,
+                taskId,
+                task.version,
+                owner,
+              ),
+              query(
+                this.db,
+                'INSERT INTO task_ticket_awards(owner,task_id,created) VALUES(?,?,?)',
+                owner,
+                taskId,
+                task.completed_at,
+              ),
+              ...(effect?.statements ?? []),
+            ],
+          };
+        },
+      )
+    ).result;
   }
   async syncTaskTickets(owner: string, now: number) {
     if (!/^\d+$/.test(owner)) throw Error('INVALID_LEDGER_REQUEST');
     const current = await this.read(owner);
     if (current.state.suspended) return;
-    const setup = await query(
-      this.db,
-      'SELECT owner FROM schedule_settings WHERE owner=? AND sleep_minutes IS NOT NULL',
-      owner,
-    ).first();
+    let setup: { owner: string; cutover_day: number | null } | null;
+    try {
+      setup = await query(
+        this.db,
+        `SELECT s.owner,v.cutover_day FROM schedule_settings s LEFT JOIN beast_v2_runtime v ON v.owner=s.owner
+         WHERE s.owner=? AND s.sleep_minutes IS NOT NULL`,
+        owner,
+      ).first<{ owner: string; cutover_day: number | null }>();
+    } catch (error) {
+      // Historical migration checks still run the healthy-only schema. Only a
+      // genuinely absent v2 table selects that compatibility path.
+      if (!String(error).includes('no such table: beast_v2_runtime')) throw error;
+      const legacy = await query(
+        this.db,
+        'SELECT owner FROM schedule_settings WHERE owner=? AND sleep_minutes IS NOT NULL',
+        owner,
+      ).first<{ owner: string }>();
+      setup = legacy ? { ...legacy, cutover_day: null } : null;
+    }
     if (!setup) return;
     const tasks = (
       await query(
         this.db,
-        `SELECT t.id,t.version,r.operation,r.request_json FROM tasks t
+        `SELECT t.id,t.version,r.operation,r.request_json,
+         COALESCE(c.completed_at,t.created) AS completed_at,
+         (SELECT day FROM schedule_days WHERE owner=t.owner AND start_at<=COALESCE(c.completed_at,t.created)
+          AND end_at>COALESCE(c.completed_at,t.created) ORDER BY day DESC LIMIT 1) AS source_day,
+         ${setup.cutover_day === null ? 'NULL' : 'c.beast_source_json'} AS beast_source_json FROM tasks t
+         LEFT JOIN task_completions c ON c.owner=t.owner AND c.task_id=t.id
          LEFT JOIN cultivation_receipts r ON r.owner=t.owner AND r.request_id='ticket:'||t.id
          WHERE t.owner=? AND t.status='completed' AND t.deleted_at IS NULL
          AND NOT EXISTS(SELECT 1 FROM task_ticket_awards a WHERE a.owner=t.owner AND a.task_id=t.id)
-         ORDER BY t.created,t.id LIMIT 25`,
+         ORDER BY COALESCE(c.completed_at,t.created),t.id LIMIT 25`,
         owner,
       ).all<{
         id: string;
         version: number;
+        completed_at: number;
+        source_day: number | null;
+        beast_source_json: string | null;
         operation: string | null;
         request_json: string | null;
       }>()
@@ -344,6 +484,12 @@ export class HealthyStore {
       return false;
     });
     if (!pending.length) return;
+    if (setup.cutover_day !== null) {
+      // One source per invocation reserves query budget for the remaining cron
+      // jobs. Later invocations drain the ordered backlog without replaying it.
+      await this.awardTaskFromSource(owner, pending[0]!.id, now, pending[0]!);
+      return;
+    }
     const rows = JSON.stringify(
       pending.map((task) => ({
         id: task.id,

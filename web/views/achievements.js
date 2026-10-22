@@ -454,7 +454,9 @@ export function renderAchievements(ui, state) {
     const qi = Math.max(0, Number(c.qi ?? 0)),
       percent = next.qi > 0 ? Math.round((100 * qi) / next.qi) : 100,
       surplus = Math.max(0, qi - next.qi),
-      penalty = (state.breakthroughPenalties ?? breakthroughPenalties)[c.rank];
+      modifier = state.live && state.beastV2?.active ? state.beastV2.breakthrough : null,
+      basePenalty = (state.breakthroughPenalties ?? breakthroughPenalties)[c.rank],
+      penalty = modifier?.preventLoss ? 0 : basePenalty * (modifier?.penaltyMultiplier ?? 1);
     const target = card('breakthrough-card');
     target.append(el('p', 'ĐỘT PHÁ TIẾP THEO', 'eyebrow'), el('h2', next.name));
     const metric = el('div', undefined, 'breakthrough-metric');

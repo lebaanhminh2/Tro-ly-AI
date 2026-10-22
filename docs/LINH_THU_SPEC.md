@@ -1,5 +1,7 @@
 # Linh thú — tổng hợp thiết kế và quyết định
 
+> **Đợt cân bằng v2 ngày 22/10/2026:** đã triển khai local theo [đặc tả v2](LINH_THU_V2_SPEC.md), xem [kết quả kiểm chứng](LINH_THU_V2_VERIFICATION.md) và [vận hành/migration](LINH_THU_V2_OPERATIONS.md). Chưa phát hành remote. Tài liệu này giữ bối cảnh v1 và các luật ngoài phạm vi thay đổi.
+
 **Cập nhật 21/10/2026:** đã triển khai cục bộ cơ chế tiến hóa chủ động, khám phá ngoại hình và thanh tiến độ theo từng T; chưa phát hành thay đổi này. Khi phát hành cần áp dụng migration `0042_linh_thu_evolution.sql` trước runtime mới. Các ghi nhận phát hành ngày 19/10 bên dưới chỉ nói về phiên bản trước.
 
 Cập nhật 21/10/2026. Đặc tả các quyết định còn hiệu lực về luyện linh thú, triệu hồi, tháp và kỹ năng. Runtime có 18 loài/108 ảnh; mã nguồn hiện có migrations đến 0042. Lần phát hành đầu ngày 19/10 được ghi riêng trong [hồ sơ lịch sử](LINH_THU_RELEASE.md); trạng thái mã nguồn và giới hạn kiểm chứng ở [nghiệm thu](LINH_THU_ACCEPTANCE.md). Ảnh 95%/100% dùng tạm theo yêu cầu, có thể chỉnh riêng sau.

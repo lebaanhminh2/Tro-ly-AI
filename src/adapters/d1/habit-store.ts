@@ -421,16 +421,15 @@ export class D1HabitStore implements HabitStore {
       if (
         await this.ticketEligible(owner, snapshot.habit, day.day, snapshot.log.value, change.value)
       ) {
-        statements.push(
-          ...new HealthyStore(this.db).prepareHabitTicket(
-            owner,
-            change.habitId,
-            day.day,
-            habitWeekStart(day.day),
-            now,
-          ),
+        const ticket = await new HealthyStore(this.db).prepareHabitTicket(
+          owner,
+          change.habitId,
+          day.day,
+          habitWeekStart(day.day),
+          now,
         );
-        result.ticketAwarded = 1;
+        statements.push(...ticket.statements);
+        result.ticketAwarded = ticket.ticketAwarded as 0 | 1 | 3;
       }
     }
     if (

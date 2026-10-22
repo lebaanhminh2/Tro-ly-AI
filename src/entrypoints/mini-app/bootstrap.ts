@@ -13,6 +13,8 @@ import {
   REALMS,
 } from '../../domain/healthy.ts';
 import { json, type MiniAppContext } from './context.ts';
+import { readBeastV2Context } from '../../adapters/d1/linh-thu-v2-context.ts';
+import { beastV2BreakthroughModifier, BEAST_V2_SELF_BURN_FINAL } from '../../domain/linh-thu-v2.ts';
 export async function bootstrap({ env, owner, now, healthy }: MiniAppContext): Promise<Response> {
   const work = new D1WorkStore(env.DB),
     rules = new RecurrenceStore(env.DB);
@@ -124,9 +126,24 @@ export async function bootstrap({ env, owner, now, healthy }: MiniAppContext): P
     (id) => !known.has(id),
   );
   tasks.push(...(await work.planTaskDetails(owner, missing, day?.day ?? null)));
+  const beast = day ? await readBeastV2Context(env.DB, owner, day.day, now) : null;
+  const breakthrough =
+    beast?.active && beast.beast
+      ? beastV2BreakthroughModifier(beast.beast.skills, beast.beast.state)
+      : { chancePoints: 0, preventLoss: false };
   return json({
     now,
     account,
+    beastV2: {
+      active: beast?.active ?? false,
+      day: day?.day ?? null,
+      multiplier: beast?.active ? beast.snapshot.multiplier : 1,
+      breakthrough: {
+        ...breakthrough,
+        penaltyMultiplier: beast?.active ? beast.snapshot.multiplier : 1,
+      },
+      selfBurnFinal: BEAST_V2_SELF_BURN_FINAL,
+    },
     sleepStatus: await new ScheduleStore(env.DB).sleepStatus(owner, now),
     checkin: dailyCheckinProgress(account.state, now),
     breakthroughPenalties: BREAKTHROUGH_PENALTIES,

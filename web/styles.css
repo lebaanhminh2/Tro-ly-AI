@@ -1048,7 +1048,9 @@ dialog::backdrop {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
 }
 .sheet-title-row h2 {
   min-width: 0;
@@ -4904,13 +4906,16 @@ dialog.schedule-sheet-open .sheet-submit .primary {
   .today-page {
     display: grid;
     grid-template-columns: 260px minmax(0, 1fr);
-    grid-template-areas: 'heading heading' 'rest rest' 'focus main';
+    grid-template-areas: 'heading heading' 'tabs tabs' 'rest rest' 'focus main';
     gap: 16px 22px;
     align-items: start;
   }
   .today-page > .heading {
     grid-area: heading;
     margin-bottom: 4px;
+  }
+  .today-page > .today-view-switch {
+    grid-area: tabs;
   }
   .today-page > .rest-state {
     grid-area: rest;
@@ -5723,13 +5728,13 @@ html[data-motion='reduce'] *::after {
 html {
   scrollbar-gutter: stable;
 }
-.today-main .today-view-switch {
+.today-page .today-view-switch {
   margin: 0;
   padding: 4px;
   border-radius: 13px;
   background: var(--line);
 }
-.today-main .today-view-switch button {
+.today-page .today-view-switch button {
   min-height: 42px;
   font-size: 12px;
   white-space: normal;

@@ -16,7 +16,12 @@ export type BeastSummonChoice = {
   result: unknown | null;
 };
 
-export type BeastSnapshot = { state: BeastAccount; version: number; activatedDay: number | null };
+export type BeastSnapshot = {
+  state: BeastAccount;
+  version: number;
+  activatedDay: number | null;
+  skillCutoverDay?: number | null;
+};
 export type BeastCollectionOverview = Record<string, { count: number; best: OwnedBeast }>;
 export type BeastRole = 'training' | 'companion';
 export type BeastRoleSelection = {
@@ -42,6 +47,8 @@ export type BeastTowerEligibility = {
   eligible: boolean;
   rescueAvailable: boolean;
   rescueBeastId?: string | null;
+  skillVersion?: 1 | 2;
+  rewardMultiplier?: 1 | 3;
 };
 export type BeastMutation<T> = {
   state: BeastAccount;
@@ -105,7 +112,13 @@ export interface BeastStore {
     owner: string,
     day: number,
     now: number,
-  ): Promise<{ ready: boolean; version?: number; outcomes?: HabitTrainingStatus[] }>;
+  ): Promise<{
+    ready: boolean;
+    version?: number;
+    outcomes?: HabitTrainingStatus[];
+    habitSatisfied?: boolean;
+    habitRewardEligible?: boolean;
+  }>;
   tower(owner: string, day: number): Promise<BeastTowerRow | null>;
   expiredTower(owner: string, now: number): Promise<BeastTowerRow | null>;
   towerEligibility(owner: string, now: number): Promise<BeastTowerEligibility>;

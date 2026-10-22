@@ -4,6 +4,7 @@ export function createAppState(live) {
   state.habitData = null;
   state.habitHistory = null;
   state.beastData = null;
+  state.beastV2 = null;
   state.beastCollection = null;
   state.beastCollectionSpecies = null;
   state.beastSpeciesPage = null;

@@ -392,9 +392,24 @@ test(
         3,
       );
       assert.equal(
-        (await db.prepare("SELECT COUNT(*) AS n FROM beast_skill_events WHERE kind='draw'").first())
-          .n,
+        (
+          await db
+            .prepare("SELECT COUNT(*) AS n FROM beast_skill_events WHERE kind='v2:draw'")
+            .first()
+        ).n,
+        3,
+        'V2 audits one paid transaction per bundle, including one x10 transaction',
+      );
+      assert.equal(
+        (
+          await db
+            .prepare(
+              "SELECT SUM(json_extract(result_json,'$.count')) AS n FROM beast_skill_events WHERE kind='v2:draw'",
+            )
+            .first()
+        ).n,
         12,
+        'Three bundle receipts cover all twelve paid rolls without replaying the recovered x10',
       );
       assert.deepEqual(browser.errors, []);
     } finally {
