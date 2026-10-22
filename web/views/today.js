@@ -159,8 +159,11 @@ export function renderWorkState(ui, state, plan, now) {
     return root;
 }
 export function renderToday(ui, state) {
+    const presented = { ...state, tasks: state.tasks.map(task => state.taskIntents?.[task.id]
+        ? { ...task, done: state.taskIntents[task.id].done,
+            completedAt: state.taskIntents[task.id].done ? (state.serverNow ?? Date.now()) : null } : task) };
     const { el, button, heading, card, openTask, render } = ui;
-    const buckets = taskBuckets(state.tasks, state.operatingDay, state.start);
+    const buckets = taskBuckets(presented.tasks, state.operatingDay, state.start);
     const plan = state.dailyPlan?.plan;
     const now = (state.serverNow ?? Date.now()) + Date.now() - (state.loadedAt ?? Date.now());
     const root = el('section', undefined, 'today-page');
@@ -194,7 +197,7 @@ export function renderToday(ui, state) {
     const toggle = el('div', undefined, 'segment today-view-switch');
     toggle.setAttribute('aria-label', 'Cách xem công việc');
     const controls = [];
-    const updatePanel = () => panel.replaceChildren(state.mode === 'timeline' ? renderDailyPlan(ui, state) : renderTaskList(ui, state, buckets, card, button, openTask, render));
+    const updatePanel = () => panel.replaceChildren(state.mode === 'timeline' ? renderDailyPlan(ui, presented) : renderTaskList(ui, state, buckets, card, button, openTask, render));
     for (const [value, label] of [['timeline', 'Lịch hôm nay'], ['tasks', 'Danh sách việc']]) {
         const b = button(label, () => {
             if (state.mode === value)
@@ -203,6 +206,7 @@ export function renderToday(ui, state) {
             state.mode = value;
             controls.forEach(([mode, control]) => control.setAttribute('aria-pressed', String(mode === value)));
             updatePanel();
+            if (value === 'tasks' && state.live && !state.historyRefreshed) ui.loadHistory?.();
             ui.keepViewAnchor?.(toggle, top);
         });
         b.setAttribute('aria-pressed', String(state.mode === value));
@@ -214,7 +218,7 @@ export function renderToday(ui, state) {
     updatePanel();
     main.append(panel);
     root.insertBefore(toggle, top.nextSibling);
-    root.append(renderWorkState(ui, state, plan, now), main);
+    root.append(renderWorkState(ui, presented, plan, now), main);
     return root;
 }
 function renderTaskList(ui, state, buckets, card, button, openTask, render) {

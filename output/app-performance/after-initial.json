@@ -1,0 +1,34 @@
+{
+  "fixture": "Local Chrome 390px, eight habits; history delay 800ms, bootstrap 100ms; POST delay 350ms and habit refresh delay 800ms. Local measurements, not production latency.",
+  "startupMs": 670.6962000000003,
+  "startupCalls": [
+    "GET bootstrap"
+  ],
+  "tick": {
+    "immediate": {
+      "checked": "true",
+      "busy": null,
+      "disabledChecks": 0,
+      "disabledNavigation": 0
+    },
+    "responseMs": 7.4000000059604645
+  },
+  "notification": {
+    "text": "✓Đã đạt mục tiêu hôm nay.Hoàn tác×",
+    "width": 366,
+    "height": 63,
+    "top": 697.7654418945312,
+    "bottom": 760.7654418945312
+  },
+  "saveCalls": [
+    "POST habits"
+  ],
+  "warm": {
+    "renderMs": 5.199999988079071,
+    "rows": 8
+  },
+  "warmCalls": [
+    "GET linh-thu/tower"
+  ],
+  "browserErrors": []
+}

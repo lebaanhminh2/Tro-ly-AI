@@ -1,0 +1,26 @@
+{
+  "scope": "local authenticated fixture, cold Chromium, 150ms latency, 400000 bytes/s, bootstrap adds 400ms",
+  "runs": [
+    {
+      "bootstrapStart": 2658.2000000029802,
+      "bootstrapEnd": 3091.1000000089407,
+      "ready": 3199.2999999970198,
+      "scriptCount": 43,
+      "scriptBytes": 588440
+    },
+    {
+      "bootstrapStart": 2688.699999988079,
+      "bootstrapEnd": 3114.7999999970198,
+      "ready": 3214.8999999910593,
+      "scriptCount": 43,
+      "scriptBytes": 588440
+    },
+    {
+      "bootstrapStart": 2754.4000000059605,
+      "bootstrapEnd": 3182.2000000029802,
+      "ready": 3281.7999999970198,
+      "scriptCount": 43,
+      "scriptBytes": 588440
+    }
+  ]
+}

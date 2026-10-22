@@ -1,6 +1,7 @@
 import { button, el } from './dom.js';
 import { beastRewardLabel } from '../models/linh-thu.js';
 import { prefersReducedMotion } from '../core/experience.js';
+import { waitForWrite } from '../core/state.js';
 import { towerCardBack, towerCardSafe, towerCardTrap, towerReceipt } from './beast-tower-art.js';
 
 // Presentation only: run outcomes, versions, credits and balances come from the API.
@@ -232,7 +233,9 @@ export async function openBeastTowerSheet(options) {
       ...extra,
     });
     // mutateBeast refreshes the authoritative wallet and run in the background.
-    await loadTower();
+    // A successful receipt already contains the authoritative run and wallet.
+    // Recovery/rejection still needs a fresh read before another command.
+    if (!result?.tower) await loadTower();
     if (!active()) return null;
     data = state.beastTower;
     if (result?.tower) {
@@ -484,11 +487,11 @@ export async function openBeastTowerSheet(options) {
     action('Xong', closeSheet);
     focusActions();
   }
-  if (runtime.saving && runtime.pendingBeast) {
+  if (runtime.saving) {
     stageTitle.textContent = 'Đang lấy kết quả…';
     stageHint.textContent = '';
     say('');
-    while (runtime.saving && active()) await new Promise((resolve) => setTimeout(resolve, 100));
+    while (runtime.saving && active()) await waitForWrite(runtime);
     if (!active()) return;
   }
   await loadTower();

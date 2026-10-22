@@ -367,7 +367,10 @@ function fixture() {
     }
     const response = clone({
       result,
-      ...(['cultivation', 'sleep'].includes(path) ||
+      ...(path === 'tasks'
+        ? { task: clone(state.tasks.find((item) => item.id === result.id) ?? null) }
+        : {}),
+      ...(['cultivation', 'sleep', 'tasks'].includes(path) ||
       (path === 'habits' && input.operation === 'log')
         ? { account: state.account }
         : {}),
@@ -545,7 +548,31 @@ async function serve(control, baseline) {
             );
             return;
           }
-          response.end(JSON.stringify(control.mutate(endpoint, JSON.parse(body))));
+          const input = JSON.parse(body);
+          if (
+            endpoint === 'habits' &&
+            input.operation === 'log' &&
+            !control.receipts.has(input.id)
+          ) {
+            const view = control.habits.habits.find((item) => item.habit.id === input.habitId);
+            if (
+              !view ||
+              view.log.version !== input.logVersion ||
+              view.habit.version !== input.version ||
+              input.day !== control.habits.day.day
+            ) {
+              response.statusCode = 409;
+              response.end(
+                JSON.stringify({
+                  error:
+                    input.day !== control.habits.day.day ? 'HABIT_DAY_CLOSED' : 'HABIT_LOG_CHANGED',
+                  message: 'Bản ghi vừa thay đổi. Mở lại thói quen nhé.',
+                }),
+              );
+              return;
+            }
+          }
+          response.end(JSON.stringify(control.mutate(endpoint, input)));
         }
         return;
       }

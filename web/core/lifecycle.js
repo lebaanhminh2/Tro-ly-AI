@@ -7,7 +7,8 @@ import { renderToday } from '../views/today.js';
 import { renderHabits } from '../views/habits.js';
 import { renderBeasts, reconcileBeasts } from '../views/linh-thu.js';
 import { settleRequest } from './http.js';
-import { connectLive, refreshLive } from './live-data.js';
+import { refreshLive } from './live-data.js';
+import { takeStartupConnection } from './startup.js';
 import { applySnapshot } from './state.js';
 export function createLifecycle({
   state,
@@ -202,37 +203,44 @@ export function createLifecycle({
     renderedScreen = screen;
     if (screen) window.scrollTo({ top: featureScroll.get(screen) ?? 0, behavior: 'instant' });
   }
-  async function refreshOnReturn() {
+  async function refreshOnReturn({ force = false, background = false } = {}) {
     if (
       !state.live ||
       !state.loaded ||
       runtime.saving ||
       runtime.focusAnimating ||
-      sheet.open ||
+      (sheet.open && !background) ||
       state.timelineDragging ||
       state.historyLoading ||
       state.activeTasksLoading
     )
       return;
-    if (!runtime.refreshPending && state.tab === 'habits') {
-      ui.loadTower?.();
-      return ui.loadHabits();
+    if (!runtime.refreshPending && state.tab === 'habits' && !background) {
+      ui.loadTower?.(force);
+      return ui.loadHabits(force);
     }
-    if (!runtime.refreshPending && state.tab === 'beasts') return ui.loadBeasts();
-    if (refreshing || (!state.baseDirty && Date.now() - lastRefresh < 2000)) return;
+    if (!runtime.refreshPending && state.tab === 'beasts' && !background)
+      return ui.loadBeasts(false, 'inventory', force);
+    if (
+      refreshing ||
+      (!force && !state.baseDirty && Date.now() - (state.baseRefreshedAt ?? lastRefresh) < 15000)
+    )
+      return;
     refreshing = true;
     const revision = runtime.revision;
     try {
       const latest = await refreshLive({
         activeOffset: state.activeTasksOffset ?? 0,
         includeHabits: state.tab === 'habits' || runtime.pendingReceipt?.path === 'habits',
+        includeHistory: state.mode === 'tasks' && !!state.historyRefreshed,
+        scope: runtime.pendingReceipt?.path === 'habits' ? 'habits' : 'all',
       });
       // A newer write, logout or open editor makes this response obsolete.
       if (
         revision !== runtime.revision ||
         runtime.saving ||
         !state.loaded ||
-        sheet.open ||
+        (sheet.open && !background) ||
         state.timelineDragging ||
         state.historyLoading ||
         state.activeTasksLoading
@@ -243,13 +251,21 @@ export function createLifecycle({
         settleRequest(runtime.pendingReceipt.path, runtime.pendingReceipt.input);
       runtime.pendingReceipt = null;
       runtime.refreshPending = false;
+      runtime.refreshNotice = false;
       lastRefresh = Date.now();
       render();
     } catch (error) {
       if (revision !== runtime.revision) return;
       if (error.code === 'AUTH_REQUIRED' && !globalThis.Telegram?.WebApp?.initData)
         showBrowserLogin();
-      else toast(error.message);
+      else if (!background) toast(error.message);
+      else if (runtime.refreshPending && !runtime.refreshNotice) {
+        runtime.refreshNotice = true;
+        toast('Đã lưu trên server. Chưa tải lại được dữ liệu.', {
+          label: 'Tải lại',
+          run: () => refreshOnReturn({ force: true, background: true }),
+        });
+      }
     } finally {
       refreshing = false;
     }
@@ -261,11 +277,12 @@ export function createLifecycle({
     state.screenState = 'loading';
     render();
     const revision = ++runtime.revision;
-    connectLive()
+    takeStartupConnection()
       .then((data) => {
         if (revision !== runtime.revision) return;
-        globalThis.Telegram?.WebApp?.onEvent?.('activated', refreshOnReturn);
+        globalThis.Telegram?.WebApp?.onEvent?.('activated', () => refreshOnReturn({ force: true }));
         connected(data);
+        globalThis.Telegram?.WebApp?.ready();
       })
       .catch((error) => {
         if (revision !== runtime.revision) return;
@@ -276,6 +293,7 @@ export function createLifecycle({
           render();
           toast(error.message);
         }
+        globalThis.Telegram?.WebApp?.ready();
       });
   }
   function installLifecycleEvents() {
@@ -289,7 +307,7 @@ export function createLifecycle({
     new ResizeObserver(measureNavigation).observe(navigation);
     measureNavigation();
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') refreshOnReturn();
+      if (document.visibilityState === 'visible') refreshOnReturn({ force: true });
     });
     setInterval(() => {
       if (document.visibilityState === 'visible') updateTimelineClock(state);
@@ -297,7 +315,7 @@ export function createLifecycle({
     setInterval(() => {
       if (document.visibilityState === 'visible') refreshOnReturn();
     }, 60000);
-    window.addEventListener('focus', refreshOnReturn);
+    window.addEventListener('focus', () => refreshOnReturn({ force: true }));
   }
   return { render, refreshOnReturn, startConnection, installLifecycleEvents };
 }

@@ -1245,7 +1245,7 @@ test(
       control.beastData.wallet.state.tickets = 60;
       // Changing the fixture only becomes visible after the real data reload.
       await browser.evaluate(
-        "document.querySelector('[data-tab=today]').click();document.querySelector('[data-tab=beasts]').click()",
+        "document.querySelector('[data-tab=today]').click();document.querySelector('[data-tab=beasts]').click();window.dispatchEvent(new Event('focus'))",
       );
       await browser.wait(
         "document.querySelector('.beast-summon-exchange')?.getAttribute('aria-label').includes('60 vé thường')",

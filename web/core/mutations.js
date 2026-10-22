@@ -1,7 +1,8 @@
-import { checkinProgress, rewardLabels } from '../models/cultivation.js';
+﻿import { checkinProgress, rewardLabels } from '../models/cultivation.js';
 import { settleRequest } from './http.js';
-import { liveMutation, mapAccount, refreshLive } from './live-data.js';
-import { applySnapshot } from './state.js';
+import { liveMutation, mapAccount, mapTask, refreshLive } from './live-data.js';
+import { applySnapshot, claimWrite, releaseWrite, waitForWrite } from './state.js';
+
 export function createMutations({
   state,
   runtime,
@@ -10,10 +11,31 @@ export function createMutations({
   toast,
   showBrowserLogin,
   refreshOnReturn,
-  ui,
 }) {
+  let refreshTimer;
+  function scheduleRefresh(deferForSheet = false) {
+    clearTimeout(refreshTimer);
+    const session = runtime.session;
+    refreshTimer = setTimeout(() => {
+      if (
+        session === runtime.session &&
+        state.live &&
+        state.loaded &&
+        state.baseDirty &&
+        (!deferForSheet || !sheet.open)
+      )
+        void refreshOnReturn?.({ force: true, background: true });
+    }, 200);
+  }
   async function performLive(path, input, options = {}) {
-    if (runtime.saving) return null;
+    const session = runtime.session;
+    if (options.queue) {
+      while (runtime.saving) await waitForWrite(runtime);
+      if (session !== runtime.session || !state.live || !state.loaded) return null;
+    } else if (runtime.saving) {
+      toast('Thao tác trước đang được lưu. Bạn có thể tiếp tục xem các mục khác.');
+      return null;
+    }
     if (runtime.pendingBeast) {
       toast('Còn một giao ước chưa xác nhận. Vào Linh thú và bấm Kiểm tra kết quả trước nhé.');
       return null;
@@ -28,53 +50,41 @@ export function createMutations({
       toast('Còn một lượt quay chưa xác nhận. Mở Quay thưởng và kiểm tra lại lượt đó trước nhé.');
       return null;
     }
-    runtime.saving = true;
-    runtime.revision++;
-    const writeRevision = runtime.revision;
+    const writeToken = claimWrite(runtime);
+    const writeRevision = ++runtime.revision;
     const featureWrite = path === 'habits';
     const drawWrite = path === 'cultivation' && input.operation === 'draw';
-    let drawAttempt;
-    if (featureWrite) {
-      state.featureSaving = { path, habitId: input.habitId ?? null };
-      if (!sheet.open) render();
-    }
     const editor = sheet.querySelector('#sheet-content')?.firstElementChild;
+    state.featureSaving = { path, habitId: input.habitId ?? null };
+    // Only the submitted editor is busy. Navigation and queued checks stay usable.
     const controls = [
-      .../** @type {NodeListOf<HTMLButtonElement>} */ (
+      .../** @type {NodeListOf<HTMLButtonElement|HTMLInputElement|HTMLSelectElement|HTMLTextAreaElement>} */ (
         document.querySelectorAll(
-          featureWrite ? '[data-write], #sheet-content button, #logout' : 'button',
+          '#sheet-content button:not([data-sheet-close]), #sheet-content input, #sheet-content select, #sheet-content textarea',
         )
       ),
-    ].map((button) => ({ button, disabled: button.disabled }));
+    ].map((control) => ({ control, disabled: control.disabled }));
     const save = sheet.querySelector('button[type=submit]'),
       oldLabel = save?.textContent;
     if (save) save.textContent = 'Đang lưu…';
-    controls.forEach(({ button }) => (button.disabled = true));
+    controls.forEach(({ control }) => (control.disabled = true));
+    let drawAttempt;
     try {
-      // Reconcile an acknowledged write before allowing another state-changing action.
       if (runtime.refreshPending) {
-        applySnapshot(
-          state,
-          await refreshLive({
-            activeOffset: state.activeTasksOffset ?? 0,
-            includeHabits: runtime.pendingReceipt?.path === 'habits' || state.tab === 'habits',
-          }),
-        );
+        const snapshot = await refreshLive({
+          includeHistory: false,
+          activeOffset: state.activeTasksOffset ?? 0,
+          includeHabits: runtime.pendingReceipt?.path === 'habits' || state.tab === 'habits',
+          scope: runtime.pendingReceipt?.path === 'habits' ? 'habits' : 'all',
+        });
+        if (writeRevision !== runtime.revision || session !== runtime.session) return null;
+        applySnapshot(state, snapshot);
         if (runtime.pendingReceipt)
           settleRequest(runtime.pendingReceipt.path, runtime.pendingReceipt.input);
         runtime.pendingReceipt = null;
         runtime.refreshPending = false;
       }
-      const includeHistory =
-        path === 'tasks' ||
-        path === 'tasks-delete' ||
-        (state.tab === 'today' && state.mode === 'tasks');
-      const refreshOptions = {
-        includeHistory,
-        activeOffset: state.activeTasksOffset ?? 0,
-        includeHabits: path === 'habits' || state.tab === 'habits',
-        scope: drawWrite ? 'draw' : featureWrite ? path : 'all',
-      };
+      input = options.resolveInput?.() ?? input;
       if (drawWrite) {
         drawAttempt = runtime.pendingDraw ?? {
           count: input.count ?? 1,
@@ -82,60 +92,74 @@ export function createMutations({
         };
         runtime.pendingDraw = drawAttempt;
       }
-      let data;
-      if (options.effect) {
-        const request = liveMutation(path, input, refreshOptions);
-        const effect = Promise.resolve().then(options.effect);
-        try {
-          data = await request;
-          await effect;
-        } catch (error) {
-          await effect.catch(() => {});
-          if (options.revertEffect) await options.revertEffect();
-          throw error;
-        }
-      } else data = await liveMutation(path, input, refreshOptions);
-      if ((featureWrite || path === 'cultivation') && writeRevision !== runtime.revision)
-        return null;
+      if (options.effect)
+        void Promise.resolve()
+          .then(options.effect)
+          .catch(() => {});
+      options.onRequest?.(input);
+      const data = await liveMutation(path, input, { acknowledge: true });
+      if (writeRevision !== runtime.revision || session !== runtime.session) return null;
       if (drawWrite && runtime.pendingDraw === drawAttempt) runtime.pendingDraw = null;
       const result = data.result?.result ?? data.result;
-      if (data.refreshError) {
-        if (featureWrite) state.baseDirty = true;
-        runtime.refreshPending = true;
-        runtime.pendingReceipt = { path, input };
-        // Display only changes explicitly acknowledged in the POST response.
-        if (data.result?.account) {
-          state.cultivation = mapAccount(data.result.account, state.day?.day);
-          const now = (state.serverNow ?? Date.now()) + Date.now() - (state.loadedAt ?? Date.now());
-          state.checkin = checkinProgress(state.cultivation, now, state.checkin?.rewards);
-        }
-        if (path === 'task-focus')
-          state.taskFocus = result.active ? { ...state.taskFocusTarget, ...result } : null;
-        if (
-          !options.keepSheet &&
-          (!featureWrite || sheet.querySelector('#sheet-content')?.firstElementChild === editor)
-        )
-          sheet.close();
-        toast(
-          'Đã lưu trên server, nhưng chưa tải lại được dữ liệu. Mình sẽ kiểm tra lại trước thao tác tiếp theo.',
-        );
-        return result;
-      }
-      if (data.accountOnly) {
+      let reconciled = false;
+      if (data.result?.account?.state) {
         state.cultivation = mapAccount(data.result.account, state.day?.day);
         const now = (state.serverNow ?? Date.now()) + Date.now() - (state.loadedAt ?? Date.now());
         state.checkin = checkinProgress(state.cultivation, now, state.checkin?.rewards);
-        // Reconcile the other screens later without blocking the confirmed draw.
-        state.baseDirty = true;
-      } else applySnapshot(state, data);
-      if (featureWrite) ui?.loadTower?.();
-      if (featureWrite && data.result?.account) {
-        state.cultivation = mapAccount(data.result.account, state.day?.day);
+        reconciled = path === 'cultivation' || path === 'sleep';
       }
-      if (
-        !options.keepSheet &&
-        (!featureWrite || sheet.querySelector('#sheet-content')?.firstElementChild === editor)
-      )
+      if (path === 'task-focus') {
+        state.taskFocus = result.active ? { ...state.taskFocusTarget, ...result } : null;
+        reconciled = true;
+      }
+      if (path === 'tasks' && 'task' in data.result) {
+        const task = data.result.task;
+        const id = task?.id ?? input.taskId;
+        const index = state.tasks.findIndex((item) => item.id === id);
+        if (!task) state.tasks = state.tasks.filter((item) => item.id !== id);
+        else if (index < 0) state.tasks.push(mapTask(task));
+        else state.tasks[index] = mapTask(task);
+        reconciled = true;
+      }
+      if (path === 'tasks-delete' && result.deleted === input.items?.length) {
+        const ids = new Set(input.items.map((item) => item.id));
+        state.tasks = state.tasks.filter((task) => !ids.has(task.id));
+        reconciled = true;
+      }
+      if (path === 'sleep') {
+        if (result.sleep) state.sleepStatus = result.sleep;
+        if (result.rest) {
+          state.rest = result.rest;
+          state.resting = result.rest.reason !== 'active';
+        }
+      }
+      if (featureWrite && input.operation === 'log' && Number.isSafeInteger(result.version)) {
+        const view = state.habitData?.habits.find((item) => item.habit.id === input.habitId);
+        if (view && state.habitData.day.day === input.day) {
+          // The receipt confirms this exact normalized log and its new version.
+          view.log = {
+            value: Math.round(input.value * 100),
+            note: input.note,
+            version: result.version,
+          };
+          state.habitRefreshedAt = Date.now();
+          reconciled = true;
+        }
+      }
+      options.onCommitted?.(result, input, data.result);
+      if (options.reconciled) reconciled = true;
+      state.baseDirty = true;
+      if (featureWrite) {
+        state.towerRefreshedAt = 0;
+        state.beastRefreshedAt = 0;
+        if (input.operation !== 'log') state.habitRefreshedAt = 0;
+      }
+      if (!reconciled) {
+        runtime.refreshPending = true;
+        runtime.pendingReceipt = { path, input };
+      }
+      // A late save cannot close an editor opened in the meantime.
+      if (!options.keepSheet && sheet.querySelector('#sheet-content')?.firstElementChild === editor)
         sheet.close();
       if (!options.silent)
         toast(
@@ -144,50 +168,52 @@ export function createMutations({
             : typeof result?.success === 'boolean'
               ? result.success
                 ? 'Thành công ✦'
-                : 'Chưa thành công. Kết quả đã lưu, không thử lại trong cùng lượt.'
+                : 'Chưa thành công. Kết quả đã lưu.'
               : result?.protected
                 ? 'Đã kích hoạt bảo vệ cho hôm nay.'
                 : 'Đã lưu.',
+          undefined,
+          { kind: 'success' },
         );
       return result;
     } catch (error) {
-      if ((featureWrite || path === 'cultivation') && writeRevision !== runtime.revision)
-        return null;
+      if (writeRevision !== runtime.revision || session !== runtime.session) return null;
       if (
         drawAttempt &&
         !['NETWORK_UNCONFIRMED', 'OPERATION_NOT_CONFIRMED'].includes(error.code) &&
         runtime.pendingDraw === drawAttempt
       )
         runtime.pendingDraw = null;
-      options.onError?.(error);
+      options.onError?.(error, input);
+      if (options.revertEffect)
+        void Promise.resolve()
+          .then(options.revertEffect)
+          .catch(() => {});
       if (error.code === 'AUTH_REQUIRED' && !globalThis.Telegram?.WebApp?.initData) {
         showBrowserLogin();
         return null;
       }
-      if (path === 'task-focus' || input.operation === 'checkin')
-        try {
-          applySnapshot(state, await refreshLive({ activeOffset: state.activeTasksOffset ?? 0 }));
-        } catch {
-          /* Keep the original action error. */
-        }
-      toast(error.message || 'Chưa lưu được, kiểm tra lại nhé.');
+      if (!options.handleError)
+        toast(error.message || 'Chưa lưu được, kiểm tra lại nhé.', undefined, { kind: 'error' });
       return null;
     } finally {
-      const authChanged = writeRevision !== runtime.revision;
-      if (save?.isConnected) save.textContent = oldLabel;
-      runtime.saving = false;
-      state.featureSaving = null;
-      runtime.revision++;
-      if (runtime.pendingDraw === drawAttempt && drawAttempt) {
-        if (authChanged) runtime.pendingDraw = null;
-        else drawAttempt.revision = runtime.revision;
+      if (runtime.writeToken === writeToken) {
+        const authChanged = writeRevision !== runtime.revision || session !== runtime.session;
+        if (save?.isConnected) save.textContent = oldLabel;
+        state.featureSaving = null;
+        runtime.revision++;
+        if (runtime.pendingDraw === drawAttempt && drawAttempt) {
+          if (authChanged) runtime.pendingDraw = null;
+          else drawAttempt.revision = runtime.revision;
+        }
+        controls.forEach(({ control, disabled }) => {
+          if (control.isConnected) control.disabled = disabled;
+        });
+        releaseWrite(runtime, writeToken);
+        render();
+        if (!authChanged && (runtime.refreshPending || (!featureWrite && state.baseDirty)))
+          scheduleRefresh(drawWrite);
       }
-      controls.forEach(({ button, disabled }) => {
-        if (button.isConnected) button.disabled = disabled;
-      });
-      render();
-      if (featureWrite && (state.tab !== path || authChanged)) refreshOnReturn();
-      if (drawWrite && !authChanged && !sheet.open && state.baseDirty) refreshOnReturn?.();
     }
   }
   return { performLive };

@@ -57,7 +57,7 @@ export function createSheets({ sheet, sheetContent, render }) {
     close.append(icon('close'));
     row.append(h, close);
     sheetContent.append(row);
-    const feedback = el('p', '', 'form-feedback');
+    const feedback = el('div', '', 'form-feedback');
     feedback.id = 'sheet-feedback';
     feedback.hidden = true;
     feedback.setAttribute('role', 'status');

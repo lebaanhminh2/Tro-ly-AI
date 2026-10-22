@@ -1,0 +1,29 @@
+{
+  "viewportHeight": 730,
+  "stage": {
+    "top": 243.6875,
+    "bottom": 706
+  },
+  "cards": [
+    {
+      "top": 319.46875,
+      "bottom": 479.46875,
+      "fullyVisible": true
+    },
+    {
+      "top": 319.46875,
+      "bottom": 479.46875,
+      "fullyVisible": true
+    },
+    {
+      "top": 491.46875,
+      "bottom": 651.46875,
+      "fullyVisible": true
+    },
+    {
+      "top": 491.46875,
+      "bottom": 651.46875,
+      "fullyVisible": true
+    }
+  ]
+}

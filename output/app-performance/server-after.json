@@ -1,0 +1,41 @@
+{
+  "fixture": "Local Miniflare D1, eight tasks, warmed operating day, 20ms injected per DB operation, five runs. No production latency claim.",
+  "measurements": [
+    {
+      "wallMs": 981.0931999999993,
+      "queries": 41,
+      "maxParallel": 13,
+      "tasks": 8,
+      "hasTimeline": true
+    },
+    {
+      "wallMs": 1204.8595999999998,
+      "queries": 41,
+      "maxParallel": 13,
+      "tasks": 8,
+      "hasTimeline": true
+    },
+    {
+      "wallMs": 942.1670000000004,
+      "queries": 41,
+      "maxParallel": 13,
+      "tasks": 8,
+      "hasTimeline": true
+    },
+    {
+      "wallMs": 906.6163999999999,
+      "queries": 41,
+      "maxParallel": 13,
+      "tasks": 8,
+      "hasTimeline": true
+    },
+    {
+      "wallMs": 1103.6980999999996,
+      "queries": 41,
+      "maxParallel": 13,
+      "tasks": 8,
+      "hasTimeline": true
+    }
+  ],
+  "medianMs": 981.0931999999993
+}

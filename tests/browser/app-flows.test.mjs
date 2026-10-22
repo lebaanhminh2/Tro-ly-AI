@@ -700,7 +700,7 @@ test(
         "!!document.querySelector('.habit-check.checked')&&!document.querySelector('.habit-check').disabled",
       );
       assert.equal(control.state.account.state.tickets, 11);
-      await browser.wait("document.body.textContent.includes('+1 vé quay!')");
+      await browser.wait("document.body.textContent.includes('+1 vé quay')");
       await browser.click('Hoàn tác');
       await browser.wait(
         "!!document.querySelector('.habit-check:not(.checked)')&&!document.querySelector('.habit-check').disabled",
@@ -1385,7 +1385,11 @@ test(
         savingStart = control.calls.length;
       await browser.evaluate("document.querySelector('.habit-check').click()");
       await browser.wait(
-        "document.querySelector('.habit-check[aria-busy=true]')?.textContent==='Đang lưu…'",
+        "document.querySelector('.habit-check')?.getAttribute('aria-pressed')==='true' && !!document.querySelector('#toast .notice-action')",
+      );
+      assert.equal(
+        await browser.evaluate("!!document.querySelector('.habit-check[aria-busy=true]')"),
+        false,
       );
       assert.equal(
         await browser.evaluate(
@@ -1468,7 +1472,7 @@ test(
 );
 
 test(
-  'acknowledged habit refresh failures reconcile before the next log and old reads cannot restore a logged-out screen',
+  'habit receipts remain usable when reads fail and old reads cannot restore a logged-out screen',
   { skip: !browserBin, timeout: 60000 },
   async () => {
     const control = fixture();
@@ -1489,17 +1493,15 @@ test(
       const before = control.posts.length;
       control.failedReads = new Set(['habits']);
       await browser.evaluate("document.querySelector('.habit-check').click()");
-      await browser.wait(
-        "document.querySelector('#toast').textContent.includes('Đã lưu trên server')",
-      );
+      await browser.wait("!!document.querySelector('#toast .notice-action')");
       assert.equal(control.posts.length, before + 1);
       assert.equal(control.habits.habits[0].log.version, 1);
       assert.equal(
         await browser.evaluate(
           "document.querySelector('.habit-check').getAttribute('aria-pressed')",
         ),
-        'false',
-        'The failed refresh cannot fabricate a new authoritative log',
+        'true',
+        'The receipt confirms the exact log without depending on another read',
       );
       control.failedReads.clear();
       await browser.tap('[data-tab=today]');
@@ -1515,6 +1517,9 @@ test(
       );
       assert.equal(control.habits.habits[0].log.version, 2);
       assert.deepEqual(control.state.account, healthy);
+      await browser.wait(
+        "document.querySelector('#toast .notice-message')?.textContent==='Đã cập nhật hôm nay.'",
+      );
       await browser.evaluate(
         "window.holdHabitRead=true;const savedFetch=fetch;window.fetch=(url,init)=>savedFetch(url,init).then(async response=>{if(String(url).startsWith('/api/habits')&&init.method==='GET'&&window.holdHabitRead){await new Promise(resolve=>window.releaseHabitRead=resolve)}return response});document.querySelector('[data-tab=habits]').click()",
       );
@@ -1558,13 +1563,13 @@ test(
       await browser.tap('[data-tab=habits]');
       await browser.wait("!!document.querySelector('.habit-check')");
       await browser.evaluate(
-        "window.holdSavedSnapshot=true;const originalFetch=fetch;window.fetch=(url,init)=>originalFetch(url,init).then(async response=>{if(String(url).startsWith('/api/habits')&&init.method==='GET'&&window.holdSavedSnapshot){await new Promise(resolve=>window.releaseSavedSnapshot=resolve)}return response});document.querySelector('.habit-check').click()",
+        "window.holdSavedSnapshot=true;const originalFetch=fetch;window.fetch=(url,init)=>originalFetch(url,init).then(async response=>{if(String(url).startsWith('/api/habits')&&init.method==='POST'&&window.holdSavedSnapshot){await new Promise(resolve=>window.releaseSavedSnapshot=resolve)}return response});document.querySelector('.habit-check').click()",
       );
       await browser.wait("typeof window.releaseSavedSnapshot==='function'");
       assert.equal(
         await browser.evaluate("document.querySelector('#logout').disabled"),
-        true,
-        'Auth changes stay serialized with a write; read navigation remains available',
+        false,
+        'Logout remains available while a write is pending; late replies are discarded',
       );
       // Force an auth transition to model a session changed outside this pending control.
       // The controller must also discard its response, rather than relying only on disabled UI.
@@ -1764,9 +1769,9 @@ test(
       await browser.tap('[data-sheet-close]');
       assert.equal(read.log.value, 1525, 'Closing preserves the authoritative partial value');
       await browser.tap('.habit-check');
-      await browser.wait("!!document.querySelector('#toast button')");
+      await browser.wait("!!document.querySelector('#toast .notice-action')");
       assert.equal(read.log.value, 2000, 'Tick completes the actual duration target');
-      await browser.tap('#toast button');
+      await browser.tap('#toast .notice-action');
       await browser.wait(
         "document.querySelector('.habit-log-button').textContent.includes('15,25')",
       );
@@ -1784,27 +1789,27 @@ test(
         "document.querySelector('[name=amount]').value='9.5';document.querySelector('.habit-form').requestSubmit()",
       );
       await browser.wait(
-        "!document.querySelector('#sheet').open && !!document.querySelector('#toast button')",
+        "!document.querySelector('#sheet').open && !!document.querySelector('#toast .notice-action')",
       );
       assert.equal(water.log.value, 950);
       await browser.tap('.habit-card:nth-child(2) .habit-check');
       await browser.wait(
-        "!document.querySelector('[aria-busy=true]') && !!document.querySelector('#toast button')",
+        "!document.querySelector('[aria-busy=true]') && !!document.querySelector('#toast .notice-action')",
       );
       assert.equal(water.log.value, 0);
-      await browser.tap('#toast button');
+      await browser.tap('#toast .notice-action');
       await browser.wait(
         "document.querySelector('.habit-card:nth-child(2) .habit-log-button').textContent.includes('9,5')",
       );
       assert.equal(water.log.value, 950, 'Untick Undo preserves over-target progress');
       await browser.tap('.habit-check');
-      await browser.wait("!!document.querySelector('#toast button')");
+      await browser.wait("!!document.querySelector('#toast .notice-action')");
       read.log.version++;
       const writes = control.posts.length;
       await browser.tap('[data-tab=today]');
       await browser.tap('[data-tab=habits]');
       await browser.wait("!document.querySelector('.feature-updating')");
-      await browser.tap('#toast button');
+      await browser.tap('#toast .notice-action');
       assert.equal(control.posts.length, writes, 'Undo must not overwrite a newer external log');
       await browser.click('Tiến bộ', '.habit-tabs button');
       await browser.wait("!!document.querySelector('.habit-progress-table')");
@@ -1844,14 +1849,14 @@ test(
         await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'habit-progress-30-390.png'));
       await browser.click('Hôm nay', '.habit-tabs button');
       await browser.tap('.habit-check');
-      await browser.wait("!!document.querySelector('#toast button')");
+      await browser.wait("!!document.querySelector('#toast .notice-action')");
       control.habits.day.day++;
       control.habits.day.endAt += 86400000;
       await browser.tap('[data-tab=today]');
       await browser.tap('[data-tab=habits]');
       await browser.wait("!document.querySelector('.feature-updating')");
       const beforeClosedUndo = control.posts.length;
-      await browser.tap('#toast button');
+      await browser.tap('#toast .notice-action');
       assert.equal(
         control.posts.length,
         beforeClosedUndo,
@@ -2404,8 +2409,8 @@ test(
       );
       assert.equal(
         await browser.evaluate("document.querySelector('.sleep-undo')?.disabled"),
-        true,
-        'No second mutation until the failed refresh is reconciled',
+        false,
+        'The acknowledged sleep state and undo generation do not depend on optional bootstrap',
       );
       await browser.evaluate("document.querySelector('[data-sheet-close]').click()");
       await browser.wait("!!document.querySelector('.sleep-card')");
@@ -3233,6 +3238,12 @@ test(
           await browser.click('Xác nhận');
           await browser.wait("!document.querySelector('#sheet').open");
           await browser.wait("!document.querySelector('[data-tab=reminders]').disabled");
+          for (
+            let attempt = 0;
+            attempt < 50 && control.state.tasks[0].steps.length !== 2;
+            attempt++
+          )
+            await delay(20);
           assert.equal(control.state.tasks[0].steps.length, 2);
           await browser.evaluate("document.querySelector('[data-tab=reminders]').click()");
           await browser.wait("!!document.querySelector('.top-create')");
@@ -3369,7 +3380,7 @@ test(
           control.failBootstrap = true;
           await browser.evaluate("document.querySelector('.focus-flip-card').click()");
           await browser.wait(
-            "document.querySelector('#toast').textContent.includes('Đã lưu trên server')",
+            "document.querySelector('#toast .notice-message')?.textContent.includes('Cậu cứ tập trung')",
           );
           assert.equal(control.posts.length, before + 1);
           control.failBootstrap = false;

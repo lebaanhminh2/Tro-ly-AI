@@ -1,0 +1,10 @@
+{
+  "scope": "public unauthenticated cold Chromium, simulated 150ms latency and 400000 bytes/s",
+  "bootstrapStart": 628.5999999940395,
+  "bootstrapEnd": 793.3999999910593,
+  "domReady": 1507.5,
+  "scriptCount": 40,
+  "scriptBytes": 507606,
+  "page": "login",
+  "errors": []
+}

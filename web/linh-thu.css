@@ -2705,8 +2705,13 @@ dialog#sheet.beast-sheet-open:has(.tower-experience) {
   --sheet-header-background: var(--bg);
   width: min(100%, 480px);
   max-width: 480px;
-  height: min(94dvh, 840px);
-  max-height: 94dvh;
+  height: min(
+    94dvh,
+    840px,
+    var(--app-viewport-height, 100dvh),
+    var(--sheet-visible-height, 100dvh)
+  );
+  max-height: min(94dvh, var(--app-viewport-height, 100dvh), var(--sheet-visible-height, 100dvh));
   padding: 22px 22px 26px;
   background: var(--bg);
   color: var(--text);
@@ -3219,10 +3224,15 @@ button.tower-card:last-child:nth-child(3) {
     inset: 0;
     margin: 0 auto;
     width: 100%;
-    height: 100dvh;
-    max-height: 100dvh;
+    height: min(100dvh, var(--app-viewport-height, 100dvh), var(--sheet-visible-height, 100dvh));
+    max-height: min(
+      100dvh,
+      var(--app-viewport-height, 100dvh),
+      var(--sheet-visible-height, 100dvh)
+    );
     border-radius: 0;
-    padding: calc(22px + env(safe-area-inset-top)) 22px max(24px, env(safe-area-inset-bottom));
+    padding: calc(22px + max(env(safe-area-inset-top), var(--app-host-safe-top, 0px))) 22px
+      max(24px, env(safe-area-inset-bottom), var(--app-host-safe-bottom, 0px));
   }
 }
 @media (min-width: 700px) {
@@ -3382,9 +3392,17 @@ button.tower-card {
   max-width: 144px;
 }
 .tower-experience.has-run {
-  grid-template-rows: auto auto minmax(0, 1fr) minmax(62px, auto) minmax(34px, auto);
+  display: flex;
+  flex-direction: column;
+}
+.tower-experience.has-run > .tower-path,
+.tower-experience.has-run > .tower-purse,
+.tower-experience.has-run > .tower-actions,
+.tower-experience.has-run > .tower-footnote {
+  flex: 0 0 auto;
 }
 .tower-experience.has-run > .tower-stage {
+  flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -3404,8 +3422,7 @@ button.tower-card {
   background: var(--line);
 }
 .tower-experience.has-run > .tower-actions:empty {
-  display: grid;
-  visibility: hidden;
+  display: none;
 }
 .tower-experience.has-run > .tower-actions > .tower-action {
   min-height: 62px;
@@ -3414,8 +3431,7 @@ button.tower-card {
   min-height: 34px;
 }
 .tower-experience.has-run > .tower-footnote:empty {
-  display: block;
-  visibility: hidden;
+  display: none;
 }
 @keyframes tower-loss-ring {
   0% {

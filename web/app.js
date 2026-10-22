@@ -46,6 +46,7 @@ for (const name of [
   'openHabitSlot',
   'showHabitInList',
   'toggleHabit',
+  'recoverHabitLog',
   'setHabitFilter',
   'showHabitPanel',
   'loadHabitHistory',
@@ -136,6 +137,7 @@ Object.assign(actions, createBeastActions(context));
 Object.assign(actions, createBrowserLoginActions(context));
 Object.assign(actions, createLifecycle(context));
 applyTheme();
+window.matchMedia?.('(prefers-color-scheme: dark)').addEventListener('change', () => applyTheme());
 applyExperiencePreferences();
 window.addEventListener('storage', (event) => {
   if (event.key === experienceStorageKey || event.key === null) {
@@ -152,6 +154,7 @@ document.querySelector('#logout').addEventListener('click', async () => {
   control.disabled = true;
   try {
     await browserAuthRequest('logout');
+    actions.resetHabitLogs();
     actions.showBrowserLogin();
   } catch (error) {
     actions.toast(error.message);
@@ -168,7 +171,7 @@ for (const b of /** @type {NodeListOf<HTMLButtonElement>} */ (
       return;
     }
     if (state.tab === b.dataset.tab && state.screenState === 'ready') {
-      if (state.tab !== 'beasts') actions.refreshOnReturn();
+      if (state.tab !== 'beasts') actions.refreshOnReturn({ force: true });
       return;
     }
     state.tab = b.dataset.tab;

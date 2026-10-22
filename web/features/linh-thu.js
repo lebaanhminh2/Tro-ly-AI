@@ -1,5 +1,6 @@
 import { liveRequest, requestIdentity, settleRequest } from '../core/http.js';
 import { mapAccount } from '../core/live-data.js';
+import { claimWrite, releaseWrite } from '../core/state.js';
 import { button, el, field } from '../ui/dom.js';
 import {
   beastArtwork,
@@ -24,15 +25,31 @@ import {
   updateBeastProtectionButton,
 } from '../views/linh-thu.js';
 import { prefersReducedMotion } from '../core/experience.js';
-import { createBeastReveal } from '../ui/beast-reveal.js';
-import { createBeastEvolution } from '../ui/beast-evolution.js';
 import { openBeastTowerSheet } from '../ui/beast-tower.js';
 import { beastSkillsV2 } from '../models/linh-thu-v2.js';
 
 const pendingKey = 'minh-anh-beast-pending-v1';
 export function createBeastActions(context) {
   const { state, runtime, render, toast, openSheet, closeSheet, sheetContent, confirm } = context;
-  let activeReveal, activeEvolution;
+  let activeReveal,
+    activeEvolution,
+    presentationGeneration = 0;
+  function currentPresentation() {
+    const generation = ++presentationGeneration;
+    const session = runtime.session;
+    const tab = state.tab,
+      panel = state.beastPanel;
+    const title = sheetContent.firstElementChild,
+      wasOpen = context.sheet.open;
+    return () =>
+      generation === presentationGeneration &&
+      session === runtime.session &&
+      state.loaded &&
+      state.tab === tab &&
+      state.beastPanel === panel &&
+      context.sheet.open === wasOpen &&
+      sheetContent.firstElementChild === title;
+  }
   // Only one account version can commit at a time. Coalesce each individual's
   // latest desired value while acknowledging its star without rebuilding cards.
   const protectionChanges = new Map();
@@ -169,6 +186,7 @@ export function createBeastActions(context) {
       () => {
         if (!state.loaded || state.beastData !== data) return;
         data.trainingPreview = null;
+        state.beastRefreshedAt = 0;
         render();
         if (state.tab === 'beasts' && document.visibilityState === 'visible' && !runtime.saving)
           loadBeasts();
@@ -210,9 +228,11 @@ export function createBeastActions(context) {
     previewLoading = { data, revision, promise };
     return promise;
   }
-  async function loadBeasts(more = false, scope = 'inventory') {
+  async function loadBeasts(more = false, scope = 'inventory', force = true) {
     if (scope === 'species') return loadBeastSpecies(more);
     if (!state.live || !state.loaded) return;
+    if (!force && !more && state.beastData && Date.now() - (state.beastRefreshedAt ?? 0) < 15000)
+      return;
     if (loading && loadingRevision === runtime.revision) return loading;
     loadingRevision = runtime.revision;
     const requestGeneration = ++generation,
@@ -237,6 +257,7 @@ export function createBeastActions(context) {
           if (state.beastData && data.account.version < state.beastData.account.version) return;
           data.trainingPreview = state.beastData?.trainingPreview ?? null;
           state.beastData = data;
+          state.beastRefreshedAt = Date.now();
           scheduleTrainingDay(data);
           state.beastCollection = page;
           state.cultivation = mapAccount(data.wallet, state.day?.day);
@@ -264,8 +285,9 @@ export function createBeastActions(context) {
     })();
     return loading;
   }
-  async function loadTower() {
+  async function loadTower(force = true) {
     if (!state.live || !state.loaded) return;
+    if (!force && state.beastTower && Date.now() - (state.towerRefreshedAt ?? 0) < 15000) return;
     if (towerLoading && towerRevision === runtime.revision) return towerLoading;
     towerRevision = runtime.revision;
     const requestGeneration = ++towerGeneration;
@@ -275,6 +297,7 @@ export function createBeastActions(context) {
         if (requestGeneration !== towerGeneration || revision !== runtime.revision || !state.loaded)
           return;
         state.beastTower = data;
+        state.towerRefreshedAt = Date.now();
         state.towerError = null;
         if (state.beastData) state.beastData.account = data.account;
         state.cultivation = mapAccount(data.wallet, state.day?.day);
@@ -328,7 +351,7 @@ export function createBeastActions(context) {
     const id = requestIdentity('linh-thu', input);
     runtime.pendingBeast = { input, id };
     persistPending(runtime.pendingBeast);
-    runtime.saving = true;
+    const writeToken = claimWrite(runtime);
     const revision = ++runtime.revision;
     state.beastBusy = true;
     state.beastRoleSaving = ['select', 'cancel'].includes(input.operation);
@@ -386,19 +409,21 @@ export function createBeastActions(context) {
       state.beastError = error.message;
       toast(error.message);
     } finally {
-      const unchanged = revision === runtime.revision;
-      runtime.saving = false;
-      state.beastBusy = false;
-      state.beastRoleSaving = false;
-      for (const { control, disabled } of sheetControls)
-        if (control.isConnected) control.disabled = disabled || !!runtime.pendingBeast;
-      runtime.revision++;
-      render();
-      if (unchanged && !runtime.pendingBeast) {
-        // Routine star writes use their own queue. This path also handles a
-        // recovered receipt, whose optimistic snapshot must be reconciled.
-        if (state.tab === 'beasts') loadBeasts();
-        if (fields.operation.startsWith('tower_') || state.tab === 'habits') loadTower();
+      if (runtime.writeToken === writeToken) {
+        const unchanged = revision === runtime.revision;
+        releaseWrite(runtime, writeToken);
+        state.beastBusy = false;
+        state.beastRoleSaving = false;
+        for (const { control, disabled } of sheetControls)
+          if (control.isConnected) control.disabled = disabled || !!runtime.pendingBeast;
+        runtime.revision++;
+        render();
+        if (unchanged && !runtime.pendingBeast) {
+          // Routine star writes use their own queue. This path also handles a
+          // recovered receipt, whose optimistic snapshot must be reconciled.
+          if (state.tab === 'beasts') loadBeasts();
+          if (fields.operation.startsWith('tower_') || state.tab === 'habits') loadTower();
+        }
       }
     }
     return result;
@@ -427,7 +452,7 @@ export function createBeastActions(context) {
       else if (pending.input.operation === 'evolve') toast(`Đã tiến hóa lên T${result.form}.`);
     };
     const revision = ++runtime.revision;
-    runtime.saving = true;
+    const writeToken = claimWrite(runtime);
     state.beastBusy = true;
     render();
     let retry = false;
@@ -448,9 +473,11 @@ export function createBeastActions(context) {
       if (error.code === 'NOT_FOUND') retry = true;
       else toast(error.message);
     } finally {
-      runtime.saving = false;
-      state.beastBusy = false;
-      render();
+      if (runtime.writeToken === writeToken) {
+        releaseWrite(runtime, writeToken);
+        state.beastBusy = false;
+        render();
+      }
     }
     if (retry) {
       if (pending.input.operation === 'protect') protectionChanges.clear();
@@ -694,6 +721,7 @@ export function createBeastActions(context) {
   async function evolveBeast(beast) {
     if (state.beastBusy || runtime.saving || runtime.pendingBeast) return;
     if (!beastProgress(state.beastData, beast).canEvolve) return;
+    void import('../ui/beast-evolution.js').catch(() => {});
     const wasOpen = context.sheet.open,
       isCurrent = currentSheet();
     for (const control of sheetContent.querySelectorAll('.beast-evolve-button')) {
@@ -711,7 +739,7 @@ export function createBeastActions(context) {
       showEvolutionResult(result);
     else if (result) toast(`Đã tiến hóa lên T${result.form}.`);
   }
-  function showEvolutionResult(result) {
+  async function showEvolutionResult(result) {
     applyEvolution(result);
     const data = state.beastData;
     const beast = [
@@ -726,6 +754,16 @@ export function createBeastActions(context) {
     const progress = beastProgress(data, beast);
     closeSheet();
     activeEvolution?.();
+    const isCurrent = currentPresentation();
+    let createBeastEvolution;
+    try {
+      ({ createBeastEvolution } = await import('../ui/beast-evolution.js'));
+    } catch {
+      if (isCurrent())
+        toast('Đã lưu kết quả tiến hóa. Chưa tải được hiệu ứng, cậu xem lại linh thú nhé.');
+      return;
+    }
+    if (!isCurrent()) return;
     const panel = state.beastPanel;
     const evolution = createBeastEvolution({
       data,
@@ -879,7 +917,8 @@ export function createBeastActions(context) {
     if (protectionSaving) return;
     protectionSaving = true;
     state.beastProtectionSaving = true;
-    runtime.saving = true;
+    const writeToken = claimWrite(runtime),
+      session = runtime.session;
     try {
       while (protectionChanges.size && state.live && state.loaded) {
         const [beastId, change] = protectionChanges.entries().next().value;
@@ -906,6 +945,10 @@ export function createBeastActions(context) {
         let failure;
         try {
           const response = await liveRequest('linh-thu', input);
+          if (session !== runtime.session) {
+            protectionChanges.clear();
+            return;
+          }
           if (revision !== runtime.revision || !state.loaded || !state.live) {
             // A newer session/page cannot adopt this response. Retain the receipt
             // intent, then reconcile before allowing any other business write.
@@ -925,6 +968,10 @@ export function createBeastActions(context) {
             state.beastError = null;
           }
         } catch (error) {
+          if (session !== runtime.session) {
+            protectionChanges.clear();
+            return;
+          }
           failure = error;
         }
         if (failure) {
@@ -980,21 +1027,25 @@ export function createBeastActions(context) {
     } finally {
       protectionSaving = false;
       protectionReconciling = false;
-      state.beastProtectionSaving = false;
-      runtime.saving = false;
-      for (const star of /** @type {NodeListOf<HTMLButtonElement>} */ (
-        document.querySelectorAll('.beast-protection')
-      ))
-        star.disabled =
-          !!runtime.pendingBeast || !!state.beastBusy || star.dataset.protectionReadonly === 'true';
-      if (
-        state.loaded &&
-        !runtime.pendingBeast &&
-        state.beastPanel === 'collection' &&
-        state.beastCollectionSpecies &&
-        !state.beastSpeciesPage
-      )
-        void loadBeastSpecies();
+      if (runtime.writeToken === writeToken) {
+        state.beastProtectionSaving = false;
+        releaseWrite(runtime, writeToken);
+        for (const star of /** @type {NodeListOf<HTMLButtonElement>} */ (
+          document.querySelectorAll('.beast-protection')
+        ))
+          star.disabled =
+            !!runtime.pendingBeast ||
+            !!state.beastBusy ||
+            star.dataset.protectionReadonly === 'true';
+        if (
+          state.loaded &&
+          !runtime.pendingBeast &&
+          state.beastPanel === 'collection' &&
+          state.beastCollectionSpecies &&
+          !state.beastSpeciesPage
+        )
+          void loadBeastSpecies();
+      }
     }
   }
   function openBeastExchange(tab = 'exchange') {
@@ -1710,6 +1761,7 @@ export function createBeastActions(context) {
     );
   }
   async function summonBeast(count) {
+    void import('../ui/beast-reveal.js').catch(() => {});
     const result = await mutateBeast({ operation: 'summon', count });
     if (result) result.choice ? openBeastSummonChoice(result.choice) : showBeastReveal(result);
   }
@@ -1819,11 +1871,21 @@ export function createBeastActions(context) {
       sheetContent.append(box);
     }
   }
-  function showBeastReveal(result) {
+  async function showBeastReveal(result) {
     const data = state.beastData;
     if (!data || !result?.beasts?.length) return;
     closeSheet();
     activeReveal?.();
+    const isCurrent = currentPresentation();
+    let createBeastReveal;
+    try {
+      ({ createBeastReveal } = await import('../ui/beast-reveal.js'));
+    } catch {
+      if (isCurrent())
+        toast('Đã lưu kết quả triệu hồi. Chưa tải được hiệu ứng, cậu xem lại kết quả nhé.');
+      return;
+    }
+    if (!isCurrent()) return;
     const openedTab = state.tab;
     const openedPanel = state.beastPanel;
     const reveal = createBeastReveal({

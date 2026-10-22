@@ -1,0 +1,110 @@
+{
+  "checkedAt": "2026-10-22T16:38:21.912Z",
+  "version": "88f44dfe-fd56-4553-863e-265f8ba5c4a1",
+  "base": "https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev",
+  "assets": [
+    {
+      "file": "index.html",
+      "status": 200,
+      "hashMatches": true,
+      "cacheControl": "public, max-age=0, must-revalidate"
+    },
+    {
+      "file": "app.js",
+      "status": 200,
+      "hashMatches": true,
+      "cacheControl": "public, max-age=0, must-revalidate"
+    },
+    {
+      "file": "styles.css",
+      "status": 200,
+      "hashMatches": true,
+      "cacheControl": "public, max-age=0, must-revalidate"
+    },
+    {
+      "file": "core/state.js",
+      "status": 200,
+      "hashMatches": true,
+      "cacheControl": "public, max-age=0, must-revalidate"
+    },
+    {
+      "file": "core/live-data.js",
+      "status": 200,
+      "hashMatches": true,
+      "cacheControl": "public, max-age=0, must-revalidate"
+    },
+    {
+      "file": "views/habits.js",
+      "status": 200,
+      "hashMatches": true,
+      "cacheControl": "public, max-age=0, must-revalidate"
+    },
+    {
+      "file": "views/today.js",
+      "status": 200,
+      "hashMatches": true,
+      "cacheControl": "public, max-age=0, must-revalidate"
+    },
+    {
+      "file": "ui/feedback.js",
+      "status": 200,
+      "hashMatches": true,
+      "cacheControl": "public, max-age=0, must-revalidate"
+    },
+    {
+      "file": "features/browser-login.js",
+      "status": 200,
+      "hashMatches": true,
+      "cacheControl": "public, max-age=0, must-revalidate"
+    },
+    {
+      "file": "core/mutations.js",
+      "status": 200,
+      "hashMatches": true,
+      "cacheControl": "public, max-age=0, must-revalidate"
+    },
+    {
+      "file": "features/tasks.js",
+      "status": 200,
+      "hashMatches": true,
+      "cacheControl": "public, max-age=0, must-revalidate"
+    },
+    {
+      "file": "features/habits.js",
+      "status": 200,
+      "hashMatches": true,
+      "cacheControl": "public, max-age=0, must-revalidate"
+    },
+    {
+      "file": "ui/sheets.js",
+      "status": 200,
+      "hashMatches": true,
+      "cacheControl": "public, max-age=0, must-revalidate"
+    },
+    {
+      "file": "core/http.js",
+      "status": 200,
+      "hashMatches": true,
+      "cacheControl": "public, max-age=0, must-revalidate"
+    },
+    {
+      "file": "core/lifecycle.js",
+      "status": 200,
+      "hashMatches": true,
+      "cacheControl": "public, max-age=0, must-revalidate"
+    },
+    {
+      "file": "ui/beast-tower.js",
+      "status": 200,
+      "hashMatches": true,
+      "cacheControl": "public, max-age=0, must-revalidate"
+    },
+    {
+      "file": "features/linh-thu.js",
+      "status": 200,
+      "hashMatches": true,
+      "cacheControl": "public, max-age=0, must-revalidate"
+    }
+  ],
+  "unauthenticatedApiStatus": 401
+}

@@ -57,6 +57,11 @@ const makeNode = (tag: string, value = '', className = '') => ({
   replaceChildren(...children: any[]) {
     this.children = children;
   },
+  insertBefore(child: any, reference: any) {
+    const index = this.children.indexOf(reference);
+    this.children.splice(index < 0 ? this.children.length : index, 0, child);
+    return child;
+  },
   setAttribute(key: string, value: string) {
     this.attrs[key] = value;
   },
@@ -458,7 +463,8 @@ test('Today switches only its work panel while keeping the flame, controls and f
     ),
     work = root.children.find((n: any) => n.className === 'work-state'),
     main = root.children.find((n: any) => n.className === 'today-main');
-  const [toggle, panel] = main.children,
+  const toggle = root.children.find((node: any) => node.className.includes('today-view-switch')),
+    panel = main.children[0],
     flame = work.children[0];
   const assertCurrentSession = () => {
     const current = walk(panel).filter(
@@ -481,8 +487,8 @@ test('Today switches only its work panel while keeping the flame, controls and f
   assert.equal(state.mode, 'tasks');
   assert.equal(toggle.children[1].attrs['aria-pressed'], 'true');
   assert.equal(work.children[0], flame);
-  assert.equal(main.children[0], toggle);
-  assert.equal(main.children[1], panel);
+  assert.ok(root.children.includes(toggle));
+  assert.equal(main.children[0], panel);
   assert.equal(panel.children[0].className, 'task-list-section');
   assert.equal(renders, 0);
   assert.equal(anchors, 1);

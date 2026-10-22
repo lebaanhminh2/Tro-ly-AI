@@ -71,20 +71,18 @@ export async function bootstrap({ env, owner, now, healthy }: MiniAppContext): P
     work.activeTaskTotal(owner),
   ]);
   const byTask = new Map(logged.results.map((row) => [row.task_id, row.minutes])),
-    remaining = new Map(planning.results.map((row) => [row.task_id, row.remaining_minutes]));
+    remaining = new Map(planning.results.map((row) => [row.task_id, row]));
   for (const task of tasks as Array<Record<string, unknown>>) {
     task.actual_minutes = byTask.get(String(task.id)) ?? 0;
-    task.remaining_minutes = remaining.get(String(task.id)) ?? null;
-    task.remaining_balance =
-      planning.results.find((row) => row.task_id === task.id)?.remaining_balance ??
-      task.remaining_minutes;
+    const balance = remaining.get(String(task.id));
+    task.remaining_minutes = balance?.remaining_minutes ?? null;
+    task.remaining_balance = balance?.remaining_balance ?? task.remaining_minutes;
   }
   const visibleStart =
     day?.start_at ?? Math.floor((now + 25200000) / 86400000) * 86400000 - 25200000;
-  const reminderPage = await rules.visiblePage(owner, 0, visibleStart);
-  const visibleRules = reminderPage.rules;
-  const appointments = (
-    await query(
+  const [reminderPage, appointmentPage, rest, dailyPlan] = await Promise.all([
+    rules.visiblePage(owner, 0, visibleStart),
+    query(
       env.DB,
       "SELECT a.id,a.version,a.due,a.status,COALESCE(a.subject,t.title) AS title,EXISTS(SELECT 1 FROM outbox o WHERE o.reminder_id IN ('appointment:'||a.id||':1','appointment:'||a.id||':2') AND o.state='sent') AS delivered FROM task_appointments a LEFT JOIN tasks t ON t.id=a.task_id AND t.owner=a.owner WHERE a.owner=? AND a.status IN ('active','expired') AND a.due>=? AND (a.task_id IS NULL OR t.deleted_at IS NULL) ORDER BY a.due LIMIT 200",
       owner,
@@ -96,8 +94,12 @@ export async function bootstrap({ env, owner, now, healthy }: MiniAppContext): P
       status: string;
       title: string;
       delivered: number;
-    }>()
-  ).results;
+    }>(),
+    new ScheduleStore(env.DB).restStatus(owner, now),
+    new DayPlanStore(env.DB).ensure(owner, now),
+  ]);
+  const visibleRules = reminderPage.rules;
+  const appointments = appointmentPage.results;
   const combined = [
     ...visibleRules,
     ...appointments.map((a) => {
@@ -118,15 +120,22 @@ export async function bootstrap({ env, owner, now, healthy }: MiniAppContext): P
       };
     }),
   ];
-  const rest = await new ScheduleStore(env.DB).restStatus(owner, now);
-  const dailyPlan = await new DayPlanStore(env.DB).ensure(owner, now);
   const activeOffset = tasks.filter((task) => task.status === 'active').length;
   const known = new Set(tasks.map((task) => task.id));
   const missing = [...new Set((dailyPlan?.plan.items ?? []).map((item) => item.taskId))].filter(
     (id) => !known.has(id),
   );
-  tasks.push(...(await work.planTaskDetails(owner, missing, day?.day ?? null)));
-  const beast = day ? await readBeastV2Context(env.DB, owner, day.day, now) : null;
+  // The plan is ensured before timeline/focus reads. All following projections
+  // are independent; none needs to wait for the previous network round trip.
+  const [plannedTasks, beast, sleepStatus, timeline, taskFocus, focusTarget] = await Promise.all([
+    work.planTaskDetails(owner, missing, day?.day ?? null),
+    day ? readBeastV2Context(env.DB, owner, day.day, now) : Promise.resolve(null),
+    new ScheduleStore(env.DB).sleepStatus(owner, now),
+    new TimelineStore(env.DB).read(owner, now),
+    currentTaskFocus(env.DB, owner, now),
+    taskFocusTarget(env.DB, owner, now),
+  ]);
+  tasks.push(...plannedTasks);
   const breakthrough =
     beast?.active && beast.beast
       ? beastV2BreakthroughModifier(beast.beast.skills, beast.beast.state)
@@ -144,7 +153,7 @@ export async function bootstrap({ env, owner, now, healthy }: MiniAppContext): P
       },
       selfBurnFinal: BEAST_V2_SELF_BURN_FINAL,
     },
-    sleepStatus: await new ScheduleStore(env.DB).sleepStatus(owner, now),
+    sleepStatus,
     checkin: dailyCheckinProgress(account.state, now),
     breakthroughPenalties: BREAKTHROUGH_PENALTIES,
     tasks,
@@ -160,10 +169,10 @@ export async function bootstrap({ env, owner, now, healthy }: MiniAppContext): P
     sessions,
     events,
     day,
-    timeline: await new TimelineStore(env.DB).read(owner, now),
+    timeline,
     dailyPlan,
-    taskFocus: await currentTaskFocus(env.DB, owner, now),
-    taskFocusTarget: await taskFocusTarget(env.DB, owner, now),
+    taskFocus,
+    taskFocusTarget: focusTarget,
     rest,
     resting: rest.reason !== 'active',
     realms: REALMS,

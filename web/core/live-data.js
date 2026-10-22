@@ -1,6 +1,6 @@
-import { liveRequest, settleRequest } from './http.js';
+import { liveRequest, requestIdentity, settleRequest } from './http.js';
 import { applyTheme } from './theme.js';
-let viewportApp;
+let viewportApp, connectedApp, telegramSDK;
 function connectViewport(app) {
   if (viewportApp === app) return;
   viewportApp = app;
@@ -21,24 +21,29 @@ function connectViewport(app) {
 }
 export async function connectLive() {
   if (!globalThis.Telegram?.WebApp && location.hash.includes('tgWebAppData')) {
-    await new Promise((resolve, reject) => {
+    telegramSDK ??= new Promise((resolve, reject) => {
       const script = document.createElement('script');
       script.src = 'https://telegram.org/js/telegram-web-app.js';
       script.onload = resolve;
-      script.onerror = () => reject(Error('Không tải được Telegram SDK.'));
+      script.onerror = () => {
+        telegramSDK = undefined;
+        script.remove();
+        reject(Error('Không tải được Telegram SDK.'));
+      };
       document.head.append(script);
     });
+    await telegramSDK;
   }
   const app = globalThis.Telegram?.WebApp;
   const theme = () => applyTheme();
   theme();
-  if (app?.initData) {
+  if (app?.initData && connectedApp !== app) {
+    connectedApp = app;
     connectViewport(app);
     app.onEvent?.('themeChanged', theme);
-    app.ready();
     app.expand();
   }
-  return refreshLive();
+  return refreshLive({ includeHistory: false });
 }
 export function mapTask(t, completions = new Map()) {
   const completedAt = t.completed_at ?? t.completedAt ?? completions.get(t.id) ?? null;
@@ -103,7 +108,7 @@ export async function refreshLive({
 } = {}) {
   if (scope === 'habits') {
     const data = await liveRequest('habits?archived=1');
-    return { habitData: data, baseDirty: true };
+    return { habitData: data, habitRefreshedAt: Date.now(), baseDirty: true };
   }
   // Start independent reads together; history errors still do not block bootstrap.
   const historyRequest = includeHistory ? historyPage(0).catch(() => null) : Promise.resolve(null);
@@ -185,7 +190,7 @@ export async function refreshLive({
     })),
     remindersNextCursor: data.remindersPage?.nextCursor ?? null,
     cultivation: mapAccount(data.account, data.day?.day),
-    ...(includeHabits ? { habitData } : {}),
+    ...(includeHabits ? { habitData, habitRefreshedAt: Date.now() } : {}),
     day: data.day,
     operatingDay: data.day?.day ?? null,
     dailyPlan: data.dailyPlan,
@@ -197,10 +202,16 @@ export async function refreshLive({
     sessions: data.sessions,
     events: data.events,
     baseDirty: false,
+    baseRefreshedAt: Date.now(),
   };
 }
 export async function liveMutation(path, input, options = {}) {
+  const requestId = requestIdentity(path, input);
   const result = await liveRequest(path, input);
+  if (options.acknowledge) {
+    settleRequest(path, input, requestId);
+    return { result, committed: true, refreshDeferred: true };
+  }
   // A draw receipt includes the complete wallet. Showing its confirmed rewards
   // does not depend on reading the schedule, task pages or habit reports again.
   if (
@@ -209,12 +220,12 @@ export async function liveMutation(path, input, options = {}) {
     options.scope === 'draw' &&
     result.account?.state
   ) {
-    settleRequest(path, input);
+    settleRequest(path, input, requestId);
     return { result, committed: true, accountOnly: true };
   }
   try {
     const refreshed = await refreshLive(options);
-    settleRequest(path, input);
+    settleRequest(path, input, requestId);
     return { result, ...refreshed, committed: true };
   } catch (refreshError) {
     // The POST was acknowledged. Never describe a failed refresh as a failed save.

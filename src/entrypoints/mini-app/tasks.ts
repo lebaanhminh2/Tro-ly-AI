@@ -1,8 +1,9 @@
 import { recordTaskNudgeActivity } from '../../adapters/d1/work-nudges.ts';
 import { D1WorkStore } from '../../adapters/d1/work-store.ts';
 import { json, type MiniAppContext, type MiniAppInput } from './context.ts';
+import { query } from '../../adapters/d1/database.ts';
 export async function handleTasks(
-  { env, owner, now }: MiniAppContext,
+  { env, owner, now, healthy }: MiniAppContext,
   input: MiniAppInput,
   path: string,
 ): Promise<Response | undefined> {
@@ -62,6 +63,38 @@ export async function handleTasks(
       now,
     );
     await recordTaskNudgeActivity(env.DB, owner, `mini:${input.id}`, now);
-    return json({ result });
+    // Return the changed task and wallet so the editor can close on confirmation
+    // without a second, full-app bootstrap just to learn its new version.
+    const taskId = (result as { id?: string }).id;
+    const day = await query(
+      env.DB,
+      'SELECT day FROM schedule_days WHERE owner=? AND start_at<=? AND end_at>? ORDER BY start_at DESC LIMIT 1',
+      owner,
+      now,
+      now,
+    ).first<{ day: number }>();
+    const [tasks, account, completion] = await Promise.all([
+      new D1WorkStore(env.DB).planTaskDetails(owner, taskId ? [taskId] : [], day?.day ?? null),
+      healthy.read(owner),
+      taskId
+        ? query(
+            env.DB,
+            'SELECT completed_at FROM task_completions WHERE owner=? AND task_id=?',
+            owner,
+            taskId,
+          ).first<{ completed_at: number }>()
+        : Promise.resolve(null),
+    ]);
+    const task = tasks[0];
+    return json({
+      result,
+      task: task
+        ? {
+            ...task,
+            completed_at: task.status === 'completed' ? (completion?.completed_at ?? now) : null,
+          }
+        : null,
+      account,
+    });
   }
 }

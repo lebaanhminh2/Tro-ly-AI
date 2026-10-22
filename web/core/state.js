@@ -37,11 +37,36 @@ export function createRuntimeState() {
     revision: 0,
     refreshPending: false,
     pendingReceipt: null,
+    session: 0,
+    writeWaiters: new Set(),
   };
+}
+export function waitForWrite(runtime) {
+  if (!runtime.saving) return Promise.resolve();
+  return new Promise((resolve) => (runtime.writeWaiters ??= new Set()).add(resolve));
+}
+export function claimWrite(runtime) {
+  const token = {};
+  runtime.writeToken = token;
+  runtime.saving = true;
+  return token;
+}
+export function releaseWrite(runtime, token = runtime.writeToken) {
+  if (runtime.writeToken !== token) return;
+  runtime.saving = false;
+  runtime.writeToken = null;
+  for (const resolve of runtime.writeWaiters ?? []) resolve();
+  runtime.writeWaiters?.clear();
 }
 /** Apply authoritative data without throwing away separately paged history. */
 export function applySnapshot(state, snapshot) {
   const next = { ...snapshot };
+  if (next.habitData) {
+    const now =
+      next.habitData.now ??
+      (state.serverNow ?? Date.now()) + Date.now() - (state.loadedAt ?? Date.now());
+    next.habitExpiresAt = Date.now() + next.habitData.day.endAt - now;
+  }
   if (snapshot.historyRefreshed === false && snapshot.tasks) {
     const ids = new Set(snapshot.tasks.map((task) => task.id));
     next.tasks = [

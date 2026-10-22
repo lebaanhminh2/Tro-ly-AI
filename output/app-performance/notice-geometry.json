@@ -1,0 +1,103 @@
+[
+  {
+    "viewportWidth": 320,
+    "theme": "light",
+    "left": 12,
+    "right": 308,
+    "bottom": 759.0130615234375,
+    "navTop": 771,
+    "width": 296,
+    "height": 58,
+    "buttonHeight": 44,
+    "closeWidth": 44,
+    "overflow": false
+  },
+  {
+    "viewportWidth": 320,
+    "theme": "dark",
+    "left": 12,
+    "right": 308,
+    "bottom": 759,
+    "navTop": 771,
+    "width": 296,
+    "height": 58,
+    "buttonHeight": 44,
+    "closeWidth": 44,
+    "overflow": false
+  },
+  {
+    "viewportWidth": 390,
+    "theme": "light",
+    "left": 12,
+    "right": 378,
+    "bottom": 759,
+    "navTop": 771,
+    "width": 366,
+    "height": 58,
+    "buttonHeight": 44,
+    "closeWidth": 44,
+    "overflow": false
+  },
+  {
+    "viewportWidth": 390,
+    "theme": "dark",
+    "left": 12,
+    "right": 378,
+    "bottom": 759,
+    "navTop": 771,
+    "width": 366,
+    "height": 58,
+    "buttonHeight": 44,
+    "closeWidth": 44,
+    "overflow": false
+  },
+  {
+    "viewportWidth": 1280,
+    "theme": "light",
+    "left": 392.5,
+    "right": 872.5,
+    "bottom": 816,
+    "navTop": 146,
+    "width": 480,
+    "height": 58,
+    "buttonHeight": 44,
+    "closeWidth": 44,
+    "overflow": false
+  },
+  {
+    "viewportWidth": 1280,
+    "theme": "dark",
+    "left": 392.5,
+    "right": 872.5,
+    "bottom": 816,
+    "navTop": 146,
+    "width": 480,
+    "height": 58,
+    "buttonHeight": 44,
+    "closeWidth": 44,
+    "overflow": false
+  },
+  {
+    "viewportWidth": 320,
+    "textScale": 2,
+    "reducedMotion": true,
+    "safeBottom": 20,
+    "left": 12,
+    "right": 308,
+    "top": 203.40625,
+    "bottom": 689.40625,
+    "navTop": 721.40625,
+    "overflow": false,
+    "bodyOverflow": false,
+    "buttons": [
+      {
+        "height": 94,
+        "width": 120
+      },
+      {
+        "height": 44,
+        "width": 44
+      }
+    ]
+  }
+]

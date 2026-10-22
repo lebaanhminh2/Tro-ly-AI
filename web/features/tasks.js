@@ -21,14 +21,7 @@ export function createTaskActions(context) {
         task.done
           ? 'Mở lại task cha, giữ trạng thái các bước đã xong.'
           : 'Đánh dấu xong cả task và các bước còn lại?',
-        () =>
-          performLive('tasks', {
-            operation: 'complete',
-            taskId: task.id,
-            version: task.version,
-            complete: !task.done,
-            confirm: true,
-          }),
+        () => completeTask(task, !task.done),
       );
       return;
     }
@@ -59,7 +52,65 @@ export function createTaskActions(context) {
       },
     );
   }
+  async function completeTask(task, complete) {
+    if (state.taskIntents?.[task.id]) return;
+    const session = runtime.session;
+    (state.taskIntents ??= {})[task.id] = { done: complete };
+    render();
+    const result = await performLive(
+      'tasks',
+      {
+        operation: 'complete',
+        taskId: task.id,
+        version: task.version,
+        complete,
+        confirm: true,
+      },
+      {
+        queue: true,
+        keepSheet: true,
+        silent: true,
+        resolveInput: () => {
+          const current = state.tasks.find((item) => item.id === task.id);
+          if (!current) throw Error('Công việc không còn trong danh sách.');
+          return {
+            operation: 'complete',
+            taskId: current.id,
+            version: current.version,
+            complete,
+            confirm: true,
+          };
+        },
+        onCommitted: (_saved, input, receipt) => {
+          if (receipt.task) {
+            if (receipt.task.status === 'completed' && state.taskFocus?.taskId === task.id)
+              state.taskFocus = null;
+            return;
+          }
+          const current = state.tasks.find((item) => item.id === task.id);
+          if (!current) return;
+          current.done = complete;
+          current.version = input.version + 1;
+          current.completedAt = complete
+            ? (state.serverNow ?? Date.now()) + Date.now() - (state.loadedAt ?? Date.now())
+            : null;
+          if (complete)
+            for (const step of current.steps) {
+              if (!step.done) step.version++;
+              step.done = true;
+            }
+          if (complete && state.taskFocus?.taskId === task.id) state.taskFocus = null;
+        },
+      },
+    );
+    if (session !== runtime.session) return;
+    delete state.taskIntents[task.id];
+    render();
+    if (result?.ticket > 0) toast('+' + result.ticket + ' vé quay', undefined, { kind: 'success' });
+    return result;
+  }
   function openTask(task) {
+    if (state.live && task?.id) task = state.tasks.find((item) => item.id === task.id) ?? task;
     openSheet(task ? '#' + task.code + ' · Chi tiết' : 'Thêm công việc');
     sheet.classList.add('task-sheet-open');
     const shell = el('div', undefined, 'task-sheet'),
@@ -416,7 +467,7 @@ export function createTaskActions(context) {
           );
           if (!saved) return;
         }
-        sheet.close();
+        if (form.isConnected) sheet.close();
         render();
         toast(progress?.dirty ? 'Đã lưu task và tiến độ hôm nay.' : 'Đã lưu thay đổi.');
         return;
@@ -479,24 +530,34 @@ export function createTaskActions(context) {
     );
   }
   async function loadHistory() {
-    if (!state.live || runtime.saving || state.historyLoading || !state.historyHasMore) return;
+    if (
+      !state.live ||
+      runtime.saving ||
+      state.historyLoading ||
+      (state.historyRefreshed && !state.historyHasMore)
+    )
+      return;
+    const firstPage = !state.historyRefreshed;
+    let changed = false;
     state.historyLoading = true;
     runtime.revision++;
-    render();
+    if (!firstPage) render();
     const revision = runtime.revision;
     try {
       const page = await historyPage(state.historyOffset ?? 0);
       if (revision !== runtime.revision || !state.loaded) return;
+      changed = page.items.length > 0 || page.hasMore;
       for (const task of page.items ?? [])
         if (!state.tasks.some((item) => item.id === task.id)) state.tasks.push(task);
       state.historyOffset = (page.offset ?? state.historyOffset ?? 0) + (page.items?.length ?? 0);
       state.historyHasMore = !!page.hasMore;
       state.historyTotal = page.total ?? state.historyTotal;
+      state.historyRefreshed = true;
     } catch (error) {
       if (revision === runtime.revision) toast(error.message || 'Chưa tải thêm lịch sử được.');
     } finally {
       state.historyLoading = false;
-      if (revision === runtime.revision) render();
+      if (revision === runtime.revision && (!firstPage || changed)) render();
     }
   }
   async function loadActiveTasks() {

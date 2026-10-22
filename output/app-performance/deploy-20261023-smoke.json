@@ -1,0 +1,49 @@
+{
+  "version": "e33dd3f9-157c-4136-b2af-3efb0466eb37",
+  "checkedAt": "2026-10-22T17:22:06.287Z",
+  "assets": [
+    {
+      "file": "index.html",
+      "status": 200,
+      "hashMatches": true,
+      "cacheControl": "public, max-age=0, must-revalidate"
+    },
+    {
+      "file": "core/startup.js",
+      "status": 200,
+      "hashMatches": true,
+      "cacheControl": "public, max-age=0, must-revalidate"
+    },
+    {
+      "file": "core/lifecycle.js",
+      "status": 200,
+      "hashMatches": true,
+      "cacheControl": "public, max-age=0, must-revalidate"
+    },
+    {
+      "file": "linh-thu.css",
+      "status": 200,
+      "hashMatches": true,
+      "cacheControl": "public, max-age=0, must-revalidate"
+    },
+    {
+      "file": "ui/beast-tower.js",
+      "status": 200,
+      "hashMatches": true,
+      "cacheControl": "public, max-age=0, must-revalidate"
+    },
+    {
+      "file": "core/live-data.js",
+      "status": 200,
+      "hashMatches": true,
+      "cacheControl": "public, max-age=0, must-revalidate"
+    },
+    {
+      "file": "features/linh-thu.js",
+      "status": 200,
+      "hashMatches": true,
+      "cacheControl": "public, max-age=0, must-revalidate"
+    }
+  ],
+  "unauthenticatedApiStatus": 401
+}

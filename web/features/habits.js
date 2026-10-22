@@ -1,4 +1,4 @@
-import { liveRequest } from '../core/http.js';
+import { liveRequest, requestIdentity } from '../core/http.js';
 import {
   cadenceLabel,
   habitDate,
@@ -10,6 +10,9 @@ import {
 import { button, el, field } from '../ui/dom.js';
 import { habitJsonExport } from '../models/habit-export.js';
 import { prefersReducedMotion } from '../core/experience.js';
+import { waitForWrite } from '../core/state.js';
+const pendingLogKey = 'minh-anh-habit-pending-v1';
+const queuedLogKey = 'minh-anh-habit-queue-v1';
 
 export function createHabitActions(context) {
   const { state, runtime, render, toast, sheet, sheetContent, openSheet, performLive, confirm } =
@@ -20,7 +23,72 @@ export function createHabitActions(context) {
   const progressCache = new Map(),
     progressRequests = new Map();
   let loading, loadingRevision;
-  function loadHabits() {
+  const logQueue = new Map();
+  const pendingLogs = new Map(),
+    recoveringLogs = new Set();
+  function persistLogs() {
+    try {
+      if (pendingLogs.size)
+        sessionStorage.setItem(pendingLogKey, JSON.stringify([...pendingLogs.values()]));
+      else sessionStorage.removeItem(pendingLogKey);
+      const queued = [...logQueue].filter(([id, intent]) => {
+        const sent = pendingLogs.get(id)?.input;
+        return (
+          !sent ||
+          sent.day !== intent.day ||
+          Math.round(sent.value * 100) !== intent.value ||
+          sent.note !== intent.note
+        );
+      });
+      if (queued.length) sessionStorage.setItem(queuedLogKey, JSON.stringify(queued));
+      else sessionStorage.removeItem(queuedLogKey);
+    } catch {
+      /* Recovery stays available in memory if storage is disabled. */
+    }
+  }
+  try {
+    const queued = JSON.parse(sessionStorage.getItem(queuedLogKey) ?? '[]');
+    for (const [id, intent] of queued) {
+      if (
+        typeof id !== 'string' ||
+        !Number.isSafeInteger(intent?.day) ||
+        !Number.isFinite(intent?.value) ||
+        typeof intent.note !== 'string'
+      )
+        continue;
+      logQueue.set(id, { ...intent, session: runtime.session });
+    }
+    const entries = JSON.parse(sessionStorage.getItem(pendingLogKey) ?? '[]');
+    for (const entry of entries) {
+      if (
+        entry?.input?.operation !== 'log' ||
+        typeof entry.input.habitId !== 'string' ||
+        typeof entry.id !== 'string'
+      )
+        continue;
+      requestIdentity('habits', entry.input, entry.id);
+      pendingLogs.set(entry.input.habitId, entry);
+    }
+  } catch {
+    /* Ignore invalid or unavailable session storage. */
+  }
+  function resetHabitLogs() {
+    logQueue.clear();
+    pendingLogs.clear();
+    recoveringLogs.clear();
+    persistLogs();
+    state.habitLogRecovery = {};
+    state.habitLogIntents = {};
+  }
+  let drainingLogs = false;
+  function loadHabits(force = true) {
+    if (
+      !force &&
+      state.habitData &&
+      Date.now() - (state.habitRefreshedAt ?? 0) < 15000 &&
+      Date.now() < state.habitExpiresAt
+    )
+      return Promise.resolve();
     if (loading && loadingRevision === runtime.revision) return loading;
     loadingRevision = runtime.revision;
     const request = fetchHabits().finally(() => {
@@ -45,7 +113,19 @@ export function createHabitActions(context) {
         : { day: { day: Math.floor((Date.now() + 25200000) / 86400000) }, habits: [] };
       if (generation !== loadGeneration || revision !== runtime.revision) return;
       state.habitData = data;
+      state.habitLogRecovery = Object.fromEntries(
+        [...pendingLogs].map(([id, entry]) => [id, entry.input]),
+      );
+      for (const [id, intent] of logQueue) {
+        if (intent.session === runtime.session) (state.habitLogIntents ??= {})[id] = intent;
+      }
+      state.habitRefreshedAt = Date.now();
+      state.habitExpiresAt =
+        Date.now() +
+        data.day.endAt -
+        (data.now ?? (state.serverNow ?? Date.now()) + Date.now() - (state.loadedAt ?? Date.now()));
       if (state.habitPanel === 'progress') loadHabitProgress();
+      if (logQueue.size) void drainLogs();
     } catch (error) {
       if (generation !== loadGeneration || revision !== runtime.revision) return;
       state.habitError = error.message;
@@ -201,7 +281,8 @@ export function createHabitActions(context) {
     }
     const result = await performLive('habits', input, options);
     if (result) {
-      context.ui.loadBeastTrainingPreview?.(true);
+      if (state.tab === 'beasts' && ['training', 'companion'].includes(state.beastPanel))
+        context.ui.loadBeastTrainingPreview?.(true);
       state.habitHistory = null;
       state.habitReport = null;
       state.habitProgress = null;
@@ -213,8 +294,8 @@ export function createHabitActions(context) {
     }
     return result;
   }
-  async function saveLog(view, day, value, note) {
-    const before = { value: view.log.value, note: view.log.note, version: view.log.version };
+  async function saveLog(view, day, value, note, options = {}) {
+    let before = { value: view.log.value, note: view.log.note, version: view.log.version };
     const result = await save(
       {
         operation: 'log',
@@ -225,19 +306,69 @@ export function createHabitActions(context) {
         value,
         note,
       },
-      { silent: true },
+      {
+        silent: true,
+        ...options,
+        resolveInput: () => {
+          if (options.retryInput) return options.retryInput;
+          const current = state.habitData?.habits.find((item) => item.habit.id === view.habit.id);
+          if (!current || state.habitData.day.day !== day)
+            throw Error('Ngày ghi nhận đã thay đổi. Mở lại thói quen nhé.');
+          if (
+            (options.expectedLogVersion != null &&
+              current.log.version !== options.expectedLogVersion) ||
+            (options.expectedHabitVersion != null &&
+              current.habit.version !== options.expectedHabitVersion)
+          )
+            throw Error('Dữ liệu đã thay đổi. Mở ghi nhận để điều chỉnh nhé.');
+          before = { ...current.log };
+          return {
+            operation: 'log',
+            habitId: current.habit.id,
+            version: current.habit.version,
+            logVersion: current.log.version,
+            day,
+            value,
+            note,
+          };
+        },
+        onRequest: (input) => {
+          pendingLogs.set(input.habitId, { input, id: requestIdentity('habits', input) });
+          persistLogs();
+        },
+        onCommitted: (_result, input) => {
+          pendingLogs.delete(input.habitId);
+          if (state.habitLogRecovery) delete state.habitLogRecovery[input.habitId];
+          persistLogs();
+        },
+        onError: (error, input) => {
+          if (!['NETWORK_UNCONFIRMED', 'OPERATION_NOT_CONFIRMED'].includes(error.code)) {
+            pendingLogs.delete(view.habit.id);
+            if (state.habitLogRecovery) delete state.habitLogRecovery[view.habit.id];
+            persistLogs();
+          }
+          options.onError?.(error, input);
+        },
+      },
     );
     if (!result || runtime.refreshPending || !state.live) return result;
-    const revision = runtime.revision,
-      saved = state.habitData?.habits.find((item) => item.habit.id === view.habit.id);
+    const saved = state.habitData?.habits.find((item) => item.habit.id === view.habit.id);
     if (!saved || state.habitData.day.day !== day || saved.log.version !== before.version + 1)
       return result;
+    if (options.undo) {
+      toast(
+        options.keptTicket > 0
+          ? 'Đã hoàn tác ghi nhận. Vé đã nhận được giữ lại; hoàn thành lại hôm nay không thêm vé.'
+          : 'Đã hoàn tác.',
+      );
+      return result;
+    }
+    const session = runtime.session;
     const version = saved.habit.version,
       logVersion = saved.log.version;
-    const expires = Date.now() + 6000;
     toast(
-      result.ticketAwarded === 1
-        ? 'Đạt mục tiêu · +1 vé quay!'
+      result.ticketAwarded > 0
+        ? '+' + result.ticketAwarded + ' vé quay'
         : value >= view.definition.target / 100
           ? 'Đã đạt mục tiêu hôm nay.'
           : 'Đã cập nhật hôm nay.',
@@ -247,11 +378,10 @@ export function createHabitActions(context) {
           const current = state.habitData?.habits.find((item) => item.habit.id === view.habit.id);
           const now = (state.serverNow ?? Date.now()) + Date.now() - (state.loadedAt ?? Date.now());
           if (
-            Date.now() > expires ||
             !state.live ||
-            runtime.saving ||
+            runtime.session !== session ||
             runtime.refreshPending ||
-            runtime.revision !== revision ||
+            state.habitLogIntents?.[view.habit.id] ||
             state.habitData?.day.day !== day ||
             now >= state.habitData.day.endAt ||
             current?.habit.version !== version ||
@@ -260,37 +390,139 @@ export function createHabitActions(context) {
             toast('Dữ liệu đã thay đổi. Mở ghi nhận để điều chỉnh nhé.');
             return;
           }
-          const undone = await save(
-            {
-              operation: 'log',
-              habitId: current.habit.id,
-              version,
-              logVersion,
-              day,
-              value: before.value / 100,
-              note: before.note,
-            },
-            { silent: true },
-          );
-          if (undone && !runtime.refreshPending)
-            toast(
-              result.ticketAwarded === 1
-                ? 'Đã hoàn tác ghi nhận. Vé đã nhận được giữ lại; hoàn thành lại hôm nay không thêm vé.'
-                : 'Đã hoàn tác.',
-            );
+          return queueHabitLog(current, day, before.value, before.note, {
+            undo: true,
+            keptTicket: result.ticketAwarded ?? 0,
+            expectedLogVersion: logVersion,
+            expectedHabitVersion: version,
+          });
         },
       },
+      { kind: 'success', key: 'habit-log', amount: result.ticketAwarded ?? 0 },
     );
     return result;
   }
   function toggleHabit(view) {
-    const { log, definition } = view;
-    return saveLog(
+    if (!state.live) return saveLog(view, state.habitData.day.day, 0, view.log.note);
+    const id = view.habit.id;
+    if (state.habitLogRecovery?.[id]) return recoverHabitLog(id);
+    const log = state.habitLogIntents?.[id] ?? view.log;
+    return queueHabitLog(
       view,
       state.habitData.day.day,
-      log.value >= definition.target ? 0 : definition.target / 100,
+      log.value >= view.definition.target ? 0 : view.definition.target,
       log.note,
     );
+  }
+  function queueHabitLog(view, day, value, note, options = {}) {
+    const id = view.habit.id;
+    const intent = {
+      day,
+      value,
+      note,
+      options,
+      session: runtime.session,
+    };
+    (state.habitLogIntents ??= {})[id] = intent;
+    logQueue.set(id, intent);
+    persistLogs();
+    render();
+    return drainLogs();
+  }
+  async function drainLogs() {
+    if (drainingLogs) return;
+    drainingLogs = true;
+    try {
+      while (logQueue.size) {
+        await waitForWrite(runtime);
+        if (!logQueue.size) return;
+        const next = [...logQueue].find(([id]) => !state.habitLogRecovery?.[id]);
+        if (!next) return;
+        const [id, intent] = next;
+        if (intent.session !== runtime.session || !state.live || !state.loaded) {
+          logQueue.clear();
+          return;
+        }
+        const view = state.habitData?.habits.find((item) => item.habit.id === id);
+        if (
+          view &&
+          view.log.value === intent.value &&
+          view.log.note === intent.note &&
+          state.habitData.day.day === intent.day
+        ) {
+          logQueue.delete(id);
+          delete state.habitLogIntents[id];
+          persistLogs();
+          render();
+          continue;
+        }
+        const failure = { error: null, input: null };
+        const result =
+          view && state.habitData.day.day === intent.day
+            ? await saveLog(view, intent.day, intent.value / 100, intent.note, {
+                ...intent.options,
+                queue: true,
+                keepSheet: true,
+                handleError: true,
+                onError: (error, input) => {
+                  failure.error = error;
+                  failure.input = input;
+                },
+              })
+            : null;
+        if (intent.session !== runtime.session) return;
+        if (logQueue.get(id) === intent || (!result && !failure.error)) {
+          logQueue.delete(id);
+          delete state.habitLogIntents[id];
+        }
+        persistLogs();
+        if (!result) {
+          const unconfirmed =
+            failure.error &&
+            ['NETWORK_UNCONFIRMED', 'OPERATION_NOT_CONFIRMED'].includes(failure.error.code);
+          if (unconfirmed && failure.input) (state.habitLogRecovery ??= {})[id] = failure.input;
+          toast(
+            unconfirmed
+              ? 'Chưa xác nhận được lần lưu. Kiểm tra lại kết quả nhé.'
+              : (failure.error?.message ?? 'Chưa lưu được. Trạng thái trước đã được giữ lại.'),
+            unconfirmed ? { label: 'Thử lại', run: () => recoverHabitLog(id) } : undefined,
+            { kind: 'error' },
+          );
+          if (
+            failure.error?.code === 'HABIT_LOG_CHANGED' ||
+            failure.error?.code === 'HABIT_CHANGED'
+          )
+            void loadHabits();
+        }
+        render();
+      }
+    } finally {
+      drainingLogs = false;
+    }
+  }
+  async function recoverHabitLog(id) {
+    if (recoveringLogs.has(id)) return;
+    const input = state.habitLogRecovery?.[id],
+      session = runtime.session;
+    if (!input) return;
+    const view = state.habitData?.habits.find((item) => item.habit.id === id);
+    if (!view) return;
+    recoveringLogs.add(id);
+    try {
+      const result = await saveLog(view, input.day, input.value, input.note, {
+        queue: true,
+        keepSheet: true,
+        retryInput: input,
+      });
+      if (result && session === runtime.session) {
+        delete state.habitLogRecovery[id];
+        render();
+        void drainLogs();
+      }
+      return result;
+    } finally {
+      recoveringLogs.delete(id);
+    }
   }
   function openHabitLog(view) {
     if (runtime.saving) {
@@ -875,6 +1107,8 @@ export function createHabitActions(context) {
     openHabitSlot,
     showHabitInList,
     toggleHabit,
+    recoverHabitLog,
+    resetHabitLogs,
     setHabitFilter,
     showHabitPanel,
     loadHabitHistory,

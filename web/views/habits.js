@@ -49,7 +49,12 @@ export function renderHabits(ui, state) {
   root.append(navigation);
   if (state.habitPanel === 'progress') return renderProgress(ui, state, root);
   const day = state.habitData.day.day,
-    all = state.habitData.habits;
+    all = state.habitData.habits.map((view) => {
+      const intent = state.habitLogIntents?.[view.habit.id];
+      return intent?.day === day
+        ? { ...view, log: { ...view.log, value: intent.value, note: intent.note } }
+        : view;
+    });
   const list = all.filter((view) =>
     state.habitFilter === 'archived'
       ? view.habit.archivedFrom !== null && day >= view.habit.archivedFrom
@@ -114,11 +119,7 @@ export function renderHabits(ui, state) {
     check.setAttribute('aria-label', (met ? 'Bỏ đánh dấu ' : 'Hoàn thành ') + definition.name);
     check.setAttribute('aria-pressed', String(met));
     check.dataset.write = 'habit-log';
-    check.disabled = archived || !!state.featureSaving;
-    if (state.featureSaving?.habitId === habit.id) {
-      check.setAttribute('aria-busy', 'true');
-      check.textContent = 'Đang lưu…';
-    }
+    check.disabled = archived;
     head.append(check, copy);
     if (!archived) {
       if (definition.metric !== 'check') {
@@ -143,6 +144,14 @@ export function renderHabits(ui, state) {
       }
     }
     row.append(head);
+    if (state.habitLogRecovery?.[habit.id]) {
+      const recovery = el('div', undefined, 'habit-log-recovery');
+      recovery.append(
+        el('span', 'Chưa xác nhận lần lưu'),
+        button('Thử lại', () => ui.recoverHabitLog(habit.id), 'text-button'),
+      );
+      row.append(recovery);
+    }
     container.append(row);
   }
   root.append(container);

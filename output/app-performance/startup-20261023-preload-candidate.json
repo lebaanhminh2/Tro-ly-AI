@@ -1,0 +1,55 @@
+{
+  "runs": [
+    {
+      "bootstrapStart": 462.1000000089407,
+      "bootstrapEnd": 1326.7000000029802,
+      "ready": 2848.7999999970198,
+      "scriptCount": 40,
+      "scriptBytes": 507519,
+      "paint": [
+        {
+          "name": "first-paint",
+          "ms": 1444
+        },
+        {
+          "name": "first-contentful-paint",
+          "ms": 1444
+        }
+      ]
+    },
+    {
+      "bootstrapStart": 454.59999999403954,
+      "bootstrapEnd": 1362.3999999910593,
+      "ready": 2833.2999999970198,
+      "scriptCount": 40,
+      "scriptBytes": 507519,
+      "paint": [
+        {
+          "name": "first-paint",
+          "ms": 1496
+        },
+        {
+          "name": "first-contentful-paint",
+          "ms": 1496
+        }
+      ]
+    },
+    {
+      "bootstrapStart": 455.29999999701977,
+      "bootstrapEnd": 1348.7000000029802,
+      "ready": 2855.2999999970198,
+      "scriptCount": 40,
+      "scriptBytes": 507519,
+      "paint": [
+        {
+          "name": "first-paint",
+          "ms": 1456
+        },
+        {
+          "name": "first-contentful-paint",
+          "ms": 1456
+        }
+      ]
+    }
+  ]
+}

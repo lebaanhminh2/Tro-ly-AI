@@ -666,3 +666,88 @@ test(
     await writeFile(`${evidence}/layouts.json`, JSON.stringify(layouts, null, 2));
   },
 );
+
+test('tower uses the host viewport without reserving invisible footer space', options, async () => {
+  await scenario(
+    async (b, c, url) => {
+      await boot(b, url);
+      await b.reducedMotion();
+      await b.evaluate(
+        "document.documentElement.style.setProperty('--app-viewport-height','730px')",
+      );
+      await open(b);
+      await b.wait(choosing);
+      const frame = await b.evaluate(`(() => {
+      const sheet = document.querySelector('#sheet').getBoundingClientRect();
+      const stage = document.querySelector('.tower-stage').getBoundingClientRect();
+      return {sheetBottom:sheet.bottom, stageTop:stage.top, stageBottom:stage.bottom,
+        cards:[...document.querySelectorAll('.tower-card')].map(n=>{
+          const r=n.getBoundingClientRect();return {top:r.top,bottom:r.bottom};
+        })};
+    })()`);
+      assert.ok(frame.sheetBottom <= 730, JSON.stringify(frame));
+      assert.ok(
+        frame.cards.every((card) => card.top >= frame.stageTop && card.bottom <= frame.stageBottom),
+        JSON.stringify(frame),
+      );
+      await shot(b, 'host-viewport-390x730');
+      await b.evaluate(
+        "document.documentElement.style.setProperty('--app-viewport-height','560px')",
+      );
+      await b.scaleText(1.5);
+      await b.evaluate("document.querySelector('.tower-stage').scrollTop=10000");
+      const reachable = await b.evaluate(`(() => {
+      const card=document.querySelectorAll('.tower-card')[3],r=card.getBoundingClientRect();
+      return card.contains(document.elementFromPoint(r.left+r.width/2,r.top+r.height/2));
+    })()`);
+      assert.equal(
+        reachable,
+        true,
+        'Last card remains reachable on a short viewport with large text',
+      );
+    },
+    (c) => seed(c, 1, 'choosing'),
+  );
+});
+
+test(
+  'tower reveals an acknowledged pick before a slow background refresh completes',
+  options,
+  async () => {
+    await scenario(
+      async (b, c, url) => {
+        await boot(b, url);
+        await b.reducedMotion();
+        await open(b);
+        await b.wait(choosing);
+        await b.evaluate(`(() => {
+      const original=window.fetch;
+      const waiting=[];
+      window.fetch=async(url,init)=>{
+        if(String(url)==='/api/linh-thu/tower' && !init?.method?.startsWith('POST'))
+          await new Promise(resolve=>{
+            waiting.push(resolve);
+            window.releaseTowerRefresh=()=>waiting.splice(0).forEach(release=>release());
+          });
+        return original(url,init);
+      };
+    })()`);
+        await pick(b);
+        try {
+          await b.wait("typeof window.releaseTowerRefresh==='function'");
+          await b.wait(decision);
+          assert.equal(c.towerRun.status, 'decision');
+          assert.equal(c.posts.filter((p) => p.input.operation === 'tower_pick').length, 1);
+          const balance = c.beastData.wallet.state.tickets;
+          await b.tap('.beast-tower-claim');
+          await b.wait("!!document.querySelector('.tower-receipt')");
+          assert.equal(c.beastData.wallet.state.tickets, balance + 2);
+          assert.equal(c.posts.filter((p) => p.input.operation === 'tower_claim').length, 1);
+        } finally {
+          await b.evaluate('window.releaseTowerRefresh?.()');
+        }
+      },
+      (c) => seed(c, 1, 'choosing'),
+    );
+  },
+);

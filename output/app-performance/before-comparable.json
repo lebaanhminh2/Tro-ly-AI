@@ -1,0 +1,48 @@
+{
+  "fixture": "Local Chrome 390px, eight habits; startup history 800ms/bootstrap 100ms; habit POST 350ms/refresh 800ms; task POST 350ms/bootstrap 800ms. Same fixture on before/after web sources; local measurements, not production latency.",
+  "source": "a1f64e7",
+  "startupMs": 1340.4866000000002,
+  "startupCalls": [
+    "GET history",
+    "GET bootstrap"
+  ],
+  "tick": {
+    "immediate": {
+      "checked": "false",
+      "busy": "true",
+      "disabledChecks": 8,
+      "disabledNavigation": 0
+    },
+    "responseMs": 1221.8999999910593
+  },
+  "notification": {
+    "text": "Đã đạt mục tiêu hôm nay.Hoàn tác",
+    "width": 258.453125,
+    "height": 68,
+    "top": 671,
+    "bottom": 739
+  },
+  "saveCalls": [
+    "POST habits",
+    "GET habits",
+    "GET linh-thu/tower"
+  ],
+  "warm": {
+    "renderMs": 10.5,
+    "rows": 8
+  },
+  "warmCalls": [
+    "GET linh-thu/tower",
+    "GET habits"
+  ],
+  "task": {
+    "confirmedRenderMs": 1224.0999999940395,
+    "disabledNavigation": 5
+  },
+  "taskCalls": [
+    "POST tasks",
+    "GET history",
+    "GET bootstrap"
+  ],
+  "browserErrors": []
+}

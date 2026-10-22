@@ -1,6 +1,6 @@
 import { browserAuthRequest } from '../core/http.js';
 import { refreshLive } from '../core/live-data.js';
-import { applySnapshot } from '../core/state.js';
+import { applySnapshot, releaseWrite } from '../core/state.js';
 import { button, card, el } from '../ui/dom.js';
 export function createBrowserLoginActions(context) {
   const { state, runtime, sheet, closeSheet, render, toast, openSettings } = context;
@@ -10,6 +10,21 @@ export function createBrowserLoginActions(context) {
     clearTimeout(loginTimer);
     loginGeneration++;
     runtime.revision++;
+    runtime.session++;
+    releaseWrite(runtime);
+    state.featureSaving = null;
+    state.beastBusy = false;
+    state.beastRoleSaving = false;
+    state.beastProtectionSaving = false;
+    state.habitLogIntents = {};
+    state.taskIntents = {};
+    state.habitLogRecovery = null;
+    state.habitRefreshedAt = 0;
+    state.beastRefreshedAt = 0;
+    state.towerRefreshedAt = 0;
+    state.baseRefreshedAt = 0;
+    document.querySelector('#toast')?.classList.remove('visible');
+    document.querySelector('#toast')?.replaceChildren();
     state.loaded = false;
     state.tasks = [];
     state.reminders = [];
@@ -47,7 +62,7 @@ export function createBrowserLoginActions(context) {
         const result = await browserAuthRequest('status');
         if (generation !== loginGeneration) return;
         if (result.authenticated) {
-          const data = await refreshLive();
+          const data = await refreshLive({ includeHistory: false });
           if (generation !== loginGeneration) return;
           connected(data);
           return;
@@ -76,7 +91,7 @@ export function createBrowserLoginActions(context) {
       const result = await browserAuthRequest('start');
       if (generation !== loginGeneration) return;
       if (result.authenticated) {
-        connected(await refreshLive());
+        connected(await refreshLive({ includeHistory: false }));
         return;
       }
       state.authChallenge = result;

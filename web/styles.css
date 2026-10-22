@@ -1104,24 +1104,139 @@ dialog::backdrop {
 }
 #toast {
   position: fixed;
-  bottom: 105px;
+  bottom: calc(
+    var(--app-nav-height, 76px) +
+      max(env(safe-area-inset-bottom, 0px), var(--app-host-safe-bottom, 0px)) + 12px
+  );
   left: 50%;
-  transform: translateX(-50%);
-  width: max-content;
-  max-width: calc(100% - 40px);
-  padding: 12px 18px;
-  border-radius: 14px;
-  background: #302b43;
-  color: #fff;
-  box-shadow: var(--shadow);
-  font-size: 13px;
-  z-index: 9;
+  transform: translate(-50%, 6px);
+  width: min(480px, calc(100% - 24px));
+  z-index: 30;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.15s;
+  visibility: hidden;
+  transition:
+    opacity 160ms,
+    transform 160ms;
 }
 #toast.visible {
   opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+  pointer-events: none;
+}
+.app-notice {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px 6px 14px;
+  min-height: 56px;
+  border: 1px solid #ffffff24;
+  border-radius: 20px;
+  background: rgb(28 28 30 / 96%);
+  color: #f5f5f7;
+  box-shadow:
+    0 8px 32px #00000029,
+    inset 0 1px 0 #ffffff0a;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+  text-align: left;
+}
+@supports (backdrop-filter: blur(18px)) or (-webkit-backdrop-filter: blur(18px)) {
+  .app-notice {
+    background: rgb(28 28 30 / 80%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    backdrop-filter: blur(18px) saturate(140%);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .app-notice {
+    background: #1c1c1e;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+.app-notice .notice-icon {
+  flex: 0 0 1.7em;
+  width: 1.7em;
+  height: 1.7em;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #ffffff1f;
+  color: #f5f5f7;
+  font-weight: 650;
+}
+.app-notice[data-kind='error'] .notice-icon {
+  color: #ffb4ab;
+  background: #ff797a24;
+}
+.app-notice .notice-message {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.app-notice button {
+  pointer-events: auto;
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  color: #c2ddff;
+  min-height: 44px;
+  padding: 8px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.app-notice button:focus-visible {
+  outline: 2px solid #f5f5f7;
+  outline-offset: -2px;
+  background: #ffffff14;
+}
+.app-notice button:active {
+  background: #ffffff1f;
+}
+.app-notice .notice-action {
+  max-width: 120px;
+}
+.app-notice .notice-close {
+  color: #ffffffb3;
+  width: 44px;
+  font-size: 22px;
+  font-weight: 400;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  line-height: 1;
+}
+#sheet-feedback.app-notice {
+  margin: 8px 0 16px;
+}
+.app-notice[data-long='true'] {
+  display: grid;
+  grid-template-columns: 1.7em minmax(0, 1fr) 44px;
+  column-gap: 10px;
+  row-gap: 0;
+}
+.app-notice[data-long='true'] .notice-action {
+  grid-column: 2;
+  justify-self: start;
+}
+.app-notice[data-long='true'] .notice-close {
+  grid-column: 3;
+  grid-row: 1;
+  align-self: start;
+}
+.habit-log-recovery {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
 }
 .demo-controls {
   margin-top: 25px;
@@ -1712,13 +1827,6 @@ dialog::backdrop {
 .habits-page .habit-list .habit-check.checked:before {
   border-color: var(--status);
 }
-.habits-page .habit-list .habit-check[aria-busy='true'] {
-  font-size: 0;
-}
-.habits-page .habit-list .habit-check[aria-busy='true']:after {
-  content: '…';
-  font-size: 17px;
-}
 .habits-page .habit-list .habit-copy {
   flex: 1;
   min-width: 0;
@@ -2013,22 +2121,6 @@ dialog.settings-sheet-open .habit-editor {
   border-right: 1px solid var(--line);
   border-radius: 0;
 }
-#toast.visible:has(button) {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  pointer-events: auto;
-}
-#toast button {
-  flex: none;
-  border: 0;
-  background: transparent;
-  color: #fff;
-  font-size: 13px;
-  font-weight: 600;
-  text-decoration: underline;
-  padding: 0 4px;
-}
 .habits-page .habit-card {
   padding: 12px 16px;
 }
@@ -2174,7 +2266,7 @@ dialog.settings-sheet-open .habit-editor {
   border-radius: 14px;
   flex-shrink: 0;
 }
-.form-feedback {
+.form-feedback:not(.app-notice) {
   padding: 12px;
   border-radius: 12px;
   background: var(--soft);

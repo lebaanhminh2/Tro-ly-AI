@@ -13,7 +13,35 @@ const statePath = '../../web/core/state.js';
 const lifecyclePath = '../../web/core/lifecycle.js';
 const mutationPath = '../../web/core/mutations.js';
 
-test('habit ticket acknowledgement updates the balance with a narrow refresh and after refresh failure', async (t) => {
+test('a late acknowledgement from a logged-out session cannot clear a new retry identity', async (t) => {
+  const { liveMutation } = await import(livePath);
+  const { browserAuthRequest, requestIdentity, settleRequest } = await import(httpPath);
+  const original = globalThis.fetch;
+  t.after(() => {
+    globalThis.fetch = original;
+  });
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const input = { operation: 'log', habitId: 'session_retry', version: 1 };
+  globalThis.fetch = async (url) => {
+    if (String(url).includes('browser-auth/logout')) return json({ authenticated: false });
+    await gate;
+    return json({ saved: true, version: 2 });
+  };
+  const oldId = requestIdentity('session-test', input);
+  const late = liveMutation('session-test', input, { acknowledge: true });
+  await browserAuthRequest('logout');
+  const newId = requestIdentity('session-test', input);
+  assert.notEqual(oldId, newId);
+  release();
+  await late;
+  assert.equal(requestIdentity('session-test', input), newId);
+  settleRequest('session-test', input);
+});
+
+test('habit receipt confirms its log and ticket balance without waiting for any refresh', async (t) => {
   const { createMutations } = await import(mutationPath),
     { createAppState, createRuntimeState } = await import(statePath);
   const oldFetch = globalThis.fetch,
@@ -28,6 +56,10 @@ test('habit ticket acknowledgement updates the balance with a narrow refresh and
   state.live = true;
   state.loaded = true;
   state.tab = 'habits';
+  state.habitData = {
+    day: { day: 1 },
+    habits: [{ habit: { id: 'habit' }, log: { version: 0, value: 0, note: '' } }],
+  };
   let balance = 7,
     offline = false;
   const calls: string[] = [];
@@ -37,6 +69,7 @@ test('habit ticket acknowledgement updates the balance with a narrow refresh and
       return new Response(
         JSON.stringify({
           saved: true,
+          version: JSON.parse(String(options.body)).logVersion + 1,
           ticketAwarded: 1,
           account: { state: { earned: 0, tickets: balance } },
         }),
@@ -54,7 +87,7 @@ test('habit ticket acknowledgement updates the balance with a narrow refresh and
   });
   const first = await controller.performLive(
     'habits',
-    { operation: 'log', value: 1 },
+    { operation: 'log', habitId: 'habit', day: 1, logVersion: 0, value: 1, note: '' },
     { silent: true },
   );
   assert.equal(first.ticketAwarded, 1);
@@ -65,9 +98,16 @@ test('habit ticket acknowledgement updates the balance with a narrow refresh and
   );
   balance = 8;
   offline = true;
-  await controller.performLive('habits', { operation: 'log', value: 2 }, { silent: true });
+  await controller.performLive(
+    'habits',
+    { operation: 'log', habitId: 'habit', day: 1, logVersion: 1, value: 2, note: '' },
+    { silent: true },
+  );
   assert.equal(state.cultivation.tickets, 8);
-  assert.equal(runtime.refreshPending, true);
+  assert.equal(runtime.refreshPending, false);
+  assert.equal(state.habitData.habits[0].log.version, 2);
+  assert.equal(state.habitData.habits[0].log.value, 200);
+  assert.ok(calls.every((call) => call.startsWith('POST')));
 });
 
 test('an unconfirmed x10 blocks other writes and retries the same receipt before allowing another draw', async (t) => {
@@ -530,7 +570,7 @@ test('background response cannot replace state after a newer mutation', async (t
   await request;
   assert.equal(state.tasks[0].title, 'Newer write');
 });
-test('controller reports successful write, prevents concurrent writes and reconciles before the next POST', async (t) => {
+test('controller returns acknowledged rewards immediately and reconciles incomplete receipts before another POST', async (t) => {
   const { createMutations } = await import(mutationPath),
     { createAppState, createRuntimeState } = await import(statePath);
   const oldFetch = globalThis.fetch,
@@ -574,8 +614,12 @@ test('controller reports successful write, prevents concurrent writes and reconc
   assert.equal(await controller.performLive('cultivation', { operation: 'checkin' }), null);
   const result = await pending;
   assert.equal(result.dailyReward.day, 1);
-  assert.equal(runtime.refreshPending, true);
-  assert.match(messages[0]!, /Đã lưu trên server/);
+  assert.equal(runtime.refreshPending, false);
+  assert.ok(calls.every((call) => call.startsWith('POST')));
+  assert.ok(messages.includes('Đã lưu.'));
+  // An incomplete receipt needs a fresh version before the next command.
+  runtime.refreshPending = true;
+  runtime.pendingReceipt = { path: 'settings', input: { operation: 'configure' } };
   calls.length = 0;
   offline = false;
   await controller.performLive('cultivation', { operation: 'draw' });

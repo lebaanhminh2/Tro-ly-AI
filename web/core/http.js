@@ -1,6 +1,7 @@
 // Owns transport and retry identities, including ambiguous network failures.
 const pendingRequests = new Map();
 const inFlightReads = new Map();
+let transportSession = new AbortController();
 export function requestIdentity(path, input, restoredId) {
   const key = path + JSON.stringify(input);
   if (restoredId && !/^[a-zA-Z0-9_-]{8,100}$/.test(restoredId))
@@ -9,8 +10,10 @@ export function requestIdentity(path, input, restoredId) {
     pendingRequests.set(key, { ...input, id: restoredId ?? crypto.randomUUID() });
   return pendingRequests.get(key).id;
 }
-export function settleRequest(path, input) {
-  pendingRequests.delete(path + JSON.stringify(input));
+export function settleRequest(path, input, expectedId = undefined) {
+  const key = path + JSON.stringify(input);
+  if (expectedId === undefined || pendingRequests.get(key)?.id === expectedId)
+    pendingRequests.delete(key);
 }
 export async function browserAuthRequest(action) {
   const response = await fetch('/api/browser-auth/' + action, {
@@ -32,6 +35,8 @@ export async function browserAuthRequest(action) {
     throw error;
   }
   if (action === 'logout') {
+    transportSession.abort();
+    transportSession = new AbortController();
     pendingRequests.clear();
     inFlightReads.clear();
   }
@@ -70,7 +75,7 @@ async function transport(path, body) {
         'Content-Type': 'application/json',
       },
       body: body ? JSON.stringify(request) : undefined,
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.any([AbortSignal.timeout(15000), transportSession.signal]),
     });
   } catch {
     // A transport failure does not prove that a write failed to commit.
@@ -84,9 +89,20 @@ async function transport(path, body) {
     error.code = body ? 'NETWORK_UNCONFIRMED' : 'NETWORK_UNAVAILABLE';
     throw error;
   }
-  const result = await response.json();
+  let result;
+  try {
+    result = await response.json();
+  } catch {
+    if (!response.ok && response.status < 500 && key) settleRequest(path, body, request.id);
+    const error = /** @type {Error & {code?:string}} */ (
+      Error('Chưa xác nhận được dữ liệu trả về. Kiểm tra kết nối rồi thử lại nhé.')
+    );
+    error.code =
+      body && (response.ok || response.status >= 500) ? 'NETWORK_UNCONFIRMED' : 'INVALID_RESPONSE';
+    throw error;
+  }
   if (!response.ok) {
-    if (response.status < 500 && key) pendingRequests.delete(key);
+    if (response.status < 500 && key) settleRequest(path, body, request.id);
     const messages = {
       AUTH_REQUIRED: 'Phiên đã hết hạn. Đóng và mở lại từ Telegram nhé.',
       SETUP_REQUIRED: 'Chọn giờ bắt đầu và giờ nghỉ trước nhé.',
@@ -130,6 +146,7 @@ async function transport(path, body) {
         'Chưa xác nhận được kết quả. Kiểm tra lại trước khi thao tác mới.',
     );
     error.code = result.error;
+    if (body && response.status >= 500) error.code = 'NETWORK_UNCONFIRMED';
     throw error;
   }
   return result;
