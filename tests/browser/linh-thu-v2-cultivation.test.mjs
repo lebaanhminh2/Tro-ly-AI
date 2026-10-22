@@ -64,7 +64,7 @@ test(
       await browser.wait("!!document.querySelector('#sheet select')");
       assert.match(await description(browser), /^Lần này có 65%/);
       assert.match(await description(browser), /Thất bại −9 tu vi/);
-      assert.match(await description(browser), /Hình phạt tu vi hôm nay nhân 3/);
+      assert.doesNotMatch(await description(browser), /Hình phạt tu vi hôm nay nhân 3/);
       await browser.press('Escape');
       await browser.wait(
         "document.querySelector('.breakthrough-card').textContent.includes('thất bại −9 tu vi')",

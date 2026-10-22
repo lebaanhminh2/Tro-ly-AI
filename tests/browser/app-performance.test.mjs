@@ -630,13 +630,25 @@ test(
       1,
     );
     await browser.screenshot('output/app-performance/notice-dialog-390.png');
+    // Native close restores focus in a queued event. Let it finish before
+    // focusing the notification so it cannot steal focus during this check.
+    await browser.evaluate(`(() => {
+    window.noticeSheetClosed=false;
+    document.querySelector('#sheet').addEventListener('close',()=>{window.noticeSheetClosed=true},{once:true});
+  })()`);
     await browser.press('Escape');
+    await browser.wait('window.noticeSheetClosed');
     await browser.evaluate(`(() => {
     const nativeTimeout=window.setTimeout;
-    window.setTimeout=(fn,ms,...args)=>nativeTimeout(fn,ms===8000?120:ms,...args);
+    // Accelerate both the initial timer and the remaining delay after blur.
+    window.setTimeout=(fn,ms,...args)=>nativeTimeout(fn,ms>=500&&ms<=8000?120:ms,...args);
     window.notice('Đã lưu', {label:'Hoàn tác',run(){}},{kind:'success'});
     document.querySelector('#toast .notice-action').focus();
   })()`);
+    assert.equal(
+      await browser.evaluate("document.activeElement?.matches('#toast .notice-action')"),
+      true,
+    );
     await delay(200);
     assert.equal(
       await browser.evaluate("document.querySelector('#toast').classList.contains('visible')"),
