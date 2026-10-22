@@ -85,6 +85,10 @@ async function drawCompanion(db: Database, now = monday, speciesId = 'frostnip')
     )
     .bind(day, now)
     .run();
+  // These draw contracts cover v1 ordinals, paid choices and weekly activation.
+  // New accounts start in v2, so keep this fixture before cutover, including
+  // rollover. Live v2 behavior is covered by linh-thu-v2-runtime.test.ts.
+  await db.prepare("UPDATE beast_v2_runtime SET cutover_day=1000000 WHERE owner='123'").run();
   return { store, day };
 }
 
