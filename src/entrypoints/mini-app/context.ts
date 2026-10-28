@@ -11,7 +11,7 @@ export type MiniAppInput = Record<string, unknown> & {
 };
 const headers = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' };
 export const json = (value: unknown, status = 200) => new Response(JSON.stringify(value), { status, headers });
-export async function readInput(request: Request): Promise<MiniAppInput | Response> {
+export async function readInput(request: Request, maxBytes = 4096): Promise<MiniAppInput | Response> {
     // Read a bounded body, including chunked requests.
     const reader = request.body?.getReader();
     if (!reader)
@@ -23,7 +23,7 @@ export async function readInput(request: Request): Promise<MiniAppInput | Respon
         if (part.done)
             break;
         bytes += part.value.byteLength;
-        if (bytes > 4096) {
+        if (bytes > maxBytes) {
             await reader.cancel();
             return json({ error: 'TOO_LARGE' }, 413);
         }

@@ -13,6 +13,38 @@ const statePath = '../../web/core/state.js';
 const lifecyclePath = '../../web/core/lifecycle.js';
 const mutationPath = '../../web/core/mutations.js';
 
+test('Telegram requests carry the cookie write guard without adding a login round trip or changing retry identity', async (t) => {
+  const { liveRequest, requestIdentity, settleRequest } = await import(httpPath);
+  const originalFetch = globalThis.fetch,
+    originalTelegram = (globalThis as any).Telegram;
+  t.after(() => {
+    globalThis.fetch = originalFetch;
+    (globalThis as any).Telegram = originalTelegram;
+  });
+  (globalThis as any).Telegram = { WebApp: { initData: 'synthetic-telegram-proof' } };
+  const calls: { url: string; options: RequestInit }[] = [];
+  globalThis.fetch = async (url, options) => {
+    calls.push({ url: String(url), options: options! });
+    return json({ saved: true });
+  };
+  await liveRequest('bootstrap');
+  const input = { operation: 'log', habitId: 'cookie_guard', value: 1 },
+    id = requestIdentity('habits', input);
+  await liveRequest('habits', input);
+  assert.deepEqual(
+    calls.map((call) => call.url),
+    ['/api/bootstrap', '/api/habits'],
+  );
+  for (const { options } of calls) {
+    const headers = new Headers(options.headers);
+    assert.equal(options.credentials, 'same-origin');
+    assert.equal(headers.get('X-Telegram-Init-Data'), 'synthetic-telegram-proof');
+    assert.equal(headers.get('X-Minh-Anh-Request'), '1');
+  }
+  assert.equal(JSON.parse(String(calls[1]!.options.body)).id, id);
+  settleRequest('habits', input, id);
+});
+
 test('a late acknowledgement from a logged-out session cannot clear a new retry identity', async (t) => {
   const { liveMutation } = await import(livePath);
   const { browserAuthRequest, requestIdentity, settleRequest } = await import(httpPath);
@@ -394,7 +426,7 @@ function bootstrap(title = 'Current') {
 }
 const json = (value: unknown, status = 200) =>
   new Response(JSON.stringify(value), { status, headers: { 'Content-Type': 'application/json' } });
-test('transport retains retry ID on ambiguous errors, clears rejected requests and never sends browser header for Telegram', async (t) => {
+test('transport retains retry ID on ambiguous errors, clears rejected requests and sends the write guard for Telegram sessions', async (t) => {
   const { liveRequest } = await import(httpPath);
   const originalFetch = globalThis.fetch;
   const telegram = (globalThis as any).Telegram;
@@ -427,7 +459,7 @@ test('transport retains retry ID on ambiguous errors, clears rejected requests a
   (globalThis as any).Telegram = { WebApp: { initData: 'signed-test-data' } };
   await liveRequest('transport-telegram', input);
   assert.equal(requests[4].headers['X-Telegram-Init-Data'], 'signed-test-data');
-  assert.equal(requests[4].headers['X-Minh-Anh-Request'], undefined);
+  assert.equal(requests[4].headers['X-Minh-Anh-Request'], '1');
 });
 test('ordinary refresh reads bootstrap and history concurrently; narrow refresh preserves history', async (t) => {
   const { refreshLive } = await import(livePath),

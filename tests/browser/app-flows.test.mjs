@@ -3,7 +3,7 @@ import { execFileSync, spawn } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { createHmac } from 'node:crypto';
 import { Miniflare } from 'miniflare';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve, sep } from 'node:path';
@@ -18,6 +18,70 @@ import { miniAppApi } from '../../src/entrypoints/mini-app.ts';
 import { HealthyStore } from '../../src/adapters/d1/healthy-store.ts';
 import { ScheduleStore } from '../../src/adapters/d1/schedule-store.ts';
 import { D1BeastStore } from '../../src/adapters/d1/linh-thu-store.ts';
+
+test(
+  'published loot odds fit mobile and a summon-ticket draw has a readable reward label',
+  { skip: !browserBin, timeout: 45000 },
+  async () => {
+    const control = fixture(),
+      original = control.mutate;
+    control.mutate = (path, input) => {
+      if (path === 'cultivation' && input.operation === 'draw') {
+        control.state.account.state.tickets--;
+        return {
+          result: { count: 1, rewards: ['summonTicket'], reward: 'summonTicket' },
+          account: control.state.account,
+        };
+      }
+      return original(path, input);
+    };
+    const server = await serve(control),
+      browser = await chrome();
+    try {
+      await mkdir('trial-results/cultivation-loot', { recursive: true });
+      await browser.navigate(server.url, 390);
+      await browser.wait('!!document.querySelector(".focus-flip-card")');
+      await browser.tap('[data-tab=achievements]');
+      await browser.evaluate(
+        '[...document.querySelectorAll("button")].find(b=>b.textContent.startsWith("Quay thưởng ·")).click()',
+      );
+      const odds = await browser.evaluate(
+        'Array.from(document.querySelectorAll(".draw-odds-row")).map(row=>Array.from(row.children).map(item=>item.textContent))',
+      );
+      assert.deepEqual(odds, [
+        ['+1 tu vi', '40%'],
+        ['+2 tu vi', '15%'],
+        ['Phá Cảnh Phù · Sơ cấp', '35%'],
+        ['Tín vật Minh Anh', '8%'],
+        ['Hộ Tâm Phù', '0,5%'],
+        ['An Tâm Phù', '1%'],
+        ['Vé quay linh thú', '0,5%'],
+      ]);
+      for (const width of [320, 390, 430]) {
+        await browser.resize(width, 844);
+        await browser.evaluate(
+          'document.querySelector(".draw-probabilities").open=true;document.querySelector(".draw-body").scrollTop=9999',
+        );
+        assert.equal(
+          await browser.evaluate('document.documentElement.scrollWidth<=innerWidth+1'),
+          true,
+        );
+        await browser.screenshot('trial-results/cultivation-loot/rates-' + width + '.png');
+      }
+      await browser.evaluate('document.querySelector("[data-draw-count=\\"1\\"]").click()');
+      await browser.wait('!!document.querySelector(".draw-rewards")');
+      assert.ok(
+        (await browser.evaluate('document.querySelector(".draw-rewards").textContent')).includes(
+          'Vé quay linh thú',
+        ),
+      );
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      await browser.close();
+      await server.close();
+    }
+  },
+);
 
 test(
   'fusion requires three inputs per selected attempt, disables unfunded batches, and stays open',
@@ -1660,12 +1724,16 @@ test(
       control.failBootstrap = true;
       const writes = control.posts.length,
         savingStart = control.calls.length;
-      await browser.evaluate("document.querySelector('.habit-check').click()");
+      await browser.evaluate(
+        "document.querySelector('[data-habit-id=h_ux_seed_0] .habit-check').click()",
+      );
       await browser.wait(
-        "document.querySelector('.habit-check')?.getAttribute('aria-pressed')==='true' && !!document.querySelector('#toast .notice-action')",
+        "document.querySelector('[data-habit-id=h_ux_seed_0] .habit-check')?.getAttribute('aria-pressed')==='true' && !!document.querySelector('#toast .notice-action')",
       );
       assert.equal(
-        await browser.evaluate("!!document.querySelector('.habit-check[aria-busy=true]')"),
+        await browser.evaluate(
+          "!!document.querySelector('[data-habit-id=h_ux_seed_0] .habit-check[aria-busy=true]')",
+        ),
         false,
       );
       assert.equal(
@@ -1675,7 +1743,7 @@ test(
         false,
       );
       await browser.wait(
-        "document.querySelector('.habit-check')?.getAttribute('aria-pressed')==='true'",
+        "document.querySelector('[data-habit-id=h_ux_seed_0] .habit-check')?.getAttribute('aria-pressed')==='true'",
       );
       assert.equal(control.posts.length, writes + 1);
       assert.equal(control.calls.slice(savingStart).includes('GET bootstrap'), false);
@@ -1684,7 +1752,7 @@ test(
       await browser.wait("!!document.querySelector('.focus-flip-card')");
       await browser.tap('[data-tab=habits]');
       await browser.wait(
-        "document.querySelector('.habit-check')?.getAttribute('aria-pressed')==='true'",
+        "document.querySelector('[data-habit-id=h_ux_seed_0] .habit-check')?.getAttribute('aria-pressed')==='true'",
       );
       assert.equal(control.posts.length, writes + 1);
 
@@ -1993,14 +2061,11 @@ test(
         false,
       );
       assert.equal(await browser.evaluate("document.querySelectorAll('.habit-check').length"), 3);
-      assert.equal(
-        await browser.evaluate("document.querySelector('.habit-more').textContent"),
-        '+4',
-      );
-      await browser.tap('.habit-more');
+      assert.equal(await browser.evaluate("document.querySelectorAll('.hv2-meta').length"), 3);
+      await browser.tap('[data-habit-id=h_read] .habit-name');
       assert.match(
         await browser.evaluate("document.querySelector('.habit-detail').innerText"),
-        /Lịch 19:00.*Mỗi ngày.*Nhắc lúc 19:00.*Thay đổi từ.*Trang 42/s,
+        /Mục tiêu.*20 phút.*Lặp lại.*Mỗi ngày.*Nhắc giờ.*19:00.*Từ.*Đọc mỗi tối.*Trang 42/s,
       );
       if (process.env.UI_SCREENSHOT_DIR)
         await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'habit-details-390.png'));
@@ -2010,7 +2075,7 @@ test(
         assert.equal((await snapshot(browser)).overflow, false);
         assert.equal(
           await browser.evaluate(
-            "[...document.querySelectorAll('.habit-meta')].every(node=>node.getBoundingClientRect().height===24)",
+            "[...document.querySelectorAll('.hv2-meta')].every(node=>node.scrollWidth<=node.clientWidth+1)",
           ),
           true,
         );
@@ -2045,7 +2110,10 @@ test(
       );
       await browser.tap('[data-sheet-close]');
       assert.equal(read.log.value, 1525, 'Closing preserves the authoritative partial value');
-      await browser.tap('.habit-check');
+      await browser.evaluate(
+        "document.querySelectorAll('.hv2-group').forEach(group=>group.open=true)",
+      );
+      await browser.tap('[data-habit-id=h_read] .habit-check');
       await browser.wait("!!document.querySelector('#toast .notice-action')");
       assert.equal(read.log.value, 2000, 'Tick completes the actual duration target');
       await browser.tap('#toast .notice-action');
@@ -2054,7 +2122,7 @@ test(
       );
       assert.equal(read.log.value, 1525);
       assert.equal(read.log.note, 'Trang 42');
-      await browser.tap('.habit-card:nth-child(2) .habit-log-button');
+      await browser.tap('[data-habit-id=h_water] .habit-log-button');
       if (process.env.UI_SCREENSHOT_DIR)
         await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'habit-quantity-390.png'));
       await browser.click('+1', '.habit-counter button');
@@ -2069,17 +2137,23 @@ test(
         "!document.querySelector('#sheet').open && !!document.querySelector('#toast .notice-action')",
       );
       assert.equal(water.log.value, 950);
-      await browser.tap('.habit-card:nth-child(2) .habit-check');
+      await browser.evaluate(
+        "document.querySelectorAll('.hv2-group').forEach(group=>group.open=true)",
+      );
+      await browser.tap('[data-habit-id=h_water] .habit-check');
       await browser.wait(
         "!document.querySelector('[aria-busy=true]') && !!document.querySelector('#toast .notice-action')",
       );
       assert.equal(water.log.value, 0);
       await browser.tap('#toast .notice-action');
       await browser.wait(
-        "document.querySelector('.habit-card:nth-child(2) .habit-log-button').textContent.includes('9,5')",
+        "document.querySelector('[data-habit-id=h_water] .habit-log-button').textContent.includes('9,5')",
       );
       assert.equal(water.log.value, 950, 'Untick Undo preserves over-target progress');
-      await browser.tap('.habit-check');
+      await browser.evaluate(
+        "document.querySelectorAll('.hv2-group').forEach(group=>group.open=true)",
+      );
+      await browser.tap('[data-habit-id=h_read] .habit-check');
       await browser.wait("!!document.querySelector('#toast .notice-action')");
       read.log.version++;
       const writes = control.posts.length;
@@ -2088,7 +2162,8 @@ test(
       await browser.wait("!document.querySelector('.feature-updating')");
       await browser.tap('#toast .notice-action');
       assert.equal(control.posts.length, writes, 'Undo must not overwrite a newer external log');
-      await browser.click('Tiến bộ', '.habit-tabs button');
+      await browser.tap('.hv2-menu > summary');
+      await browser.click('Tiến bộ', '.hv2-menu-items button');
       await browser.wait("!!document.querySelector('.habit-progress-table')");
       assert.equal(
         await browser.evaluate(
@@ -2109,8 +2184,9 @@ test(
       if (process.env.UI_SCREENSHOT_DIR)
         await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'habit-progress-7-390.png'));
       const reports = control.calls.filter((call) => call.startsWith('GET habit-report')).length;
-      await browser.click('Hôm nay', '.habit-tabs button');
-      await browser.click('Tiến bộ', '.habit-tabs button');
+      await browser.click('‹ Thói quen', '.feature-back');
+      await browser.tap('.hv2-menu > summary');
+      await browser.click('Tiến bộ', '.hv2-menu-items button');
       assert.equal(
         control.calls.filter((call) => call.startsWith('GET habit-report')).length,
         reports,
@@ -2124,8 +2200,11 @@ test(
       );
       if (process.env.UI_SCREENSHOT_DIR)
         await browser.screenshot(join(process.env.UI_SCREENSHOT_DIR, 'habit-progress-30-390.png'));
-      await browser.click('Hôm nay', '.habit-tabs button');
-      await browser.tap('.habit-check');
+      await browser.click('‹ Thói quen', '.feature-back');
+      await browser.evaluate(
+        "document.querySelectorAll('.hv2-group').forEach(group=>group.open=true)",
+      );
+      await browser.tap('[data-habit-id=h_read] .habit-check');
       await browser.wait("!!document.querySelector('#toast .notice-action')");
       control.habits.day.day++;
       control.habits.day.endAt += 86400000;
@@ -2140,23 +2219,31 @@ test(
         'Undo cannot edit a closed operating day',
       );
       await browser.tap('[aria-label="Thêm thói quen"]');
-      await browser.click('Thời lượng', '.habit-choices button');
+      await browser.evaluate(
+        "{const metric=document.querySelector('[aria-label=\"Cách ghi nhận\"]');metric.value='duration';metric.dispatchEvent(new Event('change'))}",
+      );
       await browser.evaluate("document.querySelector('[name=target]').value='35.5'");
-      await browser.click('Số lượng', '.habit-choices button');
+      await browser.evaluate(
+        "{const metric=document.querySelector('[aria-label=\"Cách ghi nhận\"]');metric.value='quantity';metric.dispatchEvent(new Event('change'))}",
+      );
       await browser.evaluate(
         "document.querySelector('[name=target]').value='9';document.querySelector('[name=unit]').value='ly'",
       );
-      await browser.click('Thời lượng', '.habit-choices button');
+      await browser.evaluate(
+        "{const metric=document.querySelector('[aria-label=\"Cách ghi nhận\"]');metric.value='duration';metric.dispatchEvent(new Event('change'))}",
+      );
       assert.equal(await browser.evaluate("document.querySelector('[name=target]').value"), '35.5');
       assert.deepEqual(
-        await browser.evaluate(
-          "[...document.querySelector('.habit-choices').children].filter(node=>node.getAttribute('aria-pressed')==='true').map(node=>node.dataset.value)",
-        ),
+        await browser.evaluate('[document.querySelector(\'[aria-label="Cách ghi nhận"]\').value]'),
         ['duration'],
       );
-      await browser.click('X ngày/tuần', '.habit-choices button');
+      await browser.evaluate(
+        "{const cadence=document.querySelector('[aria-label=\"Lặp lại\"]');cadence.value='weekly';cadence.dispatchEvent(new Event('change'))}",
+      );
       await browser.evaluate("document.querySelector('.habit-form input[min=\"1\"]').value='0'");
-      await browser.click('Hằng ngày', '.habit-choices button');
+      await browser.evaluate(
+        "{const cadence=document.querySelector('[aria-label=\"Lặp lại\"]');cadence.value='daily';cadence.dispatchEvent(new Event('change'))}",
+      );
       await browser.evaluate(
         "document.querySelector('[name=name]').value='Đọc buổi sáng';document.querySelector('.habit-form-fields').scrollTop=9999",
       );
@@ -2211,7 +2298,7 @@ test(
           "!document.querySelector('#sheet').open && !document.querySelector('#content button:disabled')",
         );
         await browser.wait(
-          `document.querySelector('.habit-list')?.innerText.includes(${JSON.stringify(name)})`,
+          `document.querySelector('.hv2-panel')?.innerText.includes(${JSON.stringify(name)})`,
         );
       };
       await create('Thiền', 'check', 'daily');
@@ -2223,9 +2310,7 @@ test(
         ['daily', 'weekly', 'weekdays'],
       );
       await browser.evaluate("document.querySelector('.habit-card .habit-check').click()");
-      await browser.wait(
-        "document.querySelector('.habit-check')?.getAttribute('aria-pressed')==='true'",
-      );
+      await browser.wait('!!document.querySelector(\'.habit-check[aria-pressed="true"]\')');
       assert.equal(control.habits.habits[0].log.value, 100);
       await browser.tap('.habit-log-button');
       await browser.evaluate(
@@ -2238,7 +2323,7 @@ test(
         await browser.evaluate("document.querySelectorAll('.habit-note img').length"),
         0,
       );
-      await browser.click('Đọc sách', '.habit-name');
+      await browser.click('Đọc sách', '.habit-name strong');
       await browser.wait("!!document.querySelector('.habit-detail')");
       assert.equal(
         await browser.evaluate("document.querySelector('.habit-note').textContent"),
@@ -2290,7 +2375,7 @@ test(
       }
       await browser.resize(320, 460);
       await browser.evaluate("document.querySelector('.habit-card .habit-name').click()");
-      await browser.click('Chỉnh thói quen');
+      await browser.click('Chỉnh sửa', '.hv2-manage button');
       await browser.evaluate("document.querySelector('.habit-form').scrollTop=9999");
       assert.equal(
         await browser.evaluate(

@@ -2,6 +2,13 @@ const weekdays = ['Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sá
 export const habitWeekdays = weekdays;
 export const habitNumber = value => Number(value / 100).toLocaleString('vi-VN', { maximumFractionDigits: 2 });
 export const habitDate = day => new Date(day * 86400000).toLocaleDateString('vi-VN', { timeZone: 'UTC', day: '2-digit', month: '2-digit' });
+// Show the latest quantity label without changing today's committed metric,
+// target or recorded values. A future metric change keeps today's own unit.
+export function habitDisplayUnit(view) {
+    const current = view.definition, pending = view.pending?.definition;
+    return current.metric === 'quantity' && pending?.metric === current.metric
+        ? pending.unit : current.unit;
+}
 export function cadenceLabel(cadence) {
     if (cadence.kind === 'daily') return 'Mỗi ngày';
     if (cadence.kind === 'weekly') return cadence.quota + ' ngày / tuần';

@@ -103,6 +103,18 @@ Nhắc định kỳ quét tối đa 20 quy tắc hợp lệ ở phase 1, tiếp 
 
 Config thực thi từ `wrangler.jsonc`; owner và auth từ source/config, không hardcode theo tài liệu. Staging được cấu hình là Worker `personal-assistant-staging`, DB `assistant-staging`, API cùng origin; đăng nhập Telegram initData có HMAC/TTL hoặc ghép trình duyệt qua `/dangnhap MÃ` và cookie session.
 
+Mini app kiểm tra chữ ký và tuổi `initData` tối đa 15 phút khi chưa có phiên hợp lệ.
+GET `/api/bootstrap` sau xác thực Telegram cấp cookie `__Host-minh-anh-session` trong
+30 ngày cố định, dùng bảng `browser_sessions` hiện có và chỉ lưu hash token. API ưu tiên
+phiên còn hạn nên việc Telegram giữ nguyên `initData` khi app ở nền không làm mất đăng nhập.
+Không có polling giữ phiên hoặc gia hạn ở mỗi request; phiên hợp lệ tốn một indexed read,
+không ghi lại phiên. Bootstrap đăng nhập mới dọn phiên đã hết hạn và tạo phiên mới trong
+một batch. Cookie có `Secure`, `HttpOnly`, `SameSite=Strict`; POST bằng cookie bắt buộc
+đúng origin và `X-Minh-Anh-Request: 1`, kể cả khi client vẫn gửi header Telegram.
+Đăng xuất xóa phiên phía server; lỗi kho phiên trả 503, không báo nhầm 401. Hết 30 ngày,
+xóa cookie hoặc WebView mất dữ liệu thì cần mở lại mini app từ Telegram để có xác thực
+mới. Bản đang mở trước lần phát hành cơ chế này cần đóng rồi mở lại một lần.
+
 [Phát hành Linh thú 19/10](LINH_THU_RELEASE.md) và [HANDOFF](HANDOFF.md) giữ ghi nhận lịch sử mới hơn. Đợt rà soát hiện tại chỉ local: không deploy, áp migration remote, đổi webhook hoặc gọi provider thật. Quyền sửa code/deploy/push trong các đợt cũ không áp dụng cho nhiệm vụ mới.
 
 Trước một lần phát hành được duyệt: đối chiếu Worker/DB đích, migrations đã áp, version/schema và diff; backup mới; diễn tập restore/nâng cấp trên bản sao; chạy gates và dry-run. Sau phát hành đối chiếu version/assets/auth và luồng đã được phép kiểm. GET/auth/hash không chứng minh mutation có đăng nhập hoặc latency thực tế.

@@ -16,6 +16,7 @@ import type { Env } from '../../src/config/env.ts';
 import { DayPlanStore } from '../../src/adapters/d1/day-plan-store.ts';
 import { TaskDayStore } from '../../src/adapters/d1/task-day-store.ts';
 import { TimelineStore } from '../../src/adapters/d1/timeline-store.ts';
+import { readHabits } from '../../src/entrypoints/mini-app/habits.ts';
 
 const monday = Date.parse('2026-10-12T08:00:00+07:00'),
   DAY = 86400000;
@@ -39,6 +40,263 @@ async function database() {
   return { mf, db, schedule, store, service };
 }
 const duration = { name: 'Đọc sách', metric: 'duration', target: 20, cadence: { kind: 'daily' } };
+
+test('habit order swaps persist across reads/days, preserve commitments/logs and reject stale, foreign and deleted neighbors', async () => {
+  const f = await database();
+  try {
+    const ids: string[] = [];
+    for (const name of ['alpha', 'bravo', 'charlie'])
+      ids.push(
+        (
+          await f.service.execute(
+            '123',
+            'order_' + name,
+            { operation: 'create', definition: { ...duration, name } },
+            monday,
+          )
+        ).habitId,
+      );
+    const read = () => f.store.today('123', monday);
+    const before = await read();
+    assert.deepEqual(
+      before.habits.map((v) => v.habit.id),
+      ids,
+    );
+    const command = {
+      operation: 'reorder',
+      habitId: ids[1],
+      version: 1,
+      otherId: ids[0],
+      otherVersion: 1,
+    };
+    const saved = await f.service.execute('123', 'order_swap_once', command, monday);
+    assert.equal(saved.version, 2);
+    assert.equal(saved.otherVersion, 2);
+    const after = await read();
+    assert.deepEqual(
+      after.habits.map((v) => v.habit.id),
+      [ids[1], ids[0], ids[2]],
+    );
+    assert.deepEqual(await f.service.execute('123', 'order_swap_once', command, monday), saved);
+    assert.deepEqual(
+      (await read()).habits.map((v) => v.habit.id),
+      [ids[1], ids[0], ids[2]],
+    );
+    for (const view of after.habits) {
+      const original = before.habits.find((v) => v.habit.id === view.habit.id)!;
+      assert.deepEqual(view.definition, original.definition);
+      assert.deepEqual(view.log, original.log);
+      assert.deepEqual(view.habit.revisions, original.habit.revisions);
+    }
+    await assert.rejects(f.service.execute('123', 'order_stale', command, monday), /HABIT_CHANGED/);
+    await assert.rejects(
+      f.service.execute(
+        '123',
+        'order_foreign',
+        { ...command, version: 2, otherId: 'h_foreign_habit' },
+        monday,
+      ),
+      /HABIT_NOT_FOUND/,
+    );
+    await assert.rejects(
+      f.service.execute('999', 'order_wrong_owner', command, monday),
+      /HABIT_NOT_FOUND|SETUP_REQUIRED|NO_ACTIVE_DAY/,
+    );
+    const later = await f.store.today('123', monday + DAY);
+    assert.deepEqual(
+      later.habits.map((v) => v.habit.id),
+      [ids[1], ids[0], ids[2]],
+    );
+    const d = later.habits.find((v) => v.habit.id === ids[2])!;
+    await f.service.execute(
+      '123',
+      'order_delete_neighbor',
+      { operation: 'delete', habitId: ids[2], version: d.habit.version },
+      monday + DAY,
+    );
+    await assert.rejects(
+      f.service.execute(
+        '123',
+        'order_hidden',
+        {
+          operation: 'reorder',
+          habitId: ids[0],
+          version: 2,
+          otherId: ids[2],
+          otherVersion: d.habit.version + 1,
+        },
+        monday + DAY,
+      ),
+      /HABIT_NOT_FOUND/,
+    );
+    assert.equal((await new HealthyStore(f.db).read('123')).state.tickets, 0);
+  } finally {
+    await f.mf.dispose();
+  }
+});
+
+test('concurrent habit swaps commit at most once for the same versions and rollback both positions on failure', async () => {
+  const f = await database();
+  try {
+    const a = await f.service.execute(
+      '123',
+      'order_race_alpha',
+      { operation: 'create', definition: duration },
+      monday,
+    );
+    const b = await f.service.execute(
+      '123',
+      'order_race_bravo',
+      { operation: 'create', definition: duration },
+      monday,
+    );
+    const input = {
+      operation: 'reorder',
+      habitId: a.habitId,
+      version: 1,
+      otherId: b.habitId,
+      otherVersion: 1,
+    };
+    const results = await Promise.allSettled([
+      f.service.execute('123', 'order_race_001', input, monday),
+      f.service.execute('123', 'order_race_002', input, monday),
+    ]);
+    assert.equal(results.filter((r) => r.status === 'fulfilled').length, 1);
+    assert.deepEqual(
+      (await f.store.today('123', monday)).habits.map((v) => v.habit.id),
+      [b.habitId, a.habitId],
+    );
+    await f.db.exec(
+      "CREATE TRIGGER order_abort BEFORE INSERT ON habit_receipts WHEN NEW.request_id='order_abort_tx' BEGIN SELECT RAISE(ABORT,'test abort'); END",
+    );
+    await assert.rejects(
+      f.service.execute('123', 'order_abort_tx', { ...input, version: 2, otherVersion: 2 }, monday),
+    );
+    const rows = (await f.store.today('123', monday)).habits;
+    assert.deepEqual(
+      rows.map((v) => v.habit.id),
+      [b.habitId, a.habitId],
+    );
+    assert.ok(rows.every((v) => v.habit.version === 2));
+  } finally {
+    await f.mf.dispose();
+  }
+});
+
+test('habit presentation persists daily choices and immediate archive/delete while preserving incurred commitments', async () => {
+  const { mf, db, service, store } = await database();
+  try {
+    const weekly = await service.execute(
+      '123',
+      'presentation_weekly',
+      {
+        operation: 'create',
+        definition: {
+          name: 'Tập thể dục',
+          metric: 'check',
+          target: 1,
+          cadence: { kind: 'weekly', quota: 7 },
+        },
+        reminderTime: '19:00',
+      },
+      monday,
+    );
+    const at = monday + 7 * DAY;
+    const first = (await store.today('123', at)).habits[0]!;
+    const day = (await store.today('123', at)).day.day;
+    await service.execute(
+      '123',
+      'presentation_zero_log',
+      { operation: 'log', habitId: weekly.habitId, version: 1, logVersion: 0, day, value: 0 },
+      at,
+    );
+    assert.equal(
+      (await store.history('123', day - 7, day, weekly.habitId, null, 50)).rows.length,
+      1,
+    );
+    assert.equal(first.preview?.status, 'missed');
+    const context = {
+      env: {
+        DB: db,
+        TELEGRAM_USER_ID: '123',
+        TELEGRAM_WEBHOOK_SECRET: 'fixture-only-webhook-secret',
+      } satisfies Env,
+      owner: '123',
+      now: at,
+      healthy: new HealthyStore(db),
+    };
+    const list = async () =>
+      (await (
+        await readHabits(context, new URL('https://local.test/api/habits?archived=1'))
+      ).json()) as any;
+    await service.execute(
+      '123',
+      'defer_weekly_today',
+      { operation: 'defer', habitId: weekly.habitId, version: 1, day },
+      at,
+    );
+    assert.equal((await list()).habits[0].presentation.choice, 'deferred');
+    assert.deepEqual((await store.today('123', at)).habits[0]!.preview, first.preview);
+    await assert.rejects(
+      service.execute(
+        '123',
+        'wrong_day_defer',
+        { operation: 'defer', habitId: weekly.habitId, version: 2, day: day - 1 },
+        at,
+      ),
+      /HABIT_DAY_CLOSED/,
+    );
+    await service.execute(
+      '123',
+      'resume_weekly_today',
+      { operation: 'resume', habitId: weekly.habitId, version: 2, day },
+      at,
+    );
+    assert.equal((await list()).habits[0].presentation.choice, 'included');
+    await service.execute(
+      '123',
+      'archive_weekly_ui',
+      { operation: 'archive', habitId: weekly.habitId, version: 3 },
+      at,
+    );
+    assert.equal((await list()).habits[0].presentation.hidden, 'archived');
+    assert.deepEqual((await store.today('123', at)).habits[0]!.preview, first.preview);
+    const reminder = await db
+      .prepare('SELECT enabled,end_date,start_date FROM recurrence_rules WHERE owner=?')
+      .bind('123')
+      .first<any>();
+    assert.ok(
+      !reminder.enabled || reminder.end_date < new Date(day * DAY).toISOString().slice(0, 10),
+    );
+    await service.execute(
+      '123',
+      'delete_archived_ui',
+      { operation: 'delete', habitId: weekly.habitId, version: 4 },
+      at,
+    );
+    assert.equal((await list()).habits.length, 0);
+    assert.deepEqual(
+      (await store.today('123', at)).habits[0]!.preview,
+      first.preview,
+      'Deletion must not change tower inputs',
+    );
+    await assert.rejects(
+      service.execute(
+        '123',
+        'deleted_habit_log',
+        { operation: 'log', habitId: weekly.habitId, version: 5, logVersion: 1, day, value: 1 },
+        at,
+      ),
+      /HABIT_NOT_FOUND/,
+    );
+    assert.equal(
+      (await store.history('123', day - 7, day, weekly.habitId, null, 50)).rows.length,
+      0,
+    );
+  } finally {
+    await mf.dispose();
+  }
+});
 
 test('habit list keeps a fixed D1 query budget at 30 active habits and projects all weekly logs', async () => {
   const { mf, db, store } = await database();

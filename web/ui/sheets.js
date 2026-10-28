@@ -28,6 +28,7 @@ export function createSheets({ sheet, sheetContent, render }) {
     document.body.classList.remove('sheet-open');
   }
   function resetSheetLayout() {
+    sheet.classList.remove('habit-v2-sheet', 'diary-v2-sheet');
     sheet.classList.remove('task-sheet-open', 'schedule-sheet-open', 'reward-sheet-open');
     sheet.classList.remove('settings-sheet-open', 'draw-sheet-open');
     sheet.classList.remove('beast-sheet-open');

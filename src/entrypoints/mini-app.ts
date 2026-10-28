@@ -1,4 +1,9 @@
-import { browserAuthApi, browserOwner, browserWriteAllowed } from '../adapters/d1/browser-auth.ts';
+import {
+  browserAuthApi,
+  browserOwner,
+  browserWriteAllowed,
+  createMiniAppSession,
+} from '../adapters/d1/browser-auth.ts';
 import { HealthyStore } from '../adapters/d1/healthy-store.ts';
 import { verifyMiniApp } from '../adapters/telegram/mini-app-auth.ts';
 import type { Env } from '../config/env.ts';
@@ -9,6 +14,7 @@ import { handleReminders, readReminders } from './mini-app/reminders.ts';
 import { handleSchedule } from './mini-app/schedule.ts';
 import { handleTasks } from './mini-app/tasks.ts';
 import { handleHabits, readHabits } from './mini-app/habits.ts';
+import { handleJournals, readJournals } from './mini-app/journals.ts';
 import { handleBeasts, readBeasts } from './mini-app/linh-thu.ts';
 import { logFailure, MiniAppTiming } from '../adapters/observability.ts';
 const taskRoutes = new Set(['/api/tasks', '/api/tasks-delete']);
@@ -29,6 +35,7 @@ const writeRoutes = new Set([
   ...scheduleRoutes,
   '/api/cultivation',
   '/api/habits',
+  '/api/journals',
   '/api/linh-thu',
 ]);
 export async function miniAppApi(request: Request, env: Env, now = Date.now()): Promise<Response> {
@@ -42,13 +49,17 @@ export async function miniAppApi(request: Request, env: Env, now = Date.now()): 
         : path === '/api/linh-thu' || path.startsWith('/api/linh-thu/')
           ? 'linh-thu'
           : 'other';
-  return timing.finish(await dispatchMiniAppApi(request, env, now, timing), route);
+  const session: { cookie?: string } = {};
+  const response = await dispatchMiniAppApi(request, env, now, timing, session);
+  if (session.cookie) response.headers.append('Set-Cookie', session.cookie);
+  return timing.finish(response, route);
 }
 async function dispatchMiniAppApi(
   request: Request,
   env: Env,
   now: number,
   timing: MiniAppTiming,
+  session: { cookie?: string },
 ): Promise<Response> {
   const receivedAt = Date.now();
   const url = new URL(request.url);
@@ -69,21 +80,33 @@ async function dispatchMiniAppApi(
     }
   }
   let owner: string;
+  let establishSession = false;
   const authStarted = performance.now();
   try {
-    const initData = request.headers.get('X-Telegram-Init-Data');
-    if (initData)
-      owner = (
-        await verifyMiniApp(initData, env.TELEGRAM_BOT_TOKEN ?? '', env.TELEGRAM_USER_ID, now)
-      ).owner;
-    else {
-      const authenticated = await browserOwner(env.DB, request, env.TELEGRAM_USER_ID, now);
-      if (!authenticated) throw Error('AUTH_REQUIRED');
+    const authenticated = await browserOwner(env.DB, request, env.TELEGRAM_USER_ID, now);
+    if (authenticated) {
       if (request.method === 'POST' && !browserWriteAllowed(request))
         return json({ error: 'FORBIDDEN' }, 403);
       owner = authenticated;
+    } else {
+      const initData = request.headers.get('X-Telegram-Init-Data');
+      if (!initData) throw Error('AUTH_REQUIRED');
+      owner = (
+        await verifyMiniApp(initData, env.TELEGRAM_BOT_TOKEN ?? '', env.TELEGRAM_USER_ID, now)
+      ).owner;
+      // Bootstrap is already the first app read. Issue once here, without an
+      // extra round trip, and never extend the fixed expiry on ordinary reads.
+      establishSession = request.method === 'GET' && url.pathname === '/api/bootstrap';
     }
-  } catch {
+  } catch (error) {
+    const code = error instanceof Error ? error.message : '';
+    if (!['AUTH_REQUIRED', 'MINI_APP_EXPIRED', 'MINI_APP_UNAUTHORIZED'].includes(code)) {
+      logFailure('browser_auth', error);
+      return json(
+        { error: 'LOGIN_UNAVAILABLE', message: 'Chưa kết nối được. Cậu thử lại nhé.' },
+        503,
+      );
+    }
     return json(
       {
         error: 'AUTH_REQUIRED',
@@ -95,7 +118,10 @@ async function dispatchMiniAppApi(
     timing.record('auth', performance.now() - authStarted);
   }
   try {
+    if (establishSession) session.cookie = await createMiniAppSession(env.DB, owner, now);
     const context = { env, owner, now, healthy: new HealthyStore(env.DB) };
+    if (request.method === 'GET' && url.pathname === '/api/journals')
+      return await readJournals(context, url);
     if (
       request.method === 'GET' &&
       [
@@ -122,8 +148,13 @@ async function dispatchMiniAppApi(
       return await activeTasks(context, url);
     if (request.method !== 'POST' || !writeRoutes.has(url.pathname))
       return json({ error: 'NOT_FOUND' }, 404);
-    const input = await readInput(request);
+    const input = await readInput(request, url.pathname === '/api/journals' ? 65536 : 4096);
     if (input instanceof Response) return input;
+    if (url.pathname === '/api/journals')
+      return await handleJournals(
+        { ...context, now: now + Math.max(0, Date.now() - receivedAt) },
+        input,
+      );
     if (url.pathname === '/api/linh-thu') return await handleBeasts(context, input);
     if (url.pathname === '/api/habits')
       return await handleHabits(
@@ -143,6 +174,17 @@ async function dispatchMiniAppApi(
     return await handleCultivation(context, input, timing);
   } catch (error) {
     const code = error instanceof Error ? error.message : '';
+    if (code === 'JOURNAL_CHANGED')
+      return json(
+        {
+          error: code,
+          message:
+            'Nhật ký vừa được sửa ở nơi khác. Bản nháp vẫn được giữ; mở lại bản đã lưu trước khi tiếp tục nhé.',
+        },
+        409,
+      );
+    if (code === 'JOURNAL_NOT_FOUND')
+      return json({ error: code, message: 'Nhật ký này đã được xóa. Tải lại danh sách nhé.' }, 409);
     const beastErrors: Record<string, string> = {
       BEAST_CHANGED: 'Linh thú vừa có thay đổi. Tải lại để tiếp tục nhé.',
       BEAST_DAY_CLOSED: 'Ngày này đã kết thúc. Tải lại để xem ngày hiện tại.',

@@ -30,6 +30,13 @@ export function createBrowserLoginActions(context) {
     state.reminders = [];
     state.habitData = null;
     state.habitHistory = null;
+    state.journalData = null;
+    state.journalDrafts = null;
+    state.journalError = null;
+    state.journalOpening = null;
+    state.habitSelected?.clear();
+    state.habitSelecting = false;
+    state.habitOrdering = false;
     state.beastData = null;
     state.beastCollection = null;
     state.beastTower = null;

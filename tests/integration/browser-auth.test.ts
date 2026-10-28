@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {createHmac} from 'node:crypto';
 import {readFileSync,readdirSync} from 'node:fs';
 import {Miniflare} from 'miniflare';
 import {approveBrowserCode,browserOwner} from '../../src/adapters/d1/browser-auth.ts';
@@ -18,6 +19,90 @@ async function fixture(){
  const cookies=(response:Response)=>response.headers.getSetCookie().map(value=>value.split(';')[0]).join('; ');
  return {mf,db,env,now,req,auth,cookies};
 }
+
+function telegramData(token:string,at:number,id=123){
+ const params=new URLSearchParams({auth_date:String(Math.floor(at/1000)),user:JSON.stringify({id})});
+ const secret=createHmac('sha256','WebAppData').update(token).digest();
+ const data=[...params].sort(([a],[b])=>a.localeCompare(b)).map(([key,value])=>key+'='+value).join('\n');
+ params.set('hash',createHmac('sha256',secret).update(data).digest('hex'));
+ return params.toString();
+}
+
+test('Telegram bootstrap establishes one fixed 30-day session, reuses it past initData expiry and revokes it on logout',async()=>{
+ const f=await fixture();try{
+  const init=telegramData(f.env.TELEGRAM_BOT_TOKEN,f.now);
+  const read=(cookie='',at=f.now,proof=init,path='bootstrap')=>miniAppApi(new Request('https://local/api/'+path,{headers:{Cookie:cookie,...(proof?{'X-Telegram-Init-Data':proof}:{})}}),f.env,at);
+  const first=await read();assert.equal(first.status,200);
+  const session=f.cookies(first);
+  assert.match(first.headers.get('Set-Cookie')!,/__Host-minh-anh-session=[a-f0-9]{64}; Path=\/; Secure; HttpOnly; SameSite=Strict; Max-Age=2592000/);
+  assert.equal(first.headers.get('Cache-Control'),'no-store');
+  const original=await f.db.prepare('SELECT * FROM browser_sessions').first<{token_hash:string;owner:string;created_at:number;expires_at:number}>();
+  assert.equal(original!.owner,'123');assert.equal(original!.created_at,f.now);assert.equal(original!.expires_at,f.now+30*86400000);
+  assert.ok(!session.includes(original!.token_hash));
+  assert.ok(!JSON.stringify(original).includes(session.split('=')[1]!));
+  const later=f.now+20*60000;
+  // initData is deliberately expired and still sent by the Telegram SDK.
+  assert.equal((await read('',later)).status,401);
+  for(const at of [later,f.now+86400000,f.now+29*86400000]){
+   const response=await read(session,at);assert.equal(response.status,200);
+   assert.equal(response.headers.get('Set-Cookie'),null,'Reads do not renew the fixed expiry or create a session');
+   assert.equal((await f.db.prepare('SELECT COUNT(*) AS n FROM browser_sessions').first<{n:number}>())!.n,1);
+  }
+  assert.deepEqual(await f.db.prepare('SELECT * FROM browser_sessions').first(),original);
+  assert.equal((await read(session,later,'','history')).status,200,'Cookie also works after a page reload without initData');
+  const write=(id:string,extra:Record<string,string>={})=>miniAppApi(new Request('https://local/api/tasks',{method:'POST',headers:{Origin:'https://local',Cookie:session,'X-Telegram-Init-Data':init,...extra},body:JSON.stringify({id,operation:'create',title:'Session task',remainingMinutes:15})}),f.env,later);
+  assert.equal((await write('session_no_header')).status,403);
+  assert.equal((await write('session_cross_site',{'X-Minh-Anh-Request':'1',Origin:'https://other'})).status,403);
+  assert.equal((await write('session_fetch_cross',{'X-Minh-Anh-Request':'1','Sec-Fetch-Site':'cross-site'})).status,403);
+  assert.equal((await write('session_valid_write',{'X-Minh-Anh-Request':'1'})).status,200);
+  assert.equal((await read(session,f.now+30*86400000)).status,401,'Expiry is enforced server-side at the exact boundary');
+  assert.equal((await f.auth('logout',session,later)).status,200);
+  assert.equal((await read(session,later)).status,401,'The revoked cookie cannot reuse expired Telegram credentials');
+  assert.equal((await f.db.prepare('SELECT COUNT(*) AS n FROM browser_sessions').first<{n:number}>())!.n,0);
+ }finally{await f.mf.dispose();}
+});
+
+test('Telegram sessions require fresh authentic owner proof, isolate the configured owner and clean expired sessions on a new login',async()=>{
+ const f=await fixture();try{
+  const bootstrap=(proof:string,cookie='',at=f.now,env=f.env)=>miniAppApi(new Request('https://local/api/bootstrap',{headers:{'X-Telegram-Init-Data':proof,Cookie:cookie}}),env,at);
+  for(const proof of [telegramData('wrong',f.now),telegramData(f.env.TELEGRAM_BOT_TOKEN,f.now,999),telegramData(f.env.TELEGRAM_BOT_TOKEN,f.now-901000),'invalid']){
+   const response=await bootstrap(proof);assert.equal(response.status,401);assert.equal(response.headers.get('Set-Cookie'),null);
+  }
+  assert.equal((await f.db.prepare('SELECT COUNT(*) AS n FROM browser_sessions').first<{n:number}>())!.n,0);
+  const init=telegramData(f.env.TELEGRAM_BOT_TOKEN,f.now),first=await bootstrap(init),session=f.cookies(first);
+  assert.equal(first.status,200);
+  assert.equal((await bootstrap(init,session,f.now+1000000,{...f.env,TELEGRAM_USER_ID:'999'})).status,401);
+  const later=f.now+30*86400000,fresh=telegramData(f.env.TELEGRAM_BOT_TOKEN,later);
+  assert.equal((await bootstrap(init,session,later)).status,401);
+  const reopened=await bootstrap(fresh,session,later);assert.equal(reopened.status,200);
+  const nextSession=f.cookies(reopened);assert.notEqual(nextSession,session);
+  assert.equal((await f.db.prepare('SELECT COUNT(*) AS n FROM browser_sessions').first<{n:number}>())!.n,1);
+  assert.equal(await browserOwner(f.db,new Request('https://local',{headers:{Cookie:session}}),'123',later),null);
+  assert.equal(await browserOwner(f.db,new Request('https://local',{headers:{Cookie:nextSession}}),'123',later),'123');
+ }finally{await f.mf.dispose();}
+});
+
+test('a session-store outage is unavailable, never a false logout, and valid sessions use one indexed read without a renewal write',async()=>{
+ const f=await fixture();try{
+  const init=telegramData(f.env.TELEGRAM_BOT_TOKEN,f.now);
+  const first=await miniAppApi(new Request('https://local/api/bootstrap',{headers:{'X-Telegram-Init-Data':init}}),f.env,f.now);
+  const session=f.cookies(first),calls:string[]=[];
+  const tracked:Database={
+   prepare(sql){calls.push(sql);return f.db.prepare(sql);},
+   batch(statements){calls.push('batch');return f.db.batch(statements);}
+  };
+  const request=()=>new Request('https://local/api/history',{headers:{Cookie:session,'X-Telegram-Init-Data':init}});
+  assert.equal((await miniAppApi(request(),{...f.env,DB:tracked},f.now+1000000)).status,200);
+  assert.equal(calls.filter(sql=>sql.includes('browser_sessions')).length,1);
+  assert.match(calls.find(sql=>sql.includes('browser_sessions'))!,/^SELECT owner FROM browser_sessions WHERE token_hash=\?/);
+  assert.ok(!calls.some(sql=>/^(INSERT|UPDATE|DELETE).*browser_sessions/.test(sql)));
+  const unavailable:Database={prepare(){throw Error('synthetic database outage');},batch(){throw Error('synthetic database outage');}};
+  const failed=await miniAppApi(request(),{...f.env,DB:unavailable},f.now+1000000);
+  assert.equal(failed.status,503);assert.equal((await failed.json() as {error:string}).error,'LOGIN_UNAVAILABLE');
+  assert.equal(failed.headers.get('Set-Cookie'),null);
+  assert.equal((await miniAppApi(request(),f.env,f.now+1000000)).status,200);
+ }finally{await f.mf.dispose();}
+});
 
 test('Chrome pairing is bound to its browser, owner-only, single use, remembered and revoked on logout',async()=>{
  const f=await fixture();try{

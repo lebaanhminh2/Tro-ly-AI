@@ -1,8 +1,8 @@
 # Thói quen — hợp đồng hiện hành
 
-> Bổ sung 19/10/2026: hệ thống Linh thú mới nhận kết quả `achieved/missed/neutral` đã chốt từ domain habit; không tự suy lại quota hoặc dùng task để luyện. Tab Habit có một tháp lật bài bốn tầng theo [đặc tả Linh thú](LINH_THU_SPEC.md). Task hoàn chỉnh chỉ là điều kiện mở tháp; phần lịch/ghi nhận habit bên dưới giữ nguyên. Bản mới đang local, chưa phát hành.
+> Hệ thống Linh thú nhận kết quả `achieved/missed/neutral` đã chốt từ domain habit; không tự suy lại quota hoặc dùng task để luyện. Tab Thói quen giữ lối vào Tháp giao ước bốn tầng theo [đặc tả Linh thú](LINH_THU_SPEC.md). Đợt UI v2 giữ nguyên toàn bộ bên trong tháp.
 
-Cập nhật 18/10/2026. Nguồn: `src/domain/habits.ts`, `src/application/habit-service.ts`, `src/adapters/d1/habit-store.ts` và các modules habit ở web. Tài liệu này mô tả hành vi đã có; không còn phần đóng góp sang game.
+Cập nhật 23/10/2026. Nguồn: `src/domain/habits.ts`, `src/application/habit-service.ts`, `src/adapters/d1/habit-store.ts`, `src/adapters/d1/journal-store.ts` và các module habit/journal ở web. Bằng chứng triển khai và phát hành ở [checkpoint v2](HABITS_V2_PROGRESS.md).
 
 ## Ghi nhận và ngày sinh hoạt
 
@@ -47,13 +47,17 @@ thiếu_mới(d) = thiếu_lũy_kế(d) - thiếu_đã_ghi_trước_d
 
 Q=3, đạt ngày đầu rồi không đạt nữa: ngày 2–5 trung tính, ngày 6 thiếu một, ngày 7 thiếu thêm một. Nếu ngày 7 đạt thì không thiếu thêm, vẫn giữ phần thiếu ngày 6. Nếu không ngày nào đạt, ngày 5/6/7 mỗi ngày thiếu một. Trung tính không tính vào mẫu số như thành công.
 
-Sửa định nghĩa có hiệu lực ngày kế tiếp; nếu lịch cũ hoặc mới là weekly thì thứ Hai kế tiếp. Giờ nhắc cập nhật ngay theo thao tác riêng. Lưu trữ/khôi phục có ngày hiệu lực tương ứng, giữ nghĩa vụ đã phát sinh và lịch sử. Không có xóa vĩnh viễn trong UI/API habit. Bản thay đổi đang hẹn được hiển thị riêng, không giả là đã áp dụng cho hôm nay.
+Sửa định nghĩa có hiệu lực ngày kế tiếp; nếu lịch cũ hoặc mới là weekly thì thứ Hai kế tiếp. Giờ nhắc cập nhật ngay theo thao tác riêng. Lưu trữ/khôi phục có ngày hiệu lực tương ứng, giữ nghĩa vụ đã phát sinh và lịch sử. Bản thay đổi đang hẹn được hiển thị riêng, không giả là đã áp dụng cho hôm nay.
+
+UI v2 tách trạng thái hiển thị trong `habit_presentation` khỏi lịch cam kết. Lưu trữ ẩn ngay khỏi danh sách đang làm, dừng nhắc và bỏ đặt chỗ hôm nay; xem/khôi phục tại ⋯ → Đã lưu trữ. Xóa có xác nhận, hỗ trợ nhiều mục, ẩn cả trong lịch sử/báo cáo phía người dùng. Các snapshot và nghĩa vụ đã phát sinh được giữ nội bộ để không thay điều kiện tháp hay thưởng đã cấp.
+
+Với lịch tuần, Khác → Để hôm khác chỉ đổi nhóm hiển thị trong ngày hiện tại, không miễn quota hay xóa kết quả thiếu. Khác → Làm hôm nay đưa trở lại; lựa chọn hết hiệu lực khi sang ngày sinh hoạt mới. Ngoài lịch hoặc đã đủ quota nằm ở Không cần làm hôm nay, không có tick/ô ghi nhận; có thể chọn làm thêm khi cam kết cho phép, vẫn chịu giới hạn thưởng hiện hành. Thói quen khôi phục đang chờ ngày hiệu lực không có hành động ghi nhận chưa hợp lệ.
 
 ## Theo dõi, tiến bộ và thao tác hiện có
 
 Danh sách luôn giữ các thói quen đang hoạt động, độc lập với số mục đã lưu trữ. API `GET /api/habits?archived=1&offset=0` trả thêm tối đa 50 mục lưu trữ cùng `archivePage.nextCursor`; giao diện có tải thêm ở danh sách và bộ lọc lịch sử. JSON export đọc các trang còn lại trước khi xuất để không mất định nghĩa cũ. Tìm kiếm companion phân trang tại DB, hỗ trợ tên tiếng Việt không dấu và tìm được mục nằm sau trang lưu trữ đầu tiên.
 
-- Danh sách giữ habit đang hoạt động, gồm ngoài lịch/chưa bắt đầu; phân biệt partial, đạt tự khai, trung tính, thiếu đã chốt và kỳ đang xử lý.
+- Danh sách chính ưu tiên Cần thực hiện; Đã hoàn thành và Không cần làm hôm nay thu gọn bên dưới. Thẻ tổng kết dùng số hoàn thành trên số cần làm. Chọn nhiều/Thoát chọn, chọn tất cả và xác nhận xóa tương tự Hôm nay.
 - Tick đầu dòng dùng cho cả ba metric: đặt đúng target hoặc về 0. Toast Hoàn tác 6 giây khôi phục tổng/ghi chú trước thao tác, có kiểm ngày, phiên, version và trạng thái đối chiếu. Cơ chế này độc lập với Hoàn tác ngủ 5 phút.
 - Slider thời lượng và bộ đếm số lượng trong bảng ghi nhận đồng bộ ô nhập chính xác. Thao tác giữ ở bản nháp đến khi Lưu, hỗ trợ số lẻ/vượt target.
 - Thêm/sửa giữ nháp khi đổi metric; ngày hiệu lực rõ; header/footer vẫn tiếp cận khi cuộn.
@@ -64,14 +68,25 @@ Danh sách luôn giữ các thói quen đang hoạt động, độc lập với 
 
 Kết toán habit tiếp tục để có lịch sử/báo cáo, chạy bounded và replay an toàn. Không còn job game, chuyển phần thưởng game hoặc đọc khóa/trận cũ. Các cột/schema lịch sử vẫn giữ để tương thích.
 
-## Prototype được giữ và quyết định chưa áp dụng
+## Nhật ký ngày
+
+Lối vào Nhật ký ngày nằm dưới danh sách; ⋯ → Nhật ký mở lịch sử theo ngày. Mỗi ngày có ba mục: Hôm nay làm được gì; Điều chưa tốt / bài học; Ngày mai cải thiện gì. Cần ít nhất một mục, tối đa 4.000 ký tự mỗi mục. Màn đọc giữ xuống dòng, bỏ mục trống, hiển thị như văn bản an toàn; có chỉnh sửa và xóa với xác nhận. Có thể viết bù ngày cũ, không viết ngày tương lai.
+
+API `GET/POST /api/journals` dùng auth hiện hành và ngày sinh hoạt server. Lần lưu đầu tiên của hôm nay cấp cố định **+1 tu vi, +1 vé quay** vào ví thật, không nhân theo Linh thú. Nội dung, claim owner/ngày, ví và receipt commit trong cùng transaction. Sửa, retry, hai thiết bị, xóa/tạo lại không cấp thêm; ngày cũ không thưởng. Xóa làm rỗng nội dung và bản nháp tại trình duyệt thực hiện, giữ version/tombstone và claim. Bản nháp cũ ở thiết bị khác không được tự ghi đè bản mới: UI báo xung đột version, cho xem bản mới hoặc chủ động dùng lại nháp.
+
+Nháp trình duyệt phân theo owner, giữ khi đóng/mở, đổi ngày hoặc reload. Lần lưu chưa xác nhận giữ request ID và nội dung gốc để phục hồi receipt; sửa tiếp sau lỗi không làm mất nội dung mới. Nháp không đồng bộ giữa các thiết bị; nhật ký đã lưu đồng bộ qua server. UI chỉ báo thành công sau receipt, lỗi lưu giữ nội dung và cho thử lại.
+
+## Prototype được giữ
 
 [Prototype habit](prototypes/habits/index.html) là HTML độc lập, dữ liệu mẫu/localStorage riêng, có reset và sáng/tối; không gọi API cá nhân. File được giữ nguyên qua đợt dọn.
 
-Phần nháp UX chưa commit trước đợt dọn đề xuất: composer ưu tiên tên rồi metric/lịch, Theo dõi/Tiến bộ, tên mở chi tiết còn menu mở quản lý, ô tick thống nhất kèm hoàn tác, slider thời lượng vẫn nhập số, bộ đếm ±1, bảng chung 7 ngày và tỷ lệ 30 ngày loại trung tính. Các quy tắc backend về ngày/hiệu lực vẫn phải giữ.
-
-Một phần đã có trong app: tick/hoàn tác, slider/bộ đếm trong bảng ghi, tiến bộ 7/30 ngày. Slider trực tiếp dưới từng dòng, toàn bộ composer/chi tiết và cách quản lý của prototype vẫn là hướng thử nghiệm, chưa được áp toàn bộ. Đợt dọn không triển khai redesign mới. Kiểm tra prototype trước đây là dữ liệu mẫu; không dùng nó làm bằng chứng logic backend hoặc tốc độ staging.
+[Demo v2 được duyệt](prototypes/habits-v2/index.html) là nguồn cho đợt triển khai này. Ứng dụng dùng dữ liệu API/D1 thật; không sao chép tháp mẫu hay dữ liệu localStorage mẫu. Tiến bộ và Lịch sử & báo cáo vẫn có trong menu ⋯. Bản demo được giữ nguyên.
 
 ## Kiểm chứng
+
+Đối chiếu UI v2 có kiểm hình học và ảnh demo/app cùng dữ liệu cho tổng kết,
+danh sách, chọn nhiều, chi tiết, ghi nhận, thêm/sửa, lưu trữ và nhật ký. CSS sheet
+giới hạn theo feature và được xóa khi mở tháp. Kết quả sửa theo phản hồi nghiệm
+thu và bản staging hiện hành ở [checkpoint v2](HABITS_V2_PROGRESS.md).
 
 Giữ tests ba lịch, 128 mẫu tuần cho Q=1..7, bảo toàn quota, đổi lịch/lưu trữ/khôi phục, precision, hai tab, version, retry qua ngày, kết toán muộn, history/export/report, nhắc/slot và đọc AI không ghi. Browser fixtures kiểm luồng mobile, chữ lớn, mất mạng, draft và đối chiếu sau lưu. Kết quả local và giới hạn tại [HANDOFF](HANDOFF.md).

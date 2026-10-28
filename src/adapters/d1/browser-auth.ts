@@ -24,6 +24,15 @@ export async function browserOwner(db:Database,request:Request,expectedOwner:str
  const row=await query(db,'SELECT owner FROM browser_sessions WHERE token_hash=? AND expires_at>?',await hash(value),now).first<{owner:string}>();
  return row?.owner===expectedOwner?row.owner:null;
 }
+// Only call after verifying fresh Telegram initData. Store the hash, never the cookie.
+export async function createMiniAppSession(db:Database,owner:string,now:number){
+ const session=token();
+ await db.batch([
+  query(db,'DELETE FROM browser_sessions WHERE expires_at<=?',now),
+  query(db,'INSERT INTO browser_sessions(token_hash,owner,created_at,expires_at) VALUES(?,?,?,?)',await hash(session),owner,now,now+SESSION_TTL)
+ ]);
+ return setCookie(SESSION_COOKIE,session,SESSION_TTL/1000);
+}
 export async function approveBrowserCode(db:Database,owner:string,expectedOwner:string,code:string,now:number){
  if(owner!==expectedOwner)return false;
  const normalized=code.toUpperCase().replace(/-/g,'');

@@ -21,6 +21,9 @@ export class HabitService {
         const fields: Record<string, string[]> = {
             create: ['operation', 'definition', 'reminderTime'], update: ['operation', 'habitId', 'version', 'definition', 'reminderTime'],
             archive: ['operation', 'habitId', 'version'], restore: ['operation', 'habitId', 'version'],
+            delete: ['operation', 'habitId', 'version'],
+            reorder: ['operation', 'habitId', 'version', 'otherId', 'otherVersion'],
+            defer: ['operation', 'habitId', 'version', 'day'], resume: ['operation', 'habitId', 'version', 'day'],
             log: ['operation', 'habitId', 'version', 'day', 'logVersion', 'value', 'note'],
             slot: ['operation', 'habitId', 'version', 'day', 'startAt', 'minutes'],
             remove_slot: ['operation', 'habitId', 'version', 'day'],
@@ -48,8 +51,27 @@ export class HabitService {
             const habit = snapshot.habit;
             if (!habit) throw Error('HABIT_NOT_FOUND');
             if (habit.version !== version(input.version)) throw Error('HABIT_CHANGED');
+            if (operation === 'reorder') {
+                const other = snapshot.otherHabit;
+                if (typeof input.otherId !== 'string' || input.otherId === habit.id || !/^[a-zA-Z0-9_-]{8,110}$/.test(input.otherId)) throw Error('INVALID_HABIT_ID');
+                if (!other) throw Error('HABIT_NOT_FOUND');
+                if (other.version !== version(input.otherVersion)) throw Error('HABIT_CHANGED');
+                return { change: { kind: 'reorder', habitId: habit.id, version: habit.version, otherId: other.id, otherVersion: other.version },
+                    result: { saved: true, habitId: habit.id, day, version: habit.version + 1, otherHabitId: other.id, otherVersion: other.version + 1 } };
+            }
             const current = definitionOnDay(habit, day)?.definition;
             if (!current) throw Error('HABIT_NOT_FOUND');
+            if (operation === 'defer' || operation === 'resume') {
+                if (input.day !== day) throw Error('HABIT_DAY_CLOSED');
+                if (habit.archivedFrom !== null) throw Error('HABIT_ARCHIVED');
+                if (operation === 'defer' && (current.cadence.kind !== 'weekly' || snapshot.log.value >= current.target)) throw Error('INVALID_HABIT_DEFER');
+                return { change: { kind: 'presentation', habitId: habit.id, version: habit.version, choice: operation === 'defer' ? 'deferred' : 'included' }, result: { saved: true, habitId: habit.id, day, version: habit.version + 1 } };
+            }
+            if (operation === 'delete') {
+                if (habit.archivedFrom !== null) return { change: { kind: 'remove', habitId: habit.id, version: habit.version }, result: { saved: true, habitId: habit.id, day, version: habit.version + 1 } };
+                const from = habit.archivedFrom ?? habitChangeDay(day, current.cadence, current.cadence);
+                return { change: { kind: 'archive', habitId: habit.id, version: habit.version, from }, result: { saved: true, habitId: habit.id, day, version: habit.version + 1, effectiveFrom: from } };
+            }
             if (operation === 'slot' || operation === 'remove_slot') {
                 if (input.day !== day) throw Error('HABIT_DAY_CLOSED');
                 if (operation === 'slot') {

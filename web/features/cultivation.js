@@ -212,7 +212,10 @@ export function createCultivationActions(context) {
     probabilities.append(el('summary', 'Tỷ lệ phần thưởng'));
     for (const item of loot) {
       const row = el('div', undefined, 'draw-odds-row');
-      row.append(el('span', item.label), el('span', item.weight + '%'));
+      row.append(
+        el('span', item.label),
+        el('span', Number(item.weight).toLocaleString('vi-VN') + '%'),
+      );
       probabilities.append(row);
     }
     probabilities.append(
@@ -289,6 +292,7 @@ export function createCultivationActions(context) {
               revision = runtime.revision;
             if (!saved) return;
             const rewards = saved.rewards ?? [saved.reward];
+            if (rewards.includes('summonTicket')) state.beastRefreshedAt = 0;
             const pendingChoices = saved.choices?.length ?? 0;
             const content = document.createDocumentFragment();
             content.append(

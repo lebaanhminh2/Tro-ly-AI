@@ -1,4 +1,4 @@
-import { drawReward, type HealthyState } from '../../domain/healthy.ts';
+import { drawReward, drawRewards, type HealthyState } from '../../domain/healthy.ts';
 import {
   applyBeastPassives,
   addSkillReward,
@@ -10,6 +10,7 @@ import { D1BeastStore } from './linh-thu-store.ts';
 import { query, type Database, type Statement } from './database.ts';
 import {
   validBeastAccount,
+  initialBeastAccount,
   type BeastAccount,
   type OwnedBeast,
 } from '../../domain/linh-thu-account.ts';
@@ -22,6 +23,7 @@ export function drawLootReward(loot: readonly DrawLoot[]): SkillReward {
   const reward: SkillReward = {};
   for (const key of loot) {
     if (key === 'qi1' || key === 'qi2') reward.qi = (reward.qi ?? 0) + (key === 'qi1' ? 1 : 2);
+    else if (key === 'summonTicket') reward.summonTickets = (reward.summonTickets ?? 0) + 1;
     else {
       reward.items ??= {};
       reward.items[key] = (reward.items[key] ?? 0) + 1;
@@ -198,6 +200,17 @@ function prepareUnaccompaniedV2Draw(
           JSON.stringify(snapshot),
           now,
         ),
+        ...(earnedReward.summonTickets
+          ? [
+              query(
+                db,
+                "UPDATE beast_accounts SET state_json=json_set(state_json,'$.summonTickets',json_extract(state_json,'$.summonTickets')+?),version=version+1,updated=? WHERE owner=?",
+                earnedReward.summonTickets,
+                now,
+                owner,
+              ),
+            ]
+          : []),
         query(
           db,
           `INSERT INTO beast_skill_events(owner,source_id,kind,day,beast_id,skill_version,result_json,created)
@@ -281,7 +294,41 @@ function prepareDrawEffects(
   random: () => number,
   row: Awaited<ReturnType<typeof readDrawContext>>,
 ) {
-  if (!row || row.account_json === null || row.activated_day === null) return null;
+  if (!row) return null;
+  if (row.account_json === null || row.activated_day === null)
+    return (healthy: HealthyState) => {
+      const drawn = drawRewards(healthy, count, random);
+      const statements: Statement[] = [];
+      if (drawn.summonTickets) {
+        const account = { ...initialBeastAccount(), summonTickets: drawn.summonTickets };
+        statements.push(
+          query(
+            db,
+            'INSERT INTO transaction_guard SELECT CASE WHEN NOT EXISTS(SELECT 1 FROM beast_accounts WHERE owner=?) THEN 1 ELSE 0 END',
+            owner,
+          ),
+          query(
+            db,
+            'INSERT INTO beast_accounts(owner,state_json,activated_day,created,updated) VALUES(?,?,?,?,?)',
+            owner,
+            JSON.stringify(account),
+            day,
+            now,
+            now,
+          ),
+        );
+      }
+      return {
+        state: drawn.state,
+        statements,
+        result: {
+          count,
+          rewards: drawn.rewards,
+          ...(count === 1 ? { reward: drawn.rewards[0] } : {}),
+          choices: [],
+        },
+      };
+    };
   const account = { state: JSON.parse(row.account_json) as BeastAccount, version: row.version };
   validBeastAccount(account.state);
   const beast: OwnedBeast | null =
@@ -365,6 +412,7 @@ function prepareDrawEffects(
         rewards.push(loot);
         const base = drawLootReward([loot]);
         state = creditBeastReward(state, base);
+        nextAccount.summonTickets += base.summonTickets ?? 0;
         if (beast) {
           const effect = applyBeastPassives(
             beast.attempt,

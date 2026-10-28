@@ -73,9 +73,11 @@ test(
       );
       await browser.evaluate("document.querySelector('[data-tab=habits]').click()");
       await browser.wait("document.querySelectorAll('.habit-check').length===4");
-      await browser.evaluate("document.querySelectorAll('.habit-check')[2].click()");
+      await browser.evaluate(
+        "document.querySelector('[data-habit-id=projection_habit_2] .habit-check').click()",
+      );
       await browser.wait(
-        "document.querySelectorAll('.habit-check')[2]?.getAttribute('aria-pressed')==='true'&&!document.querySelector('[aria-busy=true]')",
+        "document.querySelector('[data-habit-id=projection_habit_2] .habit-check')?.getAttribute('aria-pressed')==='true'&&!document.querySelector('[aria-busy=true]')",
       );
       await browser.evaluate("document.querySelector('[data-tab=beasts]').click()");
       await browser.wait(

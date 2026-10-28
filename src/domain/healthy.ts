@@ -23,9 +23,10 @@ export const LOOT = [
   { key: 'qi1', weight: 40 },
   { key: 'qi2', weight: 15 },
   { key: 'basic', weight: 35 },
-  { key: 'keepsake', weight: 6 },
-  { key: 'heart', weight: 2 },
-  { key: 'peace', weight: 2 },
+  { key: 'keepsake', weight: 8 },
+  { key: 'heart', weight: 0.5 },
+  { key: 'peace', weight: 1 },
+  { key: 'summonTicket', weight: 0.5 },
 ] as const;
 export const CHARMS = {
   basic: { boost: 5, next: 'middle', chance: 80 },
@@ -350,8 +351,8 @@ export function drawReward(state: HealthyState, random: number) {
     const amount = reward.key === 'qi1' ? 1 : 2;
     next.qi += amount;
     next.earned += amount;
-  } else next.inventory[reward.key]++;
-  return { state: next, reward: reward.key };
+  } else if (reward.key !== 'summonTicket') next.inventory[reward.key]++;
+  return { state: next, reward: reward.key, summonTickets: reward.key === 'summonTicket' ? 1 : 0 };
 }
 export function drawRewards(state: HealthyState, count: 1 | 10, random: () => number) {
   if (count !== 1 && count !== 10) throw Error('INVALID_DRAW_COUNT');
@@ -359,12 +360,14 @@ export function drawRewards(state: HealthyState, count: 1 | 10, random: () => nu
   if (state.tickets < count) throw Error('NO_TICKETS');
   let next = state;
   const rewards: Array<(typeof LOOT)[number]['key']> = [];
+  let summonTickets = 0;
   for (let i = 0; i < count; i++) {
     const outcome = drawReward(next, random());
     next = outcome.state;
     rewards.push(outcome.reward);
+    summonTickets += outcome.summonTickets;
   }
-  return { state: next, rewards };
+  return { state: next, rewards, summonTickets };
 }
 export function useProtection(state: HealthyState, item: 'heart' | 'peace', day: number) {
   if (

@@ -49,8 +49,9 @@ export const realms = [
 export const loot = [
     { key: 'qi1', label: '+1 tu vi', weight: 40 }, { key: 'qi2', label: '+2 tu vi', weight: 15 },
     { key: 'basic', label: 'Phá Cảnh Phù · Sơ cấp', weight: 35 },
-    { key: 'keepsake', label: 'Tín vật Minh Anh', weight: 6 },
-    { key: 'heart', label: 'Hộ Tâm Phù', weight: 2 }, { key: 'peace', label: 'An Tâm Phù', weight: 2 }
+    { key: 'keepsake', label: 'Tín vật Minh Anh', weight: 8 },
+    { key: 'heart', label: 'Hộ Tâm Phù', weight: 0.5 }, { key: 'peace', label: 'An Tâm Phù', weight: 1 },
+    { key: 'summonTicket', label: 'Vé quay linh thú', weight: 0.5 }
 ];
 export const talismans = [
     { key: 'basic', name: 'Sơ cấp', boost: 5, next: 'middle', chance: 80 },
@@ -63,4 +64,4 @@ export const talismanName = (key) => {
     const item = talismans.find((entry) => entry.key === key);
     return item ? (key === 'immortal' ? item.name : 'Phá Cảnh Phù · ' + item.name) : rewardLabels[key] ?? key;
 };
-export const rewardLabels = { qi1: '+1 tu vi', qi2: '+2 tu vi', basic: 'Phá Cảnh Phù sơ cấp', keepsake: 'Tín vật Minh Anh', heart: 'Hộ Tâm Phù', peace: 'An Tâm Phù' };
+export const rewardLabels = { qi1: '+1 tu vi', qi2: '+2 tu vi', basic: 'Phá Cảnh Phù sơ cấp', keepsake: 'Tín vật Minh Anh', heart: 'Hộ Tâm Phù', peace: 'An Tâm Phù', summonTicket: 'Vé quay linh thú' };

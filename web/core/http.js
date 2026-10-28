@@ -71,7 +71,8 @@ async function transport(path, body) {
       method: body ? 'POST' : 'GET',
       credentials: 'same-origin',
       headers: {
-        ...(initData ? { 'X-Telegram-Init-Data': initData } : { 'X-Minh-Anh-Request': '1' }),
+        'X-Minh-Anh-Request': '1',
+        ...(initData ? { 'X-Telegram-Init-Data': initData } : {}),
         'Content-Type': 'application/json',
       },
       body: body ? JSON.stringify(request) : undefined,

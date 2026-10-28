@@ -3,6 +3,18 @@ import * as prettier from 'prettier';
 
 // Incremental format baseline: extend this list when another module is cleaned.
 const paths = [
+  'web/ui/habit-icons.js',
+  'tests/browser/habits-parity.test.mjs',
+  'src/adapters/d1/journal-store.ts',
+  'src/entrypoints/mini-app/journals.ts',
+  'tests/integration/journals.test.ts',
+  'tests/browser/habits-v2.test.mjs',
+  'tests/browser/app-performance.test.mjs',
+  'tests/browser/linh-thu-projection.test.mjs',
+  'web/features/journals.js',
+  'web/views/habits-today.js',
+  'web/views/journals.js',
+  'web/habits-v2.css',
   'scripts/benchmark-linh-thu.ts',
   'scripts/benchmark-linh-thu-web.mjs',
   'scripts/build-linh-thu-assets.ts',

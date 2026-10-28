@@ -1,0 +1,1244 @@
+/* Habit v2 follows the approved prototype. All rules stay within this feature. */
+.habits-v2 {
+  max-width: 504px;
+  margin-inline: auto;
+}
+.habits-v2 svg,
+.habit-v2-sheet svg,
+.hv2-diary-entry svg,
+.diary-v2-sheet svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex: none;
+}
+.habits-v2 .heading {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+.habits-v2 .heading > div:first-child {
+  min-width: 0;
+  flex: 1;
+}
+.habits-v2 .heading h1 {
+  font-size: 28px;
+  font-weight: 650;
+  letter-spacing: -0.6px;
+  margin-bottom: 8px;
+}
+.habits-v2 .heading .subtitle {
+  font-size: 13px;
+  line-height: 1.5;
+}
+.habits-v2 .hv2-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  width: auto;
+}
+.hv2-actions > button,
+.hv2-menu > summary {
+  height: 44px;
+  min-height: 44px;
+  border-radius: 12px;
+}
+.hv2-actions > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 14px;
+  box-shadow: none;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 550;
+}
+.hv2-actions > button svg {
+  width: 17px;
+  height: 17px;
+}
+.hv2-menu,
+.hv2-row-options {
+  position: relative;
+  flex: none;
+}
+.hv2-menu > summary,
+.hv2-row-options > summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.hv2-menu > summary::-webkit-details-marker,
+.hv2-row-options > summary::-webkit-details-marker {
+  display: none;
+}
+.hv2-menu > summary {
+  width: 44px;
+  color: var(--muted);
+}
+.hv2-menu-items {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 7px);
+  z-index: 12;
+  min-width: 185px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--surface);
+  box-shadow: 0 10px 30px #30203c14;
+}
+.hv2-menu-items > button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 45px;
+  padding: 10px 12px;
+  text-align: left;
+  color: var(--text);
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 12px;
+}
+.hv2-menu-items > button:hover {
+  background: var(--bg);
+}
+.hv2-menu-items > button svg {
+  width: 17px;
+  height: 17px;
+  color: var(--muted);
+}
+.hv2-panel {
+  margin-top: 25px;
+  padding: 0 18px 8px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+}
+.hv2-today {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 5px 16px;
+  margin-inline: -18px;
+  padding: 21px 20px;
+}
+.hv2-date {
+  grid-column: 1;
+  grid-row: 1;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.hv2-number {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  margin: 0;
+  color: var(--muted);
+  font-size: 19px;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.hv2-number strong {
+  color: var(--accent);
+  font-size: 36px;
+  font-weight: 650;
+  letter-spacing: -1.5px;
+}
+.hv2-summary-title {
+  grid-column: 1;
+  grid-row: 2;
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.hv2-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 56px;
+  padding: 5px 0 4px;
+}
+.hv2-today + .hv2-toolbar {
+  border-top: 1px solid var(--line);
+}
+.hv2-toolbar h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+.hv2-section-actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+.habits-v2 .hv2-section-actions > button {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--accent);
+  box-shadow: none;
+  padding: 8px 0;
+  min-height: 44px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.habits-v2 .hv2-row.habit-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  padding: 13px 0;
+  margin: 0;
+  border: 0;
+  min-height: 70px;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.hv2-row + .hv2-row::before {
+  content: '';
+  position: absolute;
+  left: 39px;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: var(--line);
+}
+.hv2-check-wrap,
+.hv2-check-space {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  min-height: 44px;
+  flex: 0 0 30px;
+  color: var(--muted);
+}
+.habits-v2 .hv2-check.habit-check {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 21px;
+  height: 21px;
+  min-width: 21px;
+  min-height: 21px;
+  flex: none;
+  padding: 0;
+  border: 1px solid #c8c3d5;
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--accent);
+  box-shadow: none;
+  font-size: 15px;
+}
+/* The whole 30 x 44 wrapper is tappable; keep the visible checkbox compact. */
+.hv2-check::after {
+  content: '';
+  position: absolute;
+  inset: -12px -5px;
+}
+.habits-v2 .hv2-check[aria-checked='true'] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+:root[data-theme='dark'] .habits-v2 .hv2-check[aria-checked='true'] {
+  color: #171222;
+}
+.hv2-copy {
+  flex: 1;
+  min-width: 0;
+}
+.habits-v2 .hv2-order {
+  display: grid;
+  flex: none;
+  gap: 2px;
+  width: 40px;
+}
+.habits-v2 .hv2-order button {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  min-height: 36px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: var(--accent);
+  background: var(--surface);
+}
+.habits-v2 .hv2-order button:disabled {
+  opacity: 0.3;
+}
+.habits-v2 .hv2-order svg {
+  width: 18px;
+  height: 18px;
+}
+.habits-v2 .hv2-name.habit-name {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 3px 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  line-height: 1.5;
+}
+.hv2-name strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 550;
+  overflow-wrap: anywhere;
+}
+.hv2-meta {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.hv2-urgent {
+  display: block;
+  margin-top: 3px;
+  color: #bd5d39;
+}
+.hv2-row.is-met .hv2-name strong {
+  color: var(--muted);
+}
+.habits-v2 .hv2-amount,
+.hv2-row-options > summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 64px;
+  min-width: 64px;
+  min-height: 48px;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--accent);
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.3;
+  flex: none;
+}
+.habits-v2 .hv2-amount strong {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+}
+.habits-v2 .hv2-amount-compact strong {
+  font-size: 12px;
+}
+.hv2-amount small {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 400;
+}
+.habits-v2 .hv2-inline-amount {
+  display: block;
+  min-height: 44px;
+  min-width: 0;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: 12px;
+  text-align: left;
+}
+.habits-v2 .hv2-row-chevron {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  min-width: 16px;
+  min-height: 44px;
+  flex: none;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #aaa1b7;
+  box-shadow: none;
+}
+.hv2-row-chevron svg {
+  width: 14px;
+  height: 14px;
+}
+.hv2-group {
+  border-top: 1px solid var(--line);
+}
+.hv2-group > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  list-style: none;
+  min-height: 49px;
+  padding: 0;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 12px;
+}
+.hv2-group > summary::-webkit-details-marker {
+  display: none;
+}
+.hv2-group > summary::before {
+  content: '›';
+  font-size: 22px;
+  line-height: 1;
+  transition: transform 0.15s;
+}
+.hv2-group[open] > summary::before {
+  transform: rotate(90deg);
+}
+.hv2-empty {
+  padding: 28px 20px;
+  margin: 0 0 12px;
+  border: 1px dashed var(--line);
+  border-radius: 17px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.hv2-empty svg {
+  width: 29px;
+  height: 29px;
+  margin-bottom: 10px;
+  color: var(--accent);
+}
+.hv2-empty h3 {
+  margin: 0 0 7px;
+  color: var(--text);
+  font-size: 15px;
+}
+.hv2-empty p {
+  max-width: 32ch;
+  margin: 0 auto;
+  font-size: 12px;
+}
+.hv2-empty button {
+  margin-top: 17px;
+}
+.hv2-recovery {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  color: var(--muted);
+  font-size: 11px;
+}
+.hv2-bulk {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(var(--app-nav-height, 78px) + 8px);
+  z-index: 8;
+  width: min(504px, calc(100% - 32px));
+  padding: 12px 20px 16px;
+  border: 1px solid var(--line);
+  border-radius: 17px;
+  background: var(--surface);
+  box-shadow: 0 -8px 30px #3420440c;
+}
+.hv2-bulk p {
+  margin: 0 0 9px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.hv2-bulk button {
+  width: 100%;
+}
+.habits-v2 .hv2-bulk .danger {
+  min-height: 44px;
+  background: #fbe9eb;
+  border-color: #efd3da;
+  color: #a1354d;
+}
+:root[data-theme='dark'] .habits-v2 .hv2-bulk .danger {
+  background: #48232e;
+  border-color: #693b48;
+  color: #ffb0c0;
+}
+.habits-v2:has(.hv2-bulk) {
+  padding-bottom: 150px;
+}
+.hv2-diary-entry {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-top: 18px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+}
+.hv2-diary-entry > span {
+  flex: 1;
+  min-width: 0;
+}
+.hv2-diary-entry strong,
+.hv2-diary-entry small {
+  display: block;
+}
+.hv2-diary-entry strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+.hv2-diary-entry small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.hv2-diary-entry > svg {
+  color: var(--accent);
+}
+.hv2-diary-entry > svg:last-child {
+  width: 16px;
+  color: var(--muted);
+}
+/* Only the entrance is restyled. Tower dialogs, content, rules and art stay intact. */
+.habits-v2 > .beast-tower-entry {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: none;
+}
+.habits-v2 > .beast-tower-entry .beast-eyebrow {
+  color: #bd5d39;
+}
+.hv2-detail-today {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: var(--bg);
+}
+.hv2-detail-caption {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+.hv2-detail-number {
+  margin: 7px 0 0;
+  color: var(--accent);
+  font-size: 33px;
+  font-weight: 650;
+  letter-spacing: -1.3px;
+  line-height: 1.2;
+}
+.hv2-detail-number small {
+  color: var(--muted);
+  font-size: 14px;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+.hv2-detail-status {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+.hv2-detail-progress {
+  display: block;
+  width: 100%;
+  height: 5px;
+  margin-top: 14px;
+  border: 0;
+  border-radius: 4px;
+  appearance: none;
+  overflow: hidden;
+}
+.hv2-detail-progress::-webkit-progress-bar {
+  background: var(--line);
+}
+.hv2-detail-progress::-webkit-progress-value {
+  background: var(--accent);
+}
+.hv2-detail-progress::-moz-progress-bar {
+  background: var(--accent);
+}
+.hv2-detail-info {
+  margin: 20px 0 0;
+}
+.hv2-detail-info > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 20px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+}
+.hv2-detail-info dt {
+  color: var(--muted);
+  flex: none;
+}
+.hv2-detail-info dd {
+  margin: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.hv2-detail-note {
+  margin: 18px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.hv2-detail-history {
+  margin-top: 16px;
+}
+.hv2-detail-history > summary {
+  min-height: 44px;
+  padding: 10px 0;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 12px;
+}
+.hv2-week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 5px;
+  margin: 5px 0 10px;
+}
+.hv2-week-cell {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.hv2-week-cell b {
+  display: grid;
+  place-items: center;
+  width: 31px;
+  max-width: 100%;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--bg);
+  font-size: 13px;
+  font-weight: 500;
+}
+.hv2-week-cell.is-met b {
+  color: var(--accent);
+  background: var(--soft);
+}
+.hv2-manage {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1px 13px;
+  margin-top: 16px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.hv2-manage button {
+  font-weight: 400;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 8px 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+}
+.hv2-manage button svg {
+  width: 15px;
+  height: 15px;
+}
+.hv2-manage button.danger {
+  color: #a43e4d;
+}
+.hv2-detail-footer > button {
+  flex: 1;
+}
+.hv2-detail-footer > details {
+  flex: 0 0 64px;
+  min-width: 0;
+}
+.hv2-detail-footer .hv2-row-options > summary {
+  width: 100%;
+  height: 100%;
+}
+.hv2-detail-footer .hv2-menu-items {
+  top: auto;
+  bottom: calc(100% + 7px);
+}
+.hv2-log-progress {
+  margin: 0;
+  font-size: 33px;
+  font-weight: 600;
+  letter-spacing: -0.9px;
+  line-height: 1.3;
+  font-variant-numeric: tabular-nums;
+}
+.hv2-log-progress small {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.hv2-log-context {
+  margin: 4px 0 22px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.hv2-log-range-block {
+  margin-bottom: 22px;
+}
+.habit-v2-sheet input.hv2-duration-range {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  appearance: none;
+  cursor: pointer;
+}
+.hv2-duration-range::-webkit-slider-runnable-track {
+  height: 5px;
+  border-radius: 4px;
+  background: linear-gradient(to right, var(--accent) var(--fill), var(--line) var(--fill));
+}
+.hv2-duration-range::-moz-range-track {
+  height: 5px;
+  border-radius: 4px;
+  background: var(--line);
+}
+.hv2-duration-range::-moz-range-progress {
+  height: 5px;
+  border-radius: 4px;
+  background: var(--accent);
+}
+.hv2-duration-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  margin-top: -8.5px;
+  border: 3px solid var(--surface);
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.hv2-range-labels {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.habit-v2-sheet .habit-counter {
+  margin-top: 8px;
+  background: var(--surface);
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  overflow: hidden;
+}
+.habit-v2-sheet .habit-counter > button {
+  min-width: 52px;
+  min-height: 50px;
+  padding: 8px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: 19px;
+}
+.habit-v2-sheet .habit-counter > input {
+  min-height: 50px;
+  padding: 10px 12px;
+  appearance: textfield;
+  background: var(--surface);
+  font-weight: 400;
+  flex: 1;
+  min-width: 0;
+  width: 0;
+  margin: 0;
+  border: 0;
+  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  border-radius: 0;
+  text-align: center;
+}
+.habit-v2-sheet .habit-counter > input::-webkit-inner-spin-button,
+.habit-v2-sheet .habit-counter > input::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
+}
+/* WKWebView can inherit a light native caret from Telegram's dark host. */
+:is(.habit-v2-sheet, .diary-v2-sheet) :is(input, textarea) {
+  caret-color: var(--accent);
+  color: var(--text);
+}
+/* Keep these surfaces tied to the app theme, including on a dark OS. */
+.habits-v2 .primary,
+:is(.habit-v2-sheet, .diary-v2-sheet) .primary {
+  background: var(--accent);
+  color: #fff;
+}
+:root[data-theme='dark'] :is(.habits-v2, .habit-v2-sheet, .diary-v2-sheet) .primary {
+  color: #171222;
+}
+.hv2-log-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-top: -5px;
+}
+.hv2-log-total p {
+  color: var(--muted);
+  font-size: 12px;
+}
+.hv2-log-total button {
+  padding: 8px 0;
+  font-size: 12px;
+}
+.hv2-field-row {
+  display: flex;
+  gap: 12px;
+}
+.hv2-field-row > * {
+  flex: 1;
+  min-width: 0;
+}
+/* The native sheet has one content scroller and a pinned footer, without the old full-height settings layout. */
+dialog.habit-v2-sheet,
+dialog.diary-v2-sheet {
+  font-size: 14px;
+  width: calc(100% - 32px);
+  max-width: 470px;
+  height: auto;
+  max-height: min(88dvh, 790px, var(--sheet-visible-height, 100dvh));
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--surface);
+  overflow: hidden;
+}
+:is(.habit-v2-sheet, .diary-v2-sheet) .sheet-handle {
+  display: none;
+}
+dialog:is(.habit-v2-sheet, .diary-v2-sheet) #sheet-content {
+  padding: 0;
+  min-height: 0;
+  flex: 0 1 auto;
+}
+dialog:is(.habit-v2-sheet, .diary-v2-sheet) .sheet-title-row {
+  padding: 13px 16px 12px 23px;
+  margin: 0;
+}
+:is(.habit-v2-sheet, .diary-v2-sheet) .sheet-title-row h2 {
+  font-size: 18px;
+  line-height: 1.4;
+  letter-spacing: -0.4px;
+}
+:is(.habit-v2-sheet, .diary-v2-sheet) .sheet-title-row .icon-button {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+:is(.habit-v2-sheet, .diary-v2-sheet) #sheet-feedback:not([hidden]) {
+  padding: 12px 23px;
+}
+dialog:is(.habit-v2-sheet, .diary-v2-sheet) .habit-editor {
+  flex: 0 1 auto;
+  overflow: visible;
+  padding: 0;
+  min-height: 0;
+}
+:is(.habit-v2-sheet, .diary-v2-sheet) .habit-form-fields {
+  flex: 0 1 auto;
+  padding: 22px 23px;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+:is(.habit-v2-sheet, .diary-v2-sheet) .habit-form-footer {
+  display: flex;
+  gap: 9px;
+  margin: 0;
+  padding: 15px 23px max(18px, env(safe-area-inset-bottom));
+}
+:is(.habit-v2-sheet, .diary-v2-sheet) .habit-form-footer > button {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  font-size: 13px;
+  font-weight: 550;
+}
+:is(.habit-v2-sheet, .diary-v2-sheet) .form-field {
+  display: block;
+  margin: 0 0 18px;
+  font-size: 12px;
+  font-weight: 550;
+}
+:is(.habit-v2-sheet, .diary-v2-sheet) .form-field > :is(input, select, textarea) {
+  display: block;
+  width: 100%;
+  min-height: 46px;
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 400;
+}
+.habit-v2-sheet .habit-form-extra {
+  margin: 0;
+}
+.habit-v2-sheet .habit-form-extra > summary {
+  color: var(--text);
+  font-size: 12px;
+}
+.habit-v2-sheet .habit-form-explanation {
+  margin: 0 0 18px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.habit-v2-sheet .hv2-slot-link {
+  padding: 4px 0;
+  min-height: 44px;
+  font-size: 12px;
+}
+.hv2-confirm {
+  font-size: 13px;
+  line-height: 1.8;
+}
+.hv2-confirm-symbol {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  margin-bottom: 16px;
+  border-radius: 14px;
+  background: #fcf0f1;
+  color: #a43e4d;
+}
+.hv2-confirm-items {
+  margin: 16px 0;
+  padding: 12px 16px 12px 32px;
+  border-radius: 12px;
+  background: var(--bg);
+  overflow-wrap: anywhere;
+}
+.diary-v2-sheet .diary-confirm {
+  padding: 22px 23px;
+}
+@media (max-width: 540px) {
+  dialog.habit-v2-sheet,
+  dialog.diary-v2-sheet {
+    width: 100%;
+    max-width: 100%;
+    max-height: min(92dvh, var(--sheet-visible-height, 100dvh));
+    margin: auto auto var(--sheet-covered-bottom, 0px);
+    border-radius: 23px 23px 0 0;
+    border-bottom: 0;
+  }
+}
+@media (min-width: 900px) {
+  .hv2-bulk {
+    bottom: 24px;
+  }
+}
+@media (max-width: 359px) {
+  .hv2-panel {
+    padding-inline: 14px;
+  }
+  .hv2-today {
+    margin-inline: -14px;
+    padding: 18px 16px;
+  }
+  .hv2-section-actions {
+    gap: 11px;
+  }
+  .habits-v2 .hv2-row.habit-card {
+    gap: 7px;
+  }
+  .hv2-name strong {
+    font-size: 14px;
+  }
+  .hv2-meta {
+    font-size: 11px;
+  }
+  .habits-v2 .hv2-amount,
+  .hv2-row-options > summary {
+    width: 58px;
+    min-width: 58px;
+    padding: 5px 6px;
+  }
+  :is(.habit-v2-sheet, .diary-v2-sheet) .habit-form-fields {
+    padding: 20px;
+  }
+}
+
+.diary-page .heading {
+  flex-wrap: wrap;
+}
+.diary-page {
+  max-width: 504px;
+  margin-inline: auto;
+}
+.diary-chevron {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+}
+.diary-list {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 18px;
+  overflow: hidden;
+  margin-top: 24px;
+}
+.diary-list:empty {
+  display: none;
+}
+.diary-day {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 20px 18px;
+  border: 0;
+  border-radius: 0;
+  background: var(--surface);
+  text-align: left;
+  color: var(--text);
+}
+.diary-day + .diary-day {
+  border-top: 1px solid var(--line);
+}
+.diary-day > time {
+  width: 1.8em;
+  flex: none;
+  text-align: center;
+  color: var(--accent);
+  font-size: 24px;
+  font-weight: 600;
+}
+.diary-day time small {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 400;
+}
+.diary-copy {
+  flex: 1;
+  min-width: 0;
+}
+.diary-copy strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+.diary-copy p {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  margin: 7px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.diary-copy small {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.diary-chevron {
+  color: var(--muted);
+}
+:is(.hv2-diary-entry, .diary-day)[aria-busy='true'] {
+  position: relative;
+  cursor: progress;
+}
+:is(.hv2-diary-entry, .diary-day)[aria-busy='true'] > svg:last-child {
+  visibility: hidden;
+}
+:is(.hv2-diary-entry, .diary-day)[aria-busy='true']::after {
+  content: '';
+  position: absolute;
+  right: 20px;
+  top: calc(50% - 8px);
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--line);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: diary-opening 0.8s linear infinite;
+}
+@keyframes diary-opening {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :is(.hv2-diary-entry, .diary-day)[aria-busy='true']::after {
+    animation: none;
+  }
+}
+.diary-empty {
+  padding: 36px 22px;
+  margin-top: 24px;
+  text-align: center;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+}
+.diary-empty h2 {
+  font-size: 17px;
+}
+.diary-date-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 18px;
+}
+.diary-date-label input {
+  margin-left: auto;
+  width: auto;
+  min-width: 0;
+  max-width: 65%;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--text);
+  background: var(--surface);
+  font-size: 16px;
+}
+.diary-sheet textarea {
+  display: block;
+  width: 100%;
+  min-height: 96px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--text);
+  background: var(--surface);
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.7;
+  resize: vertical;
+}
+.diary-status {
+  margin: 0 0 18px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.diary-status:empty {
+  display: none;
+}
+.diary-reading-date {
+  display: block;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+  line-height: 1.5;
+  margin: 2px 0 24px;
+}
+.diary-reading-date > span,
+.diary-reading-date strong {
+  display: block;
+  font-weight: inherit;
+}
+.diary-reward {
+  margin: 0 0 24px;
+  padding: 11px 13px;
+  border-radius: 11px;
+  background: var(--soft);
+  color: var(--accent);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.diary-reading-section + .diary-reading-section {
+  margin-top: 24px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+.diary-reading-section h3 {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 550;
+}
+.diary-reading-section p {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 15px;
+  line-height: 1.8;
+}
+.diary-error {
+  color: #b74960;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.diary-sheet .habit-form-footer {
+  display: flex;
+  flex-wrap: wrap;
+}
+.diary-sheet .habit-form-footer > button {
+  flex: 1;
+  min-width: 0;
+}
+@media (max-width: 899px) {
+  .app-ready #content > .habits-v2 > .heading .subtitle {
+    grid-column: 1;
+  }
+  .habits-v2 .hv2-header .hv2-actions {
+    grid-column: 2;
+    grid-row: 2;
+  }
+}

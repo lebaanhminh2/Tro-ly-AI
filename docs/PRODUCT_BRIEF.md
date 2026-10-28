@@ -1,41 +1,67 @@
-# Minh Anh — trợ lý cá nhân
+# Personal AI Assistant
 
-Cập nhật 21/10/2026. Phạm vi hiện tại: task, thói quen, kế hoạch/lịch, focus, nhắc việc, ngủ/thức, tiến trình nền và Linh thú hỗ trợ các hoạt động đó. Tu luyện/Thần Lộ, công pháp và chiến đấu cũ đã ngừng hoạt động; Linh thú không khôi phục các hệ này.
+**Trợ lý cá nhân tiếng Việt trên Telegram và web, kết hợp hội thoại theo ngữ cảnh, tự động lập lịch theo deadline, theo dõi thói quen và trò chơi hóa tiến trình.**
 
-## Trải nghiệm
+Dự án giải quyết ba nhu cầu liên quan trong quản lý cá nhân: xác định việc cần làm, phân bổ thời gian thực hiện và duy trì hành động hằng ngày. Công việc, lịch, thói quen và trạng thái sinh hoạt được sử dụng chung để xây dựng kế hoạch, điều phối lời nhắc và ghi nhận tiến bộ.
 
-Trợ lý tiếng Việt giúp bắt đầu sớm và quản lý sức tải thực tế. Telegram dành cho trò chuyện và nhận nhắc; web dành cho quản lý/thao tác rõ, không cần model cho form và tick. Persona Minh Anh là nhân vật trưởng thành, tớ–cậu, giọng Bắc tự nhiên, động viên nhẹ; không dùng tình cảm gây áp lực. Múi giờ sinh hoạt UTC+7, ưu tiên điện thoại, vẫn dùng được trên desktop.
+Telegram cung cấp kênh trò chuyện và nhận thông báo. Telegram Mini App và giao diện web phục vụ quản lý chi tiết, điều chỉnh kế hoạch và xem lịch sử.
 
-## Công việc, lịch và nhắc
+## Năng lực sản phẩm
 
-- Task có ID/mã ổn định, bước nhỏ, deadline, estimate, ghi chú và work log. Xếp lại giữ task/deadline; hoàn thành một buổi hoặc bước không tự hoàn thành cả task.
-- Thao tác ảnh hưởng nhóm có xác nhận theo luồng hiện có. Thưởng task hợp lệ lần đầu giữ nguyên; mở lại không nhân thưởng.
-- Hôm nay có kế hoạch, timeline và focus. Planner giữ free/busy/fixed/capacity/buffer, không coi mọi khoảng trống là sức tải đầy đủ. Chat “bận” không tự dời toàn bộ task.
-- Nhắc riêng do user đặt khác lời thúc tự động. Nhắc định kỳ có occurrence/version; bỏ một lần khác sửa chuỗi. ACK không tự hoàn thành task hoặc habit. Outage không gửi bù dồn.
-- Thói quen tự khai báo có tick/thời lượng/số lượng, ba lịch cam kết, nhắc tùy chọn, xếp thời gian, lịch sử và báo cáo/xuất. Quy tắc tại [HABITS](HABITS.md).
+### Hội thoại AI có ngữ cảnh và khả năng thực hiện tác vụ
 
-## Ngủ và điểm dùng chung
+Tích hợp Gemini function calling để tra cứu, tạo và cập nhật công việc, quản lý cuộc hẹn, đặt lời nhắc và ghi nhận thói quen thông qua tiếng Việt.
 
-- Báo ngủ là trạng thái tự khai, không đo giấc ngủ. Ngủ/focus ngừng lời thúc phù hợp; nhắc user đã cấu hình vẫn theo cơ chế hiện có, trừ pause/inactive.
-- Ngủ không đóng ngày sinh hoạt. Hoàn tác ngủ trong 5 phút giữ guards và đảo delta ngủ, không rewind toàn tài khoản, đột phá hoặc inventory.
-- Giữ nguyên healthy, streak ngủ, điểm/vé, check-in, rút/ghép/vật phẩm, rank, đột phá và thành tích nền. Hằng số và luật nằm trong `src/domain/healthy.ts`, không lấy bảng prototype cũ làm luật mới.
-- Ngày sinh hoạt do server chốt từ lịch cài đặt; check-in theo ngày lịch Việt Nam. Đổi giờ không mở lại kỳ đã đóng.
-- Khóa rank/trận đang dở của game cũ không chặn đột phá hoặc chức năng nền. Dữ liệu game lịch sử được giữ nguyên trong DB, không hoàn tiền, phân phối lại thưởng hay kết toán tiếp.
+Ngữ cảnh hội thoại kết hợp dữ liệu đang lưu, công việc được nhắc đến, lịch, tiến độ gần đây, trạng thái tập trung và trạng thái nghỉ. Hệ thống hỗ trợ lịch sử, tóm tắt hội thoại và ghi nhớ thông tin theo yêu cầu, với phạm vi tạm thời hoặc lâu dài; người dùng có thể xem và xóa bộ nhớ.
 
-## Linh thú gắn với hoạt động hằng ngày
+Các yêu cầu thiếu thông tin được hỏi lại. Quyền đọc và quyền ghi được tách riêng; backend kiểm tra điều kiện thực thi trước khi lưu và phản hồi kết quả.
 
-- 18 loài, mỗi loài bốn dạng; các cá thể trùng loài và lượt luyện có ID riêng. Điểm thực/tạp chất từ kết quả habit theo ngày, không từ task hoặc giấc ngủ. Đủ điểm thực mới tiến hóa chủ động; luyện đầy mới xét Thức tỉnh từ 95% và Hoàn mỹ đúng 100%.
-- Đang luyện và Đồng hành là hai vai trò độc lập. Lựa chọn mới có thể hiển thị với nhãn ngày mai, nhưng server quyết định cá thể có hiệu lực hôm nay. Kỹ năng tác động vào task, habit/ngủ, quay/ghép/đột phá theo điều kiện và giới hạn.
-- Bộ sưu tập mở theo loài, số lượng/đại diện lấy toàn kho; danh sách cá thể có phân trang theo yêu cầu. Triệu hồi dùng vé và bảo hiểm; Lò đan dùng chuỗi habit để luyện đan và xác nhận luyện lại đúng cá thể.
-- Tháp giao ước nằm trong Thói quen, snapshot điều kiện habit +task và giữ phiên ở server. Chi phí, phần thưởng và receipts commit trước hiệu ứng; skip/replay/đóng không tạo giao dịch mới.
-- Tài khoản mới bắt đầu trống, không lấy dữ liệu demo để cấp thú/vé. Nguồn hiện có 108 ảnh; trạng thái dùng tạm không thay duyệt thị giác từng ảnh.
+### Quản lý công việc và tự động phân bổ lịch theo deadline
 
-Luật, công thức và các điều kiện chi tiết ở [đặc tả Linh thú](LINH_THU_SPEC.md), [kỹ năng](LINH_THU_SKILLS.md); bằng chứng và giới hạn ở [kiểm chứng](LINH_THU_ACCEPTANCE.md).
+Công việc được quản lý cùng các bước thực hiện, deadline, mức ưu tiên, thời lượng còn lại và nhật ký làm việc. Planner sử dụng những dữ liệu này để lựa chọn công việc và phân bổ vào các khung giờ:
 
-## Yêu cầu giao diện và AI
+- **Xét mức độ cấp thiết:** đối chiếu thời gian đến hạn với khối lượng chưa hoàn thành, kết hợp mức ưu tiên.
+- **Tôn trọng thời gian khả dụng:** loại trừ lịch bận, cuộc hẹn, thời gian dành cho thói quen và khoảng ngoài giờ sinh hoạt.
+- **Phân bổ qua nhiều ngày:** chia công việc thành các khối làm việc và tạo dự báo trong phạm vi 14 ngày, có đánh dấu thời gian dựa trên giả định.
+- **Kiểm soát sức tải:** kế hoạch tự động chọn tối đa ba công việc trọng tâm mỗi ngày, sử dụng 80% thời gian khả dụng và kiểm tra nguy cơ quá tải cộng dồn trước deadline.
+- **Cập nhật theo tình hình thực tế:** tính lại khi deadline, ước tính, thời gian đã làm hoặc lịch khả dụng thay đổi. Người dùng có thể chủ động điều chỉnh danh sách và thời lượng cho hôm nay.
 
-Năm mục điều hướng chính theo thứ tự: Hôm nay, Thói quen, Lời nhắc, Linh thú, Thành tích. Linh thú có bốn tab con Đang luyện / Đồng hành / Bộ sưu tập / Triệu hồi; Lò đan là nút tiêu đề. Giữ sáng/tối, giảm chuyển động, safe-area, touch target, keyboard, label và sheet có nút đóng/lưu tiếp cận được. Danh sách/tên dài/chữ lớn không tràn ngang.
+Thời gian đã làm được đối chiếu với khối lượng còn lại để phục vụ kế hoạch tiếp theo. Hoàn thành một phiên hoặc một bước được ghi nhận riêng với hoàn thành toàn bộ công việc.
 
-Loading, lỗi, hết phiên, read-only, đang lưu và conflict có cách xử lý. Chỉ báo thành công sau commit; POST đã lưu nhưng tải lại lỗi phải đối chiếu trạng thái trước thao tác tiếp, không tạo request mới để nhân tác dụng.
+### Nhắc thực hiện và hỗ trợ tập trung
 
-Model đề xuất/diễn giải; backend quyết định owner, ngày, quyền và kết quả. Chat thường không âm thầm ghi. Provider lỗi không làm tắt web, luật nền hay nhắc đã lưu. Không thêm paid fallback hoặc quyền gọi live trong đợt dọn. Chi tiết tại [AI_TOOLS](AI_TOOLS.md).
+Hệ thống chủ động nhắc theo các khung làm việc đã xếp, có giới hạn tần suất và ngừng nhắc tiếp khi nhiều lần không nhận được phản hồi. AI có thể soạn nội dung nhắc dựa trên công việc và các lời nhắc gần đây.
+
+Chế độ tập trung tạm dừng lời thúc làm việc trong khoảng tương ứng. Lời nhắc người dùng chủ động đặt có chính sách riêng, hỗ trợ một lần hoặc định kỳ; có thể bỏ qua hay dời một lần xuất hiện mà vẫn giữ chuỗi.
+
+### Theo dõi thói quen và nhìn lại mỗi ngày
+
+Thói quen hỗ trợ ba cách đo: đánh dấu hoàn thành, số lượng và thời lượng. Lịch cam kết có thể là hằng ngày, theo thứ hoặc đủ số ngày mỗi tuần. Cơ chế đánh giá phân biệt ngày đạt, thiếu và trung tính, phù hợp với lịch tuần linh hoạt.
+
+Người dùng có thể đặt thời gian thực hiện, xem tiến bộ 7/30 ngày, tra cứu lịch sử và xuất CSV/JSON. Thay đổi mục tiêu có ngày hiệu lực để bảo toàn ý nghĩa của kết quả trước đó.
+
+Nhật ký ngày bổ sung ba nội dung: việc đã làm được, bài học và điều cần cải thiện ngày mai. Giao diện giữ bản nháp; nội dung đã lưu có lịch sử theo ngày và kiểm soát xung đột khi chỉnh sửa từ nhiều thiết bị.
+
+### Quản lý nhịp sinh hoạt
+
+Giờ bắt đầu ngày, giờ nghỉ và thời điểm báo ngủ do người dùng cung cấp được đưa vào trạng thái hoạt động của hệ thống. Khi người dùng báo ngủ, ứng dụng chuyển sang trạng thái nghỉ và dừng lời thúc công việc phù hợp.
+
+Ngày sinh hoạt được xác định tại server theo múi giờ Việt Nam, làm căn cứ thống nhất cho kế hoạch, thói quen và ghi nhận kết quả.
+
+### Trò chơi hóa gắn với tiến bộ thực tế
+
+Các hoạt động hợp lệ liên kết với hệ thống điểm, vé thưởng, vật phẩm, cấp bậc nhân vật, chuỗi duy trì và thành tích.
+
+Hệ thống linh thú gồm **18 loài với bốn dạng tiến hóa**, tách vai trò **đang luyện** và **đồng hành**. Kết quả thói quen đã chốt quyết định tiến trình luyện; kỹ năng đồng hành tương tác với công việc, thói quen, giấc ngủ và tài nguyên theo điều kiện của từng loài.
+
+Bộ sưu tập, triệu hồi, luyện đan và Tháp giao ước mở rộng vòng tiến trình. Điều kiện tham gia và phần thưởng được xác định từ dữ liệu hoạt động đã ghi nhận tại backend.
+
+## Kiến trúc và chất lượng triển khai
+
+Backend sử dụng **TypeScript strict, Cloudflare Workers, D1 và Cron Triggers**; frontend sử dụng **JavaScript ES modules, HTML và CSS**. Kiến trúc **Ports and Adapters** tách luật nghiệp vụ và điều phối ứng dụng khỏi cơ sở dữ liệu, Telegram và provider AI.
+
+Thuật toán lập lịch, đánh giá thói quen và tính thưởng chạy bằng logic xác định tại backend. Transaction, kiểm tra version, lease và biên nhận xử lý bảo vệ dữ liệu khi có cập nhật đồng thời hoặc yêu cầu được gửi lại. Inbox/outbox quản lý tiếp nhận lệnh và gửi thông báo; các chức năng cốt lõi tiếp tục hoạt động khi provider AI gián đoạn.
+
+Repository có kiểm thử unit, integration và browser, cùng công cụ benchmark và diễn tập migration/phục hồi dữ liệu. GitHub Actions được cấu hình kiểm tra kiểu dữ liệu, lint, định dạng, kiểm thử và build dry-run.
+
+Dự án phục vụ sử dụng cá nhân và có hồ sơ phát hành trên môi trường staging.

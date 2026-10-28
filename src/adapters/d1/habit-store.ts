@@ -216,10 +216,11 @@ export class D1HabitStore implements HabitStore {
           this.db,
           `SELECT id,version,created_day,archived_from,next_day,COUNT(*) OVER() AS total FROM (WITH source AS (SELECT h.*,lower(json_extract(r.definition_json,'$.name')) AS folded0 FROM habits h
                 JOIN habit_revisions r ON r.owner=h.owner AND r.habit_id=h.id AND r.from_day=(SELECT MAX(from_day) FROM habit_revisions WHERE owner=h.owner AND habit_id=h.id AND from_day<=?)
-                WHERE h.owner=? AND (?='all' OR h.archived_from IS NULL OR h.archived_from>?)), ${nameStages} SELECT * FROM fold8)
+                WHERE h.owner=? AND NOT EXISTS(SELECT 1 FROM habit_presentation p WHERE p.owner=h.owner AND p.habit_id=h.id AND (p.hidden='deleted' OR (?='active' AND p.hidden='archived'))) AND (?='all' OR h.archived_from IS NULL OR h.archived_from>?)), ${nameStages} SELECT * FROM fold8)
                 WHERE instr(folded8,?)>0 ORDER BY created,id LIMIT 11 OFFSET ?`,
           day.day,
           owner,
+          search.status,
           search.status,
           day.day,
           foldName(search.text),
@@ -236,10 +237,10 @@ export class D1HabitStore implements HabitStore {
         await query(
           this.db,
           `WITH active AS (
-                SELECT *,0 AS is_archived FROM habits WHERE owner=? AND (archived_from IS NULL OR archived_from>?) ORDER BY created,id LIMIT 30
+                SELECT *,0 AS is_archived FROM habits WHERE owner=? AND (archived_from IS NULL OR archived_from>?) ORDER BY COALESCE(display_order,printf('%016d',created)||':'||id) LIMIT 30
             ), archived AS (
-                SELECT *,1 AS is_archived FROM habits WHERE owner=? AND archived_from<=? AND ?=1 ORDER BY created,id LIMIT 51 OFFSET ?
-            ) SELECT * FROM active UNION ALL SELECT * FROM archived ORDER BY is_archived,created,id`,
+                SELECT *,1 AS is_archived FROM habits WHERE owner=? AND archived_from<=? AND ?=1 ORDER BY COALESCE(display_order,printf('%016d',created)||':'||id) LIMIT 51 OFFSET ?
+            ) SELECT * FROM (SELECT * FROM active UNION ALL SELECT * FROM archived) ORDER BY is_archived,COALESCE(display_order,printf('%016d',created)||':'||id)`,
           owner,
           day.day,
           owner,
@@ -403,6 +404,8 @@ export class D1HabitStore implements HabitStore {
       activeCount: active!.n,
       log: habit ? await this.log(owner, habit.id, day.day) : emptyLog(),
     };
+    if (input.operation === 'reorder' && typeof input.otherId === 'string')
+      snapshot.otherHabit = await this.readHabit(owner, input.otherId, day.day);
     const slotOperation = input.operation === 'slot' || input.operation === 'remove_slot';
     if (slotOperation) {
       const timeline = await new TimelineStore(this.db).read(owner, now, habit?.id ?? null);
@@ -416,6 +419,51 @@ export class D1HabitStore implements HabitStore {
     }
     const { change, result } = apply(snapshot),
       statements = this.changeStatements(owner, day, now, change);
+    const presentation = await query(
+      this.db,
+      'SELECT hidden,reminder_time FROM habit_presentation WHERE owner=? AND habit_id=?',
+      owner,
+      change.habitId,
+    ).first<{ hidden: string; reminder_time: string | null }>();
+    if (presentation?.hidden === 'deleted') throw Error('HABIT_NOT_FOUND');
+    if (change.kind === 'reorder') {
+      const otherPresentation = await query(
+        this.db,
+        'SELECT hidden FROM habit_presentation WHERE owner=? AND habit_id=?',
+        owner,
+        change.otherId,
+      ).first<{ hidden: string }>();
+      if (otherPresentation?.hidden === 'deleted') throw Error('HABIT_NOT_FOUND');
+    }
+    if (
+      input.operation === 'archive' ||
+      input.operation === 'delete' ||
+      input.operation === 'restore'
+    ) {
+      const hidden =
+        input.operation === 'delete' ? 'deleted' : input.operation === 'archive' ? 'archived' : '';
+      const reminder = hidden ? await this.reminderTime(owner, change.habitId) : null;
+      statements.push(
+        query(
+          this.db,
+          "INSERT INTO habit_presentation(owner,habit_id,hidden,reminder_time) VALUES(?,?,?,?) ON CONFLICT(owner,habit_id) DO UPDATE SET hidden=excluded.hidden,reminder_time=COALESCE(excluded.reminder_time,reminder_time),choice='',choice_day=NULL",
+          owner,
+          change.habitId,
+          hidden,
+          reminder,
+        ),
+      );
+      if (hidden) {
+        statements.push(...(await this.archiveReminder(owner, day, now, change.habitId, day.day)));
+        statements.push(
+          ...(await new DayPlanStore(this.db).prepareHabitReservation(owner, now, day.day, {
+            habitId: change.habitId,
+            startAt: null,
+            minutes: null,
+          })),
+        );
+      }
+    }
     if (change.kind === 'log' && snapshot.habit) {
       result.ticketAwarded = 0;
       if (
@@ -454,7 +502,7 @@ export class D1HabitStore implements HabitStore {
           minutes: change.minutes,
         })),
       );
-    if (change.kind === 'archive')
+    if (change.kind === 'archive' && !['archive', 'delete'].includes(String(input.operation)))
       statements.push(
         ...(await this.archiveReminder(owner, day, now, change.habitId, change.from!)),
       );
@@ -463,7 +511,7 @@ export class D1HabitStore implements HabitStore {
       snapshot.habit?.archivedFrom !== null &&
       change.reminderTime === undefined
     ) {
-      const time = await this.reminderTime(owner, change.habitId);
+      const time = presentation?.reminder_time ?? (await this.reminderTime(owner, change.habitId));
       if (time)
         statements.push(
           ...(await this.prepareReminder(
@@ -658,7 +706,13 @@ export class D1HabitStore implements HabitStore {
       {
         ...rule,
         version: rule.version + 1,
-        endDate: rule.endDate && rule.endDate < cutoff ? rule.endDate : cutoff,
+        endDate:
+          cutoff < rule.startDate
+            ? rule.startDate
+            : rule.endDate && rule.endDate < cutoff
+              ? rule.endDate
+              : cutoff,
+        enabled: cutoff < rule.startDate ? false : rule.enabled,
       },
       rule.version,
       now,
@@ -671,6 +725,74 @@ export class D1HabitStore implements HabitStore {
     change: HabitChange,
   ): Statement[] {
     const id = change.habitId;
+    if (change.kind === 'reorder')
+      return [
+        query(
+          this.db,
+          "INSERT INTO transaction_guard SELECT CASE WHEN (SELECT COUNT(*) FROM habits h WHERE h.owner=? AND ((h.id=? AND h.version=?) OR (h.id=? AND h.version=?)) AND NOT EXISTS(SELECT 1 FROM habit_presentation p WHERE p.owner=h.owner AND p.habit_id=h.id AND p.hidden='deleted'))=2 THEN 1 ELSE 0 END",
+          owner,
+          id,
+          change.version,
+          change.otherId,
+          change.otherVersion,
+        ),
+        query(
+          this.db,
+          "WITH positions AS MATERIALIZED (SELECT id,COALESCE(display_order,printf('%016d',created)||':'||id) AS position FROM habits WHERE owner=? AND id IN(?,?)) UPDATE habits SET display_order=(SELECT position FROM positions WHERE id=CASE WHEN habits.id=? THEN ? ELSE ? END),version=version+1,updated=? WHERE owner=? AND id IN(?,?)",
+          owner,
+          id,
+          change.otherId,
+          id,
+          change.otherId,
+          id,
+          now,
+          owner,
+          id,
+          change.otherId,
+        ),
+      ];
+    if (change.kind === 'remove')
+      return [
+        query(
+          this.db,
+          'INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM habits WHERE owner=? AND id=? AND version=?) THEN 1 ELSE 0 END',
+          owner,
+          id,
+          change.version,
+        ),
+        query(
+          this.db,
+          'UPDATE habits SET version=version+1,updated=? WHERE owner=? AND id=?',
+          now,
+          owner,
+          id,
+        ),
+      ];
+    if (change.kind === 'presentation')
+      return [
+        query(
+          this.db,
+          'INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM habits WHERE owner=? AND id=? AND version=?) THEN 1 ELSE 0 END',
+          owner,
+          id,
+          change.version,
+        ),
+        query(
+          this.db,
+          'INSERT INTO habit_presentation(owner,habit_id,choice_day,choice) VALUES(?,?,?,?) ON CONFLICT(owner,habit_id) DO UPDATE SET choice_day=excluded.choice_day,choice=excluded.choice',
+          owner,
+          id,
+          day.day,
+          change.choice,
+        ),
+        query(
+          this.db,
+          'UPDATE habits SET version=version+1,updated=? WHERE owner=? AND id=?',
+          now,
+          owner,
+          id,
+        ),
+      ];
     if (change.kind === 'create')
       return [
         query(
@@ -1086,6 +1208,7 @@ export class D1HabitStore implements HabitStore {
             LEFT JOIN habit_logs l ON l.owner=r.owner AND l.habit_id=e.habit_id AND l.day=e.day
             LEFT JOIN habit_outcomes o ON o.owner=r.owner AND o.habit_id=e.habit_id AND o.day=e.day
             WHERE (? IS NULL OR e.habit_id=?) AND (e.day<? OR (e.day=? AND e.habit_id>?))
+            AND NOT EXISTS(SELECT 1 FROM habit_presentation p WHERE p.owner=r.owner AND p.habit_id=e.habit_id AND p.hidden='deleted')
             AND (?='all' OR COALESCE(o.status,'processing')=?)
             ORDER BY e.day DESC,e.habit_id LIMIT ?`,
         owner,
@@ -1138,7 +1261,8 @@ export class D1HabitStore implements HabitStore {
             json_extract(r.definition_json,'$.name') AS name FROM habit_outcomes o JOIN habit_revisions r
             ON r.owner=o.owner AND r.habit_id=o.habit_id AND r.from_day=(SELECT MAX(from_day) FROM habit_revisions
                 WHERE owner=o.owner AND habit_id=o.habit_id AND from_day<=o.day)
-            WHERE o.owner=? AND o.day BETWEEN ? AND ? AND (? IS NULL OR o.habit_id=?) ORDER BY o.day,o.habit_id`,
+            WHERE o.owner=? AND o.day BETWEEN ? AND ? AND (? IS NULL OR o.habit_id=?)
+            AND NOT EXISTS(SELECT 1 FROM habit_presentation p WHERE p.owner=o.owner AND p.habit_id=o.habit_id AND p.hidden='deleted') ORDER BY o.day,o.habit_id`,
         owner,
         from,
         to,
@@ -1205,6 +1329,7 @@ export class D1HabitStore implements HabitStore {
               ON r.owner=l.owner AND r.habit_id=l.habit_id AND r.from_day=(SELECT MAX(from_day) FROM habit_revisions
                 WHERE owner=l.owner AND habit_id=l.habit_id AND from_day<=l.day)
             WHERE l.owner=? AND l.day BETWEEN ? AND ? AND (? IS NULL OR l.habit_id=?)
+            AND NOT EXISTS(SELECT 1 FROM habit_presentation p WHERE p.owner=l.owner AND p.habit_id=l.habit_id AND p.hidden='deleted')
             GROUP BY l.habit_id,metric,unit ORDER BY l.habit_id,metric,unit`,
         owner,
         from,

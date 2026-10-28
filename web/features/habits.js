@@ -3,20 +3,36 @@ import {
   cadenceLabel,
   habitDate,
   habitWeekdays,
-  habitFacts,
   habitNumber,
+  habitDisplayUnit,
   safeCsvCell,
 } from '../models/habits.js';
 import { button, el, field } from '../ui/dom.js';
 import { habitJsonExport } from '../models/habit-export.js';
 import { prefersReducedMotion } from '../core/experience.js';
 import { waitForWrite } from '../core/state.js';
+import { habitArchived, habitNeeded } from '../views/habits-today.js';
+import { habitIcon } from '../ui/habit-icons.js';
 const pendingLogKey = 'minh-anh-habit-pending-v1';
 const queuedLogKey = 'minh-anh-habit-queue-v1';
 
 export function createHabitActions(context) {
-  const { state, runtime, render, toast, sheet, sheetContent, openSheet, performLive, confirm } =
-    context;
+  const { state, runtime, render, toast, sheet, sheetContent, openSheet, performLive } = context;
+  globalThis.document?.addEventListener('click', (event) => {
+    if (!(event.target instanceof Node)) return;
+    for (const menu of document.querySelectorAll('.hv2-menu[open], .hv2-row-options[open]'))
+      if (!menu.contains(event.target)) menu.removeAttribute('open');
+  });
+  globalThis.document?.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    const menus = document.querySelectorAll('.hv2-menu[open], .hv2-row-options[open]');
+    if (!menus.length) return;
+    event.preventDefault();
+    for (const menu of menus) {
+      menu.removeAttribute('open');
+      menu.querySelector('summary')?.focus();
+    }
+  });
   let loadGeneration = 0,
     reportGeneration = 0,
     historyGeneration = 0;
@@ -138,6 +154,8 @@ export function createHabitActions(context) {
   }
   function setHabitFilter(filter) {
     state.habitFilter = filter;
+    state.habitSelecting = false;
+    state.habitSelected?.clear();
     render();
   }
   async function loadMoreHabits() {
@@ -172,9 +190,54 @@ export function createHabitActions(context) {
   }
   function showHabitPanel(panel) {
     state.habitPanel = panel;
+    state.habitSelecting = false;
+    state.habitSelected?.clear();
     render();
     if (panel === 'history') loadHabitHistory(state.habitHistoryId ?? '');
     if (panel === 'progress') loadHabitProgress();
+  }
+  async function moveHabit(view, other) {
+    if (!other || state.habitOrdering) return;
+    const session = runtime.session;
+    state.habitOrdering = true;
+    render();
+    try {
+      const swap = (result) => {
+        const habits = state.habitData?.habits;
+        if (!habits || runtime.session !== session) return;
+        const a = habits.findIndex((item) => item.habit.id === view.habit.id);
+        const b = habits.findIndex((item) => item.habit.id === other.habit.id);
+        if (a < 0 || b < 0) return;
+        habits[a].habit.version = result.version;
+        habits[b].habit.version = result.otherVersion;
+        [habits[a], habits[b]] = [habits[b], habits[a]];
+      };
+      if (!state.live)
+        swap({ version: view.habit.version + 1, otherVersion: other.habit.version + 1 });
+      else {
+        const saved = await performLive(
+          'habits',
+          {
+            operation: 'reorder',
+            habitId: view.habit.id,
+            version: view.habit.version,
+            otherId: other.habit.id,
+            otherVersion: other.habit.version,
+          },
+          { silent: true, keepSheet: true, reconciled: true, onCommitted: swap },
+        );
+        if (!saved && runtime.session === session) await loadHabits();
+      }
+    } finally {
+      if (runtime.session === session) {
+        state.habitOrdering = false;
+        render();
+        const target = document.querySelector(
+          '[data-habit-id="' + view.habit.id + '"] .hv2-order button:not(:disabled)',
+        );
+        if (target instanceof HTMLElement) target.focus({ preventScroll: true });
+      }
+    }
   }
   async function loadHabitProgress() {
     if (!state.habitData) return;
@@ -293,6 +356,96 @@ export function createHabitActions(context) {
       state.habitHistoryLoading = false;
     }
     return result;
+  }
+  async function manageHabit(view, operation) {
+    const result = await save(
+      { operation, habitId: view.habit.id, version: view.habit.version },
+      { keepSheet: true, silent: true, reconciled: true },
+    );
+    if (result) {
+      await loadHabits();
+      render();
+    }
+    return result;
+  }
+  async function archiveHabit(view) {
+    const archived = habitArchived(view, state.habitData.day.day);
+    const result = await manageHabit(view, archived ? 'restore' : 'archive');
+    if (result) {
+      sheet.close();
+      toast(archived ? 'Đã khôi phục thói quen' : 'Đã lưu trữ thói quen');
+    }
+  }
+  async function setHabitToday(view, included = false) {
+    const result = await save(
+      {
+        operation: included ? 'resume' : 'defer',
+        day: state.habitData.day.day,
+        habitId: view.habit.id,
+        version: view.habit.version,
+      },
+      { keepSheet: true, silent: true, reconciled: true },
+    );
+    if (result) {
+      await loadHabits();
+      if (sheet.open) sheet.close();
+      render();
+    }
+  }
+  function deleteHabits(ids) {
+    const items = ids
+      .map((id) => state.habitData.habits.find((view) => view.habit.id === id))
+      .filter(Boolean);
+    if (!items.length) return;
+    openSheet('Xóa ' + (items.length === 1 ? 'thói quen này' : items.length + ' thói quen') + '?');
+    sheet.classList.add('settings-sheet-open', 'habit-v2-sheet');
+    const layout = el('div', undefined, 'settings-sheet-body habit-editor'),
+      body = el('div', undefined, 'habit-form-fields hv2-confirm');
+    const symbol = el('div', undefined, 'hv2-confirm-symbol');
+    symbol.append(habitIcon('trash'));
+    const names = el('ul', undefined, 'hv2-confirm-items');
+    items.forEach((view) => names.append(el('li', view.definition.name)));
+    body.append(
+      symbol,
+      el('p', 'Thói quen và lịch sử ghi nhận sẽ bị xóa. Lời nhắc liên quan cũng sẽ dừng.'),
+      names,
+      el(
+        'p',
+        'Không thể hoàn tác. Phần thưởng đã nhận được giữ nguyên; cam kết đã phát sinh vẫn được tính.',
+        'hint',
+      ),
+    );
+    const controls = el('div', undefined, 'actions habit-form-footer');
+    controls.append(
+      button('Hủy', () => sheet.close(), 'secondary'),
+      button(
+        'Xóa ' + items.length + ' thói quen',
+        async () => {
+          sheet.close();
+          let removed = 0;
+          for (const item of items) {
+            const current = state.habitData.habits.find((view) => view.habit.id === item.habit.id);
+            if (current && (await manageHabit(current, 'delete'))) {
+              removed++;
+              state.habitSelected?.delete(item.habit.id);
+            } else break;
+          }
+          if (removed === items.length) {
+            state.habitSelecting = false;
+            state.habitSelected?.clear();
+          }
+          render();
+          toast(
+            removed === items.length
+              ? 'Đã xóa ' + removed + ' thói quen'
+              : 'Đã xóa ' + removed + '/' + items.length + '. Các mục chưa xóa vẫn được giữ lại.',
+          );
+        },
+        'secondary danger',
+      ),
+    );
+    layout.append(body, controls);
+    sheetContent.append(layout);
   }
   async function saveLog(view, day, value, note, options = {}) {
     let before = { value: view.log.value, note: view.log.note, version: view.log.version };
@@ -529,19 +682,21 @@ export function createHabitActions(context) {
       toast('Đang lưu thao tác trước…');
       return;
     }
-    const logDay = state.habitData.day.day;
+    const logDay = state.habitData.day.day,
+      unit = habitDisplayUnit(view);
     openSheet(view.definition.name);
-    sheet.classList.add('settings-sheet-open');
+    sheet.classList.add('settings-sheet-open', 'habit-v2-sheet');
     const form = el('form', undefined, 'settings-sheet-body habit-form habit-editor');
-    form.append(
-      el(
-        'p',
-        cadenceLabel(view.definition.cadence) + ' · hôm nay ' + habitDate(state.habitData.day.day),
-        'hint',
-      ),
-    );
+    const preview = el('span'),
+      progress = el('p', undefined, 'hv2-log-progress');
+    progress.append(preview, el('small', ' / ' + habitNumber(view.definition.target) + ' ' + unit));
+    const date = el('p', undefined, 'hv2-log-context');
+    form.append(progress, date);
     const amount = field(
-      'Tổng đã làm hôm nay (' + view.definition.unit + ')',
+      (view.definition.metric === 'duration' ? 'Nhập chính xác' : 'Tổng hôm nay') +
+        ' (' +
+        unit +
+        ')',
       'number',
       String(view.log.value / 100),
     );
@@ -550,22 +705,42 @@ export function createHabitActions(context) {
     amount.input.step = '0.01';
     amount.input.inputMode = 'decimal';
     amount.input.name = 'amount';
+    let range, rangeMax, less, more;
+    const sync = () => {
+      const value = amount.input.valueAsNumber,
+        valid = Number.isFinite(value) && value >= 0 && value <= 1000000;
+      preview.textContent = valid ? habitNumber(Math.round(value * 100)) : '—';
+      date.textContent =
+        'Hôm nay · ' +
+        habitDate(logDay) +
+        (valid && value * 100 >= view.definition.target ? ' · Đã đạt mục tiêu' : '');
+      if (range && valid) {
+        range.max = String(Math.max(Number(range.max), value));
+        range.step = Number.isInteger(value) && Number.isInteger(Number(range.max)) ? '1' : '0.01';
+        range.value = String(value);
+        range.style.setProperty('--fill', (value / Number(range.max)) * 100 + '%');
+        range.setAttribute('aria-valuetext', preview.textContent + ' phút');
+        rangeMax.textContent = habitNumber(Number(range.max) * 100) + ' phút';
+      }
+      if (less) less.disabled = !valid || value <= 0;
+      if (more) more.disabled = !valid || value >= 1000000;
+    };
     if (view.definition.metric === 'duration') {
-      const range = el('input');
+      range = el('input', undefined, 'hv2-duration-range');
       range.type = 'range';
       range.min = '0';
-      range.step = '0.01';
+      range.max = String(Math.max(view.definition.target, view.log.value) / 100);
       range.setAttribute('aria-label', 'Thời lượng ' + view.definition.name);
-      const sync = () => {
-        range.max = String(Math.max(view.definition.target / 100, amount.input.valueAsNumber || 0));
-        range.value = amount.input.value;
-      };
-      sync();
       range.addEventListener('input', () => {
         amount.input.value = range.value;
+        sync();
       });
-      amount.input.addEventListener('input', sync);
-      form.append(el('p', 'Kéo để chọn thời lượng, hoặc nhập số chính xác.', 'hint'), range);
+      const block = el('div', undefined, 'hv2-log-range-block'),
+        labels = el('div', undefined, 'hv2-range-labels');
+      rangeMax = el('span');
+      labels.append(el('span', '0 phút'), rangeMax);
+      block.append(range, labels);
+      form.append(block);
     } else if (view.definition.metric === 'quantity') {
       const counter = el('div', undefined, 'habit-counter');
       const step = (change) => {
@@ -574,33 +749,37 @@ export function createHabitActions(context) {
           Math.min(1000000, Math.round(((amount.input.valueAsNumber || 0) + change) * 100) / 100),
         );
         amount.input.value = String(next);
+        sync();
       };
-      const less = button('−', () => step(-1)),
-        more = button('+1', () => step(1));
-      less.setAttribute('aria-label', 'Giảm 1 ' + view.definition.unit);
-      more.setAttribute('aria-label', 'Thêm 1 ' + view.definition.unit);
+      less = button('−', () => step(-1));
+      more = button('+1', () => step(1));
+      less.setAttribute('aria-label', 'Giảm 1 ' + unit);
+      more.setAttribute('aria-label', 'Thêm 1 ' + unit);
       counter.append(less, amount.input, more);
       amount.wrap.append(counter);
     }
     const note = field('Ghi chú', 'text', view.log.note, false);
     note.input.maxLength = 300;
     const extra = el('details', undefined, 'habit-form-extra');
+    extra.open = !!view.log.note;
     extra.append(el('summary', 'Thêm ghi chú'), note.wrap);
-    form.append(
-      amount.wrap,
-      el(
-        'p',
-        'Lưu sẽ thay tổng hôm nay. Đạt ' +
-          view.definition.target / 100 +
-          ' ' +
-          view.definition.unit +
-          ' mới góp tiến độ.',
-        'hint',
+    const total = el('div', undefined, 'hv2-log-total');
+    total.append(
+      el('p', 'Mục tiêu ' + habitNumber(view.definition.target) + ' ' + unit),
+      button(
+        'Đủ mục tiêu',
+        () => {
+          amount.input.value = String(view.definition.target / 100);
+          amount.input.dispatchEvent(new Event('input'));
+        },
+        'text-button',
       ),
-      extra,
     );
+    form.append(amount.wrap, total, extra);
+    amount.input.addEventListener('input', sync);
+    sync();
     const controls = el('div', undefined, 'actions habit-form-footer'),
-      submit = el('button', 'Lưu', 'primary');
+      submit = el('button', 'Lưu hôm nay', 'primary');
     submit.type = 'submit';
     const fields = el('div', undefined, 'habit-form-fields');
     fields.append(...form.childNodes);
@@ -614,66 +793,222 @@ export function createHabitActions(context) {
   }
   function openHabitDetails(view) {
     openSheet(view.definition.name);
-    sheet.classList.add('settings-sheet-open');
-    const body = el('div', undefined, 'settings-sheet-body habit-detail');
-    for (const fact of habitFacts(view, state.habitData.day.day))
-      body.append(el('p', fact.text, fact.key.endsWith('Note') ? 'habit-note' : 'hint'));
-    if (view.definition.metric !== 'check')
-      body.append(
-        el(
-          'p',
-          'Hôm nay ' +
-            view.log.value / 100 +
-            ' / ' +
-            view.definition.target / 100 +
-            ' ' +
-            view.definition.unit,
-          'habit-detail-progress',
-        ),
+    sheet.classList.add('settings-sheet-open', 'habit-v2-sheet');
+    const day = state.habitData.day.day,
+      session = runtime.session,
+      { definition, log } = view,
+      unit = habitDisplayUnit(view),
+      archived = habitArchived(view, day),
+      needed = habitNeeded(view, day),
+      met = log.value >= definition.target;
+    const layout = el('div', undefined, 'settings-sheet-body habit-editor habit-detail hv2-detail'),
+      body = el('div', undefined, 'habit-form-fields');
+    const today = el('div', undefined, 'hv2-detail-today');
+    today.append(
+      el(
+        'p',
+        archived
+          ? 'Đã lưu trữ'
+          : 'Hôm nay · ' + habitDate(day) + (!needed ? ' · Không cần làm hôm nay' : ''),
+        'hv2-detail-caption',
+      ),
+    );
+    if (!archived) {
+      const number = el(
+        'div',
+        definition.metric === 'check'
+          ? met
+            ? 'Đã hoàn thành'
+            : 'Chưa hoàn thành'
+          : habitNumber(log.value),
+        'hv2-detail-number habit-detail-progress',
       );
-    if (view.definition.metric === 'check')
-      body.append(
-        el(
-          'p',
-          view.log.value >= view.definition.target ? 'Đã đạt hôm nay' : 'Chưa đạt hôm nay',
-          'habit-detail-progress',
-        ),
+      if (definition.metric !== 'check') {
+        number.append(el('small', ' / ' + habitNumber(definition.target) + ' ' + unit));
+        const progress = el('progress', undefined, 'hv2-detail-progress');
+        progress.max = definition.target;
+        progress.value = Math.min(log.value, definition.target);
+        progress.setAttribute('aria-label', 'Tiến độ ' + definition.name);
+        today.append(number, progress);
+      } else today.append(number);
+      const status = met
+        ? 'Đã đạt mục tiêu hôm nay.'
+        : definition.cadence.kind === 'weekly'
+          ? 'Tuần này ' +
+            (view.preview?.period.completedDays.length ?? 0) +
+            '/' +
+            definition.cadence.quota +
+            ' ngày.'
+          : definition.metric !== 'check'
+            ? 'Còn ' +
+              habitNumber(Math.max(0, definition.target - log.value)) +
+              ' ' +
+              unit +
+              ' để đạt mục tiêu.'
+            : 'Một lần thực hiện là đủ.';
+      today.append(el('p', status, 'hv2-detail-status'));
+    } else
+      today.append(
+        el('p', 'Đã dừng theo dõi và nhắc giờ. Lịch sử vẫn được giữ.', 'hv2-detail-status'),
       );
+    body.append(today);
+    const info = el('dl', undefined, 'hv2-detail-info');
+    for (const [label, value] of [
+      [
+        'Mục tiêu',
+        definition.metric === 'check'
+          ? 'Một lần thực hiện'
+          : habitNumber(definition.target) + ' ' + unit,
+      ],
+      ['Lặp lại', cadenceLabel(definition.cadence)],
+      [
+        'Nhắc giờ',
+        view.reminderTime
+          ? view.reminderTime + (archived ? ' · Đã dừng' : !needed ? ' · Hôm nay nghỉ' : '')
+          : 'Không đặt',
+      ],
+    ]) {
+      const row = el('div');
+      row.append(el('dt', label), el('dd', value));
+      info.append(row);
+    }
+    body.append(info);
     if (view.pending)
       body.append(
         el(
           'p',
-          'Sắp áp dụng: ' +
+          'Từ ' +
+            habitDate(view.pending.fromDay) +
+            ': ' +
             view.pending.definition.name +
             ' · ' +
-            cadenceLabel(view.pending.definition.cadence) +
             (view.pending.definition.metric === 'check'
               ? ''
-              : ' · ' +
-                habitNumber(view.pending.definition.target) +
+              : habitNumber(view.pending.definition.target) +
                 ' ' +
-                view.pending.definition.unit),
-          'hint',
+                view.pending.definition.unit +
+                ' · ') +
+            cadenceLabel(view.pending.definition.cadence),
+          'hv2-detail-note',
         ),
       );
-    const archived =
-      view.habit.archivedFrom !== null && state.habitData.day.day >= view.habit.archivedFrom;
-    if (!archived) {
+    for (const note of [definition.note, log.note])
+      if (note) body.append(el('p', note, 'habit-note hv2-detail-note'));
+    const history = el('details', undefined, 'hv2-detail-history'),
+      historyBody = el('div');
+    history.append(el('summary', '7 ngày gần đây'), historyBody);
+    let historyLoaded = false,
+      historyLoading = false;
+    const load = async () => {
+      if (historyLoaded || historyLoading) return;
+      historyLoading = true;
+      historyBody.replaceChildren(el('p', 'Đang tải…', 'hint'));
+      try {
+        const report = state.live
+          ? await liveRequest(
+              'habit-report?' +
+                new URLSearchParams({
+                  from: String(day - 6),
+                  to: String(day - 1),
+                  habitId: view.habit.id,
+                }),
+            )
+          : { byHabit: [] };
+        if (session !== runtime.session || !historyBody.isConnected) return;
+        const days = new Map(
+          (report.byHabit.find((item) => item.habitId === view.habit.id)?.days ?? []).map(
+            (item) => [item.day, item.status],
+          ),
+        );
+        days.set(day, archived || !needed ? 'neutral' : met ? 'achieved' : 'missed');
+        const week = el('div', undefined, 'hv2-week');
+        for (let current = day - 6; current <= day; current++) {
+          const status = days.get(current),
+            achieved = status === 'achieved',
+            missed = status === 'missed';
+          const label = achieved
+            ? 'Đạt mục tiêu'
+            : missed
+              ? current === day
+                ? 'Chưa đạt hôm nay'
+                : 'Chưa đạt'
+              : 'Ngoài lịch / nghỉ';
+          const cell = el('div', undefined, 'hv2-week-cell' + (achieved ? ' is-met' : ''));
+          cell.setAttribute('aria-label', habitDate(current) + ': ' + label);
+          cell.append(el('span', habitDate(current)), el('b', achieved ? '✓' : missed ? '·' : '–'));
+          week.append(cell);
+        }
+        historyBody.replaceChildren(
+          week,
+          el('p', '✓ Đạt mục tiêu   · Chưa đạt   – Ngoài lịch / nghỉ', 'hint'),
+        );
+        historyLoaded = true;
+      } catch (error) {
+        if (historyBody.isConnected)
+          historyBody.replaceChildren(
+            el('p', error.message, 'hint'),
+            button('Thử lại', load, 'text-button'),
+          );
+      } finally {
+        historyLoading = false;
+      }
+    };
+    history.addEventListener('toggle', () => {
+      if (history.open) void load();
+    });
+    body.append(history);
+    if (!archived && needed)
       body.append(
         button(
-          'Điều chỉnh hôm nay',
-          () => (view.definition.metric === 'check' ? toggleHabit(view) : openHabitLog(view)),
-          'secondary',
-        ),
-        button(
-          view.slot ? 'Chỉnh thời gian' : 'Xếp thời gian',
+          view.slot ? 'Chỉnh thời gian · ' + view.slot.minutes + ' phút' : 'Xếp thời gian',
           () => openHabitSlot(view),
-          'secondary',
+          'text-button hv2-slot-link',
+        ),
+      );
+    const manage = el('div', undefined, 'hv2-manage');
+    const link = (label, icon, action, danger = false) => {
+      const control = button('', action, danger ? 'danger' : 'text-button');
+      control.append(habitIcon(icon), document.createTextNode(label));
+      manage.append(control);
+    };
+    if (!archived) {
+      link('Chỉnh sửa', 'edit', () => openHabit(view));
+      link('Lưu trữ', 'archive', () => archiveHabit(view));
+    }
+    link('Xóa thói quen', 'trash', () => deleteHabits([view.habit.id]), true);
+    body.append(manage);
+    const footer = el('div', undefined, 'actions habit-form-footer hv2-detail-footer');
+    if (archived) footer.append(button('Khôi phục thói quen', () => archiveHabit(view), 'primary'));
+    else if (!needed && view.preview?.reason !== 'archived')
+      footer.append(button('Làm hôm nay', () => setHabitToday(view, true), 'primary'));
+    else if (needed) {
+      if (definition.cadence.kind === 'weekly' && !met) {
+        const options = el('details', undefined, 'hv2-row-options'),
+          menu = el('div', undefined, 'hv2-menu-items');
+        options.append(el('summary', 'Khác'));
+        menu.append(button('Để hôm khác', () => setHabitToday(view), 'text-button'));
+        options.append(menu);
+        footer.append(options);
+      }
+      footer.append(
+        button(
+          definition.metric === 'check'
+            ? met
+              ? 'Bỏ hoàn thành hôm nay'
+              : 'Hoàn thành hôm nay'
+            : 'Ghi nhận hôm nay',
+          () => {
+            if (definition.metric !== 'check') return openHabitLog(view);
+            void toggleHabit(view);
+            sheet.close();
+          },
+          'primary',
         ),
       );
     }
-    body.append(button('Chỉnh thói quen', () => openHabit(view), 'text-button'));
-    sheetContent.append(body);
+    layout.append(body);
+    if (footer.childElementCount) layout.append(footer);
+    sheetContent.append(layout);
   }
   function openHabitSlot(view) {
     if (runtime.saving) {
@@ -773,46 +1108,30 @@ export function createHabitActions(context) {
     }
     const initial = view?.pending?.definition ?? view?.definition;
     openSheet(view ? 'Chỉnh thói quen' : 'Thêm thói quen');
-    sheet.classList.add('settings-sheet-open');
+    sheet.classList.add('settings-sheet-open', 'habit-v2-sheet');
     const form = el('form', undefined, 'settings-sheet-body habit-form habit-editor'),
       name = field('Tên thói quen', 'text', initial?.name ?? '');
     name.input.name = 'name';
     name.input.maxLength = 100;
+    name.input.placeholder = 'Ví dụ: Đọc sách';
     const makeSelect = (label, options, value) => {
-      const wrap = el('fieldset', undefined, 'habit-choice-field'),
+      const wrap = el('label', label, 'form-field'),
         input = el('select');
-      wrap.append(el('legend', label));
-      input.hidden = true;
       input.setAttribute('aria-label', label);
-      const choices = el('div', undefined, 'habit-choices');
       for (const [id, name] of options) {
         const option = el('option', name);
         option.value = id;
         input.append(option);
       }
-      const sync = () => {
-        for (const control of choices.children)
-          control.setAttribute('aria-pressed', String(control.dataset.value === input.value));
-      };
-      for (const [id, name] of options) {
-        const control = button(name, () => {
-          input.value = id;
-          input.dispatchEvent(new Event('change'));
-        });
-        control.dataset.value = id;
-        choices.append(control);
-      }
       input.value = value;
-      input.addEventListener('change', sync);
-      sync();
-      wrap.append(input, choices);
+      wrap.append(input);
       return { wrap, input };
     };
     const metric = makeSelect(
       'Cách ghi nhận',
       [
-        ['check', 'Đánh dấu'],
-        ['duration', 'Thời lượng'],
+        ['check', 'Tích hoàn thành'],
+        ['duration', 'Thời lượng · phút'],
         ['quantity', 'Số lượng'],
       ],
       initial?.metric ?? 'check',
@@ -823,15 +1142,21 @@ export function createHabitActions(context) {
     target.input.step = '0.01';
     target.input.inputMode = 'decimal';
     target.input.name = 'target';
-    const unit = field('Đơn vị (trang, ly, km…)', 'text', initial?.unit ?? '', false);
+    const unit = field(
+      'Đơn vị',
+      'text',
+      initial?.metric === 'quantity' ? initial.unit : 'ly',
+      false,
+    );
+    unit.input.placeholder = 'ly, trang, km…';
     unit.input.maxLength = 20;
     unit.input.name = 'unit';
     const cadence = makeSelect(
-      'Lịch lặp',
+      'Lặp lại',
       [
-        ['daily', 'Hằng ngày'],
-        ['weekdays', 'Chọn thứ'],
-        ['weekly', 'X ngày/tuần'],
+        ['daily', 'Mỗi ngày'],
+        ['weekdays', 'Chọn ngày trong tuần'],
+        ['weekly', 'Linh hoạt theo tuần'],
       ],
       initial?.cadence.kind ?? 'daily',
     );
@@ -856,23 +1181,17 @@ export function createHabitActions(context) {
       days.append(control);
     });
     const note = field('Ghi chú', 'text', initial?.note ?? '', false);
-    note.input.maxLength = 300;
+    const noteInput = el('textarea');
+    noteInput.value = note.input.value;
+    noteInput.maxLength = 300;
+    noteInput.rows = 3;
+    noteInput.placeholder = 'Điều cậu muốn nhớ…';
+    note.input.replaceWith(noteInput);
+    note.input = noteInput;
     const remind = field('Giờ nhắc (tùy chọn)', 'time', view?.reminderTime ?? '', false);
     const explanation = el('p', '', 'hint habit-form-explanation');
-    const targetRange = el('input');
-    targetRange.type = 'range';
-    targetRange.min = '0.01';
-    targetRange.step = '0.01';
-    targetRange.setAttribute('aria-label', 'Mục tiêu thời lượng');
-    const syncTarget = () => {
-      targetRange.max = String(Math.max(60, target.input.valueAsNumber || 0));
-      targetRange.value = target.input.value;
-    };
-    targetRange.addEventListener('input', () => {
-      target.input.value = targetRange.value;
-    });
-    target.input.addEventListener('input', syncTarget);
-    syncTarget();
+    const targetRow = el('div', undefined, 'hv2-field-row');
+    targetRow.append(target.wrap, unit.wrap);
     const drafts = { check: '1', duration: '20', quantity: '8' };
     let previousMetric = metric.input.value;
     drafts[previousMetric] = target.input.value;
@@ -881,12 +1200,10 @@ export function createHabitActions(context) {
         drafts[previousMetric] = target.input.value;
         previousMetric = metric.input.value;
         target.input.value = drafts[previousMetric];
-        syncTarget();
       }
-      target.wrap.hidden = metric.input.value === 'check';
+      targetRow.hidden = metric.input.value === 'check';
       target.input.required = metric.input.value !== 'check';
       target.input.disabled = metric.input.value === 'check';
-      targetRange.hidden = metric.input.value !== 'duration';
       target.wrap.firstChild.textContent =
         metric.input.value === 'duration' ? 'Mục tiêu mỗi ngày (phút)' : 'Mục tiêu mỗi ngày';
       unit.wrap.hidden = metric.input.value !== 'quantity';
@@ -905,18 +1222,12 @@ export function createHabitActions(context) {
     cadence.input.addEventListener('change', update);
     update();
     const extra = el('details', undefined, 'habit-form-extra');
-    extra.append(
-      el('summary', 'Nhắc giờ & ghi chú'),
-      note.wrap,
-      remind.wrap,
-      el('p', 'Giờ nhắc cập nhật ngay và vẫn gửi khi ngủ hoặc tập trung.', 'hint'),
-    );
+    extra.open = !!(initial?.note || view?.reminderTime);
+    extra.append(el('summary', 'Nhắc giờ & ghi chú'), remind.wrap, note.wrap);
     form.append(
       name.wrap,
       metric.wrap,
-      target.wrap,
-      targetRange,
-      unit.wrap,
+      targetRow,
       cadence.wrap,
       days,
       quota.wrap,
@@ -926,34 +1237,10 @@ export function createHabitActions(context) {
     const controls = el('div', undefined, 'actions habit-form-footer'),
       submit = el('button', view ? 'Lưu thay đổi' : 'Thêm thói quen', 'primary');
     submit.type = 'submit';
-    const archived = view && view.habit.archivedFrom !== null;
-    if (!archived) controls.append(submit);
-    if (view)
-      controls.append(
-        button(
-          archived ? 'Khôi phục' : 'Lưu trữ',
-          () => {
-            const from =
-              initial.cadence.kind === 'weekly'
-                ? state.habitData.day.day - ((state.habitData.day.day + 3) % 7) + 7
-                : state.habitData.day.day + 1;
-            confirm(
-              archived ? 'Khôi phục thói quen?' : 'Lưu trữ thói quen?',
-              (archived ? 'Hoạt động lại' : 'Ngừng theo dõi') +
-                ' từ ' +
-                habitDate(from) +
-                '. Lịch sử được giữ; cam kết đang có vẫn tính đến mốc này.',
-              () =>
-                save({
-                  operation: archived ? 'restore' : 'archive',
-                  habitId: view.habit.id,
-                  version: view.habit.version,
-                }),
-            );
-          },
-          'text-button',
-        ),
-      );
+    controls.append(
+      button('Hủy', () => (view ? openHabitDetails(view) : sheet.close()), 'secondary'),
+      submit,
+    );
     const fields = el('div', undefined, 'habit-form-fields');
     fields.append(...form.childNodes);
     form.append(fields, controls);
@@ -1099,6 +1386,10 @@ export function createHabitActions(context) {
     }
   }
   return {
+    archiveHabit,
+    setHabitToday,
+    deleteHabits,
+    moveHabit,
     loadHabits,
     loadMoreHabits,
     openHabit,

@@ -216,6 +216,7 @@ export function createLifecycle({
     )
       return;
     if (!runtime.refreshPending && state.tab === 'habits' && !background) {
+      if (state.habitPanel === 'journals') return ui.loadJournals?.();
       ui.loadTower?.(force);
       return ui.loadHabits(force);
     }

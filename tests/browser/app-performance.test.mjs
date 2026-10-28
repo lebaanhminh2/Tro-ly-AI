@@ -213,7 +213,7 @@ test(
       const response=await original(url,init);
       if(String(url)==='/api/habits'&&init?.method==='POST')throw Error('RESPONSE_LOST');
       return response;
-    };document.querySelector('.habit-check').click();
+    };document.querySelector('[data-habit-id=h_performance_seed_0] .habit-check').click();
   })()`);
     await browser.wait("!!document.querySelector('.habit-log-recovery')");
     const pending = await browser.evaluate(
@@ -249,7 +249,9 @@ test('Undo updates the check immediately and saves in the background', options, 
   })()`);
   await browser.wait("typeof window.releaseUndo==='function'");
   assert.equal(
-    await browser.evaluate("document.querySelector('.habit-check').getAttribute('aria-pressed')"),
+    await browser.evaluate(
+      "document.querySelector('[data-habit-id=h_performance_seed_0] .habit-check').getAttribute('aria-pressed')",
+    ),
     'false',
   );
   assert.equal(control.habits.habits[0].log.value, 100);
@@ -270,8 +272,8 @@ test('reload preserves unsent habit intents behind an unconfirmed log', options,
       if(String(url)==='/api/habits'&&init?.method==='POST')await new Promise(resolve=>window.holdFirstLog=resolve);
       return response;
     };
-    document.querySelectorAll('.habit-check')[0].click();
-    document.querySelectorAll('.habit-check')[1].click();
+    document.querySelector('[data-habit-id=h_performance_seed_0] .habit-check').click();
+    document.querySelector('[data-habit-id=h_performance_seed_1] .habit-check').click();
   })()`);
   await browser.wait("typeof window.holdFirstLog==='function'");
   assert.equal(
@@ -282,7 +284,7 @@ test('reload preserves unsent habit intents behind an unconfirmed log', options,
   await browser.wait("!!document.querySelector('.focus-flip-card')");
   await habits(browser);
   await browser.wait(
-    "!!document.querySelector('.habit-log-recovery') && document.querySelectorAll('.habit-check')[1].getAttribute('aria-pressed')==='true'",
+    "!!document.querySelector('.habit-log-recovery') && document.querySelector('[data-habit-id=h_performance_seed_1] .habit-check').getAttribute('aria-pressed')==='true'",
   );
   for (let attempt = 0; attempt < 50 && control.habits.habits[1].log.value !== 100; attempt++)
     await delay(20);
@@ -374,13 +376,13 @@ test(
         await new Promise(resolve => window.releasePosts.push(resolve));
       return original(url, init);
     };
-    document.querySelector('.habit-check').click();
+    document.querySelector('[data-habit-id=h_performance_seed_0] .habit-check').click();
   })()`);
     await browser.wait('window.releasePosts.length===1');
     const immediate = await browser.evaluate(`(() => {
-    document.querySelectorAll('.habit-check')[1].click();
-    document.querySelectorAll('.habit-check')[0].click();
-    return { values:[...document.querySelectorAll('.habit-check')].map(n=>n.getAttribute('aria-pressed')),
+    document.querySelector('[data-habit-id=h_performance_seed_1] .habit-check').click();
+    document.querySelector('[data-habit-id=h_performance_seed_0] .habit-check').click();
+    return { values:[...document.querySelectorAll('.habit-check')].sort((a,b)=>a.closest('[data-habit-id]').dataset.habitId.localeCompare(b.closest('[data-habit-id]').dataset.habitId)).map(n=>n.getAttribute('aria-pressed')),
       disabled:[...document.querySelectorAll('.habit-check,[data-tab]')].some(n=>n.disabled),
       busy:!!document.querySelector('.habit-check[aria-busy=true]'),
       reward:document.querySelector('#toast').textContent.includes('vé quay') };
@@ -396,7 +398,7 @@ test(
       'window.holdPosts=false;window.releasePosts.forEach(resolve=>resolve())',
     );
     await browser.wait(
-      "!!document.querySelector('#toast .notice-action') && document.querySelectorAll('.habit-check')[1].getAttribute('aria-pressed')==='true'",
+      "!!document.querySelector('#toast .notice-action') && document.querySelector('[data-habit-id=h_performance_seed_1] .habit-check').getAttribute('aria-pressed')==='true'",
     );
     for (
       let count = 0;
@@ -430,11 +432,13 @@ test(
     await browser.evaluate(`(() => {
     const original=fetch; window.fetch=(url,init)=>String(url)==='/api/habits'&&init?.method==='POST'
       ? Promise.resolve(new Response(JSON.stringify({error:'HABIT_LOG_CHANGED',message:'Bản ghi vừa thay đổi.'}),{status:409})) : original(url,init);
-    document.querySelector('.habit-check').click();
+    document.querySelector('[data-habit-id=h_performance_seed_0] .habit-check').click();
   })()`);
     await browser.wait("document.querySelector('#toast')?.dataset.kind==='error'");
     assert.equal(
-      await browser.evaluate("document.querySelector('.habit-check').getAttribute('aria-pressed')"),
+      await browser.evaluate(
+        "document.querySelector('[data-habit-id=h_performance_seed_0] .habit-check').getAttribute('aria-pressed')",
+      ),
       'false',
     );
     assert.equal(control.state.account.state.tickets, tickets);
@@ -461,17 +465,19 @@ test(
       const response=await original(url,init);
       if(log&&lost){lost=false;throw Error('RESPONSE_LOST')}
       return response;
-    }; document.querySelector('.habit-check').click();
+    }; document.querySelector('[data-habit-id=h_performance_seed_0] .habit-check').click();
   })()`);
     await browser.wait("!!document.querySelector('.habit-log-recovery')");
     assert.equal(control.state.account.state.tickets, tickets + 1);
     assert.equal(
-      await browser.evaluate("document.querySelector('.habit-check').getAttribute('aria-pressed')"),
+      await browser.evaluate(
+        "document.querySelector('[data-habit-id=h_performance_seed_0] .habit-check').getAttribute('aria-pressed')",
+      ),
       'false',
     );
     await browser.tap('.habit-log-recovery button');
     await browser.wait(
-      "!document.querySelector('.habit-log-recovery') && document.querySelector('.habit-check').getAttribute('aria-pressed')==='true'",
+      "!document.querySelector('.habit-log-recovery') && document.querySelector('[data-habit-id=h_performance_seed_0] .habit-check').getAttribute('aria-pressed')==='true'",
     );
     const attempts = await browser.evaluate('window.habitAttempts');
     assert.equal(attempts.length, 2);
@@ -495,15 +501,17 @@ test(
       if(String(url)==='/api/habits'&&init?.method==='POST'&&first){
         first=false;await new Promise(resolve=>window.releaseLostLog=resolve);throw Error('RESPONSE_LOST');
       }return response;
-    };document.querySelector('.habit-check').click();
+    };document.querySelector('[data-habit-id=h_performance_seed_0] .habit-check').click();
   })()`);
     await browser.wait("typeof window.releaseLostLog==='function'");
     await browser.evaluate(
-      "document.querySelector('.habit-check').click();window.releaseLostLog()",
+      "document.querySelector('[data-habit-id=h_performance_seed_0] .habit-check').click();window.releaseLostLog()",
     );
     await browser.wait("!!document.querySelector('.habit-log-recovery')");
     assert.equal(
-      await browser.evaluate("document.querySelector('.habit-check').getAttribute('aria-pressed')"),
+      await browser.evaluate(
+        "document.querySelector('[data-habit-id=h_performance_seed_0] .habit-check').getAttribute('aria-pressed')",
+      ),
       'false',
     );
     await browser.tap('.habit-log-recovery button');
@@ -530,11 +538,11 @@ test(
       const response=await original(url,init);
       if(String(url)==='/api/habits'&&init?.method==='POST')await new Promise(resolve=>window.releaseSavedLog=resolve);
       return response;
-    };document.querySelector('.habit-check').click();
+    };document.querySelector('[data-habit-id=h_performance_seed_0] .habit-check').click();
   })()`);
     await browser.wait("typeof window.releaseSavedLog==='function'");
     await browser.evaluate(
-      "document.querySelectorAll('.habit-check')[1].click();document.querySelector('#logout').click()",
+      "document.querySelector('[data-habit-id=h_performance_seed_1] .habit-check').click();document.querySelector('#logout').click()",
     );
     await browser.wait("!!document.querySelector('.browser-login')");
     await browser.evaluate('window.releaseSavedLog()');

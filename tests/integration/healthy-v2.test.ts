@@ -93,6 +93,76 @@ async function fixture(speciesId = 'pyropup', multiplier = 3) {
   };
 }
 
+test('paid summon-ticket loot credits the real beast wallet atomically in legacy, unaccompanied v2 and companion v2 draws', async () => {
+  for (const mode of ['legacy-new', 'legacy-existing', 'v2-alone', 'v2-companion', 'v2-triple']) {
+    const f = await fixture('pyropup', mode === 'v2-triple' ? 3 : 1);
+    try {
+      if (mode.startsWith('legacy')) {
+        f.raw.exec(
+          'BEGIN; PRAGMA defer_foreign_keys=ON; DELETE FROM beast_v2_states; DELETE FROM beast_v2_buffs; DELETE FROM beast_v2_days; DELETE FROM beast_v2_runtime; DELETE FROM beast_roles; DELETE FROM beast_attempts; DELETE FROM beasts; COMMIT;',
+        );
+        if (mode === 'legacy-new')
+          f.raw.exec('DELETE FROM beast_number_counters; DELETE FROM beast_accounts');
+      } else if (mode === 'v2-alone') {
+        f.raw.exec('DELETE FROM beast_roles');
+        f.raw
+          .prepare(
+            "UPDATE beast_v2_days SET snapshot_json=json_set(snapshot_json,'$.beastId',NULL,'$.attemptId',NULL,'$.attempt',NULL)",
+          )
+          .run();
+      }
+      await f.seedWallet({ tickets: 12 });
+      const draw = () =>
+        f.healthy.mutateWithAccount(
+          '123',
+          'summon_loot_tx',
+          'draw',
+          { count: 10 },
+          now,
+          async (state) => {
+            const prepared = await prepareCultivationDraw(
+              f.db,
+              '123',
+              'summon_loot_tx',
+              f.day.day,
+              now,
+              10,
+              () => 0.997,
+            );
+            return prepared.apply!(state);
+          },
+        );
+      f.raw.exec(
+        "CREATE TRIGGER loot_abort BEFORE INSERT ON cultivation_receipts WHEN NEW.request_id='summon_loot_tx' BEGIN SELECT RAISE(ABORT,'test abort'); END",
+      );
+      await assert.rejects(draw());
+      assert.equal((await f.healthy.read('123')).state.tickets, 12);
+      const balance = () =>
+        JSON.parse(
+          String(
+            f.raw.prepare("SELECT state_json FROM beast_accounts WHERE owner='123'").get()
+              ?.state_json ?? '{"summonTickets":0}',
+          ),
+        ).summonTickets;
+      assert.equal(balance(), 0);
+      f.raw.exec('DROP TRIGGER loot_abort');
+      const result = await draw();
+      assert.deepEqual(
+        (result.result as { rewards: string[] }).rewards,
+        Array(10).fill('summonTicket'),
+      );
+      assert.equal((await f.healthy.read('123')).state.tickets, 2);
+      assert.equal(balance(), mode === 'v2-triple' ? 30 : 10, mode);
+      assert.deepEqual(await draw(), result);
+      assert.equal(balance(), mode === 'v2-triple' ? 30 : 10);
+      assert.equal((await f.healthy.read('123')).state.tickets, 2);
+      assert.ok(!('summonTicket' in (await f.healthy.read('123')).state.inventory));
+    } finally {
+      f.raw.close();
+    }
+  }
+});
+
 test('v2 checkin credits base reward exactly three times, persists actual reward and replays unchanged', async () => {
   const f = await fixture();
   try {

@@ -13,6 +13,11 @@ export type HabitPageOptions = {
 };
 export type HabitLog = { value: number; note: string; version: number; updatedAt: number };
 export type HabitView = {
+  presentation?: {
+    hidden: '' | 'archived' | 'deleted';
+    choice: '' | 'deferred' | 'included';
+    choiceDay: number | null;
+  };
   habit: HabitRecord;
   definition: HabitDefinition;
   pending: HabitRevision | null;
@@ -24,11 +29,15 @@ export type HabitView = {
 export type HabitSnapshot = {
   day: HabitDay;
   habit: HabitRecord | null;
+  otherHabit?: HabitRecord | null;
   log: HabitLog;
   activeCount: number;
   schedule?: { free: TimeRange[]; occupied: TimeRange[] };
 };
 export type HabitChange =
+  | { kind: 'reorder'; habitId: string; version: number; otherId: string; otherVersion: number }
+  | { kind: 'remove'; habitId: string; version: number }
+  | { kind: 'presentation'; habitId: string; version: number; choice: 'deferred' | 'included' }
   | { kind: 'create'; habitId: string; definition: HabitDefinition; reminderTime?: string | null }
   | {
       kind: 'revision';
@@ -59,6 +68,8 @@ export type HabitSaved = {
   day: number;
   version: number;
   effectiveFrom?: number;
+  otherHabitId?: string;
+  otherVersion?: number;
   ticketAwarded?: 0 | 1 | 3;
 };
 export type HabitHistoryRow = {

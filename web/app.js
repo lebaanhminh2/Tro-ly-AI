@@ -16,6 +16,7 @@ import { createSleepActions } from './features/sleep.js';
 import { createTaskActions } from './features/tasks.js';
 import { createTodayPlanActions } from './features/today-plan.js';
 import { createHabitActions } from './features/habits.js';
+import { createJournalActions } from './features/journals.js';
 import { createBeastActions } from './features/linh-thu.js';
 import * as dom from './ui/dom.js';
 import { createFeedback } from './ui/feedback.js';
@@ -38,6 +39,13 @@ const forward = {
 };
 for (const name of [
   'loadHabits',
+  'archiveHabit',
+  'setHabitToday',
+  'deleteHabits',
+  'moveHabit',
+  'loadJournals',
+  'showJournals',
+  'openJournal',
   'loadMoreHabits',
   'loadMoreReminders',
   'openHabit',
@@ -133,6 +141,7 @@ Object.assign(actions, createScheduleActions(context));
 Object.assign(actions, createSleepActions(context));
 Object.assign(actions, createCultivationActions(context));
 Object.assign(actions, createHabitActions(context));
+Object.assign(actions, createJournalActions(context));
 Object.assign(actions, createBeastActions(context));
 Object.assign(actions, createBrowserLoginActions(context));
 Object.assign(actions, createLifecycle(context));

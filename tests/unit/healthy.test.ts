@@ -34,9 +34,39 @@ const assessment = {
   assessedAt: window.end,
 };
 
+test('loot intervals match the published 100% table and a summon ticket never becomes a cultivation inventory item', async () => {
+  const modelPath = '../../web/models/cultivation.js';
+  const { loot }: { loot: { key: string; weight: number }[] } = await import(modelPath);
+  assert.deepEqual(
+    loot.map(({ key, weight }) => ({ key, weight })),
+    LOOT,
+  );
+  const counts: Record<string, number> = {};
+  const state = { ...initialHealthy(), tickets: 1 };
+  for (let i = 0; i < 10000; i++) {
+    const drawn = drawReward(state, (i + 0.5) / 10000);
+    counts[drawn.reward] = (counts[drawn.reward] ?? 0) + 1;
+    if (drawn.reward === 'summonTicket') {
+      assert.equal(drawn.summonTickets, 1);
+      assert.deepEqual(drawn.state.inventory, state.inventory);
+    }
+  }
+  assert.deepEqual(counts, {
+    qi1: 4000,
+    qi2: 1500,
+    basic: 3500,
+    keepsake: 800,
+    heart: 50,
+    peace: 100,
+    summonTicket: 50,
+  });
+  assert.equal(drawRewards({ ...state, tickets: 10 }, 10, () => 0.997).summonTickets, 10);
+  assert.equal(state.tickets, 1);
+});
+
 test('ten draws use ten independent original rolls without mutating the input or spending partially', () => {
   const state = { ...initialHealthy(), tickets: 12 };
-  const samples = [0, 0.399, 0.4, 0.549, 0.55, 0.899, 0.9, 0.959, 0.96, 0.98];
+  const samples = [0, 0.399, 0.4, 0.549, 0.55, 0.899, 0.9, 0.979, 0.98, 0.985];
   let calls = 0;
   const result = drawRewards(state, 10, () => samples[calls++]!);
   assert.equal(calls, 10);

@@ -38,7 +38,8 @@ export function demoDraw(c, random = Math.random) {
     const amount = reward.key === 'qi1' ? 1 : 2;
     c.qi += amount;
     c.totalEarned += amount;
-  } else c.inventory[reward.key]++;
+  } else if (reward.key === 'summonTicket') c.summonTickets = (c.summonTickets ?? 0) + 1;
+  else c.inventory[reward.key]++;
   c.log.unshift('Quay thưởng: ' + reward.label);
   return reward;
 }
