@@ -1,0 +1,48 @@
+{
+  "date": "2026-11-17",
+  "worker": "personal-assistant-staging",
+  "version": "1b1d01e0-4fc3-4dec-802c-c15cf17008f8",
+  "migration": "0049_reminder_deletion.sql",
+  "backend": {
+    "tests": 527,
+    "passed": 527,
+    "failed": 0
+  },
+  "browser": {
+    "tests": 48,
+    "passed": 48,
+    "failed": 0
+  },
+  "checks": {
+    "typecheck": "passed",
+    "lintChangedFiles": "passed",
+    "formatChangedFiles": "passed",
+    "webSyntax": "55 modules passed",
+    "staging": "passed",
+    "webTypecheck": "Four pre-existing HTMLElement.disabled errors in web/telegram-frame-check.js; no new errors in changed feature files"
+  },
+  "live": {
+    "pageStatus": 200,
+    "unauthenticatedDeleteStatus": 401,
+    "assets": [
+      {
+        "file": "core/http.js",
+        "status": 200,
+        "sha256": "530c8378dc9c0ed83125c190a566ddd21bedb30984de529713d70c8f86c0c3c6",
+        "matchesLocal": true
+      },
+      {
+        "file": "features/reminders.js",
+        "status": 200,
+        "sha256": "da868efbf3bb41d8f5a6ca4b46ce03256b4d89cb1539f24d8a8142d7e4cd593c",
+        "matchesLocal": true
+      },
+      {
+        "file": "core/mutations.js",
+        "status": 200,
+        "sha256": "cd931c337d4c323125ac01bf63fc039d63f9f39203e3de23c60788dff048f491",
+        "matchesLocal": true
+      }
+    ]
+  }
+}

@@ -289,7 +289,7 @@ export class D1HabitStore implements HabitStore {
       query(
         this.db,
         `SELECT l.habit_id,json_extract(r.times_json,'$[0]') AS time FROM habit_reminder_links l
-                JOIN recurrence_rules r ON r.owner=l.owner AND r.id=l.rule_id WHERE l.owner=? AND r.enabled=1
+                JOIN recurrence_rules r ON r.owner=l.owner AND r.id=l.rule_id WHERE l.owner=? AND r.enabled=1 AND r.deleted_at IS NULL
                 AND l.habit_id IN(SELECT value FROM json_each(?)) LIMIT 100`,
         owner,
         ids,
@@ -625,7 +625,7 @@ export class D1HabitStore implements HabitStore {
   private async reminderTime(owner: string, habitId: string): Promise<string | null> {
     const row = await query(
       this.db,
-      'SELECT r.enabled,r.times_json FROM habit_reminder_links l JOIN recurrence_rules r ON r.id=l.rule_id AND r.owner=l.owner WHERE l.owner=? AND l.habit_id=?',
+      'SELECT r.enabled,r.times_json FROM habit_reminder_links l JOIN recurrence_rules r ON r.id=l.rule_id AND r.owner=l.owner WHERE l.owner=? AND l.habit_id=? AND r.deleted_at IS NULL',
       owner,
       habitId,
     ).first<{ enabled: number; times_json: string }>();
@@ -651,10 +651,16 @@ export class D1HabitStore implements HabitStore {
       'SHA-256',
       new TextEncoder().encode(owner + ':' + habitId),
     );
+    // Keep a deleted rule as history; explicitly setting a new reminder creates
+    // a fresh rule instead of reviving its cancelled deliveries or tombstone.
     const id =
-      link?.rule_id ??
-      'habit-' +
-        Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+      link && !existing
+        ? 'habit-' + crypto.randomUUID()
+        : (link?.rule_id ??
+          'habit-' +
+            Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join(
+              '',
+            ));
     const selectedTime = time ?? existing!.times[0]!;
     const startMinutes = Math.floor((day.startAt + 25200000) / 60000) % 1440;
     const shift = minutes(selectedTime) < startMinutes ? 1 : 0;

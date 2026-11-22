@@ -20,6 +20,495 @@ import { ScheduleStore } from '../../src/adapters/d1/schedule-store.ts';
 import { D1BeastStore } from '../../src/adapters/d1/linh-thu-store.ts';
 
 test(
+  'reminder editor stages enabled state with edits, cancels drafts and persists both toggle directions',
+  { skip: !browserBin, timeout: 45000 },
+  async () => {
+    const control = fixture(),
+      server = await serve(control),
+      browser = await chrome();
+    const open = () => browser.evaluate("document.querySelector('.reminder-row').click()");
+    try {
+      await browser.navigate(server.url, 390);
+      await browser.wait("!!document.querySelector('.focus-flip-card')");
+      await browser.evaluate("document.querySelector('[data-tab=reminders]').click()");
+      await open();
+      assert.equal(
+        await browser.evaluate(
+          "/Dời lần kế tiếp|Bỏ lần kế tiếp|cả lịch/.test(document.querySelector('#sheet-content').textContent)",
+        ),
+        false,
+      );
+      await browser.evaluate(`
+        document.querySelector('.reminder-enable input').click();
+        document.querySelector('.reminder-editor input[type=text]').value = 'Unsaved title';
+      `);
+      assert.equal(control.posts.length, 0, 'Changing the switch must not send a mutation');
+      await browser.click('Hủy');
+      await browser.wait("!document.querySelector('#sheet').open");
+      assert.equal(control.posts.length, 0);
+      assert.equal(control.state.reminders[0].enabled, true);
+      assert.equal(control.state.reminders[0].title, 'Uống nước');
+      await open();
+      assert.equal(
+        await browser.evaluate("document.querySelector('.reminder-enable input').checked"),
+        true,
+      );
+      await browser.evaluate(`
+        document.querySelector('.reminder-enable input').click();
+        document.querySelector('.reminder-editor input[type=text]').value = 'Updated reminder';
+        document.querySelector('.reminder-editor input[type=time]').value = '10:30';
+      `);
+      await browser.click('Lưu thay đổi');
+      await browser.wait(
+        "!document.querySelector('#sheet').open && !!document.querySelector('.reminder-row.off')",
+      );
+      assert.equal(control.posts.length, 1);
+      assert.equal(control.posts[0].path, 'reminders');
+      assert.equal(control.posts[0].input.rule.enabled, false);
+      assert.equal(control.posts[0].input.rule.title, 'Updated reminder');
+      assert.deepEqual(control.posts[0].input.rule.times, ['10:30', '15:00']);
+      assert.equal(
+        await browser.evaluate("document.querySelector('.reminder-total').textContent"),
+        '0 lời nhắc đang bật',
+      );
+      await open();
+      assert.equal(
+        await browser.evaluate("document.querySelector('.reminder-enable input').checked"),
+        false,
+      );
+      await browser.evaluate("document.querySelector('.reminder-enable input').click()");
+      await browser.click('Lưu thay đổi');
+      await browser.wait(
+        "!document.querySelector('#sheet').open && !document.querySelector('.reminder-row.off')",
+      );
+      assert.equal(control.posts.length, 2);
+      assert.equal(control.state.reminders[0].enabled, true);
+      await browser.navigate(server.url, 390);
+      await browser.wait("!!document.querySelector('.focus-flip-card')");
+      await browser.evaluate("document.querySelector('[data-tab=reminders]').click()");
+      await open();
+      assert.deepEqual(
+        await browser.evaluate(`({
+        title: document.querySelector('.reminder-editor input[type=text]').value,
+        enabled: document.querySelector('.reminder-enable input').checked,
+        times: [...document.querySelectorAll('.time-slot input')].map(input => input.value)
+      })`),
+        { title: 'Updated reminder', enabled: true, times: ['10:30', '15:00'] },
+      );
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      await browser.close();
+      await server.close();
+    }
+  },
+);
+
+test(
+  'reminder editor saves once and weekday dates without leaking a hidden end date',
+  { skip: !browserBin, timeout: 45000 },
+  async () => {
+    const control = fixture(),
+      server = await serve(control),
+      browser = await chrome();
+    const open = () => browser.evaluate("document.querySelector('.reminder-row').click()");
+    try {
+      await browser.navigate(server.url, 390);
+      await browser.wait("!!document.querySelector('.focus-flip-card')");
+      await browser.evaluate("document.querySelector('[data-tab=reminders]').click()");
+      await open();
+      await browser.evaluate(`
+        (() => {
+          const end = document.querySelector('.reminder-end-option input');
+          end.click();
+          const dates = document.querySelectorAll('.reminder-editor input[type=date]');
+          dates[1].value = '2026-10-01';
+        })();
+      `);
+      assert.equal(
+        await browser.evaluate("document.querySelector('.reminder-editor').checkValidity()"),
+        false,
+      );
+      await browser.click('Lưu thay đổi');
+      assert.equal(control.posts.length, 0);
+      await browser.evaluate(`
+        (() => {
+          const repeat = document.querySelector('.reminder-editor select');
+          repeat.value = 'once';
+          repeat.dispatchEvent(new Event('change'));
+          document.querySelector('.reminder-editor input[type=date]').value = '2026-10-06';
+        })();
+      `);
+      assert.deepEqual(
+        await browser.evaluate(`({
+        label: document.querySelector('.reminder-editor input[type=date]').parentElement.firstChild.textContent,
+        endHidden: document.querySelector('.reminder-end-option').hidden,
+        endDisabled: document.querySelectorAll('.reminder-editor input[type=date]')[1].disabled
+      })`),
+        { label: 'Ngày nhắc', endHidden: true, endDisabled: true },
+      );
+      await browser.click('Lưu thay đổi');
+      await browser.wait("!document.querySelector('#sheet').open");
+      assert.equal(control.posts[0].input.rule.kind, 'once');
+      assert.equal(control.posts[0].input.rule.startDate, '2026-10-06');
+      assert.equal(control.posts[0].input.rule.endDate, null);
+      await browser.wait(
+        "document.querySelector('.reminder-repeat').textContent.includes('06/10/2026')",
+      );
+      await open();
+      await browser.evaluate(`
+        (() => {
+          const repeat = document.querySelector('.reminder-editor select');
+          repeat.value = 'weekdays';
+          repeat.dispatchEvent(new Event('change'));
+        })();
+      `);
+      await browser.click('Lưu thay đổi');
+      assert.equal(control.posts.length, 1, 'A weekday reminder needs at least one selected day');
+      await browser.evaluate(
+        "document.querySelector('.reminder-weekdays').scrollIntoView({block: 'center'})",
+      );
+      await browser.tap('.reminder-weekdays label:nth-child(2)');
+      await browser.tap('.reminder-weekdays label:nth-child(6)');
+      await browser.evaluate(`
+        document.querySelector('.reminder-end-option input').click();
+        document.querySelectorAll('.reminder-editor input[type=date]')[1].value = '2026-11-01';
+      `);
+      await browser.click('Lưu thay đổi');
+      await browser.wait("!document.querySelector('#sheet').open");
+      assert.deepEqual(control.posts[1].input.rule.weekdays, [2, 6]);
+      assert.equal(control.posts[1].input.rule.endDate, '2026-11-01');
+      await browser.wait(
+        "document.querySelector('.reminder-note')?.textContent.includes('01/11/2026')",
+      );
+      await open();
+      assert.equal(
+        await browser.evaluate("document.querySelector('.reminder-end-option input').checked"),
+        true,
+      );
+      await browser.evaluate("document.querySelector('.reminder-end-option input').click()");
+      await browser.click('Lưu thay đổi');
+      await browser.wait("!document.querySelector('#sheet').open");
+      assert.equal(control.posts[2].input.rule.endDate, null);
+      assert.equal(control.posts[2].input.rule.kind, 'weekdays');
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      await browser.close();
+      await server.close();
+    }
+  },
+);
+
+test(
+  'reminder editor keeps time limits and fixed actions usable on narrow and short screens',
+  { skip: !browserBin, timeout: 45000 },
+  async () => {
+    const control = fixture(),
+      server = await serve(control),
+      browser = await chrome();
+    try {
+      await mkdir('output/reminder-editor', { recursive: true });
+      await browser.navigate(server.url, 390);
+      await browser.wait("!!document.querySelector('.focus-flip-card')");
+      await browser.evaluate(
+        "document.querySelector('[data-tab=reminders]').click(); document.querySelector('.reminder-row').click()",
+      );
+      await browser.evaluate("document.querySelector('.time-slot button').click()");
+      assert.equal(await browser.evaluate("document.querySelectorAll('.time-slot').length"), 1);
+      assert.equal(
+        await browser.evaluate("document.querySelector('.time-slot button').hidden"),
+        true,
+      );
+      await browser.evaluate("document.querySelector('.time-slot button').click()");
+      assert.equal(await browser.evaluate("document.querySelectorAll('.time-slot').length"), 1);
+      for (let i = 0; i < 7; i++) await browser.click('+ Thêm giờ');
+      await browser.evaluate("document.querySelector('.time-slots > button').click()");
+      assert.equal(await browser.evaluate("document.querySelectorAll('.time-slot').length"), 8);
+      assert.equal(
+        await browser.evaluate("document.querySelector('.time-slots > button').disabled"),
+        true,
+      );
+      await browser.evaluate(`
+        document.activeElement.blur();
+        document.documentElement.style.setProperty('--app-host-safe-bottom', '34px');
+        document.querySelectorAll('.time-slot input').forEach((input, index) => {
+          input.value = String(index + 8).padStart(2, '0') + ':00';
+          input.dispatchEvent(new Event('input'));
+        });
+      `);
+      for (const [width, height] of [
+        [320, 568],
+        [390, 844],
+        [430, 700],
+        [390, 390],
+      ]) {
+        await browser.resize(width, height);
+        for (const position of ['top', 'bottom']) {
+          await browser.evaluate(
+            `document.querySelector('.reminder-editor-body').scrollTop = ${position === 'top' ? '0' : '10000'}`,
+          );
+          await browser.evaluate(
+            'new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))',
+          );
+          const layout = await browser.evaluate(`(() => {
+            const sheet = document.querySelector('#sheet'), body = document.querySelector('.reminder-editor-body');
+            const actions = document.querySelector('.reminder-editor-actions'), rect = actions.getBoundingClientRect();
+            const save = actions.querySelector('[type=submit]'), button = save.getBoundingClientRect();
+            const target = document.elementFromPoint(button.left + button.width / 2, button.top + button.height / 2);
+            return {
+              bounded: sheet.getBoundingClientRect().top >= 0 && rect.bottom <= innerHeight + 1,
+              noOverflow: sheet.scrollWidth <= sheet.clientWidth + 1 && body.scrollWidth <= body.clientWidth + 1,
+              scrollable: body.scrollHeight > body.clientHeight && body.clientHeight > 60,
+              reachable: save === target || save.contains(target),
+              safeBottom: parseFloat(getComputedStyle(actions).paddingBottom) >= 34
+            };
+          })()`);
+          assert.deepEqual(
+            layout,
+            {
+              bounded: true,
+              noOverflow: true,
+              scrollable: true,
+              reachable: true,
+              safeBottom: true,
+            },
+            `${width}x${height}, ${position}`,
+          );
+        }
+        if (width === 320 || height === 390)
+          await browser.screenshot(`output/reminder-editor/editor-${width}x${height}.png`);
+      }
+      await browser.resize(390, 844);
+      await browser.colorScheme('dark');
+      await delay(180);
+      await browser.evaluate("document.querySelector('.reminder-editor-body').scrollTop = 10000");
+      await browser.evaluate(
+        'new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))',
+      );
+      await browser.screenshot('output/reminder-editor/editor-dark.png');
+      await browser.tap('.reminder-editor-actions .primary');
+      await browser.wait("!document.querySelector('#sheet').open");
+      assert.equal(control.posts.length, 1);
+      assert.equal(control.posts[0].input.rule.times.length, 8);
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      await browser.close();
+      await server.close();
+    }
+  },
+);
+
+test(
+  'chat and completed once reminders retain clear status and supported edit/delete controls',
+  { skip: !browserBin, timeout: 45000 },
+  async () => {
+    const control = fixture(),
+      original = control.state.reminders[0];
+    control.state.reminders = [
+      {
+        ...clone(original),
+        id: 'chat',
+        title: 'Chat reminder',
+        kind: 'once',
+        times: ['19:00'],
+        origin: 'appointment',
+      },
+      {
+        ...clone(original),
+        id: 'sent',
+        title: 'Sent reminder',
+        kind: 'once',
+        delivered: true,
+        past: true,
+      },
+      { ...clone(original), id: 'past', title: 'Past reminder', kind: 'once', past: true },
+    ];
+    const server = await serve(control),
+      browser = await chrome();
+    try {
+      await browser.navigate(server.url, 390);
+      await browser.wait("!!document.querySelector('.focus-flip-card')");
+      await browser.evaluate(
+        "document.querySelector('[data-tab=reminders]').click(); document.querySelector('.reminder-row').click()",
+      );
+      assert.deepEqual(
+        await browser.evaluate(`({
+        toggle: !!document.querySelector('.reminder-enable'),
+        repeatDisabled: document.querySelector('.reminder-editor select').disabled,
+        addHidden: document.querySelector('.time-slots > button').hidden,
+        times: document.querySelectorAll('.time-slot').length,
+        delete: !!document.querySelector('.reminder-editor-danger button')
+      })`),
+        { toggle: false, repeatDisabled: true, addHidden: true, times: 1, delete: true },
+      );
+      await browser.evaluate(
+        "document.querySelector('.reminder-editor input[type=text]').value = 'Edited chat reminder'",
+      );
+      await browser.click('Lưu thay đổi');
+      await browser.wait("!document.querySelector('#sheet').open");
+      assert.equal(control.posts[0].input.rule.origin, 'appointment');
+      assert.equal(control.posts[0].input.rule.enabled, true);
+      assert.deepEqual(control.posts[0].input.rule.times, ['19:00']);
+      for (const [index, text] of [
+        [1, 'Đã gửi'],
+        [2, 'đã qua giờ'],
+      ]) {
+        await browser.evaluate(`document.querySelectorAll('.reminder-row')[${index}].click()`);
+        assert.ok(
+          (
+            await browser.evaluate("document.querySelector('.reminder-editor-status').textContent")
+          ).includes(text),
+        );
+        await browser.click('Hủy');
+        await browser.wait("!document.querySelector('#sheet').open");
+      }
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      await browser.close();
+      await server.close();
+    }
+  },
+);
+
+test(
+  'reminder deletion confirms each source, preserves cancellation, updates filters and survives reload',
+  { skip: !browserBin, timeout: 60000 },
+  async () => {
+    const control = fixture();
+    const original = control.state.reminders[0];
+    control.state.reminders = [
+      original,
+      { ...clone(original), id: 'disabled', title: 'Disabled reminder', enabled: false },
+      {
+        ...clone(original),
+        id: 'delivered',
+        title: 'Delivered once',
+        kind: 'once',
+        delivered: true,
+        past: true,
+      },
+      {
+        ...clone(original),
+        id: 'chat',
+        title: 'Chat reminder',
+        kind: 'once',
+        origin: 'appointment',
+      },
+    ];
+    const server = await serve(control),
+      browser = await chrome();
+    const open = async (title) => {
+      await browser.evaluate(
+        `[...document.querySelectorAll('.reminder-row')].find(row => row.textContent.includes(${JSON.stringify(title)})).click()`,
+      );
+      await browser.wait(
+        "document.querySelector('#sheet').open && !!document.querySelector('#sheet form')",
+      );
+    };
+    try {
+      await browser.navigate(server.url, 390);
+      await browser.wait("!!document.querySelector('.focus-flip-card')");
+      await browser.evaluate("document.querySelector('[data-tab=reminders]').click()");
+      await open(original.title);
+      await browser.click('Xóa lời nhắc');
+      assert.ok(
+        (await browser.evaluate("document.querySelector('#sheet-content').textContent")).includes(
+          original.title,
+        ),
+      );
+      await browser.click('Quay lại');
+      assert.equal(control.posts.filter((p) => p.path === 'reminders-delete').length, 0);
+      assert.equal(await browser.evaluate("document.querySelectorAll('.reminder-row').length"), 4);
+      for (const [index, reminder] of [...control.state.reminders].entries()) {
+        await open(reminder.title);
+        await browser.click('Xóa lời nhắc');
+        await browser.evaluate(
+          "[...document.querySelectorAll('#sheet button')].find(b => b.textContent === 'Xác nhận').scrollIntoView({block:'center'})",
+        );
+        if (index === 0) {
+          await mkdir('output/reminder-deletion', { recursive: true });
+          await browser.screenshot('output/reminder-deletion/confirm-mobile.png');
+        }
+        await browser.evaluate(
+          "(() => { const confirmation = [...document.querySelectorAll('#sheet button')].find(b => b.textContent === 'Xác nhận'); confirmation.click(); confirmation.click(); })()",
+        );
+        await browser.wait(`document.querySelectorAll('.reminder-row').length === ${3 - index}`);
+        assert.equal(control.posts.filter((p) => p.path === 'reminders-delete').length, index + 1);
+        assert.equal(
+          await browser.evaluate('document.documentElement.scrollWidth <= innerWidth + 1'),
+          true,
+        );
+      }
+      await browser.wait("document.body.textContent.includes('Một lời nhắc, nhẹ đầu hơn')");
+      assert.equal(
+        await browser.evaluate("document.querySelector('.reminder-total').textContent"),
+        '0 lời nhắc đang bật',
+      );
+      await browser.navigate(server.url, 390);
+      await browser.wait("!!document.querySelector('.focus-flip-card')");
+      await browser.evaluate("document.querySelector('[data-tab=reminders]').click()");
+      assert.equal(await browser.evaluate("document.querySelectorAll('.reminder-row').length"), 0);
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      await browser.close();
+      await server.close();
+    }
+  },
+);
+
+test(
+  'reminder deletion retries a lost committed response with the same request identity',
+  { skip: !browserBin, timeout: 45000 },
+  async () => {
+    const control = fixture(),
+      server = await serve(control),
+      browser = await chrome();
+    try {
+      await browser.navigate(server.url, 390);
+      await browser.wait("!!document.querySelector('.focus-flip-card')");
+      await browser.evaluate(`
+        window.deleteAttempts = [];
+        const transport = window.fetch.bind(window);
+        window.fetch = async (resource, options) => {
+          if (String(resource).endsWith('/api/reminders-delete')) {
+            window.deleteAttempts.push(JSON.parse(options.body));
+            const response = await transport(resource, options);
+            if (window.deleteAttempts.length === 1) throw new TypeError('Dropped response after commit');
+            return response;
+          }
+          return transport(resource, options);
+        };
+        document.querySelector('[data-tab=reminders]').click();
+      `);
+      const submit = async () => {
+        await browser.evaluate("document.querySelector('.reminder-row').click()");
+        await browser.click('Xóa lời nhắc');
+        await browser.click('Xác nhận');
+      };
+      await submit();
+      await browser.wait(
+        "window.deleteAttempts.length === 1 && document.body.textContent.includes('Chưa xác nhận')",
+      );
+      assert.equal(
+        await browser.evaluate("document.querySelectorAll('.reminder-row').length"),
+        1,
+        'Do not report success before recovering the receipt',
+      );
+      assert.equal(control.state.reminders.length, 0, 'The server already committed');
+      await submit();
+      await browser.wait("!document.querySelector('.reminder-row')");
+      const attempts = await browser.evaluate('window.deleteAttempts');
+      assert.equal(attempts.length, 2);
+      assert.equal(attempts[0].id, attempts[1].id);
+      assert.equal(control.posts.filter((p) => p.path === 'reminders-delete').length, 1);
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      await browser.close();
+      await server.close();
+    }
+  },
+);
+
+test(
   'published loot odds fit mobile and a summon-ticket draw has a readable reward label',
   { skip: !browserBin, timeout: 45000 },
   async () => {
@@ -1367,6 +1856,118 @@ test(
 );
 
 test(
+  'Telegram native bottom bar follows the app theme and tolerates older or unavailable bridges',
+  { skip: !browserBin, timeout: 60000 },
+  async () => {
+    const control = fixture();
+    const html = await readFile(new URL('../../web/index.html', import.meta.url), 'utf8');
+    const telegram = `<script>
+      localStorage.setItem('minh-anh-theme','light');
+      globalThis.__telegramEvents=new Map();
+      globalThis.__hostColors=[];
+      globalThis.Telegram={WebApp:{initData:'local-theme-test',version:'8.0',colorScheme:'dark',
+        backgroundColor:'#000000',bottomBarColor:'#3a3a3a',
+        ready(){},expand(){},onEvent(name,fn){__telegramEvents.set(name,fn)},
+        isVersionAtLeast(required){
+          const a=this.version.split('.').map(Number),b=required.split('.').map(Number);
+          return a[0]>b[0]||(a[0]===b[0]&&a[1]>=b[1]);
+        },
+        setBackgroundColor(color){this.backgroundColor=color;__hostColors.push(['background',color])},
+        setBottomBarColor(color){this.bottomBarColor=color;__hostColors.push(['bottom',color])}
+      }};
+    </script>`;
+    control.staticFiles = new Map([
+      [
+        'index.html',
+        Buffer.from(html.replace('<script type="module"', telegram + '<script type="module"')),
+      ],
+    ]);
+    const server = await serve(control);
+    let browser;
+    const colors = () =>
+      browser.evaluate(`({
+      theme:document.documentElement.dataset.theme,
+      page:getComputedStyle(document.body).backgroundColor,
+      nav:getComputedStyle(document.querySelector('.bottom-nav')).backgroundColor,
+      background:Telegram.WebApp.backgroundColor,bottom:Telegram.WebApp.bottomBarColor
+    })`);
+    try {
+      browser = await chrome();
+      await browser.navigate(server.url, 390);
+      await browser.wait('document.body.classList.contains("app-ready")');
+      assert.deepEqual(await colors(), {
+        theme: 'light',
+        page: 'rgb(244, 243, 248)',
+        nav: 'rgb(255, 255, 255)',
+        background: '#f4f3f8',
+        bottom: '#ffffff',
+      });
+      assert.deepEqual(await browser.evaluate('__hostColors'), [
+        ['background', '#f4f3f8'],
+        ['bottom', '#ffffff'],
+      ]);
+      for (const [preference, expected] of [
+        [
+          'dark',
+          {
+            theme: 'dark',
+            page: 'rgb(23, 22, 31)',
+            nav: 'rgb(34, 33, 45)',
+            background: '#17161f',
+            bottom: '#22212d',
+          },
+        ],
+        [
+          'light',
+          {
+            theme: 'light',
+            page: 'rgb(244, 243, 248)',
+            nav: 'rgb(255, 255, 255)',
+            background: '#f4f3f8',
+            bottom: '#ffffff',
+          },
+        ],
+      ]) {
+        await browser.evaluate(
+          `import('/app/core/theme.js').then(theme=>theme.setThemePreference('${preference}'))`,
+        );
+        assert.deepEqual(await colors(), expected);
+      }
+      await browser.evaluate(
+        "import('/app/core/theme.js').then(theme=>theme.setThemePreference('auto'))",
+      );
+      assert.equal((await colors()).bottom, '#22212d');
+      await browser.evaluate(
+        "Telegram.WebApp.colorScheme='light';__telegramEvents.get('themeChanged')()",
+      );
+      assert.equal((await colors()).bottom, '#ffffff');
+      const calls = await browser.evaluate('__hostColors.length');
+      await browser.evaluate("import('/app/core/theme.js').then(theme=>theme.applyTheme())");
+      assert.equal(
+        await browser.evaluate('__hostColors.length'),
+        calls,
+        'No redundant native updates',
+      );
+      await browser.evaluate(`Telegram.WebApp.version='7.9';__hostColors.length=0;
+        import('/app/core/theme.js').then(theme=>theme.setThemePreference('dark'))`);
+      assert.deepEqual(await browser.evaluate('__hostColors'), [['background', '#17161f']]);
+      await browser.evaluate(`Telegram.WebApp.version='8.0';
+        Telegram.WebApp.setBackgroundColor=Telegram.WebApp.setBottomBarColor=()=>{throw Error('Bridge unavailable')};
+        import('/app/core/theme.js').then(theme=>theme.setThemePreference('light'))`);
+      assert.equal(await browser.evaluate('document.documentElement.dataset.theme'), 'light');
+      await browser.evaluate(`delete Telegram.WebApp.setBackgroundColor;delete Telegram.WebApp.setBottomBarColor;
+        import('/app/core/theme.js').then(theme=>theme.setThemePreference('dark'))`);
+      assert.equal(await browser.evaluate('document.documentElement.dataset.theme'), 'dark');
+      assert.deepEqual(browser.errors, []);
+      assert.equal(control.posts.length, 0);
+    } finally {
+      await browser?.close();
+      await server.close();
+    }
+  },
+);
+
+test(
   'mobile frame prioritizes content, shares heading geometry and follows stable Telegram viewport and safe areas',
   { skip: !browserBin, timeout: 60000 },
   async () => {
@@ -1701,7 +2302,14 @@ test(
       await browser.wait(
         "document.querySelectorAll('.habit-card').length===8 && !document.querySelector('.feature-updating')",
       );
-      assert.deepEqual(control.calls.slice(start), ['GET linh-thu/tower', 'GET habits']);
+      await browser.wait(
+        '!!document.querySelector("#pb-entry") && !document.querySelector("#pb-entry .pb-network")',
+      );
+      assert.deepEqual(control.calls.slice(start), [
+        'GET linh-thu/tower',
+        'GET habits',
+        'GET first-step',
+      ]);
       const transitionCalls = control.calls.slice(start);
       await browser.evaluate('window.scrollTo(0,300)');
       const scroll = await browser.evaluate('scrollY');
@@ -3450,7 +4058,7 @@ test(
         210,
       );
       assert.equal(control.state.tasks[1].status, 'completed');
-      // An entirely completed plan has no editable fields and still saves its recorded totals.
+      // Completed work stays visible and actionable without resaving recorded totals.
       control.state.tasks.forEach((task) =>
         Object.assign(task, { status: 'completed', completed_at: now }),
       );
@@ -3468,19 +4076,152 @@ test(
       );
       assert.equal(
         await browser.evaluate(
-          "document.querySelector('#sheet form').innerText.includes('210 phút đã chọn')",
+          "document.querySelector('#sheet form').innerText.includes('210 phút đã ghi nhận')",
         ),
         true,
       );
-      await browser.click('Lưu kế hoạch hôm nay');
+      assert.deepEqual(
+        await browser.evaluate(
+          "[...document.querySelectorAll('.plan-completed-row')].map(row=>row.dataset.completedTaskId)",
+        ),
+        ['task-1', 'task-2', 'task-0'],
+      );
+      assert.equal(
+        await browser.evaluate(
+          "document.querySelector('#sheet button[type=submit]').checkVisibility()",
+        ),
+        false,
+      );
+      assert.equal(
+        await browser.evaluate("document.querySelector('.plan-picker').checkVisibility()"),
+        false,
+      );
+      const before = control.posts.length;
+      await browser.evaluate("document.querySelector('#sheet form').requestSubmit()");
+      assert.equal(
+        control.posts.length,
+        before,
+        'Opening a finished plan must not submit a redundant write',
+      );
+      await browser.click('Chi tiết');
+      await browser.wait("!!document.querySelector('#task-sheet-form')");
+      assert.equal(
+        await browser.evaluate("document.querySelector('#sheet-title').textContent"),
+        '#' + control.state.tasks[1].public_code + ' · Chi tiết',
+      );
+      await browser.evaluate("document.querySelector('[data-sheet-close]').click()");
+      await browser.wait("!document.querySelector('#sheet').open");
+      await browser.click('Chỉnh lịch');
+      await browser.click('Thêm công việc');
+      await browser.wait("!!document.querySelector('#task-sheet-form')");
+      assert.equal(
+        await browser.evaluate("document.querySelector('#sheet-title').textContent"),
+        'Thêm công việc',
+      );
+      await browser.evaluate("document.querySelector('[data-sheet-close]').click()");
       await browser.wait("!document.querySelector('#sheet').open");
       assert.equal(
-        control.posts.at(-1).input.items.reduce((sum, item) => sum + item.minutes, 0),
+        control.posts.length,
+        before,
+        'Viewing details or opening creation does not change records',
+      );
+      await browser.click('Chỉnh lịch');
+      await browser.click('Mở lại');
+      assert.equal(
+        await browser.evaluate("document.querySelector('#sheet-title').textContent"),
+        'Mở lại #' + control.state.tasks[1].public_code,
+      );
+      await browser.click('Quay lại');
+      await browser.wait("!document.querySelector('#sheet').open");
+      assert.equal(control.posts.length, before, 'Canceling reopening preserves completion');
+      await browser.click('Chỉnh lịch');
+      await browser.click('Mở lại');
+      await browser.click('Xác nhận');
+      await browser.wait(
+        "!!document.querySelector('.daily-plan>.daily-list .daily-item:not(.done)')",
+      );
+      assert.equal(control.posts.length, before + 1);
+      assert.equal(control.posts.at(-1).path, 'tasks');
+      assert.equal(control.posts.at(-1).input.operation, 'complete');
+      assert.equal(control.posts.at(-1).input.complete, false);
+      assert.equal(control.state.tasks[1].status, 'active');
+      await browser.click('Chỉnh lịch');
+      assert.deepEqual(await order(), ['task-1']);
+      assert.equal(
+        await browser.evaluate("document.querySelector('[data-plan-minutes]').value"),
+        '80',
+      );
+      assert.equal(
+        control.state.dailyPlan.plan.items.reduce((sum, item) => sum + item.minutes, 0),
         210,
       );
       assert.deepEqual(browser.errors, []);
     } finally {
       if (browser) await browser.close();
+      await server.close();
+    }
+  },
+);
+
+test(
+  'plan editor can defer every unfinished task while preserving completed work and supports an empty plan',
+  { skip: !browserBin, timeout: 60000 },
+  async () => {
+    const control = fixture();
+    Object.assign(control.state.tasks[1], { status: 'completed', completed_at: now });
+    control.state.dailyPlan.plan.items = [
+      { taskId: 'task-0', minutes: 90, windows: [] },
+      { taskId: 'task-1', minutes: 80, windows: [] },
+    ];
+    const server = await serve(control);
+    let browser;
+    try {
+      browser = await chrome();
+      await browser.navigate(server.url, 320);
+      await browser.wait("!!document.querySelector('.daily-plan')");
+      await browser.click('Chỉnh lịch');
+      await browser.click('Để hôm khác');
+      assert.equal(
+        await browser.evaluate("document.querySelectorAll('[data-plan-minutes]').length"),
+        0,
+      );
+      assert.equal(
+        await browser.evaluate(
+          "document.querySelector('#sheet button[type=submit]').checkVisibility()",
+        ),
+        true,
+      );
+      await browser.click('Lưu kế hoạch hôm nay');
+      await browser.wait("!document.querySelector('#sheet').open");
+      assert.deepEqual(control.posts.at(-1).input.items, [{ taskId: 'task-1', minutes: 80 }]);
+      assert.equal(control.state.tasks[0].status, 'active');
+      assert.equal(control.state.tasks[1].status, 'completed');
+      control.state.dailyPlan.plan.items = [];
+      control.state.dailyPlan.plan.planned = 0;
+      await browser.navigate(server.url, 320);
+      await browser.wait("!!document.querySelector('.daily-plan')");
+      await browser.click('Chỉnh lịch');
+      assert.equal(
+        await browser.evaluate(
+          "document.querySelector('#sheet button[type=submit]').checkVisibility()",
+        ),
+        false,
+      );
+      assert.equal(
+        await browser.evaluate("document.querySelector('.plan-picker').checkVisibility()"),
+        true,
+      );
+      await browser.click('+ Thêm vào hôm nay');
+      assert.equal(
+        await browser.evaluate(
+          "document.querySelector('#sheet button[type=submit]').checkVisibility()",
+        ),
+        true,
+      );
+      assert.equal((await snapshot(browser)).overflow, false);
+      assert.deepEqual(browser.errors, []);
+    } finally {
+      await browser?.close();
       await server.close();
     }
   },

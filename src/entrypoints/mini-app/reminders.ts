@@ -18,11 +18,100 @@ export async function readReminders({ env, owner, now }: MiniAppContext, url: UR
   );
   return json({ reminders: page.rules, nextCursor: page.nextCursor });
 }
+async function prepareAppointmentDelete(
+  { env, owner }: MiniAppContext,
+  id: string,
+  version: number,
+) {
+  const row = await query(
+    env.DB,
+    `SELECT a.version,EXISTS(SELECT 1 FROM outbox b
+      WHERE b.reminder_id IN ('appointment:'||a.id||':1','appointment:'||a.id||':2') AND b.state='sending') AS sending
+      FROM task_appointments a WHERE a.owner=? AND a.id=? AND a.status IN ('active','expired')`,
+    owner,
+    id,
+  ).first<{ version: number; sending: number }>();
+  if (!row) throw Error('REMINDER_NOT_FOUND');
+  if (row.version !== version) throw Error('REMINDER_CHANGED');
+  if (row.sending) throw Error('REMINDER_SENDING');
+  return [
+    query(
+      env.DB,
+      `INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(
+        SELECT 1 FROM task_appointments a WHERE a.owner=? AND a.id=? AND a.version=? AND a.status IN ('active','expired')
+        AND NOT EXISTS(SELECT 1 FROM outbox b
+          WHERE b.reminder_id IN ('appointment:'||a.id||':1','appointment:'||a.id||':2') AND b.state='sending')) THEN 1 ELSE 0 END`,
+      owner,
+      id,
+      version,
+    ),
+    query(
+      env.DB,
+      "UPDATE task_appointments SET status='cancelled',version=version+1 WHERE owner=? AND id=?",
+      owner,
+      id,
+    ),
+    query(
+      env.DB,
+      "UPDATE outbox SET state='failed' WHERE state='pending' AND reminder_id IN (?,?)",
+      'appointment:' + id + ':1',
+      'appointment:' + id + ':2',
+    ),
+  ];
+}
 export async function handleReminders(
   { env, owner, now, healthy }: MiniAppContext,
   input: MiniAppInput,
   path: string,
 ): Promise<Response | undefined> {
+  if (path === '/api/reminders-delete') {
+    if (
+      Object.keys(input).some(
+        (key) => !['id', 'reminderId', 'origin', 'version', 'confirm'].includes(key),
+      ) ||
+      typeof input.reminderId !== 'string' ||
+      !input.reminderId.trim() ||
+      input.reminderId.length > 200 ||
+      !Number.isSafeInteger(input.version) ||
+      Number(input.version) < 1 ||
+      (input.origin !== undefined && input.origin !== 'appointment')
+    )
+      return json({ error: 'INVALID_REQUEST' }, 400);
+    if (input.confirm !== true) throw Error('CONFIRM_DELETE');
+    const reminderId = input.reminderId,
+      version = Number(input.version);
+    const prepare = () =>
+      input.origin === 'appointment'
+        ? prepareAppointmentDelete({ env, owner, now, healthy }, reminderId, version)
+        : new RecurrenceStore(env.DB).prepareDelete(owner, reminderId, version, now);
+    try {
+      const result = await healthy.mutate(
+        owner,
+        input.id,
+        'delete-reminder',
+        input,
+        now,
+        async (state) => ({
+          state,
+          result: { deleted: true, reminderId, origin: input.origin ?? null },
+          statements: await prepare(),
+        }),
+      );
+      return json({ result });
+    } catch (error) {
+      const replay = await healthy.receipt(owner, input.id, 'delete-reminder', input);
+      if (replay) return json({ result: replay.result });
+      // Reclassify a failed atomic guard after a concurrent edit or dispatcher
+      // claim. The receipt is checked inside mutate before any preconditions.
+      if (
+        error instanceof Error &&
+        (error.message.startsWith('REMINDER_') || error.message === 'REQUEST_ID_REUSED')
+      )
+        throw error;
+      await prepare();
+      throw error;
+    }
+  }
   if (path === '/api/reminder-instance') {
     if (
       Object.keys(input).some((k) => !['id', 'ruleId', 'operation', 'due'].includes(k)) ||

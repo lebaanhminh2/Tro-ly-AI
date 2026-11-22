@@ -1,0 +1,128 @@
+{
+  "revision": "anti-procrastination-approved-2026-11-16",
+  "approvedOn": "2026-11-16",
+  "canonical": "index.html",
+  "handoff": "README.md",
+  "verification": "VERIFICATION.md",
+  "holdMs": 3000,
+  "workMs": 300000,
+  "completionMs": 1000,
+  "scope": "Standalone local prototype; not integrated or deployed",
+  "files": [
+    {
+      "path": "index.html",
+      "bytes": 167204,
+      "sha256": "5a406bd64347177f5094858414302739a846b6cc48473f12e7da174fa56bfe6f"
+    },
+    {
+      "path": "README.md",
+      "bytes": 14560,
+      "sha256": "c4a34c6ab07254d7e313d28cbc013209987820008920d45ca60e91469215ab11"
+    },
+    {
+      "path": "VERIFICATION.md",
+      "bytes": 4528,
+      "sha256": "f3053d58e328bb18e5511100396efa3278cce18afb1089985acb1dd55244f988"
+    },
+    {
+      "path": "reference/01-idle.png",
+      "bytes": 19966,
+      "sha256": "4a897d95d583dc8f49d7f25ce3a9129cc5e4a3af520c2c46e159b359deec948f"
+    },
+    {
+      "path": "reference/02-blue-flight.png",
+      "bytes": 84085,
+      "sha256": "392ebe37f175d205ffc92ba779b204a837b14c69278fcdeb1c41e226c26adb13"
+    },
+    {
+      "path": "reference/03-gold-signal.png",
+      "bytes": 128075,
+      "sha256": "4a47f6a2e535903c15307fda58c970db5d3e392555907904cc1aed81043c2205"
+    },
+    {
+      "path": "reference/04-close-pass.png",
+      "bytes": 164257,
+      "sha256": "960f099a68b4b33c2e8682398e1a2e8fffc9df62ad3ce44a84c32c38361eb980"
+    },
+    {
+      "path": "reference/05-launch.png",
+      "bytes": 98081,
+      "sha256": "61f55ccc8da2b847c4ea6a0e89ede22a4b06b2e7a8f6246508fd1def3d3d28ee"
+    },
+    {
+      "path": "reference/06-running.png",
+      "bytes": 20081,
+      "sha256": "775de3ecc8522eeaa7fe76b1390b48fe1e21f3e0a422608a3fae6bfb9e48cb79"
+    },
+    {
+      "path": "reference/07-cancel-menu.png",
+      "bytes": 44936,
+      "sha256": "7054f9480cce40170fcbda2750755a448151c902ebdadad6fdfbeddb2100ae0d"
+    },
+    {
+      "path": "reference/08-cancel-confirm.png",
+      "bytes": 41984,
+      "sha256": "103b4c7bc6bdae3e16a8a2dd9c20b5ce1f5381cd9d98257c57a2f68dc65b5ab9"
+    },
+    {
+      "path": "reference/09-after-cancel.png",
+      "bytes": 48138,
+      "sha256": "285fe561f43227acfcfaa48fbf5720ef64e59a74a1af5ec92571a8ca9138e43a"
+    },
+    {
+      "path": "reference/10-reduced-motion.png",
+      "bytes": 48379,
+      "sha256": "1d0b9245575e68fa67674b721fbe8ba466da9fd87052d58179e335d7c1bd9bc4"
+    },
+    {
+      "path": "reference/approved-motion.gif",
+      "bytes": 1407805,
+      "sha256": "a239ed3afaaf3f4470b87907cc4ebc5fe8c4a60cb045f1264618c9cbbdaa2ff9"
+    },
+    {
+      "path": "reference/habit-1440-light.png",
+      "bytes": 58494,
+      "sha256": "fa6fd44e99e882d054c57bd61335a8a77c827e625296783e686a0a418dc3917c"
+    },
+    {
+      "path": "reference/habit-320-dark.png",
+      "bytes": 41228,
+      "sha256": "43df589023365896a1f460a34cce5cc8334a6719fd96bdc9ddfe404732a2d175"
+    },
+    {
+      "path": "reference/habit-320-light.png",
+      "bytes": 40709,
+      "sha256": "938d1955b3add68c07a885dd30537d1675303c7c77e41c5a39258432ff6836cb"
+    },
+    {
+      "path": "reference/habit-375-dark.png",
+      "bytes": 42481,
+      "sha256": "c309ad0a3810ae353ad98dcf5eb9f9560bd609847c2b82d14c3352f17c188af9"
+    },
+    {
+      "path": "reference/habit-375-light.png",
+      "bytes": 42199,
+      "sha256": "fdea4b43c23ff0546718c270159047264ce138cc80c05947bab78cf3dbd38921"
+    },
+    {
+      "path": "reference/habit-390-dark.png",
+      "bytes": 44439,
+      "sha256": "37cf608d624a03150919ba045a8a9246b8b8a275b3e5930237a64e30120fff16"
+    },
+    {
+      "path": "reference/habit-390-light.png",
+      "bytes": 44140,
+      "sha256": "e9dac4ce22b1a9567604c1e29e6a1b571c0b4b7adebcd05a16a96e4a3fcd5b6f"
+    },
+    {
+      "path": "reference/habit-768-light.png",
+      "bytes": 46799,
+      "sha256": "888956f92947d072759d54d2790a0cb4e808dd1fde31b680e1ac4c081f739096"
+    },
+    {
+      "path": "reference/implemented-motion.gif",
+      "bytes": 1368328,
+      "sha256": "38b0b7650c22ad1ab016ff3761e2156be5ab902ae5000bf3b10ac0357de712a2"
+    }
+  ]
+}

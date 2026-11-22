@@ -506,6 +506,7 @@ p {
 .shell {
   max-width: 520px;
   margin: auto;
+  min-height: 100vh;
   min-height: 100dvh;
 }
 .demo-strip {
@@ -522,6 +523,8 @@ p {
   justify-content: space-between;
   padding: 22px 22px 18px;
   padding-top: max(22px, env(safe-area-inset-top));
+  padding-right: max(22px, env(safe-area-inset-right, 0px));
+  padding-left: max(22px, env(safe-area-inset-left, 0px));
 }
 .identity {
   display: flex;
@@ -564,7 +567,8 @@ p {
   font-size: 21px;
 }
 main {
-  padding: 8px 22px 125px;
+  padding: 8px max(22px, env(safe-area-inset-right, 0px)) 125px
+    max(22px, env(safe-area-inset-left, 0px));
   outline: none;
 }
 .heading {
@@ -2230,6 +2234,219 @@ dialog.settings-sheet-open .habit-editor {
   font-size: 12px;
   padding: 8px;
 }
+/* Reminder fields scroll while the title and save/cancel controls stay reachable. */
+dialog:has(.reminder-editor) {
+  height: min(88dvh, 760px);
+  padding-bottom: 0;
+}
+dialog:has(.reminder-editor) .sheet-handle {
+  margin-bottom: 14px;
+}
+#sheet-content:has(.reminder-editor) {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+  scrollbar-gutter: auto;
+}
+dialog:has(.reminder-editor) .sheet-title-row {
+  position: relative;
+  flex: 0 0 auto;
+  margin-bottom: 0;
+}
+dialog:has(.reminder-editor) #sheet-feedback {
+  flex: 0 0 auto;
+}
+.reminder-editor {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+.reminder-editor-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 2px 20px;
+  scroll-padding-block: 16px;
+}
+.reminder-editor .form-field {
+  min-width: 0;
+  margin: 16px 0;
+  gap: 6px;
+}
+.reminder-editor .time-slots {
+  margin: 20px 0;
+}
+.reminder-editor .time-slot .form-field {
+  margin: 6px 0;
+}
+.reminder-editor .time-slot .secondary {
+  min-height: 44px;
+  margin-top: 4px;
+}
+.reminder-editor .time-slots > .text-button {
+  min-height: 44px;
+  margin-top: 4px;
+}
+.reminder-repeat-fields {
+  padding-bottom: 4px;
+}
+.reminder-weekdays {
+  border: 0;
+  padding: 0;
+  margin: 16px 0;
+  min-width: 0;
+}
+.reminder-weekdays legend {
+  padding: 0;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+.reminder-weekdays .weekday-list {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+.reminder-weekdays label {
+  position: relative;
+  justify-content: center;
+  min-width: 0;
+  min-height: 44px;
+  padding: 6px 2px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.reminder-weekdays input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+}
+.reminder-weekdays label:has(:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.reminder-weekdays label:has(:checked) {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  font-weight: 700;
+}
+@media (max-width: 360px) {
+  .reminder-weekdays .weekday-list {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+.reminder-end-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  font-size: 14px;
+}
+.reminder-end-option input {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  accent-color: var(--accent);
+}
+.reminder-enable {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 0;
+  border-top: 1px solid var(--line);
+}
+.reminder-enable strong {
+  display: block;
+  font-size: 15px;
+}
+.reminder-enable small {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.reminder-enable input {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  flex: 0 0 auto;
+  width: 48px;
+  height: 30px;
+  margin: 7px 0;
+  border: 1px solid var(--muted);
+  border-radius: 20px;
+  background: var(--line);
+  cursor: pointer;
+}
+.reminder-enable input::before {
+  content: '';
+  display: block;
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--surface);
+}
+.reminder-enable input:checked {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+.reminder-enable input:checked::before {
+  transform: translateX(18px);
+  background: #fff;
+}
+.reminder-enable input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+.reminder-enable input:disabled {
+  opacity: 0.5;
+}
+.reminder-editor-status {
+  padding: 12px;
+  margin: 16px 0;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.reminder-editor-danger {
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+  margin-top: 4px;
+}
+.reminder-editor-danger > button {
+  width: 100%;
+  min-height: 46px;
+}
+.reminder-editor-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.7fr);
+  flex: 0 0 auto;
+  gap: 10px;
+  padding: 14px 0 max(20px, env(safe-area-inset-bottom, 0px), var(--app-host-safe-bottom, 0px));
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+.reminder-editor-actions > button {
+  min-width: 0;
+  min-height: 48px;
+  padding: 12px 8px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
 .inventory-group {
   font-size: 11px;
   letter-spacing: 1.5px;
@@ -2409,6 +2626,40 @@ textarea {
   border: 1px solid var(--line);
   border-radius: 12px;
   padding: 8px;
+}
+.plan-picker[hidden] {
+  display: none;
+}
+.plan-completed {
+  margin: 18px 0;
+}
+.plan-completed-summary {
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+.plan-completed-row {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+.plan-completed-row small {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.plan-completed-actions,
+.plan-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.plan-editor-actions > button {
+  flex: 1 1 150px;
+}
+.plan-editor-actions > button[hidden] {
+  display: none;
 }
 .daily-item.done {
   opacity: 0.7;
@@ -4921,12 +5172,13 @@ dialog.schedule-sheet-open .sheet-submit .primary {
   display: none;
 }
 .login-screen main {
-  padding-bottom: 32px;
+  padding-bottom: max(32px, env(safe-area-inset-bottom, 0px));
 }
 @media (min-width: 900px) {
   .shell {
     max-width: 1280px;
-    padding: 0 24px;
+    padding: env(safe-area-inset-top, 0px) max(24px, env(safe-area-inset-right, 0px)) 0
+      max(24px, env(safe-area-inset-left, 0px));
     display: grid;
     grid-template-columns: 210px minmax(0, 1fr);
     column-gap: 24px;
@@ -5818,6 +6070,7 @@ html[data-motion='reduce'] *::after {
 
 /* Both Today modes share the same frame, toolbar and work-row geometry. */
 html {
+  background: var(--bg);
   scrollbar-gutter: stable;
 }
 .today-page .today-view-switch {

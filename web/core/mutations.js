@@ -36,6 +36,13 @@ export function createMutations({
       toast('Thao tác trước đang được lưu. Bạn có thể tiếp tục xem các mục khác.');
       return null;
     }
+    if (runtime.pendingFirstStep?.session !== runtime.session) runtime.pendingFirstStep = null;
+    if (runtime.pendingFirstStep && path !== 'first-step') {
+      toast(
+        'Còn một lượt Phá trì hoãn chưa xác nhận. Vào Thói quen và kiểm tra kết quả trước nhé.',
+      );
+      return null;
+    }
     if (runtime.pendingBeast) {
       toast('Còn một giao ước chưa xác nhận. Vào Linh thú và bấm Kiểm tra kết quả trước nhé.');
       return null;
@@ -147,6 +154,18 @@ export function createMutations({
         state.tasks = state.tasks.filter((task) => !ids.has(task.id));
         reconciled = true;
       }
+      if (path === 'reminders-delete' && result.deleted && result.reminderId === input.reminderId) {
+        state.reminders = state.reminders.filter(
+          (reminder) =>
+            reminder.id !== input.reminderId ||
+            (reminder.origin ?? null) !== (input.origin ?? null),
+        );
+        // Offsets change after deletion. Hide stale pagination until bootstrap
+        // supplies a fresh first page, and invalidate a linked habit's display.
+        state.remindersNextCursor = null;
+        state.habitRefreshedAt = 0;
+        reconciled = true;
+      }
       if (path === 'sleep') {
         if (result.sleep) state.sleepStatus = result.sleep;
         if (result.rest) {
@@ -184,21 +203,28 @@ export function createMutations({
         sheet.close();
       if (!options.silent)
         toast(
-          result?.reward
-            ? 'Nhận ' + (rewardLabels[result.reward] ?? result.reward)
-            : typeof result?.success === 'boolean'
-              ? result.success
-                ? 'Thành công ✦'
-                : 'Chưa thành công. Kết quả đã lưu.'
-              : result?.protected
-                ? 'Đã kích hoạt bảo vệ cho hôm nay.'
-                : 'Đã lưu.',
+          path === 'reminders-delete' && result.deleted
+            ? 'Đã xóa lời nhắc.'
+            : result?.reward
+              ? 'Nhận ' + (rewardLabels[result.reward] ?? result.reward)
+              : typeof result?.success === 'boolean'
+                ? result.success
+                  ? 'Thành công ✦'
+                  : 'Chưa thành công. Kết quả đã lưu.'
+                : result?.protected
+                  ? 'Đã kích hoạt bảo vệ cho hôm nay.'
+                  : 'Đã lưu.',
           undefined,
           { kind: 'success' },
         );
       return result;
     } catch (error) {
       if (writeRevision !== runtime.revision || session !== runtime.session) return null;
+      if (
+        path === 'reminders-delete' &&
+        ['REMINDER_CHANGED', 'REMINDER_NOT_FOUND'].includes(error.code)
+      )
+        state.baseDirty = true;
       if (
         fusionAttempt &&
         !['NETWORK_UNCONFIRMED', 'OPERATION_NOT_CONFIRMED'].includes(error.code) &&

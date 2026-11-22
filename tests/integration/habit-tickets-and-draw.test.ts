@@ -673,7 +673,14 @@ test('draw x10 is atomic, validates count and replays identical results after se
     const qiCount = saved.result.rewards.filter(
       (key: string) => key === 'qi1' || key === 'qi2',
     ).length;
-    assert.equal(inventory.reduce((sum, n) => sum + n, 0) + qiCount, 10);
+    const summonCount = saved.result.rewards.filter((key: string) => key === 'summonTicket').length;
+    const beastAccount = await db
+      .prepare(
+        "SELECT json_extract(state_json,'$.summonTickets') AS tickets FROM beast_accounts WHERE owner='123'",
+      )
+      .first<{ tickets: number }>();
+    assert.equal(beastAccount?.tickets ?? 0, summonCount);
+    assert.equal(inventory.reduce((sum, n) => sum + n, 0) + qiCount + summonCount, 10);
     await healthy.mutate('123', 'suspend_draw01', 'fixture', {}, monday, (s) => ({
       state: { ...s, suspended: true },
       result: {},

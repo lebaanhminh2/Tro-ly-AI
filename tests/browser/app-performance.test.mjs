@@ -562,7 +562,9 @@ test(
   options,
   async (t) => {
     const { browser } = await open(t);
-    await mkdir('output/app-performance', { recursive: true });
+    await mkdir(process.env.UI_SCREENSHOT_DIR ?? 'trial-results/app-performance', {
+      recursive: true,
+    });
     await browser.evaluate(`(async()=>{
     const {createFeedback}=await import('/app/ui/feedback.js');
     window.notice=createFeedback({sheet:document.querySelector('#sheet')}).toast;
@@ -589,7 +591,9 @@ test(
           assert.ok(geometry.bottom <= geometry.navTop - 8, JSON.stringify(geometry));
         assert.equal(geometry.overflow, false);
         measurements.push({ viewportWidth: width, theme, ...geometry });
-        await browser.screenshot(`output/app-performance/notice-${width}-${theme}.png`);
+        await browser.screenshot(
+          `${process.env.UI_SCREENSHOT_DIR ?? 'trial-results/app-performance'}/notice-${width}-${theme}.png`,
+        );
         await browser.tap('#toast .notice-close');
       }
     await browser.resize(320, 844);
@@ -618,7 +622,9 @@ test(
       safeBottom: 20,
       ...accessible,
     });
-    await browser.screenshot('output/app-performance/notice-320-large-text.png');
+    await browser.screenshot(
+      `${process.env.UI_SCREENSHOT_DIR ?? 'trial-results/app-performance'}/notice-320-large-text.png`,
+    );
     await browser.scaleText(1);
     await browser.evaluate(
       "document.documentElement.style.removeProperty('--app-host-safe-bottom')",
@@ -637,7 +643,9 @@ test(
       await browser.evaluate("document.querySelectorAll('#sheet .notice-message').length"),
       1,
     );
-    await browser.screenshot('output/app-performance/notice-dialog-390.png');
+    await browser.screenshot(
+      `${process.env.UI_SCREENSHOT_DIR ?? 'trial-results/app-performance'}/notice-dialog-390.png`,
+    );
     // Native close restores focus in a queued event. Let it finish before
     // focusing the notification so it cannot steal focus during this check.
     await browser.evaluate(`(() => {
@@ -666,7 +674,7 @@ test(
     await browser.evaluate('document.activeElement.blur()');
     await browser.wait("!document.querySelector('#toast').classList.contains('visible')");
     await writeFile(
-      'output/app-performance/notice-geometry.json',
+      `${process.env.UI_SCREENSHOT_DIR ?? 'trial-results/app-performance'}/notice-geometry.json`,
       JSON.stringify(measurements, null, 2),
     );
     assert.deepEqual(browser.errors, []);

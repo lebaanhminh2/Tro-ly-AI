@@ -12,7 +12,9 @@ import { D1HabitStore } from '../../src/adapters/d1/habit-store.ts';
 import { ScheduleStore } from '../../src/adapters/d1/schedule-store.ts';
 import { HealthyStore } from '../../src/adapters/d1/healthy-store.ts';
 
-const evidence = 'trial-results/habits-v2/live';
+const evidence = process.env.UI_SCREENSHOT_DIR
+  ? process.env.UI_SCREENSHOT_DIR + '/habits-v2'
+  : 'trial-results/habits-v2/live';
 async function setup() {
   const mf = new Miniflare({
     modules: true,
@@ -80,7 +82,7 @@ async function setup() {
   const secret = 'local-test-token';
   control.testNow = now;
   control.api = async (request, endpoint) => {
-    if (endpoint === 'journals' || endpoint === 'habits') {
+    if (endpoint === 'journals' || endpoint === 'habits' || endpoint === 'first-step') {
       if (control.failJournals && endpoint === 'journals' && request.method === 'POST')
         return Response.json(
           { error: 'OPERATION_NOT_CONFIRMED', message: 'Mất kết nối thử nghiệm' },
@@ -609,6 +611,14 @@ test(
         .prepare('SELECT * FROM daily_journals WHERE owner=? AND day=?')
         .bind('123', f.day)
         .first();
+    const tapVisible = async (selector) => {
+      await b.evaluate(
+        'document.querySelector(' +
+          JSON.stringify(selector) +
+          ').scrollIntoView({block:"center",behavior:"instant"})',
+      );
+      await b.tap(selector);
+    };
     const write = async (value) =>
       b.evaluate(
         '(()=>{const input=document.querySelector("[name=achieved]");input.value=' +
@@ -627,7 +637,7 @@ test(
       await b.wait('!!document.querySelector(".focus-flip-card")');
       await b.tap('[data-tab=habits]');
       await b.wait('!!document.querySelector(".hv2-diary-entry")');
-      await b.tap('.hv2-diary-entry');
+      await tapVisible('.hv2-diary-entry');
       await b.wait('!!document.querySelector(".diary-sheet textarea")');
       await b.evaluate(
         'localStorage.setItem("minh-anh-theme","light");document.documentElement.dataset.theme="light";document.querySelector("[name=lessons]").focus()',
@@ -682,7 +692,7 @@ test(
       const text = 'Đọc sách được 20 phút\nNgày mai bắt đầu sớm hơn. <img src=x onerror=alert(1)>';
       await write(text);
       await b.tap('[data-sheet-close]');
-      await b.tap('.hv2-diary-entry');
+      await tapVisible('.hv2-diary-entry');
       await b.wait('!!document.querySelector(".diary-sheet textarea")');
       assert.equal(await b.evaluate('document.querySelector("[name=achieved]").value'), text);
       const before = (await f.healthy.read('123')).state;
@@ -696,7 +706,7 @@ test(
       await b.wait('!!document.querySelector(".focus-flip-card")');
       await b.tap('[data-tab=habits]');
       await b.wait('!!document.querySelector(".hv2-diary-entry")');
-      await b.tap('.hv2-diary-entry');
+      await tapVisible('.hv2-diary-entry');
       await b.wait('!!document.querySelector(".diary-sheet textarea")');
       await b.evaluate('document.querySelector(".diary-sheet").requestSubmit()');
       await b.wait('!!document.querySelector(".diary-reading")');
@@ -725,7 +735,7 @@ test(
       await b.scaleText(1);
       await b.resize(390, 844);
       await b.tap('[data-sheet-close]');
-      await b.tap('.hv2-menu > summary');
+      await tapVisible('.hv2-menu > summary');
       await b.click('Nhật ký', '.hv2-menu-items button');
       await b.wait('!!document.querySelector(".diary-day")');
       await b.screenshot(evidence + '/13-real-journal-list-390.png');

@@ -12,7 +12,7 @@ export function renderReminders(ui, state) {
     root.append(
       el(
         'p',
-        'Đang ngừng gửi nhắc chủ động. Cậu vẫn sửa được các lịch bên dưới; “đang bật” không có nghĩa sẽ gửi trong lúc nghỉ.',
+        'Đang ngừng gửi nhắc chủ động. Cậu vẫn sửa được các lời nhắc bên dưới; “đang bật” không có nghĩa sẽ gửi trong lúc nghỉ.',
         'footer-note',
       ),
     );
@@ -40,7 +40,8 @@ export function renderReminders(ui, state) {
     toggle,
     el(
       'p',
-      state.reminders.filter((r) => r.enabled && !r.past && !r.delivered).length + ' lịch đang bật',
+      state.reminders.filter((r) => r.enabled && !r.past && !r.delivered).length +
+        ' lời nhắc đang bật',
       'reminder-total',
     ),
   );
@@ -62,15 +63,13 @@ export function renderReminders(ui, state) {
       ? 'Đã gửi lời nhắc · tự ẩn khi sang ngày mới'
       : r.past
         ? 'Đã qua giờ · tự ẩn khi sang ngày mới'
-        : r.skipped
-          ? 'Bỏ lần kế tiếp · lịch lặp vẫn giữ'
-          : !r.enabled
-            ? 'Không gửi lời nhắc mới'
-            : r.kind !== 'once'
-              ? r.end
-                ? 'Đến ' + r.end.split('-').reverse().join('/')
-                : 'Tiếp tục đến khi cậu tắt'
-              : '';
+        : !r.enabled
+          ? 'Không gửi lời nhắc mới'
+          : r.kind !== 'once'
+            ? r.end
+              ? 'Đến ' + r.end.split('-').reverse().join('/')
+              : 'Tiếp tục đến khi cậu tắt'
+            : '';
     if (note) main.append(el('small', note, 'reminder-note'));
     const badge = el(
       'span',
@@ -86,7 +85,7 @@ export function renderReminders(ui, state) {
     const empty = el('div', undefined, 'reminder-empty');
     empty.append(
       el('span', '◷', 'reminder-empty-mark'),
-      el('h2', state.reminders.length ? 'Nhóm này chưa có lịch' : 'Một lời nhắc, nhẹ đầu hơn'),
+      el('h2', state.reminders.length ? 'Nhóm này chưa có lời nhắc' : 'Một lời nhắc, nhẹ đầu hơn'),
       el(
         'p',
         state.reminders.length

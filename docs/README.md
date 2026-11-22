@@ -8,6 +8,10 @@ Cập nhật 21/10/2026. Mục lục cho mã nguồn hiện hành của trợ l�
 
 ## Tài liệu runtime và bối cảnh hiện hành
 
+Phần **Phá trì hoãn trong Habit** đã chốt thiết kế ngày 16/11/2026: [HTML chạy local và hướng dẫn triển khai](prototypes/anti-procrastination/README.md), kèm GIF, ảnh đối chiếu và thông số chuyển động. Giữ 3 giây → bắt đầu 5 phút, có hủy lượt từ menu ba chấm; tự xác nhận đã làm nhận +1 tu vi và +1 vé mỗi lần. Đây là demo đã duyệt, chưa tích hợp vào ứng dụng thật.
+
+[Kế hoạch triển khai và ma trận nghiệm thu](ANTI_PROCRASTINATION_IMPLEMENTATION.md), [lệnh goal chạy qua đêm đến staging](ANTI_PROCRASTINATION_GOAL.md): nguồn đầu vào cho đợt triển khai tiếp theo, chưa khởi chạy.
+
 | Tài liệu                                      | Khi cần đọc                                                             |
 | --------------------------------------------- | ----------------------------------------------------------------------- |
 | [Sản phẩm](PRODUCT_BRIEF.md)                  | Chức năng, năm mục điều hướng và nguyên tắc trải nghiệm                 |

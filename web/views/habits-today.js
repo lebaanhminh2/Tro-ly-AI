@@ -380,6 +380,7 @@ export function renderHabitToday(ui, state) {
     bulk.append(el('p', selection.size + ' thói quen đã chọn'), remove);
     root.append(bulk);
   } else if (!archived) {
+    if (state.live && ui.firstStepCard) root.append(ui.firstStepCard());
     const diary = button(
       '',
       (event) => ui.openJournal(undefined, false, event.currentTarget),

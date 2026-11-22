@@ -323,6 +323,13 @@ function fixture() {
       state.settings.start_minutes = minutes(input.start);
       state.settings.sleep_minutes = minutes(input.sleep);
       state.settings.auto_plan_delay_minutes = input.autoPlanDelayMinutes;
+    } else if (path === 'reminders-delete') {
+      const target = state.reminders.find(
+        (r) => r.id === input.reminderId && r.origin === input.origin,
+      );
+      assert.ok(target && target.version === input.version && input.confirm === true);
+      state.reminders = state.reminders.filter((r) => r !== target);
+      result = { deleted: true, reminderId: target.id, origin: target.origin ?? null };
     } else if (path === 'reminders') {
       const rule = input.rule,
         existing = state.reminders.find((r) => r.id === rule.id);
@@ -422,6 +429,10 @@ async function serve(control, baseline) {
         if (request.method === 'GET' && control.failedReads?.has(endpoint)) {
           response.statusCode = 503;
           response.end(JSON.stringify({ error: 'OPERATION_NOT_CONFIRMED' }));
+          return;
+        }
+        if (endpoint === 'first-step' && request.method === 'GET') {
+          response.end(JSON.stringify({ owner: '123', serverNow: now, active: null }));
           return;
         }
         if (endpoint.startsWith('linh-thu') && control.beastApi) {
@@ -853,6 +864,11 @@ async function chrome() {
       errors,
       evaluate,
       wait,
+      // Continuous trusted input is needed to test press-and-hold interactions.
+      async dispatchInput(method, params) {
+        assert.ok(method.startsWith('Input.'), 'Only CDP input methods are exposed here');
+        return call(method, params);
+      },
       async scaleText(factor = 1) {
         await evaluate(`(() => {
                     const originals = globalThis.__qaTextOriginals ??= new Map();
@@ -915,6 +931,9 @@ async function chrome() {
             { name: 'prefers-reduced-motion', value: enabled ? 'reduce' : 'no-preference' },
           ],
         });
+        await evaluate(
+          'new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))',
+        );
       },
       async screenshot(path) {
         const { data } = await call('Page.captureScreenshot', {
@@ -923,11 +942,11 @@ async function chrome() {
         });
         await writeFile(path, Buffer.from(data, 'base64'));
       },
-      async resize(width, height) {
+      async resize(width, height, deviceScaleFactor = 1) {
         await call('Emulation.setDeviceMetricsOverride', {
           width,
           height,
-          deviceScaleFactor: 1,
+          deviceScaleFactor,
           mobile: width < 900,
         });
         await evaluate(

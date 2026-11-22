@@ -15,10 +15,15 @@ import { handleSchedule } from './mini-app/schedule.ts';
 import { handleTasks } from './mini-app/tasks.ts';
 import { handleHabits, readHabits } from './mini-app/habits.ts';
 import { handleJournals, readJournals } from './mini-app/journals.ts';
+import { handleFirstStep, readFirstStep } from './mini-app/first-step.ts';
 import { handleBeasts, readBeasts } from './mini-app/linh-thu.ts';
 import { logFailure, MiniAppTiming } from '../adapters/observability.ts';
 const taskRoutes = new Set(['/api/tasks', '/api/tasks-delete']);
-const reminderRoutes = new Set(['/api/reminders', '/api/reminder-instance']);
+const reminderRoutes = new Set([
+  '/api/reminders',
+  '/api/reminder-instance',
+  '/api/reminders-delete',
+]);
 const scheduleRoutes = new Set([
   '/api/settings',
   '/api/schedule',
@@ -36,6 +41,7 @@ const writeRoutes = new Set([
   '/api/cultivation',
   '/api/habits',
   '/api/journals',
+  '/api/first-step',
   '/api/linh-thu',
 ]);
 export async function miniAppApi(request: Request, env: Env, now = Date.now()): Promise<Response> {
@@ -120,6 +126,8 @@ async function dispatchMiniAppApi(
   try {
     if (establishSession) session.cookie = await createMiniAppSession(env.DB, owner, now);
     const context = { env, owner, now, healthy: new HealthyStore(env.DB) };
+    if (request.method === 'GET' && url.pathname === '/api/first-step')
+      return await readFirstStep(context, url);
     if (request.method === 'GET' && url.pathname === '/api/journals')
       return await readJournals(context, url);
     if (
@@ -150,6 +158,11 @@ async function dispatchMiniAppApi(
       return json({ error: 'NOT_FOUND' }, 404);
     const input = await readInput(request, url.pathname === '/api/journals' ? 65536 : 4096);
     if (input instanceof Response) return input;
+    if (url.pathname === '/api/first-step')
+      return await handleFirstStep(
+        { ...context, now: now + Math.max(0, Date.now() - receivedAt) },
+        input,
+      );
     if (url.pathname === '/api/journals')
       return await handleJournals(
         { ...context, now: now + Math.max(0, Date.now() - receivedAt) },
@@ -174,6 +187,15 @@ async function dispatchMiniAppApi(
     return await handleCultivation(context, input, timing);
   } catch (error) {
     const code = error instanceof Error ? error.message : '';
+    const firstStepErrors: Record<string, string> = {
+      FIRST_STEP_ACTIVE: 'Còn một lượt đang làm. Tiếp tục hoặc hủy lượt đó trước nhé.',
+      FIRST_STEP_NOT_FOUND: 'Chưa tìm thấy lượt này. Tải lại để kiểm tra nhé.',
+      FIRST_STEP_TOO_EARLY: 'Chưa đủ 5 phút. Đồng hồ vẫn đang chạy nhé.',
+      FIRST_STEP_CANCELED: 'Lượt này đã hủy và không nhận thưởng.',
+      FIRST_STEP_COMPLETED: 'Lượt này đã nhận thưởng rồi.',
+      FIRST_STEP_CHANGED: 'Lượt này vừa thay đổi. Tải lại để kiểm tra nhé.',
+    };
+    if (firstStepErrors[code]) return json({ error: code, message: firstStepErrors[code] }, 409);
     if (code === 'JOURNAL_CHANGED')
       return json(
         {
@@ -267,6 +289,9 @@ async function dispatchMiniAppApi(
         'CONFIRM_DELETE',
         'STEP_NOT_FOUND',
         'NO_NEXT_REMINDER',
+        'REMINDER_NOT_FOUND',
+        'REMINDER_CHANGED',
+        'REMINDER_SENDING',
         'SESSION_CHANGED',
       ].includes(code)
     )

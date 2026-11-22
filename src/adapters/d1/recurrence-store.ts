@@ -33,7 +33,7 @@ export class RecurrenceStore {
   async get(owner: string, id: string): Promise<RecurrenceRule | null> {
     const r = await query(
       this.db,
-      'SELECT * FROM recurrence_rules WHERE owner=? AND id=?',
+      'SELECT * FROM recurrence_rules WHERE owner=? AND id=? AND deleted_at IS NULL',
       owner,
       id,
     ).first<RuleRow>();
@@ -47,7 +47,7 @@ export class RecurrenceStore {
     const rows = (
       await query(
         this.db,
-        'SELECT * FROM recurrence_rules WHERE owner=? ORDER BY enabled DESC,created DESC,id LIMIT 101 OFFSET ?',
+        'SELECT * FROM recurrence_rules WHERE owner=? AND deleted_at IS NULL ORDER BY enabled DESC,created DESC,id LIMIT 101 OFFSET ?',
         owner,
         offset,
       ).all<RuleRow>()
@@ -102,7 +102,7 @@ export class RecurrenceStore {
     return [
       query(
         this.db,
-        'INSERT INTO transaction_guard SELECT CASE WHEN (?=0 AND NOT EXISTS(SELECT 1 FROM recurrence_rules WHERE id=?)) OR EXISTS(SELECT 1 FROM recurrence_rules WHERE owner=? AND id=? AND version=?) THEN 1 ELSE 0 END',
+        'INSERT INTO transaction_guard SELECT CASE WHEN (?=0 AND NOT EXISTS(SELECT 1 FROM recurrence_rules WHERE id=?)) OR EXISTS(SELECT 1 FROM recurrence_rules WHERE owner=? AND id=? AND version=? AND deleted_at IS NULL) THEN 1 ELSE 0 END',
         expectedVersion,
         rule.id,
         rule.owner,
@@ -136,6 +136,68 @@ export class RecurrenceStore {
   async save(rule: RecurrenceRule, expectedVersion: number, now: number) {
     await this.db.batch(this.saveStatements(rule, expectedVersion, now));
   }
+  async prepareDelete(owner: string, id: string, version: number, now: number) {
+    const current = await query(
+      this.db,
+      `SELECT r.version,EXISTS(SELECT 1 FROM recurrence_occurrences o JOIN outbox b ON b.id='recurring:'||o.id
+        WHERE o.owner=r.owner AND o.rule_id=r.id AND b.state='sending') AS sending
+        FROM recurrence_rules r WHERE r.owner=? AND r.id=? AND r.deleted_at IS NULL`,
+      owner,
+      id,
+    ).first<{ version: number; sending: number }>();
+    if (!current) throw Error('REMINDER_NOT_FOUND');
+    if (current.version !== version) throw Error('REMINDER_CHANGED');
+    if (current.sending) throw Error('REMINDER_SENDING');
+    return [
+      query(
+        this.db,
+        `INSERT INTO transaction_guard SELECT CASE WHEN EXISTS(
+          SELECT 1 FROM recurrence_rules r WHERE r.owner=? AND r.id=? AND r.version=? AND r.deleted_at IS NULL
+          AND NOT EXISTS(SELECT 1 FROM recurrence_occurrences o JOIN outbox b ON b.id='recurring:'||o.id
+            WHERE o.owner=r.owner AND o.rule_id=r.id AND b.state='sending')) THEN 1 ELSE 0 END`,
+        owner,
+        id,
+        version,
+      ),
+      query(
+        this.db,
+        'UPDATE recurrence_rules SET deleted_at=?,enabled=0,version=version+1 WHERE owner=? AND id=?',
+        now,
+        owner,
+        id,
+      ),
+      query(
+        this.db,
+        "UPDATE recurrence_occurrences SET status='cancelled' WHERE owner=? AND rule_id=? AND status IN ('scheduled','queued')",
+        owner,
+        id,
+      ),
+      query(
+        this.db,
+        `UPDATE outbox SET state='failed' WHERE state='pending' AND id IN (
+          SELECT 'recurring:'||id FROM recurrence_occurrences WHERE owner=? AND rule_id=?)`,
+        owner,
+        id,
+      ),
+      // A restored habit must not recover a reminder the user explicitly deleted.
+      query(
+        this.db,
+        `UPDATE habit_presentation SET reminder_time=NULL WHERE owner=? AND habit_id IN (
+          SELECT habit_id FROM habit_reminder_links WHERE owner=? AND rule_id=?)`,
+        owner,
+        owner,
+        id,
+      ),
+      query(
+        this.db,
+        `UPDATE habit_accounts SET version=version+1 WHERE owner=? AND EXISTS(
+          SELECT 1 FROM habit_reminder_links WHERE owner=? AND rule_id=?)`,
+        owner,
+        owner,
+        id,
+      ),
+    ];
+  }
   async materialize(owner: string, from: number, to: number) {
     if (!Number.isFinite(from) || !Number.isFinite(to) || to <= from || to - from > 32 * 86400000)
       throw Error('INVALID_OCCURRENCE_WINDOW');
@@ -149,7 +211,7 @@ export class RecurrenceStore {
     const rows = (
       await query(
         this.db,
-        `SELECT * FROM recurrence_rules WHERE owner=? AND enabled=1 AND id>?
+        `SELECT * FROM recurrence_rules WHERE owner=? AND enabled=1 AND deleted_at IS NULL AND id>?
     AND start_date<=? AND (end_date IS NULL OR end_date>=?) AND (kind!='once' OR start_date>=?) ORDER BY id LIMIT 20`,
         owner,
         cursor?.after_id ?? '',
@@ -176,7 +238,7 @@ export class RecurrenceStore {
         this.db,
         `INSERT OR IGNORE INTO recurrence_occurrences(id,rule_id,owner,rule_version,slot,due)
       SELECT json_extract(o.value,'$.id'),json_extract(o.value,'$.ruleId'),json_extract(o.value,'$.owner'),json_extract(o.value,'$.version'),json_extract(o.value,'$.slot'),json_extract(o.value,'$.due') FROM json_each(?) o
-      WHERE EXISTS(SELECT 1 FROM recurrence_rules WHERE id=json_extract(o.value,'$.ruleId') AND owner=json_extract(o.value,'$.owner') AND enabled=1 AND version=json_extract(o.value,'$.version'))
+      WHERE EXISTS(SELECT 1 FROM recurrence_rules WHERE id=json_extract(o.value,'$.ruleId') AND owner=json_extract(o.value,'$.owner') AND enabled=1 AND deleted_at IS NULL AND version=json_extract(o.value,'$.version'))
       AND (NOT EXISTS(SELECT 1 FROM habit_reminder_links WHERE owner=json_extract(o.value,'$.owner') AND rule_id=json_extract(o.value,'$.ruleId')) OR NOT EXISTS(
         SELECT 1 FROM recurrence_occurrences prior JOIN outbox b ON b.id='recurring:'||prior.id
         WHERE prior.owner=json_extract(o.value,'$.owner') AND prior.rule_id=json_extract(o.value,'$.ruleId') AND prior.slot=json_extract(o.value,'$.slot') AND b.state IN('sending','sent','uncertain')))`,

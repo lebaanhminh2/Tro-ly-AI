@@ -124,6 +124,11 @@ async function transport(path, body) {
       ITEM_UNAVAILABLE: 'Vật phẩm chưa dùng được lúc này.',
       ALREADY_PROTECTED: 'Hôm nay đã kích hoạt bảo vệ rồi.',
       NO_NEXT_REMINDER: 'Không còn lần nhắc sắp tới để sửa.',
+      CONFIRM_DELETE: 'Xác nhận thao tác xóa trước nhé.',
+      REMINDER_NOT_FOUND:
+        'Lời nhắc này đã được xóa hoặc không còn tồn tại. Đang cập nhật danh sách.',
+      REMINDER_CHANGED: 'Lời nhắc vừa thay đổi. Mở lại trên danh sách mới rồi thử nhé.',
+      REMINDER_SENDING: 'Một tin nhắc đang được gửi. Chờ một lát rồi thử xóa lại nhé.',
     };
     const timelineErrors = {
       TIMELINE_CHANGED: 'Lịch vừa thay đổi. Đóng hộp và mở lại lịch trước khi kéo nhé.',

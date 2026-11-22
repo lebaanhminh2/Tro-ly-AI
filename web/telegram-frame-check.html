@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Kiểm tra khung Telegram</title>
+    <style>
+      :root {
+        color-scheme: light;
+        background: #fff;
+        color: #222;
+        font-family: system-ui, sans-serif;
+      }
+      body {
+        box-sizing: border-box;
+        margin: 0;
+        min-height: 100vh;
+        min-height: 100dvh;
+        padding: max(24px, var(--host-safe-top, 0px)) 24px max(24px, var(--host-safe-bottom, 0px));
+        background: #fff;
+      }
+      h1 {
+        font-size: 22px;
+      }
+      p {
+        line-height: 1.5;
+      }
+      pre {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        font-size: 13px;
+      }
+      .actions {
+        display: grid;
+        gap: 12px;
+        margin: 24px 0;
+      }
+      button {
+        min-height: 44px;
+        padding: 10px;
+        font: inherit;
+      }
+    </style>
+    <script type="module" src="./telegram-frame-check.js"></script>
+  </head>
+  <body>
+    <h1>Trang đối chứng</h1>
+    <p>Kiểm tra số 2. Trang vừa mở chưa tải SDK Telegram và không gọi API dữ liệu.</p>
+    <p>Trước khi bấm các nút dưới đây, hãy xem dải xám ở sát đáy có xuất hiện không.</p>
+    <p id="status" role="status">Đang tải mã kiểm tra…</p>
+    <div class="actions">
+      <button id="initialize" type="button">1. Tải SDK và mở rộng khung</button>
+      <button id="color" type="button" disabled>2. Đồng bộ màu trắng</button>
+      <button id="fullscreen" type="button" disabled>3. Thử toàn màn hình</button>
+    </div>
+    <pre id="details"></pre>
+  </body>
+</html>

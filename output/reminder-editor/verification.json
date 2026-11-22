@@ -1,0 +1,56 @@
+{
+  "checkedAt": "2026-11-17T03:37:55.843Z",
+  "environment": "staging",
+  "url": "https://personal-assistant-staging.telegram-assistant-ai-trial.workers.dev/app/",
+  "version": "75f5789e-1676-4161-87ae-942799118076",
+  "pageStatus": 200,
+  "assets": [
+    {
+      "path": "features/reminders.js",
+      "status": 200,
+      "localSha256": "53717d50eaec4ff6139704f33a7a8d0b32d8ab1cbf2238ecd25eacb72f80454a",
+      "remoteSha256": "53717d50eaec4ff6139704f33a7a8d0b32d8ab1cbf2238ecd25eacb72f80454a",
+      "matches": true,
+      "cacheControl": "public, max-age=0, must-revalidate"
+    },
+    {
+      "path": "views/reminders.js",
+      "status": 200,
+      "localSha256": "ebbbe60ae5264801f4ad5be7eced96157448fea9d10ebfefcdddc9a126a8dca9",
+      "remoteSha256": "ebbbe60ae5264801f4ad5be7eced96157448fea9d10ebfefcdddc9a126a8dca9",
+      "matches": true,
+      "cacheControl": "public, max-age=0, must-revalidate"
+    },
+    {
+      "path": "styles.css",
+      "status": 200,
+      "localSha256": "45fce484a25e2466cc7a2e9251911cb722dbcb34c938bc51d5248f9512ec51c4",
+      "remoteSha256": "45fce484a25e2466cc7a2e9251911cb722dbcb34c938bc51d5248f9512ec51c4",
+      "matches": true,
+      "cacheControl": "public, max-age=0, must-revalidate"
+    }
+  ],
+  "tests": {
+    "appFlows": {
+      "passed": 52,
+      "failed": 0
+    },
+    "afterFinalWeekdayLayout": {
+      "passed": 7,
+      "failed": 0
+    },
+    "webSyntax": "passed, 55 modules",
+    "eslintChangedModules": "passed",
+    "formattingChangedFiles": "passed",
+    "stagingDryRun": "passed",
+    "webTypecheck": "4 preexisting TS2339 errors in web/telegram-frame-check.js at lines 38, 73, 74, 79; none in changed modules"
+  },
+  "screenshots": [
+    "editor-320x568.png",
+    "editor-390x390.png",
+    "editor-dark.png",
+    "editor-top-320.png",
+    "editor-weekdays-390.png",
+    "editor-weekdays-320.png"
+  ]
+}

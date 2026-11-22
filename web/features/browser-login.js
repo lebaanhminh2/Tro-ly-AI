@@ -11,6 +11,7 @@ export function createBrowserLoginActions(context) {
     loginGeneration++;
     runtime.revision++;
     runtime.session++;
+    context.resetFirstStep?.();
     releaseWrite(runtime);
     state.featureSaving = null;
     state.beastBusy = false;

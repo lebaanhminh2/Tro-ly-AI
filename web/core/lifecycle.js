@@ -5,6 +5,7 @@ import { renderReminders } from '../views/reminders.js';
 import { updateTimelineClock } from '../views/timeline.js';
 import { renderToday } from '../views/today.js';
 import { renderHabits } from '../views/habits.js';
+import { reconcileFirstStep } from '../views/first-step.js';
 import { renderBeasts, reconcileBeasts } from '../views/linh-thu.js';
 import { settleRequest } from './http.js';
 import { refreshLive } from './live-data.js';
@@ -77,8 +78,14 @@ export function createLifecycle({
       state.tab === 'beasts' && state.screenState === 'ready'
         ? content.querySelector(':scope > .beast-page')
         : null;
-    if (!previousBeasts) content.replaceChildren();
-    else for (const child of [...content.children]) if (child !== previousBeasts) child.remove();
+    const previousHabits =
+      screen === renderedScreen && state.tab === 'habits' && state.screenState === 'ready'
+        ? content.querySelector(':scope > .habits-v2:has(> #pb-entry)')
+        : null;
+    if (!previousBeasts && !previousHabits) content.replaceChildren();
+    else if (previousHabits) {
+      for (const child of [...content.children]) if (child !== previousHabits) child.remove();
+    } else for (const child of [...content.children]) if (child !== previousBeasts) child.remove();
     const login = state.live && state.screenState === 'login';
     document.body.classList.toggle('login-screen', login);
     document.body.classList.toggle('live-app', state.live);
@@ -96,6 +103,7 @@ export function createLifecycle({
       !state.live || !state.loaded || !!globalThis.Telegram?.WebApp?.initData;
     if (login) {
       content.append(renderBrowserLogin());
+      ui.syncFirstStep?.();
       return;
     }
     if (state.live && !state.loaded && state.screenState === 'error') {
@@ -103,6 +111,7 @@ export function createLifecycle({
         heading('Chưa kết nối được', 'Cậu kiểm tra kết nối rồi thử lại nhé.'),
         button('Thử lại', startConnection, 'primary'),
       );
+      ui.syncFirstStep?.();
       return;
     }
     if (state.screenState === 'empty')
@@ -143,14 +152,16 @@ export function createLifecycle({
         state.tab === 'today'
           ? renderToday(ui, state)
           : state.tab === 'habits'
-            ? renderHabits(ui, state)
+            ? reconcileFirstStep(previousHabits, renderHabits(ui, state))
             : state.tab === 'beasts'
               ? reconcileBeasts(previousBeasts, renderBeasts(ui, state))
               : state.tab === 'reminders'
                 ? renderReminders(ui, state)
                 : renderAchievements(ui, state);
+      if (previousHabits && view !== previousHabits) previousHabits.remove();
       if (view.parentNode !== content) content.append(view);
     }
+    ui.syncFirstStep?.();
     const now = (state.serverNow ?? Date.now()) + Date.now() - (state.loadedAt ?? Date.now());
     const boundaries = (state.dailyPlan?.plan?.items ?? []).flatMap((item) =>
       (item.windows ?? []).flatMap((slot) => [slot.start, slot.end]),
@@ -216,6 +227,7 @@ export function createLifecycle({
     )
       return;
     if (!runtime.refreshPending && state.tab === 'habits' && !background) {
+      ui.refreshFirstStep?.(force);
       if (state.habitPanel === 'journals') return ui.loadJournals?.();
       ui.loadTower?.(force);
       return ui.loadHabits(force);
